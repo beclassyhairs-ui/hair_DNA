@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* 40~70대 가독성을 위해 기준 폰트 사이즈를 키움 */
+    font-size: 18px;
+  }
+
+  body {
+    @apply bg-cream text-brown antialiased;
+    /* 부드러운 화면 전환을 위한 기본 색 명시 */
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
