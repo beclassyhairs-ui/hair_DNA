@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app"
   ),
-  title: "어뷰티(A-Beauty) | 퍼스널 헤어 DNA 테스트",
+  title: "어뷰티(A-Beauty) | 퍼스널 헤어 MBTI 테스트",
   description:
-    "나의 평소 관리 습관과 미용실 성향으로 알아보는 헤어 DNA. 어뷰티(A-Beauty)에서 무료로 진단받으세요.",
+    "나의 평소 관리 습관과 미용실 성향으로 알아보는 헤어 MBTI. 어뷰티(A-Beauty)에서 무료로 진단받으세요.",
 };
 
 export default function RootLayout({

@@ -14,7 +14,8 @@ interface Product {
 }
 
 interface HairType {
-  nickname: string;   // 메인 타이틀 (화면 노출, ENFP 등 코드 비노출)
+  mbti: string;       // MBTI 4자리 코드 (화면 상단 크게 노출)
+  nickname: string;   // 캐릭터 닉네임
   tagline: string;    // 서브타이틀
   emoji: string;
   gradA: string;
@@ -34,6 +35,7 @@ interface HairType {
 const HAIR_TYPES: Record<number, HairType> = {
   // 0 ─ ESTJ ──────────────────────────────────────────────────────────────
   0: {
+    mbti: "ESTJ",
     nickname: "엄격한 원장님 빙의형",
     tagline: "\"내 머리에 한 치의 오차도 용납 못해.\"",
     emoji: "📐",
@@ -43,6 +45,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 1 ─ ESTP ──────────────────────────────────────────────────────────────
   1: {
+    mbti: "ESTP",
     nickname: "인간 카멜레온",
     tagline: "\"머리색이 3주 이상 같으면 병나는 스타일.\"",
     emoji: "🦎",
@@ -52,6 +55,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 2 ─ ESFJ ──────────────────────────────────────────────────────────────
   2: {
+    mbti: "ESFJ",
     nickname: "리액션 봇 단골손님",
     tagline: "\"어머 원장님 너무 예뻐요!\"",
     emoji: "🌸",
@@ -61,6 +65,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 3 ─ ESFP ──────────────────────────────────────────────────────────────
   3: {
+    mbti: "ESFP",
     nickname: "거울 앞의 팝스타",
     tagline: "\"내 머리가 제일 화려해야 해!\"",
     emoji: "🌟",
@@ -70,6 +75,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 4 ─ ENTJ ──────────────────────────────────────────────────────────────
   4: {
+    mbti: "ENTJ",
     nickname: "헤어 플래너",
     tagline: "\"이 시술, 제 모질에 최선 맞나요?\"",
     emoji: "📊",
@@ -79,6 +85,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 5 ─ ENTP ──────────────────────────────────────────────────────────────
   5: {
+    mbti: "ENTP",
     nickname: "도전정신 만렙 실험쥐",
     tagline: "\"탈색 3번? 콜! 삭발 빼고 다 해봅니다.\"",
     emoji: "🧪",
@@ -88,6 +95,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 6 ─ ENFJ ──────────────────────────────────────────────────────────────
   6: {
+    mbti: "ENFJ",
     nickname: "헤어스타일 전도사",
     tagline: "\"야, 내 샵 원장님 미쳤어. 너도 여기 가봐.\"",
     emoji: "📢",
@@ -97,6 +105,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 7 ─ ENFP ──────────────────────────────────────────────────────────────
   7: {
+    mbti: "ENFP",
     nickname: "변덕쟁이 금사빠",
     tagline: "\"자를까 기를까? 아 그냥 붙임머리 할까?!\"",
     emoji: "🎪",
@@ -106,6 +115,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 8 ─ ISTJ ──────────────────────────────────────────────────────────────
   8: {
+    mbti: "ISTJ",
     nickname: "한 우물 파는 소나무",
     tagline: "\"10년째 같은 미용실, 같은 스타일.\"",
     emoji: "🌲",
@@ -115,6 +125,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 9 ─ ISTP ──────────────────────────────────────────────────────────────
   9: {
+    mbti: "ISTP",
     nickname: "귀찮음 만렙 쌩얼헤어",
     tagline: "\"머리는 감고 말리면 끝.\"",
     emoji: "😴",
@@ -124,6 +135,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 10 ─ ISFJ ─────────────────────────────────────────────────────────────
   10: {
+    mbti: "ISFJ",
     nickname: "프로 손민수형",
     tagline: "\"이거 고데기죠...?\" (핸드폰 3번 켰다 껐다가 내미는)",
     emoji: "🪞",
@@ -133,6 +145,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 11 ─ ISFP ─────────────────────────────────────────────────────────────
   11: {
+    mbti: "ISFP",
     nickname: "방구석 뷰티 유튜버",
     tagline: "밖에선 대충 묶고, 방구석에선 S컬 장인",
     emoji: "🎬",
@@ -142,6 +155,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 12 ─ INTJ ─────────────────────────────────────────────────────────────
   12: {
+    mbti: "INTJ",
     nickname: "헤어 분석가",
     tagline: "원장님이랑 팩트로 토론 가능한 지식인",
     emoji: "🔬",
@@ -151,6 +165,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 13 ─ INTP ─────────────────────────────────────────────────────────────
   13: {
+    mbti: "INTP",
     nickname: "머리칼 방치형 학자",
     tagline: "\"머리카락은 뇌를 보호하는 단백질일 뿐.\"",
     emoji: "📚",
@@ -160,6 +175,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 14 ─ INFJ ─────────────────────────────────────────────────────────────
   14: {
+    mbti: "INFJ",
     nickname: "내적 관종 미니멀리스트",
     tagline: "겉은 무난, 속은 시크릿 투톤",
     emoji: "🕯️",
@@ -169,6 +185,7 @@ const HAIR_TYPES: Record<number, HairType> = {
   },
   // 15 ─ INFP ─────────────────────────────────────────────────────────────
   15: {
+    mbti: "INFP",
     nickname: "망상 폭주 단발병 환자",
     tagline: "속으론 '나 완전 아이유 같겠지?' 상상하지만 티 안 냄",
     emoji: "💭",
@@ -233,9 +250,9 @@ function MbtiResultPage() {
 
   function handleShare() {
     const url = typeof window !== "undefined" ? window.location.href : "";
-    const text = `내 헤어 유형은 "${data.nickname}"\n어뷰티(A-Beauty) 퍼스널 헤어 DNA 테스트 해봐 💇`;
+    const text = `내 헤어 MBTI는 ${data.mbti} "${data.nickname}"\n어뷰티(A-Beauty) 헤어 MBTI 테스트 해봐 💇`;
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "퍼스널 헤어 DNA 테스트", text, url }).catch(() => {});
+      navigator.share({ title: "헤어 MBTI 테스트", text, url }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(url).then(() => {
         setCopied(true);
@@ -252,7 +269,7 @@ function MbtiResultPage() {
           ← 다시 하기
         </Link>
         <span className="text-xs font-semibold tracking-[0.22em] uppercase text-gold">
-          퍼스널 헤어 DNA
+          헤어 MBTI
         </span>
         <button
           onClick={handleShare}
@@ -280,10 +297,15 @@ function MbtiResultPage() {
                 {data.emoji}
               </motion.div>
               <p className="mb-3 text-sm font-semibold tracking-[0.18em] uppercase text-white/60">
-                나의 헤어 유형
+                나의 헤어 MBTI
               </p>
-              {/* 메인 타이틀: 4자리 코드 노출 없이 캐릭터 네임만 */}
-              <h1 className="font-serif text-[1.65rem] font-bold leading-snug text-white">
+              {/* MBTI 4자리 코드 — 크고 굵게 */}
+              <div className="mb-2 inline-block rounded-xl bg-white/20 px-5 py-1.5 backdrop-blur-sm">
+                <span className="font-sans text-3xl font-black tracking-[0.15em] text-white">
+                  {data.mbti}
+                </span>
+              </div>
+              <h1 className="font-serif text-[1.55rem] font-bold leading-snug text-white">
                 {data.nickname}
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-white/70">

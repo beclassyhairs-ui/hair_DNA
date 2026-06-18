@@ -219,7 +219,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           퍼스널 헤어
           <br />
           <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
-            DNA 테스트
+            MBTI 테스트
           </span>
         </motion.h1>
 
@@ -231,7 +231,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         >
           나의 평소 관리 습관과 미용실 성향으로
           <br />
-          <strong className="text-cream/90">알아보는 헤어 DNA</strong>
+          <strong className="text-cream/90">알아보는 헤어 MBTI</strong>
         </motion.p>
 
         <motion.div
@@ -255,7 +255,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           whileTap={{ scale: 0.97 }}
           className="mt-8 w-full rounded-2xl bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 py-5 text-lg font-bold text-white shadow-[0_8px_32px_rgba(168,85,247,0.35)] transition-all hover:brightness-110 active:scale-[0.98]"
         >
-          내 헤어 DNA 찾기 →
+          내 헤어 MBTI 찾기 →
         </motion.button>
 
         <motion.div
@@ -347,7 +347,7 @@ export default function MbtiPage() {
                     ← 이전
                   </button>
                   <span className="text-xs font-semibold tracking-[0.22em] uppercase text-gold">
-                    퍼스널 헤어 DNA
+                    헤어 MBTI
                   </span>
                   <span className="tabular-nums text-sm text-cream/40">
                     {index + 1}
