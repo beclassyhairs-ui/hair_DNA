@@ -1,14 +1,13 @@
 // ============================================================================
-// 어뷰티 — MediaPipe Face Mesh 기반 얼굴형 분석 라이브러리
+// 어뷰티 — MediaPipe Face Mesh 기반 얼굴형 분석 라이브러리 v2
 //
-// 로드 방식: CDN 동적 주입 (npm install 불필요, WASM 서빙 설정 불필요)
+// 로드 방식: CDN 동적 주입 (npm install 불필요)
 // CDN: https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619
 //
-// 4가지 교차 비율로 한국인 '둥근형/계란형' 쏠림 현상 방지:
-//   [비율 1] 가로 vs 세로       → 긴형(oblong) / 둥근형(round) 판단
-//   [비율 2] 광대 vs 턱 너비    → 각진형(square) / 하트형(heart) 판단
-//   [비율 3] 이마 vs 광대 너비  → 다이아몬드형(diamond) 판단
-//   [비율 4] 관자놀이/볼 굴곡   → 땅콩형(peanut) / 육각형(hexagon) 판단
+// 한국인 '둥근형/계란형' 쏠림 방지 → 3가지 독립 비율 교차 검증:
+//   lengthRatio    = 세로 / 가로              → 긴형·둥근형 판단
+//   jawRatio       = 턱 너비 / 광대 너비      → 각진형·역삼각형 판단
+//   foreheadRatio  = 이마 너비 / 광대 너비    → 다이아몬드·땅콩형 판단
 // ============================================================================
 
 export type FaceShapeKey =
@@ -17,33 +16,64 @@ export type FaceShapeKey =
 
 export interface Landmark { x: number; y: number; z: number; }
 
-// ─── MediaPipe Face Mesh 468점 중 얼굴형 판단용 핵심 랜드마크 인덱스 ───────────
-// 참고: https://developers.google.com/mediapipe/solutions/vision/face_landmarker
+// ─────────────────────────────────────────────────────────────────────────────
+// 핵심 랜드마크 인덱스 (MediaPipe Face Mesh 468점)
+// 사용자 지정 정확 인덱스
+// ─────────────────────────────────────────────────────────────────────────────
 const LM = {
-  TOP_HEAD:          10,   // 이마 최상단 (헤어라인 중심)
-  CHIN:             152,   // 턱끝
+  TOP_HEAD:      10,   // 이마 최상단 (세로 Face Length 상단)
+  CHIN:         152,   // 턱끝 (세로 Face Length 하단)
 
-  LEFT_EAR:         234,   // 왼쪽 볼/귀 외곽 최돌출
-  RIGHT_EAR:        454,   // 오른쪽 볼/귀 외곽 최돌출
+  LEFT_CHEEK:   234,   // 왼쪽 광대 최돌출 (가로 Face Width 기준)
+  RIGHT_CHEEK:  454,   // 오른쪽 광대 최돌출
 
-  LEFT_CHEEKBONE:   116,   // 왼쪽 광대 최돌출
-  RIGHT_CHEEKBONE:  345,   // 오른쪽 광대 최돌출
+  LEFT_JAW:     132,   // 왼쪽 하관 각 (Jaw Width)
+  RIGHT_JAW:    361,   // 오른쪽 하관 각
 
-  LEFT_FOREHEAD:    103,   // 왼쪽 이마 폭
-  RIGHT_FOREHEAD:   332,   // 오른쪽 이마 폭
-
-  LEFT_JAW:         172,   // 왼쪽 턱선 (하관)
-  RIGHT_JAW:        397,   // 오른쪽 턱선 (하관)
-
-  LEFT_TEMPLE:       70,   // 왼쪽 관자놀이
-  RIGHT_TEMPLE:     300,   // 오른쪽 관자놀이
-
-  LEFT_LOWER_CHEEK:  50,   // 왼쪽 볼 하부 (광대 아래-턱 위 중간)
-  RIGHT_LOWER_CHEEK:280,   // 오른쪽 볼 하부
+  LEFT_TEMPLE:   71,   // 왼쪽 관자놀이 (Forehead Width)
+  RIGHT_TEMPLE: 301,   // 오른쪽 관자놀이
 } as const;
 
-// ─── 거리 계산 헬퍼 ──────────────────────────────────────────────────────────
+// Face Oval 외곽 36점 순서 (MediaPipe 표준 face contour path)
+export const FACE_OVAL_SEQUENCE = [
+  10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
+  397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
+  172,  58, 132,  93, 234, 127, 162,  21,  54, 103,  67, 109,
+] as const;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 임계값 객체 — 추후 미세 조정 시 이 객체만 수정
+// ─────────────────────────────────────────────────────────────────────────────
+export const FACE_THRESHOLDS = {
+  LONG_FACE_RATIO:       1.35, // lengthRatio > 이 값 → 긴형(oblong)
+  SHORT_FACE_RATIO:      1.15, // lengthRatio < 이 값 → 둥근형/짧은형(round)
+  WIDE_JAW_RATIO:        0.85, // jawRatio > 이 값 → 각진형(square)
+  NARROW_JAW_RATIO:      0.70, // jawRatio < 이 값 → 역삼각(heart) or 다이아몬드
+  NARROW_FOREHEAD_RATIO: 0.75, // foreheadRatio < 이 값 → 다이아몬드·땅콩형
+} as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 랜드마크 데이터 타입 (Canvas 시각화에 사용)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface ShapeKeyPoints {
+  top:          { x: number; y: number };
+  chin:         { x: number; y: number };
+  leftCheek:    { x: number; y: number };
+  rightCheek:   { x: number; y: number };
+  leftJaw:      { x: number; y: number };
+  rightJaw:     { x: number; y: number };
+  leftTemple:   { x: number; y: number };
+  rightTemple:  { x: number; y: number };
+}
+
+export interface FaceLandmarkData {
+  oval:  { x: number; y: number }[]; // 36점 외곽 윤곽선
+  shape: ShapeKeyPoints;              // 8점 핵심 측정 좌표
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 거리 계산 헬퍼
+// ─────────────────────────────────────────────────────────────────────────────
 function hDist(a: Landmark, b: Landmark): number {
   return Math.abs(b.x - a.x);
 }
@@ -52,103 +82,106 @@ function vDist(a: Landmark, b: Landmark): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// [비율 1] 가로 vs 세로 비율
-// 결과 > 1.35 → 긴형(oblong) | < 0.95 → 둥근형(round) 경향
+// 3가지 비율 계산 함수 (독립 공개 — 테스트·디버깅용)
 // ─────────────────────────────────────────────────────────────────────────────
-export function calcHeightRatio(lm: Landmark[]): number {
-  const h = vDist(lm[LM.TOP_HEAD], lm[LM.CHIN]);
-  const w = hDist(lm[LM.LEFT_EAR], lm[LM.RIGHT_EAR]);
-  return w > 0 ? h / w : 1.0;
+
+/** 세로/가로 비율 — 긴형/둥근형 판단 */
+export function calcLengthRatio(lm: Landmark[]): number {
+  const faceW = hDist(lm[LM.LEFT_CHEEK], lm[LM.RIGHT_CHEEK]);
+  return faceW > 0 ? vDist(lm[LM.TOP_HEAD], lm[LM.CHIN]) / faceW : 1.0;
+}
+
+/** 턱 너비 / 광대 너비 — 각진형/하트형 판단 */
+export function calcJawRatio(lm: Landmark[]): number {
+  const cheekW = hDist(lm[LM.LEFT_CHEEK], lm[LM.RIGHT_CHEEK]);
+  return cheekW > 0 ? hDist(lm[LM.LEFT_JAW], lm[LM.RIGHT_JAW]) / cheekW : 1.0;
+}
+
+/** 이마 너비 / 광대 너비 — 다이아몬드/땅콩형 판단 */
+export function calcForeheadRatio(lm: Landmark[]): number {
+  const cheekW = hDist(lm[LM.LEFT_CHEEK], lm[LM.RIGHT_CHEEK]);
+  return cheekW > 0 ? hDist(lm[LM.LEFT_TEMPLE], lm[LM.RIGHT_TEMPLE]) / cheekW : 1.0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// [비율 2] 광대 vs 턱 너비 비율
-// > 1.25 → 하트형/다이아몬드 경향 | < 1.07 → 각진형 경향
+// 랜드마크 데이터 추출 (Canvas 시각화 입력용)
 // ─────────────────────────────────────────────────────────────────────────────
-export function calcCheekToJawRatio(lm: Landmark[]): number {
-  const cheek = hDist(lm[LM.LEFT_CHEEKBONE], lm[LM.RIGHT_CHEEKBONE]);
-  const jaw   = hDist(lm[LM.LEFT_JAW],       lm[LM.RIGHT_JAW]);
-  return jaw > 0 ? cheek / jaw : 1.0;
-}
+export function extractLandmarkData(lm: Landmark[]): FaceLandmarkData {
+  const oval = Array.from(FACE_OVAL_SEQUENCE).map((idx) => ({
+    x: lm[idx].x,
+    y: lm[idx].y,
+  }));
 
-// ─────────────────────────────────────────────────────────────────────────────
-// [비율 3] 이마 vs 광대 너비 비율
-// < 0.84 (이마 좁음) + 광대>턱 → 다이아몬드형
-// ─────────────────────────────────────────────────────────────────────────────
-export function calcForeheadToCheekRatio(lm: Landmark[]): number {
-  const forehead = hDist(lm[LM.LEFT_FOREHEAD],   lm[LM.RIGHT_FOREHEAD]);
-  const cheek    = hDist(lm[LM.LEFT_CHEEKBONE],  lm[LM.RIGHT_CHEEKBONE]);
-  return cheek > 0 ? forehead / cheek : 1.0;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// [비율 4] 관자놀이/볼 굴곡 감지 (이중 패임 → 땅콩형 / 육각형 판단)
-// templeRatio: 관자놀이 / 광대  → 0.88 미만이면 패임 있음
-// lowerCheekRatio: 하볼 / 광대  → 0.88 미만이면 패임 있음
-// ─────────────────────────────────────────────────────────────────────────────
-export interface ContourRatios {
-  templeRatio:     number;  // 관자놀이 폭 / 광대 폭
-  lowerCheekRatio: number;  // 하볼 폭 / 광대 폭
-}
-export function calcContourRatios(lm: Landmark[]): ContourRatios {
-  const cheekW = hDist(lm[LM.LEFT_CHEEKBONE], lm[LM.RIGHT_CHEEKBONE]);
-  if (cheekW === 0) return { templeRatio: 1, lowerCheekRatio: 1 };
-  return {
-    templeRatio:     hDist(lm[LM.LEFT_TEMPLE],       lm[LM.RIGHT_TEMPLE])       / cheekW,
-    lowerCheekRatio: hDist(lm[LM.LEFT_LOWER_CHEEK],  lm[LM.RIGHT_LOWER_CHEEK]) / cheekW,
+  const shape: ShapeKeyPoints = {
+    top:         { x: lm[LM.TOP_HEAD].x,     y: lm[LM.TOP_HEAD].y },
+    chin:        { x: lm[LM.CHIN].x,          y: lm[LM.CHIN].y },
+    leftCheek:   { x: lm[LM.LEFT_CHEEK].x,   y: lm[LM.LEFT_CHEEK].y },
+    rightCheek:  { x: lm[LM.RIGHT_CHEEK].x,  y: lm[LM.RIGHT_CHEEK].y },
+    leftJaw:     { x: lm[LM.LEFT_JAW].x,     y: lm[LM.LEFT_JAW].y },
+    rightJaw:    { x: lm[LM.RIGHT_JAW].x,    y: lm[LM.RIGHT_JAW].y },
+    leftTemple:  { x: lm[LM.LEFT_TEMPLE].x,  y: lm[LM.LEFT_TEMPLE].y },
+    rightTemple: { x: lm[LM.RIGHT_TEMPLE].x, y: lm[LM.RIGHT_TEMPLE].y },
   };
+
+  return { oval, shape };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 종합 얼굴형 분류 — 4가지 비율을 조합한 Decision Tree
+// 8대 얼굴형 판별 로직 — FACE_THRESHOLDS 기반 if/else 트리
 // ─────────────────────────────────────────────────────────────────────────────
 export function classifyFaceShape(landmarks: Landmark[]): FaceShapeKey {
-  const heightRatio      = calcHeightRatio(landmarks);
-  const cheekToJaw       = calcCheekToJawRatio(landmarks);
-  const foreheadToCheek  = calcForeheadToCheekRatio(landmarks);
-  const { templeRatio, lowerCheekRatio } = calcContourRatios(landmarks);
+  const T = FACE_THRESHOLDS;
 
-  // 1. 긴형: 얼굴 높이가 너비의 1.35배 초과
-  if (heightRatio > 1.35) return "oblong";
+  const lengthRatio   = calcLengthRatio(landmarks);
+  const jawRatio      = calcJawRatio(landmarks);
+  const foreheadRatio = calcForeheadRatio(landmarks);
 
-  // 2. 둥근형: 세로/가로 < 0.95 + 광대≈턱(차이 작음)
-  if (heightRatio < 0.95 && cheekToJaw < 1.15) return "round";
+  // ── 1. 긴형: 세로/가로 비율이 임계값 초과 ──────────────────────────────────
+  if (lengthRatio > T.LONG_FACE_RATIO) return "oblong";
 
-  // 3. 다이아몬드형: 이마<광대 + 광대>턱 + 관자놀이 패임
-  if (foreheadToCheek < 0.84 && cheekToJaw > 1.18 && templeRatio < 0.88) return "diamond";
+  // ── 2. 각진형: 턱이 광대만큼 넓음 ─────────────────────────────────────────
+  if (jawRatio > T.WIDE_JAW_RATIO) return "square";
 
-  // 4. 하트형(역삼각형): 이마≥광대 + 광대>턱(뚜렷)
-  if (cheekToJaw > 1.25 && foreheadToCheek > 0.90) return "heart";
-
-  // 5. 각진형: 광대≈턱(차이 작음) + 세로/가로 정상 범위
-  if (cheekToJaw < 1.07 && heightRatio > 0.95) return "square";
-
-  // 6. 땅콩형: 관자놀이+하볼 모두 패임 (이중 굴곡)
-  if (templeRatio < 0.88 && lowerCheekRatio < 0.88) return "peanut";
-
-  // 7. 육각형: 광대>턱(중간 정도) + 턱 폭이 전체 얼굴 폭 대비 넓음
-  if (cheekToJaw > 1.08 && cheekToJaw < 1.20) {
-    const earW  = hDist(landmarks[LM.LEFT_EAR], landmarks[LM.RIGHT_EAR]);
-    const jawW  = hDist(landmarks[LM.LEFT_JAW], landmarks[LM.RIGHT_JAW]);
-    if (earW > 0 && jawW / earW > 0.74) return "hexagon";
+  // ── 3. V라인 계열 (턱이 좁음) ─────────────────────────────────────────────
+  if (jawRatio < T.NARROW_JAW_RATIO) {
+    if (foreheadRatio < T.NARROW_FOREHEAD_RATIO) {
+      // 이마도 좁음 → 광대만 돌출 → 다이아몬드
+      return "diamond";
+    } else {
+      // 이마는 정상 이상 → 역삼각형 → 하트
+      return "heart";
+    }
   }
 
-  // 8. 계란형 (기본값) — 나머지 모든 경우
+  // ── 4. 중간 턱 너비 (0.70 ~ 0.85) ─────────────────────────────────────────
+  if (lengthRatio < T.SHORT_FACE_RATIO) {
+    // 세로/가로가 짧음 → 둥근형
+    return "round";
+  }
+
+  if (foreheadRatio < T.NARROW_FOREHEAD_RATIO) {
+    // 이마 좁고 + 턱 중간 → 관자놀이 패임 특징 → 땅콩형
+    return "peanut";
+  }
+
+  if (foreheadRatio > 0.90 && jawRatio > 0.78) {
+    // 이마·턱 모두 넓고 광대도 강함 → 육각형
+    return "hexagon";
+  }
+
+  // ── 5. 균형 잡힌 비율 → 계란형 ────────────────────────────────────────────
   return "oval";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MediaPipe Face Mesh CDN 로더
+// MediaPipe CDN 로더
 // ─────────────────────────────────────────────────────────────────────────────
 
-const MP_CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js";
-const MP_FILES_BASE = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/";
+const MP_CDN      = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js";
+const MP_FILES    = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/";
 
 declare global {
-  interface Window {
-    // any: MediaPipe CDN 동적 로드 — 타입 정의 없음
-    FaceMesh?: any;
-  }
+  interface Window { FaceMesh?: unknown; }
 }
 
 async function loadFaceMesh(): Promise<unknown> {
@@ -157,7 +190,6 @@ async function loadFaceMesh(): Promise<unknown> {
 
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${MP_CDN}"]`)) {
-      // 이미 삽입된 경우 로드 완료 대기
       const poll = setInterval(() => {
         if (window.FaceMesh) { clearInterval(poll); resolve(window.FaceMesh); }
       }, 100);
@@ -174,21 +206,29 @@ async function loadFaceMesh(): Promise<unknown> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 공개 API: 이미지/비디오 요소에서 얼굴형 분석
-// 실패 시 null 반환 → 호출부에서 mock fallback 처리
+// 공개 API
 // ─────────────────────────────────────────────────────────────────────────────
+
+export interface FaceAnalysisResult {
+  shape:     FaceShapeKey;
+  landmarks: FaceLandmarkData | null;
+}
+
+/**
+ * 이미지에서 얼굴형을 분석합니다.
+ * MediaPipe 로드 실패 / 얼굴 미감지 시 null 반환 → 호출부에서 mock fallback 처리
+ */
 export async function analyzeFaceShape(
   image: HTMLImageElement | HTMLCanvasElement | HTMLVideoElement,
-): Promise<FaceShapeKey | null> {
+): Promise<FaceAnalysisResult | null> {
   try {
-    // any: MediaPipe CDN 동적 로드 — 타입 정의 없음
-    const FaceMeshClass = await loadFaceMesh() as any;
+    // any: MediaPipe CDN 동적 로드 — 정적 타입 정의 없음
+    const FaceMeshClass = await loadFaceMesh() as any; // eslint-disable-line
     if (!FaceMeshClass) return null;
 
-    return new Promise<FaceShapeKey | null>((resolve) => {
-      // any: MediaPipe CDN 동적 로드 — 타입 정의 없음
+    return new Promise<FaceAnalysisResult | null>((resolve) => {
       const faceMesh = new FaceMeshClass({
-        locateFile: (file: string) => `${MP_FILES_BASE}${file}`,
+        locateFile: (file: string) => `${MP_FILES}${file}`,
       });
 
       faceMesh.setOptions({
@@ -198,13 +238,15 @@ export async function analyzeFaceShape(
         minTrackingConfidence: 0.5,
       });
 
-      // any: MediaPipe CDN 동적 로드 — 타입 정의 없음
-      faceMesh.onResults((results: any) => {
+      faceMesh.onResults((results: any) => { // eslint-disable-line
         const lms: Landmark[] = results.multiFaceLandmarks?.[0];
         if (!lms || lms.length < 468) {
           resolve(null);
         } else {
-          resolve(classifyFaceShape(lms));
+          resolve({
+            shape:     classifyFaceShape(lms),
+            landmarks: extractLandmarkData(lms),
+          });
         }
         try { faceMesh.close(); } catch { /* ignore */ }
       });

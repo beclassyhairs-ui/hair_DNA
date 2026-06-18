@@ -10,8 +10,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY } from "../constants";
-import { analyzeFaceShape, type FaceShapeKey } from "../../../lib/faceAnalysis";
+import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_LANDMARKS_KEY } from "../constants";
+import { analyzeFaceShape, type FaceShapeKey, type FaceLandmarkData } from "../../../lib/faceAnalysis";
 
 const FACE_SHAPE_OPTIONS: { value: FaceShapeKey; label: string }[] = [
   { value: "oval",    label: "계란형" },
@@ -143,12 +143,13 @@ export default function BangsUploadPage() {
     try { return (sessionStorage.getItem(BANGS_FACESHAPE_KEY) as FaceShapeKey) ?? "round"; } catch { return "round"; }
   });
 
-  const videoRef     = useRef<HTMLVideoElement>(null);
-  const streamRef    = useRef<MediaStream | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imgRef       = useRef<HTMLImageElement | null>(null);
-  // MediaPipe 분석 결과를 로딩 중에 받아서 저장
-  const mpResultRef  = useRef<FaceShapeKey | null>(null);
+  const videoRef        = useRef<HTMLVideoElement>(null);
+  const streamRef       = useRef<MediaStream | null>(null);
+  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const imgRef          = useRef<HTMLImageElement | null>(null);
+  // MediaPipe 분석 결과를 10s 로딩과 병렬로 수신해 저장
+  const mpResultRef     = useRef<FaceShapeKey | null>(null);
+  const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -206,7 +207,7 @@ export default function BangsUploadPage() {
     e.target.value = "";
   }
 
-  // MediaPipe 분석 시작 (사진 확정 직후 비동기로)
+  // MediaPipe 분석 시작 (사진 확정 직후 비동기 — 10s 로딩과 병렬)
   async function runFaceAnalysis(dataUrl: string) {
     setMpStatus("analyzing");
     try {
@@ -217,9 +218,10 @@ export default function BangsUploadPage() {
         img.onerror = () => rej();
       });
       imgRef.current = img;
-      const result = await analyzeFaceShape(img);
+      const result = await analyzeFaceShape(img); // FaceAnalysisResult | null
       if (result) {
-        mpResultRef.current = result;
+        mpResultRef.current    = result.shape;
+        mpLandmarksRef.current = result.landmarks;
         setMpStatus("done");
       } else {
         setMpStatus("failed");
@@ -241,6 +243,10 @@ export default function BangsUploadPage() {
       // 10초 후: MediaPipe 결과 또는 mock fallback 저장
       const finalShape: FaceShapeKey = mpResultRef.current ?? mockShape;
       try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
+      // 랜드마크 데이터 저장 (Canvas 시각화용)
+      if (mpLandmarksRef.current) {
+        try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
+      }
       setIsLoading(false);
       router.push("/bangs/result");
     }, LOADING_MS);
