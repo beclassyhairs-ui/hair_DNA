@@ -23,6 +23,42 @@ import {
 import type { BangsSurveyAnswers } from "../surveyData";
 import type { FaceLandmarkData, ShapeKeyPoints } from "../../../lib/faceAnalysis";
 
+// ─── Kakao SDK 전역 타입 선언 ─────────────────────────────────────────────────
+declare global {
+  interface Window {
+    Kakao?: {
+      isInitialized: () => boolean;
+      init:          (key: string) => void;
+      Share: {
+        sendDefault: (config: Record<string, unknown>) => void;
+      };
+    };
+  }
+}
+
+const SITE_URL   = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+const KAKAO_KEY  = process.env.NEXT_PUBLIC_KAKAO_APP_KEY ?? "";
+const KAKAO_CDN  = "https://t1.kakaocdn.net/kakaojs/2.7.2/kakao.min.js";
+
+/** Kakao JS SDK를 CDN에서 동적 로드 (최초 1회만 삽입) */
+function loadKakaoSDK(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") { resolve(); return; }
+    if (window.Kakao) { resolve(); return; }
+    if (document.querySelector(`script[src="${KAKAO_CDN}"]`)) {
+      const poll = setInterval(() => {
+        if (window.Kakao) { clearInterval(poll); resolve(); }
+      }, 80);
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = KAKAO_CDN;
+    s.onload  = () => resolve();
+    s.onerror = () => resolve(); // 실패해도 fallback 진행
+    document.head.appendChild(s);
+  });
+}
+
 // ─── 애니메이션 상수 ──────────────────────────────────────────────────────────
 const STAGGER = {
   hidden: {},
@@ -305,7 +341,8 @@ export default function BangsResultPage() {
   const [survey,   setSurvey]  = useState<BangsSurveyAnswers | null>(null);
   const [faceKey,  setFaceKey] = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
-  const [copied,   setCopied]  = useState(false);
+  const [copied,    setCopied]   = useState(false);
+  const [kakaoSent, setKakaoSent] = useState(false);
 
   useEffect(() => {
     try {
@@ -331,23 +368,67 @@ export default function BangsResultPage() {
   const bangRec       = recommendBang(faceKey, safeAnswers);
   const product       = getProductRecommendation(safeAnswers.q5);
 
-  function handleShare() {
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/bangs?utm_source=result_share`
-      : "/bangs";
+  /** 카카오톡 SDK 공유 (실패 시 navigator.share → 클립보드 순 fallback) */
+  async function handleKakaoShare() {
+    const shareUrl = `${SITE_URL}/bangs?utm_source=kakao_share`;
+
+    // ─ 1차: Kakao SDK 실제 공유 ───────────────────────────────────────────
+    try {
+      await loadKakaoSDK();
+      const K = window.Kakao;
+      if (K) {
+        if (!K.isInitialized() && KAKAO_KEY) K.init(KAKAO_KEY);
+        if (K.isInitialized()) {
+          K.Share.sendDefault({
+            objectType: "feed",
+            content: {
+              title:       "어뷰티 | 내 인생 앞머리 진단 결과",
+              description: `AI가 처방한 나의 인생 앞머리는 [${bangRec.primaryLabel}] 입니다. 지금 확인해보세요!`,
+              imageUrl:    `${SITE_URL}/images/bangs-og.png`,
+              link: {
+                mobileWebUrl: shareUrl,
+                webUrl:       shareUrl,
+              },
+            },
+            buttons: [
+              {
+                title: "나도 인생 앞머리 찾기",
+                link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+              },
+            ],
+          });
+          setKakaoSent(true);
+          setTimeout(() => setKakaoSent(false), 2500);
+          return;
+        }
+      }
+    } catch { /* Kakao SDK 실패 → fallback */ }
+
+    // ─ 2차: 모바일 네이티브 공유 (카카오앱 선택창) ───────────────────────
     if (typeof navigator !== "undefined" && navigator.share) {
       navigator.share({
-        title: "내 인생 앞머리 찾기",
+        title: "어뷰티 | 내 인생 앞머리 찾기",
         text: `나는 ${faceInfo.title}! 인생 앞머리는 ${bangRec.primaryLabel}이에요 💇`,
-        url,
+        url: shareUrl,
       }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(url).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        alert("링크가 복사되었습니다! 카톡 채팅방에 붙여넣기 해주세요 🚀");
-      });
+      return;
     }
+
+    // ─ 3차: PC 클립보드 복사 ────────────────────────────────────────────
+    navigator.clipboard?.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      alert("링크가 복사되었습니다! 카톡 채팅방에 붙여넣기 해주세요 🚀");
+    });
+  }
+
+  /** 링크 복사 전용 */
+  function handleCopyLink() {
+    const url = `${SITE_URL}/bangs?utm_source=copy_share`;
+    navigator.clipboard?.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
   return (
@@ -359,8 +440,8 @@ export default function BangsResultPage() {
           ← 다시 찍기
         </Link>
         <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold">인생뱅 결과지</span>
-        <button onClick={handleShare} className="text-base font-medium text-cream/40 hover:text-cream">
-          {copied ? "복사됨 ✓" : "공유"}
+        <button onClick={handleKakaoShare} className="text-base font-medium text-cream/40 hover:text-cream">
+          {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>
 
@@ -462,15 +543,35 @@ export default function BangsResultPage() {
             </p>
           </motion.div>
 
-          {/* 공유 */}
+          {/* 공유 카드 — 카카오 SDK + 링크 복사 */}
           <motion.div variants={FADE_UP}
-            className="rounded-2xl border border-white/[0.09] bg-white/[0.04] px-5 py-5 text-center">
-            <p className="text-lg font-semibold text-cream/85">친구도 인생 앞머리 찾아줄까요? 🤔</p>
-            <p className="mt-1 text-base text-cream/40">공유하고 서로 결과를 비교해 보세요</p>
-            <button onClick={handleShare}
-              className="mt-4 w-full rounded-xl border border-white/15 py-4 text-lg font-semibold text-cream/70 transition-all hover:border-white/30 hover:text-cream active:scale-[0.98]">
-              🔗 결과 링크 공유하기
+            className="rounded-2xl border border-white/[0.09] bg-white/[0.04] px-5 py-5">
+            <p className="text-center text-lg font-semibold text-cream/85">
+              친구도 인생 앞머리 찾아줄까요? 🤔
+            </p>
+            <p className="mt-1 text-center text-base text-cream/40">
+              공유하고 서로 결과를 비교해 보세요
+            </p>
+            {/* 카카오톡 공유 버튼 */}
+            <button
+              onClick={handleKakaoShare}
+              className="mt-4 flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FEE500] text-lg font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
+            >
+              <span className="text-xl">💬</span>
+              {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
             </button>
+            {/* 링크 복사 버튼 */}
+            <button
+              onClick={handleCopyLink}
+              className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/15 text-base font-medium text-cream/60 transition-all hover:border-white/30 hover:text-cream active:scale-[0.98]"
+            >
+              {copied ? "✓ 복사됨" : "🔗 링크 복사"}
+            </button>
+            {!KAKAO_KEY && (
+              <p className="mt-2 text-center text-xs text-cream/20">
+                카카오 앱키 미설정 — NEXT_PUBLIC_KAKAO_APP_KEY 환경변수 추가 필요
+              </p>
+            )}
           </motion.div>
 
         </motion.div>

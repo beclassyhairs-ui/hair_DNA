@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // @mediapipe/face_mesh — CommonJS 패키지를 Next.js에서 올바르게 번들링
+  transpilePackages: ["@mediapipe/face_mesh"],
+
   async redirects() {
     return [
       { source: "/", destination: "/mbti", permanent: false },
