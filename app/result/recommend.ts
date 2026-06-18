@@ -79,7 +79,9 @@ function single(answers: Answers, qid: string): string | undefined {
 
 function multi(answers: Answers, qid: string): string[] {
   const a = answers[qid];
-  return Array.isArray(a) ? a : [];
+  if (Array.isArray(a)) return a;
+  if (typeof a === "string") return [a]; // single-select 필드도 배열로 처리
+  return [];
 }
 
 function labelOf(qid: string, optId?: string): string {
@@ -519,7 +521,9 @@ export function recommend(answers: Answers): DiagnosisResult {
       ? "내추럴 스트레이트"
       : design === "wave"
         ? "로맨틱 웨이브"
-        : "볼륨 C컬";
+        : design === "s_curl"
+          ? "내추럴 S컬"
+          : "볼륨 C컬";
   const hasRichLayer = layers.includes("rich");
   const styleName = `${primaryLength} ${designShort}${hasRichLayer ? " 레이어드" : ""}`;
   const styleDescription = `${moodLabel} 무드를 살린 ${primaryLength} 기장의 ${designShort} 스타일이에요. ${
