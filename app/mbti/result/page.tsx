@@ -241,11 +241,12 @@ function MbtiResultPage() {
   const data = HAIR_TYPES[id] ?? HAIR_TYPES[9];
 
   function handleMainCta() {
-    if (WAITLIST_LINK) {
-      window.open(WAITLIST_LINK, "_blank");
-    } else {
-      alert("정식 서비스 오픈 준비 중입니다! 조금만 기다려주세요.");
-    }
+    // [추적] GA4·Clarity에 알림 버튼 클릭 이벤트 전송
+    console.log("notification_button_clicked");
+    window.gtag?.("event", "notification_cta_click");
+
+    // 카카오 채널 링크 — 아래 URL의 _xxxxxx 부분을 실제 채널 ID로 교체하세요
+    window.open("http://pf.kakao.com/_xxxxxx", "_blank");
   }
 
   function handleShare() {
@@ -254,9 +255,12 @@ function MbtiResultPage() {
       : "/mbti?utm_source=friend_share";
     const text = `내 헤어 MBTI는 ${data.mbti} "${data.nickname}"\n어뷰티(A-Beauty) 헤어 MBTI 테스트 해봐 💇`;
     if (typeof navigator !== "undefined" && navigator.share) {
+      // 모바일: 네이티브 공유 시트 (카카오톡 등 앱 선택창)
       navigator.share({ title: "헤어 MBTI 테스트", text, url: shareUrl }).catch(() => {});
     } else {
+      // PC: 클립보드 복사 후 안내 알림
       navigator.clipboard?.writeText(shareUrl).then(() => {
+        alert("링크가 복사되었습니다! 카톡 채팅방에 붙여넣기 해주세요🚀");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
@@ -349,8 +353,8 @@ function MbtiResultPage() {
               href={data.product.link}
               target="_blank"
               rel="noopener noreferrer sponsored"
-              className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-6 py-5 text-center font-bold text-white shadow-[0_4px_24px_rgba(0,0,0,0.35)] transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ background: `linear-gradient(135deg, ${data.gradA}, ${data.gradB})` }}
+              className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-6 py-5 text-center font-bold text-white shadow-[0_4px_24px_rgba(255,124,152,0.45)] transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{ background: "linear-gradient(135deg, #FF7C98, #C084FC)" }}
             >
               {/* 호버 글로우 */}
               <span
