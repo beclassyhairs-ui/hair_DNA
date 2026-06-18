@@ -249,12 +249,14 @@ function MbtiResultPage() {
   }
 
   function handleShare() {
-    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareUrl = typeof window !== "undefined"
+      ? `${window.location.origin}/mbti?utm_source=friend_share`
+      : "/mbti?utm_source=friend_share";
     const text = `내 헤어 MBTI는 ${data.mbti} "${data.nickname}"\n어뷰티(A-Beauty) 헤어 MBTI 테스트 해봐 💇`;
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "헤어 MBTI 테스트", text, url }).catch(() => {});
+      navigator.share({ title: "헤어 MBTI 테스트", text, url: shareUrl }).catch(() => {});
     } else {
-      navigator.clipboard?.writeText(url).then(() => {
+      navigator.clipboard?.writeText(shareUrl).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });
