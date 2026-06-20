@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
 const TITLE = "퍼스널 헤어 MBTI 테스트 💇";
 const DESCRIPTION =
   "내 평소 관리 습관으로 알아보는 찰떡 헤어스타일! 나는 어떤 유형일까? 지금 바로 확인해 보세요.";
-const OG_IMAGE = "/hair-mbti-og.png?v=2"; // public/ 기준 — 1200×630px 권장 (?v=2로 카카오 캐시 무효화)
+const OG_IMAGE = `${SITE_URL}/hair-mbti-og.png`;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
 

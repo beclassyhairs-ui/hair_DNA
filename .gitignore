@@ -33,3 +33,5 @@ dev.err.log
 # claude code
 .claude/
 memory/
+
+.vercel

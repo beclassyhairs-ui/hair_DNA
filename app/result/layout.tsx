@@ -7,7 +7,11 @@
 
 import type { Metadata } from "next";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+const OG_IMAGE = `${SITE_URL}/hair-mbti-og.png`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
   description:
     "AI가 분석한 나의 얼굴형·헤어 고민 맞춤 진단 결과지. 추천 스타일과 맞춤 처방을 확인해 보세요.",
@@ -18,12 +22,20 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "어뷰티(A-Beauty)",
     locale: "ko_KR",
-    // images: ["/og-result.png"], // 추후 결과 OG 이미지 추가 영역
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "어뷰티(A-Beauty) AI 헤어 진단 결과",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
     description: "AI가 분석한 나의 맞춤 헤어스타일과 처방전을 확인해 보세요.",
+    images: [OG_IMAGE],
   },
 };
 

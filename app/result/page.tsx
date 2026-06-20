@@ -4,6 +4,41 @@
 // 동안비법 — 맞춤 진단 결과지 (3탭 + Paywall/Sharewall + 다이어리 저장)
 // ============================================================================
 
+// ─── Kakao SDK 전역 타입 선언 ─────────────────────────────────────────────────
+declare global {
+  interface Window {
+    Kakao?: {
+      isInitialized: () => boolean;
+      init:          (key: string) => void;
+      Share: {
+        sendDefault: (config: Record<string, unknown>) => void;
+      };
+    };
+  }
+}
+
+const SITE_URL  = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_APP_KEY ?? "";
+const KAKAO_CDN = "https://t1.kakaocdn.net/kakaojs/2.7.2/kakao.min.js";
+
+function loadKakaoSDK(): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") { resolve(); return; }
+    if (window.Kakao) { resolve(); return; }
+    if (document.querySelector(`script[src="${KAKAO_CDN}"]`)) {
+      const poll = setInterval(() => {
+        if (window.Kakao) { clearInterval(poll); resolve(); }
+      }, 80);
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = KAKAO_CDN;
+    s.onload  = () => resolve();
+    s.onerror = () => resolve();
+    document.head.appendChild(s);
+  });
+}
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -90,11 +125,35 @@ export default function ResultPage() {
     setTimeout(() => setShowConfetti(false), 3500);
   }, []);
 
-  // ── [Mock] 카카오 3명 공유 ──────────────────────────────────────────────────
-  function handleKakaoShare() {
+  // ── 카카오 공유 (paywall 잠금 해제용) ──────────────────────────────────────
+  async function handleKakaoShare() {
     track(EVENTS.SHARE_CLICK, { method: "kakao_unlock", ref: myRefId });
-    // TODO: 실제 카카오 SDK 연동 (window.Kakao.Share.sendDefault)
-    // 현재는 Mock — 바로 잠금 해제
+    const shareUrl = buildReferralUrl(myRefId);
+
+    try {
+      await loadKakaoSDK();
+      const K = window.Kakao;
+      if (K) {
+        if (!K.isInitialized() && KAKAO_KEY) K.init(KAKAO_KEY);
+        if (K.isInitialized()) {
+          K.Share.sendDefault({
+            objectType: "feed",
+            content: {
+              title:       "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
+              description: "AI가 분석한 나의 맞춤 헤어 처방전을 확인해 보세요!",
+              imageUrl:    `${SITE_URL}/hair-mbti-og.png`,
+              link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+            },
+            buttons: [
+              { title: "나도 무료 진단 받기", link: { mobileWebUrl: shareUrl, webUrl: shareUrl } },
+            ],
+          });
+          unlock();
+          return;
+        }
+      }
+    } catch { /* SDK 실패 → fallback */ }
+
     unlock();
   }
 
@@ -1033,10 +1092,32 @@ function ShareRow({ styleName, myRefId }: { styleName: string; myRefId: string }
   const shareUrl = buildReferralUrl(myRefId);
   const shareText = `나의 맞춤 헤어 스타일은 "${styleName}"이에요. 무료로 AI 진단 받아보세요!`;
 
-  function handleShare(method: "kakao" | "copy") {
+  async function handleShare(method: "kakao" | "copy") {
     track(EVENTS.SHARE_CLICK, { method, ref: myRefId, style: styleName });
     void trackServer(EVENTS.SHARE_CLICK, { method, ref: myRefId });
     if (method === "kakao") {
+      try {
+        await loadKakaoSDK();
+        const K = window.Kakao;
+        if (K) {
+          if (!K.isInitialized() && KAKAO_KEY) K.init(KAKAO_KEY);
+          if (K.isInitialized()) {
+            K.Share.sendDefault({
+              objectType: "feed",
+              content: {
+                title:       `어뷰티(A-Beauty) | ${styleName}`,
+                description: shareText,
+                imageUrl:    `${SITE_URL}/hair-mbti-og.png`,
+                link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+              },
+              buttons: [
+                { title: "나도 무료 진단 받기", link: { mobileWebUrl: shareUrl, webUrl: shareUrl } },
+              ],
+            });
+            return;
+          }
+        }
+      } catch { /* SDK 실패 → fallback */ }
       if (typeof navigator !== "undefined" && navigator.share) {
         navigator.share({ title: "어뷰티(A-Beauty) AI 헤어 진단", text: shareText, url: shareUrl }).catch(() => {});
       } else {
