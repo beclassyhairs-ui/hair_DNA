@@ -3,12 +3,6 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-const DIAGNOSTICS = [
-  { code: "01", label: "Face Mesh 468-Point Scan",   desc: "MediaPipe 랜드마크 정밀 추출" },
-  { code: "02", label: "Geometric Ratio Analysis",   desc: "세로·턱·이마 비율 교차 검증" },
-  { code: "03", label: "Expert Bang Prescription",   desc: "40종 앞머리 × 8가지 얼굴형 매칭" },
-];
-
 export default function BangsLandingPage() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden bg-[#0E0D0C] px-6 py-10 text-cream">
@@ -77,57 +71,19 @@ export default function BangsLandingPage() {
         </motion.div>
 
         {/* 헤드라인 */}
-        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-gold/50">
-          Bang Prescription System
-        </p>
-        <h1 className="font-serif text-[2.2rem] font-bold leading-[1.15] tracking-tight text-cream">
-          내 인생 앞머리를
+        <h1 className="font-serif text-[2.3rem] font-bold leading-[1.15] tracking-tight text-cream">
+          AI가 찾아주는
           <br />
           <span
             className="bg-clip-text text-transparent"
             style={{ backgroundImage: "linear-gradient(90deg, #E4D2A8, #C8A86B, #A8884A)" }}
           >
-            찾아드릴게요
+            내 인생 앞머리
           </span>
         </h1>
-        <p className="mt-5 text-base leading-relaxed text-cream/45">
-          청담동 전문가의 시선으로<br />얼굴형을 분석하고 앞머리를 처방합니다.
+        <p className="mt-5 text-base leading-relaxed text-cream/50">
+          5초 만에 나의 얼굴 윤곽과 콤플렉스를 분석하여<br />완벽한 앞머리를 처방받으세요.
         </p>
-
-        {/* 진단 프로세스 카드들 */}
-        <div className="mt-10 w-full space-y-2.5">
-          {DIAGNOSTICS.map((d, i) => (
-            <motion.div
-              key={d.code}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35 + i * 0.09, duration: 0.5 }}
-              className="flex items-center gap-4 rounded-xl border border-white/[0.07] bg-white/[0.03] px-5 py-4"
-            >
-              <span className="flex-none font-mono text-xs text-gold/35 tracking-wider">{d.code}</span>
-              <div className="h-6 w-px bg-gold/15" />
-              <div className="flex-1 text-left">
-                <p className="text-sm font-semibold text-cream/80">{d.label}</p>
-                <p className="mt-0.5 text-xs text-cream/30">{d.desc}</p>
-              </div>
-              <span className="flex-none text-xs text-gold/25">✦</span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* 소요 시간 */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mt-7 flex items-center gap-5 text-xs text-cream/25"
-        >
-          <span>약 2분 소요</span>
-          <span className="h-3 w-px bg-white/10" />
-          <span>사진 1장</span>
-          <span className="h-3 w-px bg-white/10" />
-          <span>무료</span>
-        </motion.div>
       </motion.div>
 
       {/* ── CTA ── */}
@@ -144,7 +100,7 @@ export default function BangsLandingPage() {
         >
           <span className="relative flex items-center gap-3">
             <span className="text-charcoal/60 text-sm">✦</span>
-            <span className="tracking-wide">진단 시작하기</span>
+            <span className="tracking-wide">테스트 시작하기</span>
             <span className="text-charcoal/60">→</span>
           </span>
         </Link>

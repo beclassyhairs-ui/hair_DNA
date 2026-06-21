@@ -25,11 +25,11 @@ const FACE_SHAPE_OPTIONS: { value: FaceShapeKey; label: string }[] = [
 ];
 
 const LOADING_STEPS = [
-  "AI가 이마 비율을 측정하고 있어요...",
-  "얼굴 골격 구조를 정밀 분석 중이에요...",
-  "가르마 방향과 얼굴형을 매칭하고 있어요...",
-  "고객님에게 맞는 앞머리를 탐색하고 있어요...",
-  "인생 앞머리 처방전을 작성하고 있어요...",
+  "AI가 얼굴 윤곽과 비율을 스캐닝 중입니다...",
+  "골격 구조 데이터를 정밀 측정하고 있습니다...",
+  "468개 랜드마크를 분석 및 매칭 중입니다...",
+  "최적의 앞머리 유형을 도출하고 있습니다...",
+  "전문가 처방전을 생성하고 있습니다...",
 ];
 
 const LOADING_MS = 10_000;
@@ -62,24 +62,35 @@ function FakeLoadingOverlay() {
       </span>
 
       <div className="flex flex-col items-center gap-8 text-center">
-        <div className="relative flex h-36 w-36 items-center justify-center">
-          <motion.div className="absolute inset-0 rounded-full border-2 border-gold/35"
-            animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }} />
-          <motion.div className="absolute inset-0 rounded-full border-2 border-gold/20"
-            animate={{ scale: [1, 1.65, 1], opacity: [0.4, 0, 0.4] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.45 }} />
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/12 text-5xl">💇</div>
+        {/* 골드 스피너 */}
+        <div className="relative flex h-32 w-32 items-center justify-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full"
+            style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.9)", borderRightColor: "rgba(200,168,107,0.3)" }}
+          />
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 3.6, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-4 rounded-full"
+            style={{ border: "1.5px solid transparent", borderTopColor: "rgba(200,168,107,0.5)", borderLeftColor: "rgba(200,168,107,0.2)" }}
+          />
+          <motion.div
+            animate={{ scale: [1, 1.12, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="h-3 w-3 rounded-full bg-gold"
+          />
         </div>
 
         <AnimatePresence mode="wait">
           <motion.p
             key={stepIdx}
-            initial={{ opacity: 0, y: 14 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -14 }}
+            exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
-            className="max-w-xs text-center text-2xl font-medium leading-relaxed text-cream"
+            className="max-w-xs text-center text-lg font-medium leading-relaxed text-cream/85"
           >
             {LOADING_STEPS[stepIdx]}
           </motion.p>
@@ -267,17 +278,21 @@ export default function BangsUploadPage() {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-lg flex-1 px-5">
-        <div className="pt-8 text-center">
-          <h1 className="font-serif text-3xl font-bold leading-snug text-cream">
-            정면 얼굴 사진을<br />올려주세요
+      {/* 사진 프레임 영역 — 높이 제한으로 버튼 겹침 방지 */}
+      <div className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-5 pb-6">
+        <div className="pt-6 text-center">
+          <h1 className="font-serif text-2xl font-bold leading-snug text-cream">
+            정면 얼굴 사진을 올려주세요
           </h1>
+          <p className="mt-1.5 text-sm text-cream/40">귀가 보이게 찍으면 분석 정확도가 높아져요</p>
         </div>
 
-        {/* 사진 프레임 */}
-        <div className="mt-7 flex justify-center">
-          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-black/40"
-            style={{ aspectRatio: "3/4" }}>
+        {/* 사진 프레임 — max-h 제한으로 화면 초과 방지 */}
+        <div className="mt-5 flex justify-center">
+          <div
+            className="relative w-full max-w-xs overflow-hidden rounded-3xl border border-white/15 bg-black/40"
+            style={{ aspectRatio: "3/4", maxHeight: "56vh" }}
+          >
             {camera && (
               <video ref={videoRef} playsInline muted autoPlay
                 className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
@@ -287,14 +302,13 @@ export default function BangsUploadPage() {
               <img src={src} alt="업로드한 사진" className="absolute inset-0 h-full w-full object-cover" />
             )}
             {showChooser && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 px-6">
-                <div className="mb-2 text-6xl">📷</div>
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6">
                 <button onClick={startCamera}
-                  className="flex w-full max-w-[15rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-4 text-lg font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
+                  className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
                   카메라로 촬영
                 </button>
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="flex w-full max-w-[15rem] items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 py-4 text-lg font-medium text-cream/80 transition-colors hover:border-white/40 active:scale-[0.98]">
+                  className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 py-3.5 text-base font-medium text-cream/80 transition-colors hover:border-white/40 active:scale-[0.98]">
                   갤러리에서 선택
                 </button>
               </div>
@@ -303,44 +317,7 @@ export default function BangsUploadPage() {
           </div>
         </div>
 
-        {camError && <p className="mt-4 text-center text-base text-red-300/90">{camError}</p>}
-
-        {/* MediaPipe 분석 상태 표시 */}
-        {mpStatus === "analyzing" && (
-          <p className="mt-3 text-center text-sm text-gold/60">✦ AI 얼굴형 분석 중...</p>
-        )}
-        {mpStatus === "done" && (
-          <p className="mt-3 text-center text-sm text-emerald-400/70">✓ 얼굴형 분석 완료</p>
-        )}
-
-        {/* 촬영 팁 */}
-        <div className="mt-6 rounded-2xl border border-gold/20 bg-gold/5 px-5 py-5">
-          <p className="mb-1 text-sm font-bold uppercase tracking-widest text-gold">촬영 팁</p>
-          <p className="text-xl leading-relaxed text-cream/80">
-            정면 응시 · 앞머리를 살짝 넘기거나
-            <br /><strong className="text-cream">귀가 보이게</strong> 찍어주시면
-            <br />AI 분석 정확도가 올라갑니다 ✦
-          </p>
-        </div>
-
-        {/* Mock 얼굴형 선택기 (MediaPipe fallback) */}
-        <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-cream/25">
-            AI 분석 불가 시 직접 선택 (테스트용)
-          </p>
-          <p className="mb-3 text-xs text-cream/20">MediaPipe 분석에 성공하면 자동으로 대체됩니다</p>
-          <select value={mockShape}
-            onChange={(e) => {
-              const v = e.target.value as FaceShapeKey;
-              setMockShape(v);
-              try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, v); } catch { /**/ }
-            }}
-            className="w-full rounded-xl border border-white/12 bg-charcoal px-4 py-3 text-lg text-cream focus:border-gold/50 focus:outline-none">
-            {FACE_SHAPE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
+        {camError && <p className="mt-4 text-center text-sm text-red-300/90">{camError}</p>}
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={onPickFile} className="hidden" />

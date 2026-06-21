@@ -14,7 +14,7 @@ import {
   type FaceShapeKey,
 } from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
-import type { FaceLandmarkData, ShapeKeyPoints } from "../../../lib/faceAnalysis";
+import type { FaceLandmarkData } from "../../../lib/faceAnalysis";
 
 declare global {
   interface Window {
@@ -50,16 +50,6 @@ function loadKakaoSDK(): Promise<void> {
 
 type Pt = { x: number; y: number };
 
-const APPROX_SHAPE: ShapeKeyPoints = {
-  top:         { x: 0.50, y: 0.05 },
-  chin:        { x: 0.50, y: 0.90 },
-  leftCheek:   { x: 0.13, y: 0.47 },
-  rightCheek:  { x: 0.87, y: 0.47 },
-  leftJaw:     { x: 0.24, y: 0.76 },
-  rightJaw:    { x: 0.76, y: 0.76 },
-  leftTemple:  { x: 0.27, y: 0.12 },
-  rightTemple: { x: 0.73, y: 0.12 },
-};
 
 function getApproxOval(): Pt[] {
   return Array.from({ length: 36 }, (_, i) => {
@@ -80,98 +70,34 @@ function calcPathLength(pts: Pt[]): number {
   return len + Math.sqrt(dx * dx + dy * dy);
 }
 
-function getGeometricPolygon(faceKey: FaceShapeKey, s: ShapeKeyPoints): Pt[] {
-  const midTop: Pt = { x: (s.leftTemple.x + s.rightTemple.x) / 2, y: Math.min(s.top.y, s.leftTemple.y) };
-  switch (faceKey) {
-    case "oval":    return [midTop, s.rightTemple, s.rightCheek, s.chin, s.leftCheek, s.leftTemple];
-    case "round":   return [
-      { x: (s.leftTemple.x + s.rightTemple.x) / 2, y: s.top.y },
-      { x: s.rightCheek.x, y: (s.top.y + s.chin.y) / 2 },
-      { x: (s.leftJaw.x + s.rightJaw.x) / 2, y: s.chin.y },
-      { x: s.leftCheek.x, y: (s.top.y + s.chin.y) / 2 },
-    ];
-    case "oblong":  return [s.leftTemple, s.rightTemple, s.rightJaw, s.chin, s.leftJaw];
-    case "square":  return [
-      { x: s.leftTemple.x, y: s.top.y }, { x: s.rightTemple.x, y: s.top.y },
-      { x: s.rightJaw.x, y: s.chin.y }, { x: s.leftJaw.x, y: s.chin.y },
-    ];
-    case "heart":   return [s.leftTemple, s.rightTemple, s.chin];
-    case "diamond": return [midTop, s.rightCheek, s.chin, s.leftCheek];
-    case "hexagon": return [s.leftTemple, s.rightTemple, s.rightCheek, s.rightJaw, s.leftJaw, s.leftCheek];
-    case "peanut": {
-      const inX = 0.04;
-      return [
-        s.leftTemple, s.rightTemple,
-        { x: s.rightCheek.x - inX, y: (s.rightTemple.y + s.rightCheek.y) / 2 },
-        s.rightCheek,
-        { x: s.rightCheek.x - inX, y: (s.rightCheek.y + s.rightJaw.y) / 2 },
-        s.rightJaw, s.chin, s.leftJaw,
-        { x: s.leftCheek.x + inX, y: (s.leftCheek.y + s.leftJaw.y) / 2 },
-        s.leftCheek,
-        { x: s.leftCheek.x + inX, y: (s.leftTemple.y + s.leftCheek.y) / 2 },
-      ];
-    }
-  }
-}
 
 function drawScanFrame(
   ctx: CanvasRenderingContext2D,
   W: number, H: number, progress: number,
-  ovalPts: Pt[], geoPts: Pt[],
+  ovalPts: Pt[],
 ) {
   ctx.clearRect(0, 0, W, H);
+  if (ovalPts.length < 2) return;
 
-  // Phase 1: 골드 점선 얼굴 외곽 (0 → 0.72)
-  const p1 = Math.min(1, progress / 0.72);
-  if (p1 > 0 && ovalPts.length >= 2) {
-    const scaled = ovalPts.map(p => ({ x: p.x * W, y: p.y * H }));
-    const L = calcPathLength(scaled) + 10;
-    ctx.beginPath();
-    ctx.moveTo(scaled[0].x, scaled[0].y);
-    for (let i = 1; i < scaled.length; i++) ctx.lineTo(scaled[i].x, scaled[i].y);
-    ctx.closePath();
-    ctx.strokeStyle = "rgba(200,168,107,0.82)";
-    ctx.lineWidth   = Math.max(1.5, W * 0.003);
-    ctx.setLineDash([L, L]);
-    ctx.lineDashOffset = L * (1 - p1);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.lineDashOffset = 0;
-  }
+  // 실제 MediaPipe FACE_OVAL 좌표를 따라 딥 골드 윤곽선 스캐닝
+  const scaled = ovalPts.map(p => ({ x: p.x * W, y: p.y * H }));
+  const L = calcPathLength(scaled) + 4;
 
-  // Phase 2: 골드 기하 도형 (0.52 → 1.0) — 글로우 포함
-  if (progress > 0.52 && geoPts.length >= 3) {
-    const p2 = Math.min(1, (progress - 0.52) / 0.48);
-    const scaled = geoPts.map(p => ({ x: p.x * W, y: p.y * H }));
-    const L = calcPathLength(scaled) + 10;
-    ctx.beginPath();
-    ctx.moveTo(scaled[0].x, scaled[0].y);
-    for (let i = 1; i < scaled.length; i++) ctx.lineTo(scaled[i].x, scaled[i].y);
-    ctx.closePath();
-    ctx.strokeStyle = "rgba(228,210,168,0.96)";
-    ctx.lineWidth   = Math.max(2.2, W * 0.006);
-    ctx.shadowColor = "rgba(200,168,107,0.75)";
-    ctx.shadowBlur  = W * 0.022;
-    ctx.setLineDash([L, L]);
-    ctx.lineDashOffset = L * (1 - p2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.lineDashOffset = 0;
-    ctx.shadowBlur = 0;
-  }
+  ctx.beginPath();
+  ctx.moveTo(scaled[0].x, scaled[0].y);
+  for (let i = 1; i < scaled.length; i++) ctx.lineTo(scaled[i].x, scaled[i].y);
+  ctx.closePath();
 
-  // Phase 3: 중심 측정선 (0.88 → 1.0)
-  if (progress > 0.88) {
-    const p3 = (progress - 0.88) / 0.12;
-    ctx.strokeStyle = `rgba(200,168,107,${(p3 * 0.38).toFixed(2)})`;
-    ctx.lineWidth   = Math.max(0.8, W * 0.0014);
-    ctx.setLineDash([H * 0.018, H * 0.03]);
-    ctx.beginPath();
-    ctx.moveTo(W * 0.5, H * 0.03);
-    ctx.lineTo(W * 0.5, H * 0.94);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+  ctx.strokeStyle = "#D4AF37";
+  ctx.lineWidth   = Math.max(1.8, W * 0.0032);
+  ctx.shadowColor = "rgba(212,175,55,0.55)";
+  ctx.shadowBlur  = Math.max(6, W * 0.018);
+  ctx.setLineDash([L, L]);
+  ctx.lineDashOffset = L * (1 - progress);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineDashOffset = 0;
+  ctx.shadowBlur = 0;
 }
 
 // ─── 컴팩트 사진 + Canvas 시각화 ─────────────────────────────────────────────
@@ -185,9 +111,7 @@ function FaceAnalysisCanvas({
   const imgRef    = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const shapePoints = landmarkData?.shape ?? APPROX_SHAPE;
-  const ovalPoints  = landmarkData?.oval  ?? getApproxOval();
-  const geoPts      = getGeometricPolygon(faceKey, shapePoints);
+  const ovalPoints = landmarkData?.oval ?? getApproxOval();
 
   useEffect(() => {
     if (!imgLoaded || !canvasRef.current || !imgRef.current) return;
@@ -203,7 +127,7 @@ function FaceAnalysisCanvas({
     let rafId: number;
     function frame(ts: number) {
       const progress = Math.min(1, (ts - startTime) / DURATION);
-      drawScanFrame(ctx!, W, H, progress, ovalPoints, geoPts);
+      drawScanFrame(ctx!, W, H, progress, ovalPoints);
       if (progress < 1) rafId = requestAnimationFrame(frame);
     }
     rafId = requestAnimationFrame(frame);
@@ -275,68 +199,6 @@ function BoldText({ text }: { text: string }) {
   );
 }
 
-// ─── 8가지 얼굴형 바텀시트 ────────────────────────────────────────────────────
-
-const ALL_FACE_SHAPES: FaceShapeKey[] = ["oval","round","oblong","square","heart","diamond","hexagon","peanut"];
-
-const FACE_SHAPE_SYMBOL: Record<FaceShapeKey, string> = {
-  oval:    "○", round: "◯", oblong: "▯", square: "□",
-  heart:   "▽", diamond: "◇", hexagon: "⬡", peanut: "∞",
-};
-
-function FaceSheetModal({ onClose }: { onClose: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 260 }}
-        className="relative z-10 w-full rounded-t-3xl border-t border-gold/20 bg-[#141210] px-5 pb-10 pt-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 핸들 */}
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/20" />
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Face Shape Atlas</p>
-        <p className="mb-6 font-serif text-xl font-bold text-cream">8가지 얼굴형 전체 보기</p>
-
-        <div className="grid grid-cols-2 gap-3">
-          {ALL_FACE_SHAPES.map((key) => {
-            const info = FACE_SHAPE_INFO[key];
-            return (
-              <div
-                key={key}
-                className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3.5"
-              >
-                <span className="flex-none text-2xl text-gold/70 font-thin" style={{ fontFamily: "serif" }}>
-                  {FACE_SHAPE_SYMBOL[key]}
-                </span>
-                <div>
-                  <p className="text-sm font-bold text-cream leading-tight">{info.title}</p>
-                  <p className="mt-0.5 text-[11px] leading-snug text-cream/40 line-clamp-2">{info.summary}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <button
-          onClick={onClose}
-          className="mt-6 flex h-12 w-full items-center justify-center rounded-xl border border-white/12 text-sm font-medium text-cream/50 hover:text-cream"
-        >
-          닫기
-        </button>
-      </motion.div>
-    </motion.div>
-  );
-}
 
 // ─── 애니메이션 상수 ──────────────────────────────────────────────────────────
 
@@ -356,9 +218,8 @@ export default function BangsResultPage() {
   const [survey,       setSurvey]       = useState<BangsSurveyAnswers | null>(null);
   const [faceKey,      setFaceKey]      = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
-  const [copied,       setCopied]       = useState(false);
-  const [kakaoSent,    setKakaoSent]    = useState(false);
-  const [showSheet,    setShowSheet]    = useState(false);
+  const [copied,    setCopied]    = useState(false);
+  const [kakaoSent, setKakaoSent] = useState(false);
 
   useEffect(() => {
     try {
@@ -578,25 +439,8 @@ export default function BangsResultPage() {
             </button>
           </motion.div>
 
-          {/* BLOCK G: 다른 얼굴형 구경 */}
-          <motion.div variants={FADE_UP}>
-            <button
-              onClick={() => setShowSheet(true)}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-white/12 bg-white/[0.04] text-base font-semibold text-cream/60 transition-all hover:border-gold/25 hover:text-cream/90 active:scale-[0.98]"
-            >
-              <span className="text-gold/60">◇</span>
-              다른 얼굴형 구경하러 가기
-              <span className="text-cream/25">↑</span>
-            </button>
-          </motion.div>
-
         </motion.div>
       </div>
-
-      {/* ── 바텀시트 모달 ── */}
-      <AnimatePresence>
-        {showSheet && <FaceSheetModal onClose={() => setShowSheet(false)} />}
-      </AnimatePresence>
 
       {/* ── 하단 고정 CTA ── */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-charcoal/95 px-5 py-4 backdrop-blur-md">

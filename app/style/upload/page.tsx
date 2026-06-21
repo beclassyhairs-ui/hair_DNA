@@ -25,11 +25,11 @@ type Transform = { scale: number; x: number; y: number };
 // ─── Fake 로딩 오버레이 ───────────────────────────────────────────────────────
 
 const LOADING_STEPS = [
-  "AI가 고객님의 두상을 정밀 스캔하고 있어요...",
-  "AI가 고객님의 두상과 모질 데이터를 매칭하고 있어요...",
-  "가상 헤어스타일을 합성 중입니다...",
-  "전문가 데이터베이스에서 최적의 스타일을 탐색하고 있어요...",
-  "맞춤 헤어 케어 처방전을 작성하고 있어요...",
+  "AI 뷰티 디렉터가 고객님의 모질 텍스처와 모량을 분석 중입니다...",
+  "두상 구조와 희망 스타일 데이터를 정밀 매칭하고 있습니다...",
+  "전문가 데이터베이스에서 최적 헤어를 도출하고 있습니다...",
+  "케어 처방전 및 맞춤 스타일을 생성하고 있습니다...",
+  "마지막 세부 조정 중입니다. 잠시만 기다려주세요...",
 ];
 
 function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
@@ -62,16 +62,28 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
 
       {/* 애니메이션 영역 */}
       <div className="flex flex-col items-center gap-8 text-center">
-        <div className="relative flex h-36 w-36 items-center justify-center">
-          <motion.div className="absolute inset-0 rounded-full border-2 border-gold/30"
-            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }} />
-          <motion.div className="absolute inset-0 rounded-full border-2 border-gold/15"
-            animate={{ scale: [1, 1.7, 1], opacity: [0.3, 0, 0.3] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} />
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 text-5xl">
-            💇
-          </div>
+        {/* 골드 링 스피너 */}
+        <div className="relative flex h-32 w-32 items-center justify-center">
+          {/* 외곽 회전 링 */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full"
+            style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }}
+          />
+          {/* 내부 역방향 링 */}
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-5 rounded-full"
+            style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }}
+          />
+          {/* 중앙 펄스 점 */}
+          <motion.div
+            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            className="h-2.5 w-2.5 rounded-full bg-gold"
+          />
         </div>
 
         <AnimatePresence mode="wait">
@@ -406,7 +418,7 @@ export default function StyleUploadPage() {
 
       {/* 헤더 */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.07] bg-charcoal/90 px-5 py-3.5 backdrop-blur-md">
-        <button onClick={() => router.push("/style")} className="text-sm font-medium text-cream/40 hover:text-cream">
+        <button onClick={() => router.push("/style/survey")} className="text-sm font-medium text-cream/40 hover:text-cream">
           ← 질문으로
         </button>
         <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">사진 등록</span>

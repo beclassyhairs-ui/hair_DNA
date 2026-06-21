@@ -1,261 +1,94 @@
 "use client";
 
-// ============================================================================
-// 어뷰티 스타일 서비스 — 4×4 마이크로 설문 (다크 테마)
-// 1문항씩 표시 · 350ms 자동 슬라이드 · Deep Charcoal + Gold
-// ============================================================================
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  ALL_STYLE_QUESTIONS,
-  STYLE_TOTAL,
-  STYLE_SURVEY,
-  type StyleAnswers,
-  type StyleQuestion,
-} from "./surveyData";
+import { motion } from "framer-motion";
 import { STYLE_ANSWERS_KEY } from "./constants";
 
-function getStepLabel(idx: number) {
-  let count = 0;
-  for (const step of STYLE_SURVEY) {
-    const next = count + step.questions.length;
-    if (idx < next) return step.label;
-    count = next;
+export default function StyleLandingPage() {
+  function clearAndStart() {
+    try { sessionStorage.removeItem(STYLE_ANSWERS_KEY); } catch { /**/ }
   }
-  return "";
-}
-
-const slideVariants = {
-  enter:  (dir: number) => ({ opacity: 0, x: dir > 0 ? 56 : -56 }),
-  center: { opacity: 1, x: 0 },
-  exit:   (dir: number) => ({ opacity: 0, x: dir > 0 ? -56 : 56 }),
-};
-
-// ============================================================================
-// 메인 설문 페이지
-// ============================================================================
-export default function StyleSurveyPage() {
-  const router = useRouter();
-  const [qIdx,    setQIdx]    = useState(0);
-  const [dir,     setDir]     = useState(1);
-  const [answers, setAnswers] = useState<StyleAnswers>({});
-  const [pending, setPending] = useState(false);
-  const [ready,   setReady]   = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      if (raw) setAnswers(JSON.parse(raw) as StyleAnswers);
-    } catch { /**/ }
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    try { sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(answers)); } catch { /**/ }
-  }, [answers, ready]);
-
-  useEffect(() => { window.scrollTo(0, 0); }, [qIdx]);
-
-  const q        = ALL_STYLE_QUESTIONS[qIdx];
-  const isLast   = qIdx === STYLE_TOTAL - 1;
-  const isAnswered = q ? Boolean(answers[q.id]) : false;
-
-  function advance(next: StyleAnswers) {
-    try { sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(next)); } catch { /**/ }
-    if (isLast) {
-      router.push("/style/upload");
-    } else {
-      setDir(1);
-      setQIdx((i) => i + 1);
-    }
-  }
-
-  function handleSelect(optId: string) {
-    if (pending) return;
-    const next = { ...answers, [q.id]: optId };
-    setAnswers(next);
-    setPending(true);
-    setTimeout(() => { setPending(false); advance(next); }, 350);
-  }
-
-  function goBack() {
-    if (pending || qIdx === 0) return;
-    setDir(-1);
-    setQIdx((i) => i - 1);
-  }
-
-  function goNext() {
-    if (!isAnswered || pending) return;
-    setPending(true);
-    setTimeout(() => { setPending(false); advance(answers); }, 160);
-  }
-
-  if (!q) return null;
 
   return (
-    <main className="flex min-h-screen flex-col bg-charcoal text-cream">
+    <main className="relative flex min-h-[100svh] flex-col items-center justify-between overflow-hidden bg-[#0C0B0A] px-6 py-10 text-cream">
 
-      {/* ── 상단 헤더: 스텝 라벨 + 8칸 진행 바 ── */}
-      <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-charcoal/92 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              {getStepLabel(qIdx)}
-            </span>
-            <span className="tabular-nums text-sm font-semibold text-cream/40">
-              {qIdx + 1}
-              <span className="mx-1 text-cream/20">/</span>
-              {STYLE_TOTAL}
-            </span>
-          </div>
-          <div className="flex gap-1.5">
-            {Array.from({ length: STYLE_TOTAL }).map((_, i) => (
-              <motion.div
-                key={i}
-                className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
-                  i < qIdx ? "bg-gold-dark" : i === qIdx ? "bg-gold" : "bg-white/10"
-                }`}
-                animate={{ scaleY: i === qIdx ? 1.2 : 1 }}
-                transition={{ duration: 0.2 }}
-              />
-            ))}
-          </div>
-        </div>
-      </header>
+      {/* 배경 그리드 */}
+      <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
+        style={{ backgroundImage: "linear-gradient(rgba(200,168,107,1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,107,1) 1px,transparent 1px)", backgroundSize: "52px 52px" }} />
+      <div className="pointer-events-none absolute left-1/2 top-2/5 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.06]"
+        style={{ background: "radial-gradient(circle,rgba(200,168,107,1) 0%,transparent 70%)" }} />
 
-      {/* ── 질문 본문 ── */}
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5">
-        <AnimatePresence mode="wait" custom={dir}>
-          <motion.div
-            key={q.id}
-            custom={dir}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-1 flex-col py-8"
-          >
-            {/* 질문 헤더 */}
-            <div className="mb-8">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-gold">
-                {q.no}
-              </p>
-              <h2 className="font-serif text-[1.75rem] font-bold leading-snug text-cream">
-                {q.title}
-              </h2>
-              {q.hint && (
-                <p className="mt-2.5 text-base leading-relaxed text-cream/50">
-                  {q.hint}
-                </p>
-              )}
-            </div>
-
-            {/* 선택지 */}
-            <OptionList
-              q={q}
-              selected={answers[q.id]}
-              onSelect={handleSelect}
-              pending={pending}
-            />
-          </motion.div>
-        </AnimatePresence>
+      {/* 브랜드 */}
+      <div className="relative w-full text-center">
+        <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.38em] text-gold/55">
+          <span className="h-px w-6 bg-gold/40" />
+          A-Beauty · Hair Style AI
+          <span className="h-px w-6 bg-gold/40" />
+        </span>
       </div>
 
-      {/* ── 하단 고정 네비게이션 ── */}
-      <div className="sticky bottom-0 z-10 border-t border-white/[0.07] bg-charcoal/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-lg gap-3 px-5 py-4 pb-8">
-          {qIdx > 0 ? (
-            <button
-              onClick={goBack}
-              disabled={pending}
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-7 text-base font-medium text-cream/60 transition-colors hover:border-white/25 hover:text-cream active:scale-[0.98] disabled:opacity-40"
-            >
-              ← 이전
-            </button>
-          ) : (
-            <Link
-              href="/"
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-7 text-base font-medium text-cream/60 transition-colors hover:border-white/25 hover:text-cream"
-            >
-              나가기
-            </Link>
-          )}
-          <button
-            onClick={goNext}
-            disabled={!isAnswered || pending}
-            className={`flex h-14 flex-1 items-center justify-center gap-1.5 rounded-2xl text-base font-bold transition-all active:scale-[0.98] ${
-              isAnswered && !pending
-                ? "bg-gradient-to-r from-gold-light via-gold to-gold-dark text-charcoal shadow-gold hover:brightness-105"
-                : "cursor-not-allowed bg-white/10 text-cream/25"
-            }`}
-          >
-            {isLast ? "사진 등록하기" : "다음"} →
-          </button>
+      {/* 히어로 */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-col items-center text-center"
+      >
+        {/* 스캔 아이콘 */}
+        <div className="relative mb-10 flex h-32 w-32 items-center justify-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 rounded-full border border-dashed border-gold/20" />
+          <motion.div animate={{ rotate: -360 }} transition={{ duration: 14, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-4 rounded-full border border-dashed border-gold/15" />
+          <div className="absolute inset-8 rounded-full border border-gold/35 bg-gold/5" />
+          <motion.div animate={{ scale: [1, 1.45, 1], opacity: [0.3, 0, 0.3] }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: "easeOut" }}
+            className="absolute inset-0 rounded-full border border-gold/25" />
+          <svg viewBox="0 0 48 48" className="relative h-10 w-10" fill="none">
+            <ellipse cx="24" cy="24" rx="9" ry="13" stroke="rgba(200,168,107,0.85)" strokeWidth="1.2" />
+            <line x1="24" y1="7"  x2="24" y2="13" stroke="rgba(200,168,107,0.45)" strokeWidth="1" />
+            <line x1="24" y1="35" x2="24" y2="41" stroke="rgba(200,168,107,0.45)" strokeWidth="1" />
+            <line x1="5"  y1="24" x2="11" y2="24" stroke="rgba(200,168,107,0.45)" strokeWidth="1" />
+            <line x1="37" y1="24" x2="43" y2="24" stroke="rgba(200,168,107,0.45)" strokeWidth="1" />
+            <circle cx="24" cy="24" r="1.4" fill="rgba(200,168,107,0.9)" />
+          </svg>
         </div>
-      </div>
+
+        <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-gold/45">
+          Hair Prescription System
+        </p>
+        <h1 className="mt-3 font-serif text-[2rem] font-bold leading-[1.2] tracking-tight text-cream sm:text-4xl">
+          AI가 분석해주는<br />
+          <span className="bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)" }}>
+            내 인생 헤어스타일
+          </span>
+        </h1>
+        <p className="mt-4 text-sm leading-relaxed text-cream/45 sm:text-base">
+          나의 모질과 희망 스타일을 분석해<br className="sm:hidden" /> 최적의 헤어를 처방합니다.
+        </p>
+      </motion.div>
+
+      {/* CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45, duration: 0.5 }}
+        className="w-full max-w-sm"
+      >
+        <Link
+          href="/style/survey"
+          onClick={clearAndStart}
+          className="flex h-16 w-full items-center justify-center rounded-2xl text-base font-black text-charcoal shadow-[0_8px_30px_rgba(200,168,107,0.38)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(200,168,107,0.55)] active:scale-[0.98]"
+          style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)" }}
+        >
+          나의 맞춤 스타일 분석하기 →
+        </Link>
+        <p className="mt-3 text-center text-[11px] text-cream/18">
+          개인정보 미저장 · 약 2분 소요 · 무료
+        </p>
+      </motion.div>
+
     </main>
-  );
-}
-
-// ============================================================================
-// 선택지 목록 (다크 테마)
-// ============================================================================
-function OptionList({
-  q, selected, onSelect, pending,
-}: {
-  q: StyleQuestion;
-  selected: string | undefined;
-  onSelect: (id: string) => void;
-  pending: boolean;
-}) {
-  return (
-    <div className="space-y-3">
-      {q.options.map((opt) => {
-        const isSel = selected === opt.id;
-        return (
-          <motion.button
-            key={opt.id}
-            type="button"
-            onClick={() => !pending && onSelect(opt.id)}
-            whileTap={{ scale: 0.985 }}
-            className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left transition-all duration-200 ${
-              isSel
-                ? "border-gold bg-gold/[0.1] shadow-[0_2px_20px_rgba(200,168,107,0.2)]"
-                : "border-white/[0.1] bg-white/[0.03] hover:border-gold/40 hover:bg-white/[0.06]"
-            }`}
-          >
-            {/* 라디오 인디케이터 */}
-            <span
-              className={`flex h-7 w-7 flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
-                isSel ? "border-gold bg-gold" : "border-white/25 bg-transparent"
-              }`}
-            >
-              {isSel && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-charcoal">
-                  <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3"
-                    strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
-            {/* 텍스트 */}
-            <span className="flex-1">
-              <span className={`block text-lg font-bold leading-snug ${isSel ? "text-gold-light" : "text-cream/85"}`}>
-                {opt.label}
-              </span>
-              {opt.desc && (
-                <span className={`mt-0.5 block text-sm ${isSel ? "text-cream/70" : "text-cream/40"}`}>
-                  {opt.desc}
-                </span>
-              )}
-            </span>
-          </motion.button>
-        );
-      })}
-    </div>
   );
 }

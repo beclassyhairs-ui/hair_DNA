@@ -134,9 +134,7 @@ export default function BangsSurveyPage() {
                     onClick={() => handleSelect(opt)}
                     disabled={pending}
                     whileTap={{ scale: 0.985 }}
-                    className={`flex w-full items-center gap-5 rounded-2xl border-2 px-6 text-left transition-all duration-200 ${
-                      isNone ? "py-4" : "py-5"
-                    } ${
+                    className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-3.5 text-left transition-all duration-200 ${
                       isSel
                         ? "border-gold bg-gold/10 shadow-[0_2px_20px_rgba(200,168,107,0.28)]"
                         : isNone
@@ -146,9 +144,7 @@ export default function BangsSurveyPage() {
                   >
                     {/* 아이콘 */}
                     <span
-                      className={`flex flex-none items-center justify-center rounded-xl text-2xl transition-colors ${
-                        isNone ? "h-11 w-11" : "h-14 w-14"
-                      } ${
+                      className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl text-xl transition-colors ${
                         isSel
                           ? "bg-gold-dark text-charcoal"
                           : isNone
@@ -162,16 +158,16 @@ export default function BangsSurveyPage() {
                     {/* 텍스트 */}
                     <span className="flex-1">
                       <span
-                        className={`block font-bold leading-snug ${
-                          isNone ? "text-lg" : "text-2xl"
-                        } ${isSel ? "text-gold-light" : isNone ? "text-cream/45" : "text-cream"}`}
+                        className={`block font-bold leading-snug text-base ${
+                          isSel ? "text-gold-light" : isNone ? "text-cream/45" : "text-cream"
+                        }`}
                       >
                         {opt.label}
                       </span>
                       <span
-                        className={`mt-1 block ${
-                          isNone ? "text-sm" : "text-lg"
-                        } ${isSel ? "text-cream/70" : "text-cream/40"}`}
+                        className={`mt-0.5 block text-sm ${
+                          isSel ? "text-cream/70" : "text-cream/40"
+                        }`}
                       >
                         {opt.desc}
                       </span>
