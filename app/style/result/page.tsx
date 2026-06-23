@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
 import {
   getStyleEntry,
   getRefImagePath,
@@ -185,8 +185,8 @@ function KakaoSaveModal({
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
 
 function BeforeAfterSection({
-  photo, answers, locked,
-}: { photo: string | null; answers: StyleAnswers; locked: boolean }) {
+  photo, answers, locked, generated,
+}: { photo: string | null; answers: StyleAnswers; locked: boolean; generated: string | null }) {
   const [refErr, setRefErr] = useState(false);
 
   return (
@@ -224,7 +224,12 @@ function BeforeAfterSection({
         className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
         style={{ aspectRatio: "3/4" }}
       >
-        {!refErr ? (
+        {generated ? (
+          // Replicate AI 생성 이미지 (우선 표시)
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={generated} alt="AI 변신 스타일" className="h-full w-full object-cover" />
+        ) : !refErr ? (
+          // 레퍼런스 이미지 (폴백)
           // eslint-disable-next-line @next/next/no-img-element
           <img src={getRefImagePath(answers)} alt="추천 스타일" className="h-full w-full object-cover" onError={() => setRefErr(true)} />
         ) : (
@@ -288,6 +293,7 @@ function CareSummary({ answers }: { answers: StyleAnswers }) {
 
 export default function StyleResultPage() {
   const [photo,     setPhoto]     = useState<string | null>(null);
+  const [generated, setGenerated] = useState<string | null>(null); // Replicate AI 생성 이미지
   const [answers,   setAnswers]   = useState<StyleAnswers>({});
   const [locked,    setLocked]    = useState(true);
   const [ready,     setReady]     = useState(false);
@@ -297,6 +303,8 @@ export default function StyleResultPage() {
     try {
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (p) setPhoto(p);
+      const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
+      if (g) setGenerated(g);
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) setAnswers(JSON.parse(a) as StyleAnswers);
       if (sessionStorage.getItem(STYLE_UNLOCKED_KEY) === "1") setLocked(false);
@@ -357,7 +365,7 @@ export default function StyleResultPage() {
         </div>
 
         {/* Before / After */}
-        <BeforeAfterSection photo={photo} answers={answers} locked={locked} />
+        <BeforeAfterSection photo={photo} answers={answers} locked={locked} generated={generated} />
 
         {/* 콘텐츠 (잠금 시 블러) */}
         <div className={`mt-5 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>

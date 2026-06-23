@@ -10,7 +10,7 @@ export default function StyleLandingPage() {
   }
 
   return (
-    <main className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-[#0C0B0A] px-6 text-cream">
+    <main className="relative flex h-screen flex-col items-center justify-center overflow-hidden bg-[#0C0B0A] px-6 text-cream">
 
       {/* 배경 그리드 */}
       <div

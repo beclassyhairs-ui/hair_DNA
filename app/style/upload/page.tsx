@@ -1,15 +1,16 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 스타일 — 사진 업로드 (카메라 미러뷰 + 드래그/휠 줌 크롭 + 10초 로딩)
-// 기존 /app/upload/page.tsx의 카메라·크롭 UI를 그대로 상속
+// 어뷰티 스타일 — 사진 업로드
+// 레이아웃: flex h-[100svh] flex-col → 버튼 영역 Sticky Bottom (겹침 불가 구조)
+// AI 생성: 확인 즉시 /api/style/generate 호출 → sessionStorage 저장
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
-import { STYLE_ANSWERS_KEY, STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 
@@ -18,21 +19,21 @@ const OUTPUT_MAX   = 512;
 const JPEG_QUALITY = 0.9;
 const MIN_SCALE    = 1;
 const MAX_SCALE    = 4;
-const LOADING_MS   = 10_000;
+const LOADING_MS   = 13_000; // Replicate 응답 대기 포함
 
 type Transform = { scale: number; x: number; y: number };
 
-// ─── Fake 로딩 오버레이 ───────────────────────────────────────────────────────
+// ─── 로딩 오버레이 ────────────────────────────────────────────────────────────
 
 const LOADING_STEPS = [
-  "AI 뷰티 디렉터가 고객님의 모질 텍스처와 모량을 분석 중입니다...",
+  "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
   "두상 구조와 희망 스타일 데이터를 정밀 매칭하고 있습니다...",
-  "전문가 데이터베이스에서 최적 헤어를 도출하고 있습니다...",
-  "케어 처방전 및 맞춤 스타일을 생성하고 있습니다...",
-  "마지막 세부 조정 중입니다. 잠시만 기다려주세요...",
+  "전문가 헤어 데이터베이스에서 최적 스타일을 도출하고 있습니다...",
+  "맞춤 케어 처방전과 스타일을 최종 생성하고 있습니다...",
+  "마지막 세부 조정 중입니다. 결과지가 곧 완성됩니다...",
 ];
 
-function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
+function LoadingOverlay({ onDone }: { onDone: () => void }) {
   const [stepIdx, setStepIdx]   = useState(0);
   const [progress, setProgress] = useState(0);
 
@@ -42,7 +43,8 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
       elapsed += 120;
       const p = Math.min(100, Math.round((elapsed / LOADING_MS) * 100));
       setProgress(p);
-      setStepIdx(Math.min(LOADING_STEPS.length - 1, Math.floor((elapsed / LOADING_MS) * LOADING_STEPS.length)));
+      setStepIdx(Math.min(LOADING_STEPS.length - 1,
+        Math.floor((elapsed / LOADING_MS) * LOADING_STEPS.length)));
       if (elapsed >= LOADING_MS) { clearInterval(t); onDone(); }
     }, 120);
     return () => clearInterval(t);
@@ -55,30 +57,25 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
       exit={{ opacity: 0, transition: { duration: 0.5 } }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#0C0B0A] px-6 py-14"
     >
-      {/* 상단 브랜드 */}
       <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-5 py-2 text-sm font-bold tracking-wide text-gold">
         ✦ 어뷰티 AI 스타일 합성 중
       </span>
 
-      {/* 애니메이션 영역 */}
       <div className="flex flex-col items-center gap-8 text-center">
         {/* 골드 링 스피너 */}
         <div className="relative flex h-32 w-32 items-center justify-center">
-          {/* 외곽 회전 링 */}
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
             className="absolute inset-0 rounded-full"
             style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }}
           />
-          {/* 내부 역방향 링 */}
           <motion.div
             animate={{ rotate: -360 }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
             className="absolute inset-5 rounded-full"
             style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }}
           />
-          {/* 중앙 펄스 점 */}
           <motion.div
             animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
@@ -93,13 +90,12 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.4 }}
-            className="max-w-xs text-center text-xl font-medium leading-relaxed text-cream"
+            className="max-w-xs text-center text-base font-medium leading-relaxed text-cream sm:text-lg"
           >
             {LOADING_STEPS[stepIdx]}
           </motion.p>
         </AnimatePresence>
 
-        {/* 프로그레스 바 */}
         <div className="w-56">
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
             <motion.div
@@ -108,11 +104,13 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
               transition={{ duration: 0.15, ease: "linear" }}
             />
           </div>
-          <p className="mt-2 text-center text-sm font-semibold tabular-nums text-gold/60">{progress}%</p>
+          <p className="mt-2 text-center text-sm font-semibold tabular-nums text-gold/60">
+            {progress}%
+          </p>
         </div>
       </div>
 
-      {/* 광고 자리 (애드센스 placeholder) */}
+      {/* 광고 placeholder */}
       <div className="w-full max-w-sm rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-4 text-center">
         <p className="text-[10px] uppercase tracking-widest text-cream/20">Advertisement</p>
         <div className="mt-2 h-16 w-full rounded-xl bg-white/[0.03]" />
@@ -148,23 +146,24 @@ function FaceGuide() {
 
 function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
   return (
-    <main className="flex min-h-screen flex-col items-center bg-charcoal pb-32">
-      <div className="mx-auto w-full max-w-sm pt-6 overflow-y-auto">
-        <div className="mx-4 overflow-hidden rounded-2xl border border-gold/20">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={guideImg.src} alt="촬영 가이드" className="w-full h-auto" />
+    <main className="flex h-[100svh] flex-col bg-[#0C0B0A] text-cream">
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-sm px-4 pt-6">
+          <div className="overflow-hidden rounded-2xl border border-gold/20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={guideImg.src} alt="촬영 가이드" className="h-auto w-full" />
+          </div>
+          <p className="mt-4 px-2 text-center text-sm text-cream/40">
+            정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
+          </p>
         </div>
-        <p className="mt-4 px-6 text-center text-sm text-cream/40">
-          정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
-        </p>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/[0.07] bg-charcoal/90 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-lg px-5 py-4 pb-8">
-          <button onClick={onConfirm}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
-            가이드 확인했어요 · 사진 찍으러 가기 →
-          </button>
-        </div>
+      {/* Sticky Bottom — 절대 겹치지 않음 */}
+      <div className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-4 pb-8 backdrop-blur-md">
+        <button onClick={onConfirm}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
+          가이드 확인했어요 · 사진 찍으러 가기 →
+        </button>
       </div>
     </main>
   );
@@ -172,24 +171,26 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
 
 // ─── 캐시 미리보기 ────────────────────────────────────────────────────────────
 
-function CachedPreview({ photo, onRetake, onContinue }: { photo: string; onRetake: () => void; onContinue: () => void; }) {
+function CachedPreview({ photo, onRetake, onContinue }: {
+  photo: string; onRetake: () => void; onContinue: () => void;
+}) {
   return (
-    <div className="mt-8 flex flex-col items-center">
+    <div className="flex flex-col items-center pt-4">
       <div style={{ aspectRatio: String(FRAME_RATIO) }}
         className="w-full max-w-sm overflow-hidden rounded-3xl border border-gold/30">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={photo} alt="업로드한 사진" className="h-full w-full object-cover" />
       </div>
-      <p className="mt-4 text-center text-base text-cream/55">
-        이전에 올린 사진이 있어요. 이대로 진행하거나 다시 등록할 수 있어요.
+      <p className="mt-4 text-center text-sm text-cream/55">
+        이전에 올린 사진이에요. 그대로 진행하거나 다시 등록할 수 있어요.
       </p>
-      <div className="mt-5 grid w-full max-w-sm grid-cols-2 gap-3">
+      <div className="mt-4 grid w-full max-w-sm grid-cols-2 gap-3">
         <button onClick={onRetake}
-          className="flex h-13 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] py-3 text-base font-medium text-cream/70 transition-colors hover:border-white/25 hover:text-cream active:scale-[0.98]">
+          className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] text-base font-medium text-cream/70 transition-colors hover:border-white/25 hover:text-cream active:scale-[0.98]">
           다시 등록
         </button>
         <button onClick={onContinue}
-          className="flex h-13 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
+          className="flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
           이 사진으로 계속
         </button>
       </div>
@@ -200,28 +201,31 @@ function CachedPreview({ photo, onRetake, onContinue }: { photo: string; onRetak
 // ============================================================================
 // 메인 업로드 페이지
 // ============================================================================
+
 export default function StyleUploadPage() {
   const router = useRouter();
 
-  const [showGuide,   setShowGuide]   = useState(true);
-  const [src,         setSrc]         = useState<string | null>(null);
-  const [natural,     setNatural]     = useState<{ w: number; h: number } | null>(null);
-  const [savedPhoto,  setSavedPhoto]  = useState<string | null>(null);
-  const [transform,   setTransform]   = useState<Transform>({ scale: 1, x: 0, y: 0 });
-  const [busy,        setBusy]        = useState(false);
-  const [isLoading,   setIsLoading]   = useState(false);
-  const [camera,      setCamera]      = useState(false);
-  const [camError,    setCamError]    = useState<string | null>(null);
+  const [showGuide,  setShowGuide]  = useState(true);
+  const [src,        setSrc]        = useState<string | null>(null);
+  const [natural,    setNatural]    = useState<{ w: number; h: number } | null>(null);
+  const [savedPhoto, setSavedPhoto] = useState<string | null>(null);
+  const [transform,  setTransform]  = useState<Transform>({ scale: 1, x: 0, y: 0 });
+  const [busy,       setBusy]       = useState(false);
+  const [isLoading,  setIsLoading]  = useState(false);
+  const [camera,     setCamera]     = useState(false);
+  const [camError,   setCamError]   = useState<string | null>(null);
 
-  const frameRef   = useRef<HTMLDivElement>(null);
-  const imgElRef   = useRef<HTMLImageElement>(null);
-  const videoRef   = useRef<HTMLVideoElement>(null);
-  const streamRef  = useRef<MediaStream | null>(null);
+  const frameRef    = useRef<HTMLDivElement>(null);
+  const imgElRef    = useRef<HTMLImageElement>(null);
+  const videoRef    = useRef<HTMLVideoElement>(null);
+  const streamRef   = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pointers   = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const gesture    = useRef<{ mode: "drag" | "pinch" | null; startDist: number; startScale: number; lastX: number; lastY: number; }>({
-    mode: null, startDist: 0, startScale: 1, lastX: 0, lastY: 0,
-  });
+  const pointers    = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gesture     = useRef<{
+    mode: "drag" | "pinch" | null;
+    startDist: number; startScale: number;
+    lastX: number; lastY: number;
+  }>({ mode: null, startDist: 0, startScale: 1, lastX: 0, lastY: 0 });
 
   useEffect(() => {
     try {
@@ -231,8 +235,7 @@ export default function StyleUploadPage() {
   }, []);
 
   useEffect(() => { return () => { if (src) URL.revokeObjectURL(src); }; }, [src]);
-  useEffect(() => { return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); }; }, []);
-
+  useEffect(() => { return () => { streamRef.current?.getTracks().forEach(t => t.stop()); }; }, []);
   useEffect(() => {
     if (camera && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current;
@@ -241,7 +244,7 @@ export default function StyleUploadPage() {
   }, [camera]);
 
   const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setCamera(false);
@@ -287,19 +290,39 @@ export default function StyleUploadPage() {
       if (!blob) return;
       const url = URL.createObjectURL(blob);
       const img = new window.Image();
-      img.onload = () => { setNatural({ w: img.naturalWidth, h: img.naturalHeight }); setTransform({ scale: 1, x: 0, y: 0 }); setSrc(url); stopCamera(); };
+      img.onload = () => {
+        setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+        setTransform({ scale: 1, x: 0, y: 0 });
+        setSrc(url);
+        stopCamera();
+      };
       img.src = url;
     }, "image/jpeg", 0.95);
   }
 
-  const getFrame     = useCallback(() => { const el = frameRef.current; if (!el) return { w: 0, h: 0 }; return { w: el.clientWidth, h: el.clientHeight }; }, []);
-  const coverScale   = useCallback(() => { if (!natural) return 1; const f = getFrame(); if (!f.w || !f.h) return 1; return Math.max(f.w / natural.w, f.h / natural.h); }, [natural, getFrame]);
-  const clamp        = useCallback((t: Transform): Transform => {
+  const getFrame   = useCallback(() => {
+    const el = frameRef.current;
+    if (!el) return { w: 0, h: 0 };
+    return { w: el.clientWidth, h: el.clientHeight };
+  }, []);
+
+  const coverScale = useCallback(() => {
+    if (!natural) return 1;
+    const f = getFrame();
+    if (!f.w || !f.h) return 1;
+    return Math.max(f.w / natural.w, f.h / natural.h);
+  }, [natural, getFrame]);
+
+  const clamp = useCallback((t: Transform): Transform => {
     if (!natural) return t;
     const f = getFrame(); const s = coverScale() * t.scale;
     const rw = natural.w * s, rh = natural.h * s;
     const maxX = Math.max(0, (rw - f.w) / 2), maxY = Math.max(0, (rh - f.h) / 2);
-    return { scale: t.scale, x: Math.min(maxX, Math.max(-maxX, t.x)), y: Math.min(maxY, Math.max(-maxY, t.y)) };
+    return {
+      scale: t.scale,
+      x: Math.min(maxX, Math.max(-maxX, t.x)),
+      y: Math.min(maxY, Math.max(-maxY, t.y)),
+    };
   }, [natural, getFrame, coverScale]);
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -307,18 +330,32 @@ export default function StyleUploadPage() {
     if (src) URL.revokeObjectURL(src);
     const url = URL.createObjectURL(file);
     const img = new window.Image();
-    img.onload = () => { setNatural({ w: img.naturalWidth, h: img.naturalHeight }); setTransform({ scale: 1, x: 0, y: 0 }); setSrc(url); setSavedPhoto(null); };
+    img.onload = () => {
+      setNatural({ w: img.naturalWidth, h: img.naturalHeight });
+      setTransform({ scale: 1, x: 0, y: 0 });
+      setSrc(url);
+      setSavedPhoto(null);
+    };
     img.src = url; e.target.value = "";
   }
 
-  function dist(a: { x: number; y: number }, b: { x: number; y: number }) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function dist(a: { x: number; y: number }, b: { x: number; y: number }) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
 
   function onPointerDown(e: React.PointerEvent) {
     if (!src) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 1) { gesture.current.mode = "drag"; gesture.current.lastX = e.clientX; gesture.current.lastY = e.clientY; }
-    else if (pointers.current.size === 2) { const [p1, p2] = Array.from(pointers.current.values()); gesture.current.mode = "pinch"; gesture.current.startDist = dist(p1, p2); gesture.current.startScale = transform.scale; }
+    if (pointers.current.size === 1) {
+      gesture.current.mode = "drag";
+      gesture.current.lastX = e.clientX; gesture.current.lastY = e.clientY;
+    } else if (pointers.current.size === 2) {
+      const [p1, p2] = Array.from(pointers.current.values());
+      gesture.current.mode = "pinch";
+      gesture.current.startDist = dist(p1, p2);
+      gesture.current.startScale = transform.scale;
+    }
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -327,48 +364,87 @@ export default function StyleUploadPage() {
     if (gesture.current.mode === "drag" && pointers.current.size === 1) {
       const dx = e.clientX - gesture.current.lastX, dy = e.clientY - gesture.current.lastY;
       gesture.current.lastX = e.clientX; gesture.current.lastY = e.clientY;
-      setTransform((t) => clamp({ ...t, x: t.x + dx, y: t.y + dy }));
+      setTransform(t => clamp({ ...t, x: t.x + dx, y: t.y + dy }));
     } else if (gesture.current.mode === "pinch" && pointers.current.size >= 2) {
       const [p1, p2] = Array.from(pointers.current.values());
       const d = dist(p1, p2);
       if (gesture.current.startDist > 0) {
         const ratio = d / gesture.current.startDist;
-        const next  = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * ratio));
-        setTransform((t) => clamp({ ...t, scale: next }));
+        const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * ratio));
+        setTransform(t => clamp({ ...t, scale: next }));
       }
     }
   }
 
   function onPointerUp(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId);
-    if (pointers.current.size === 1) { const [p] = Array.from(pointers.current.values()); gesture.current.mode = "drag"; gesture.current.lastX = p.x; gesture.current.lastY = p.y; }
-    else if (pointers.current.size === 0) { gesture.current.mode = null; }
+    if (pointers.current.size === 1) {
+      const [p] = Array.from(pointers.current.values());
+      gesture.current.mode = "drag";
+      gesture.current.lastX = p.x; gesture.current.lastY = p.y;
+    } else if (pointers.current.size === 0) {
+      gesture.current.mode = null;
+    }
   }
 
   function onWheel(e: React.WheelEvent) {
     if (!src) return;
     const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transform.scale * (1 - e.deltaY * 0.0015)));
-    setTransform((t) => clamp({ ...t, scale: next }));
+    setTransform(t => clamp({ ...t, scale: next }));
   }
 
   function onSlide(e: React.ChangeEvent<HTMLInputElement>) {
-    setTransform((t) => clamp({ ...t, scale: Number(e.target.value) }));
+    setTransform(t => clamp({ ...t, scale: Number(e.target.value) }));
+  }
+
+  // AI 생성 호출 (fire-and-forget, 로딩 중 병렬 실행)
+  async function callAIGenerate(photoDataUrl: string) {
+    try {
+      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
+      const res = await fetch("/api/style/generate", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ photoDataUrl, answers }),
+        signal:  AbortSignal.timeout(30_000),
+      });
+      const data = await res.json() as { ok: boolean; imageUrl?: string };
+      if (data.ok && data.imageUrl) {
+        try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+      }
+    } catch { /**/ }
+  }
+
+  // 데이터 제출 (Google Sheets + Blob)
+  async function submitDiagnosis(photoDataUrl: string) {
+    try {
+      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
+      await fetch("/api/submit-diagnosis", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ photoDataUrl, answers: toSheetAnswers(answers), treatmentCounts: {} }),
+      });
+    } catch { /**/ }
   }
 
   function confirmPhoto() {
     if (!src || !natural) return;
     setBusy(true);
     try {
-      const f = getFrame(); const s = coverScale() * transform.scale;
+      const f  = getFrame(); const s = coverScale() * transform.scale;
       const rw = natural.w * s, rh = natural.h * s;
-      const imgLeft = f.w / 2 + transform.x - rw / 2, imgTop = f.h / 2 + transform.y - rh / 2;
+      const imgLeft = f.w / 2 + transform.x - rw / 2;
+      const imgTop  = f.h / 2 + transform.y - rh / 2;
       let sx = (0 - imgLeft) / s, sy = (0 - imgTop) / s;
-      let sw = f.w / s, sh = f.h / s;
-      sx = Math.max(0, Math.min(sx, natural.w)); sy = Math.max(0, Math.min(sy, natural.h));
-      sw = Math.min(sw, natural.w - sx); sh = Math.min(sh, natural.h - sy);
+      let sw = f.w / s,          sh = f.h / s;
+      sx = Math.max(0, Math.min(sx, natural.w));
+      sy = Math.max(0, Math.min(sy, natural.h));
+      sw = Math.min(sw, natural.w - sx);
+      sh = Math.min(sh, natural.h - sy);
       const ratio = f.w / f.h;
-      const outW = ratio >= 1 ? OUTPUT_MAX : Math.round(OUTPUT_MAX * ratio);
-      const outH = ratio >= 1 ? Math.round(OUTPUT_MAX / ratio) : OUTPUT_MAX;
+      const outW  = ratio >= 1 ? OUTPUT_MAX : Math.round(OUTPUT_MAX * ratio);
+      const outH  = ratio >= 1 ? Math.round(OUTPUT_MAX / ratio) : OUTPUT_MAX;
       const canvas = document.createElement("canvas");
       canvas.width = outW; canvas.height = outH;
       const ctx = canvas.getContext("2d");
@@ -377,24 +453,15 @@ export default function StyleUploadPage() {
       ctx.drawImage(imgElRef.current, sx, sy, sw, sh, 0, 0, outW, outH);
       const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       try { sessionStorage.setItem(STYLE_PHOTO_KEY, dataUrl); } catch { /**/ }
-      void submitStyle(dataUrl);
-      setIsLoading(true); // 10초 로딩 시작
+
+      // 병렬: Sheets 저장 + AI 생성 (로딩 타이머와 독립 실행)
+      void submitDiagnosis(dataUrl);
+      void callAIGenerate(dataUrl);
+
+      setIsLoading(true);
     } finally {
       setBusy(false);
     }
-  }
-
-  async function submitStyle(photoDataUrl: string) {
-    try {
-      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
-      const sheetAnswers = toSheetAnswers(answers);
-      await fetch("/api/submit-diagnosis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoDataUrl, answers: sheetAnswers, treatmentCounts: {} }),
-      });
-    } catch { /**/ }
   }
 
   function resetSrc() {
@@ -403,103 +470,126 @@ export default function StyleUploadPage() {
     pointers.current.clear(); gesture.current.mode = null;
   }
 
-  const s  = natural ? coverScale() * transform.scale : 1;
-  const rw = natural ? natural.w * s : 0;
+  const s          = natural ? coverScale() * transform.scale : 1;
+  const rw         = natural ? natural.w * s : 0;
   const showChooser = !src && !camera && !savedPhoto;
 
   if (showGuide) return <PhotoGuide onConfirm={() => setShowGuide(false)} />;
 
   return (
-    <main className="min-h-screen bg-charcoal pb-32 text-cream">
-      {/* 로딩 오버레이 */}
+    // ★ flex h-[100svh] flex-col — 버튼 영역이 flex-none으로 항상 하단 고정
+    <main className="flex h-[100svh] flex-col bg-[#0C0B0A] text-cream">
+
+      {/* 로딩 오버레이 (fixed, 레이아웃 무관) */}
       <AnimatePresence>
-        {isLoading && <FakeLoadingOverlay onDone={() => router.push("/style/result")} />}
+        {isLoading && (
+          <LoadingOverlay onDone={() => router.push("/style/result")} />
+        )}
       </AnimatePresence>
 
-      {/* 헤더 */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.07] bg-charcoal/90 px-5 py-3.5 backdrop-blur-md">
-        <button onClick={() => router.push("/style/survey")} className="text-sm font-medium text-cream/40 hover:text-cream">
+      {/* ── 헤더 (flex-none) ── */}
+      <header className="flex-none flex items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-3.5 backdrop-blur-md">
+        <button onClick={() => router.push("/style/survey")}
+          className="text-sm font-medium text-cream/40 transition-colors hover:text-cream">
           ← 질문으로
         </button>
         <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">사진 등록</span>
         <div className="w-16" />
       </header>
 
-      <div className="mx-auto w-full max-w-lg px-5">
-        <div className="pt-7 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Step · Photo</p>
-          <h1 className="mt-2 font-serif text-2xl font-bold leading-snug text-cream">
-            정면 얼굴 사진을 올려주세요
-          </h1>
-          <p className="mt-2 text-sm text-cream/45">
-            원본 사진은 안전하게 보관되며, 헤어스타일만 AI로 시뮬레이션돼요.
-          </p>
+      {/* ── 스크롤 콘텐츠 (flex-1, min-h-0) ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="mx-auto w-full max-w-lg px-5">
+
+          {/* 타이틀 */}
+          <div className="pb-3 pt-5 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Step · Photo</p>
+            <h1 className="mt-1.5 font-serif text-xl font-bold leading-snug text-cream">
+              정면 얼굴 사진을 올려주세요
+            </h1>
+            <p className="mt-1.5 text-sm text-cream/40">
+              원본 사진은 안전하게 보관되며, 헤어스타일만 AI로 시뮬레이션돼요.
+            </p>
+          </div>
+
+          {savedPhoto && !src && !camera ? (
+            <CachedPreview
+              photo={savedPhoto}
+              onRetake={() => {
+                setSavedPhoto(null);
+                try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
+              }}
+              onContinue={() => {
+                // 캐시 사진으로 AI 재생성
+                void callAIGenerate(savedPhoto);
+                setIsLoading(true);
+              }}
+            />
+          ) : (
+            <>
+              {/* 카메라/이미지 프레임 */}
+              <div className="flex justify-center pb-3">
+                <div
+                  ref={frameRef}
+                  onPointerDown={onPointerDown} onPointerMove={onPointerMove}
+                  onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
+                  onWheel={onWheel}
+                  style={{ aspectRatio: String(FRAME_RATIO) }}
+                  className="relative w-full max-w-sm touch-none select-none overflow-hidden rounded-3xl border border-white/15 bg-black/40"
+                >
+                  {camera && (
+                    <video ref={videoRef} playsInline muted autoPlay
+                      className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
+                  )}
+                  {!camera && src && natural && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img ref={imgElRef} src={src} alt="업로드한 사진" draggable={false}
+                      style={{
+                        position: "absolute", display: "block",
+                        left: "50%", top: "50%", width: `${rw}px`,
+                        aspectRatio: natural ? `${natural.w} / ${natural.h}` : undefined,
+                        maxWidth: "none", minWidth: 0, minHeight: 0,
+                        transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px))`,
+                      }} />
+                  )}
+                  {showChooser && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6">
+                      <button onClick={startCamera}
+                        className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
+                        카메라로 촬영
+                      </button>
+                      <button onClick={() => fileInputRef.current?.click()}
+                        className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/5 py-3.5 text-base font-medium text-cream/85 transition-colors hover:border-white/45 active:scale-[0.98]">
+                        갤러리에서 선택
+                      </button>
+                    </div>
+                  )}
+                  <FaceGuide />
+                </div>
+              </div>
+
+              {camError && (
+                <p className="mb-3 text-center text-sm text-red-300/90">{camError}</p>
+              )}
+
+              {/* 줌 슬라이더 */}
+              {src && !camera && (
+                <div className="mx-auto mb-3 flex w-full max-w-sm items-center gap-3">
+                  <span className="text-sm text-cream/40">－</span>
+                  <input type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
+                    value={transform.scale} onChange={onSlide}
+                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold"
+                    aria-label="확대/축소" />
+                  <span className="text-sm text-cream/40">＋</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
-
-        {savedPhoto && !src && !camera ? (
-          <CachedPreview
-            photo={savedPhoto}
-            onRetake={() => { setSavedPhoto(null); try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ } }}
-            onContinue={() => { setIsLoading(true); }}
-          />
-        ) : (
-          <>
-            <div className="mt-7 flex justify-center">
-              <div
-                ref={frameRef}
-                onPointerDown={onPointerDown} onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onWheel={onWheel}
-                style={{ aspectRatio: String(FRAME_RATIO) }}
-                className="relative w-full max-w-sm touch-none select-none overflow-hidden rounded-3xl border border-white/15 bg-black/40"
-              >
-                {camera && (
-                  <video ref={videoRef} playsInline muted autoPlay
-                    className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
-                )}
-                {!camera && src && natural && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img ref={imgElRef} src={src} alt="업로드한 사진" draggable={false}
-                    style={{ position: "absolute", display: "block", left: "50%", top: "50%", width: `${rw}px`,
-                      aspectRatio: natural ? `${natural.w} / ${natural.h}` : undefined,
-                      maxWidth: "none", minWidth: 0, minHeight: 0,
-                      transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px))` }} />
-                )}
-                {showChooser && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6">
-                    <button onClick={startCamera}
-                      className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
-                      📷 카메라로 촬영
-                    </button>
-                    <button onClick={() => fileInputRef.current?.click()}
-                      className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/5 py-3.5 text-base font-medium text-cream/85 transition-colors hover:border-white/45 active:scale-[0.98]">
-                      🖼 갤러리에서 선택
-                    </button>
-                  </div>
-                )}
-                <FaceGuide />
-              </div>
-            </div>
-
-            {camError && <p className="mt-4 text-center text-sm text-red-300/90">{camError}</p>}
-
-            {src && !camera && (
-              <div className="mx-auto mt-5 flex w-full max-w-sm items-center gap-3">
-                <span className="text-sm text-cream/40">－</span>
-                <input type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
-                  value={transform.scale} onChange={onSlide}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold"
-                  aria-label="확대 / 축소" />
-                <span className="text-sm text-cream/40">＋</span>
-              </div>
-            )}
-          </>
-        )}
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={onPick} className="hidden" />
-
-      {/* 하단 고정 액션 */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-white/[0.07] bg-charcoal/90 backdrop-blur-md">
+      {/* ── Sticky Bottom 버튼 영역 (flex-none — 카메라 프레임과 절대 겹치지 않음) ── */}
+      <div className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/90 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-5 py-4 pb-8">
           {camera ? (
             <>
@@ -528,9 +618,9 @@ export default function StyleUploadPage() {
                   boxShadow: ["0 0 0 0 rgba(200,168,107,0)", "0 0 0 8px rgba(200,168,107,0.35)", "0 0 0 0 rgba(200,168,107,0)"],
                 }}
                 transition={busy ? { duration: 0.2 } : {
-                  scale: { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
+                  scale:     { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
                   boxShadow: { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
-                  opacity: { duration: 0.25 },
+                  opacity:   { duration: 0.25 },
                 }}
                 className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal disabled:opacity-60"
               >
@@ -538,13 +628,15 @@ export default function StyleUploadPage() {
               </motion.button>
             </>
           ) : (
-            <button onClick={() => router.push("/style")}
+            <button onClick={() => router.push("/style/survey")}
               className="flex h-14 flex-1 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] text-base font-medium text-cream/60 hover:text-cream">
               ← 설문으로 돌아가기
             </button>
           )}
         </div>
       </div>
+
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={onPick} className="hidden" />
     </main>
   );
 }
