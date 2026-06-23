@@ -2,8 +2,9 @@
 
 // ============================================================================
 // 어뷰티 스타일 — 사진 업로드
-// 레이아웃: flex h-[100svh] flex-col → 버튼 영역 Sticky Bottom (겹침 불가 구조)
-// AI 생성: 확인 즉시 /api/style/generate 호출 → sessionStorage 저장
+// [1] PhotoGuide 동의 체크박스 (법적 리스크 방어)
+// [2] 셔터 플래시 애니메이션 (alert/confirm 완전 제거)
+// [3] h-[100dvh] flex-col 구조 — 카메라/버튼 물리적 겹침 차단
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,12 +15,11 @@ import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../cons
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 
-const FRAME_RATIO  = 3 / 4;
 const OUTPUT_MAX   = 512;
 const JPEG_QUALITY = 0.9;
 const MIN_SCALE    = 1;
 const MAX_SCALE    = 4;
-const LOADING_MS   = 13_000; // Replicate 응답 대기 포함
+const LOADING_MS   = 13_000;
 
 type Transform = { scale: number; x: number; y: number };
 
@@ -34,7 +34,7 @@ const LOADING_STEPS = [
 ];
 
 function LoadingOverlay({ onDone }: { onDone: () => void }) {
-  const [stepIdx, setStepIdx]   = useState(0);
+  const [stepIdx,  setStepIdx]  = useState(0);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -62,55 +62,35 @@ function LoadingOverlay({ onDone }: { onDone: () => void }) {
       </span>
 
       <div className="flex flex-col items-center gap-8 text-center">
-        {/* 골드 링 스피너 */}
         <div className="relative flex h-32 w-32 items-center justify-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
             className="absolute inset-0 rounded-full"
-            style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }}
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
+            style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }} />
+          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
             className="absolute inset-5 rounded-full"
-            style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }}
-          />
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+            style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }} />
+          <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            className="h-2.5 w-2.5 rounded-full bg-gold"
-          />
+            className="h-2.5 w-2.5 rounded-full bg-gold" />
         </div>
 
         <AnimatePresence mode="wait">
-          <motion.p
-            key={stepIdx}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.4 }}
-            className="max-w-xs text-center text-base font-medium leading-relaxed text-cream sm:text-lg"
-          >
+          <motion.p key={stepIdx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.4 }}
+            className="max-w-xs text-center text-base font-medium leading-relaxed text-cream sm:text-lg">
             {LOADING_STEPS[stepIdx]}
           </motion.p>
         </AnimatePresence>
 
         <div className="w-56">
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-dark"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.15, ease: "linear" }}
-            />
+            <motion.div className="h-full rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-dark"
+              animate={{ width: `${progress}%` }} transition={{ duration: 0.15, ease: "linear" }} />
           </div>
-          <p className="mt-2 text-center text-sm font-semibold tabular-nums text-gold/60">
-            {progress}%
-          </p>
+          <p className="mt-2 text-center text-sm font-semibold tabular-nums text-gold/60">{progress}%</p>
         </div>
       </div>
 
-      {/* 광고 placeholder */}
       <div className="w-full max-w-sm rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-4 text-center">
         <p className="text-[10px] uppercase tracking-widest text-cream/20">Advertisement</p>
         <div className="mt-2 h-16 w-full rounded-xl bg-white/[0.03]" />
@@ -137,16 +117,21 @@ function FaceGuide() {
       <path d="M40 400 C70 330 110 312 150 312 C190 312 230 330 260 400"
         fill="none" stroke="rgba(200,168,107,0.5)" strokeWidth="2" strokeDasharray="7 8" />
       <line x1="150" y1="78" x2="150" y2="292"
-        stroke="rgba(255,255,255,0.25)" strokeWidth="1" strokeDasharray="3 7" />
+        stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="3 7" />
     </svg>
   );
 }
 
-// ─── 가이드 프리스크린 ────────────────────────────────────────────────────────
+// ─── 가이드 프리스크린 + 동의 체크박스 ────────────────────────────────────────
+// [요구사항 1] 체크 미완료 시 버튼 비활성화 → 법적 동의 취득
 
 function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
+  const [agreed, setAgreed] = useState(false);
+
   return (
-    <main className="flex h-[100svh] flex-col bg-[#0C0B0A] text-cream">
+    <main className="flex h-[100dvh] flex-col bg-[#0C0B0A] text-cream">
+
+      {/* 스크롤 가능한 가이드 영역 */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-sm px-4 pt-6">
           <div className="overflow-hidden rounded-2xl border border-gold/20">
@@ -158,43 +143,58 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           </p>
         </div>
       </div>
-      {/* Sticky Bottom — 절대 겹치지 않음 */}
-      <div className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-4 pb-8 backdrop-blur-md">
-        <button onClick={onConfirm}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
-          가이드 확인했어요 · 사진 찍으러 가기 →
+
+      {/* ── Sticky Bottom: 체크박스 + 버튼 ── */}
+      <div
+        className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/95 px-5 pt-5 backdrop-blur-md"
+        style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+      >
+        {/* 동의 체크박스 */}
+        <button
+          type="button"
+          onClick={() => setAgreed(v => !v)}
+          className="mb-4 flex w-full items-start gap-3 text-left"
+        >
+          {/* 커스텀 체크박스 */}
+          <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded border-2 transition-all duration-200 ${
+            agreed ? "border-gold bg-gold" : "border-white/35 bg-transparent"
+          }`}>
+            {agreed && (
+              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                <path d="M5 12.5l4.5 4.5L19 7" stroke="#0C0B0A" strokeWidth="3"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          <span>
+            <span className="block text-sm font-medium leading-snug text-cream/80">
+              AI 헤어 분석을 위한 사진 촬영 및 임시 처리에 동의합니다.{" "}
+              <span className="text-gold">(필수)</span>
+            </span>
+            <span className="mt-1 block text-xs text-cream/35">
+              *업로드된 사진은 AI 분석 즉시 안전하게 파기됩니다.
+            </span>
+          </span>
+        </button>
+
+        {/* CTA 버튼 — 체크 전 disabled */}
+        <button
+          onClick={onConfirm}
+          disabled={!agreed}
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35"
+          style={{
+            background: agreed
+              ? "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)"
+              : "rgba(255,255,255,0.07)",
+            color: agreed ? "#0C0B0A" : "rgba(255,255,255,0.4)",
+          }}
+        >
+          {agreed
+            ? "가이드 확인했어요 · 사진 찍으러 가기 →"
+            : "위 항목에 동의 후 진행할 수 있어요"}
         </button>
       </div>
     </main>
-  );
-}
-
-// ─── 캐시 미리보기 ────────────────────────────────────────────────────────────
-
-function CachedPreview({ photo, onRetake, onContinue }: {
-  photo: string; onRetake: () => void; onContinue: () => void;
-}) {
-  return (
-    <div className="flex flex-col items-center pt-4">
-      <div style={{ aspectRatio: String(FRAME_RATIO) }}
-        className="w-full max-w-sm overflow-hidden rounded-3xl border border-gold/30">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={photo} alt="업로드한 사진" className="h-full w-full object-cover" />
-      </div>
-      <p className="mt-4 text-center text-sm text-cream/55">
-        이전에 올린 사진이에요. 그대로 진행하거나 다시 등록할 수 있어요.
-      </p>
-      <div className="mt-4 grid w-full max-w-sm grid-cols-2 gap-3">
-        <button onClick={onRetake}
-          className="flex h-12 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] text-base font-medium text-cream/70 transition-colors hover:border-white/25 hover:text-cream active:scale-[0.98]">
-          다시 등록
-        </button>
-        <button onClick={onContinue}
-          className="flex h-12 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
-          이 사진으로 계속
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -214,14 +214,16 @@ export default function StyleUploadPage() {
   const [isLoading,  setIsLoading]  = useState(false);
   const [camera,     setCamera]     = useState(false);
   const [camError,   setCamError]   = useState<string | null>(null);
+  // [요구사항 2] 셔터 플래시 상태
+  const [flash,      setFlash]      = useState(false);
 
-  const frameRef    = useRef<HTMLDivElement>(null);
-  const imgElRef    = useRef<HTMLImageElement>(null);
-  const videoRef    = useRef<HTMLVideoElement>(null);
-  const streamRef   = useRef<MediaStream | null>(null);
+  const frameRef     = useRef<HTMLDivElement>(null);
+  const imgElRef     = useRef<HTMLImageElement>(null);
+  const videoRef     = useRef<HTMLVideoElement>(null);
+  const streamRef    = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pointers    = useRef<Map<number, { x: number; y: number }>>(new Map());
-  const gesture     = useRef<{
+  const pointers     = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const gesture      = useRef<{
     mode: "drag" | "pinch" | null;
     startDist: number; startScale: number;
     lastX: number; lastY: number;
@@ -273,11 +275,19 @@ export default function StyleUploadPage() {
   function capturePhoto() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
+
+    // [요구사항 2] 셔터 플래시 — alert/confirm 완전 대체
+    setFlash(true);
+
     const vw = video.videoWidth, vh = video.videoHeight;
+    const frame = frameRef.current;
+    const frameW = frame?.clientWidth  ?? vw;
+    const frameH = frame?.clientHeight ?? vh;
+    const frameRatio = frameW / frameH;
     const videoRatio = vw / vh;
     let cropW: number, cropH: number;
-    if (videoRatio > FRAME_RATIO) { cropH = vh; cropW = Math.round(vh * FRAME_RATIO); }
-    else { cropW = vw; cropH = Math.round(vw / FRAME_RATIO); }
+    if (videoRatio > frameRatio) { cropH = vh; cropW = Math.round(vh * frameRatio); }
+    else { cropW = vw; cropH = Math.round(vw / frameRatio); }
     const sx = Math.round((vw - cropW) / 2), sy = Math.round((vh - cropH) / 2);
     const canvas = document.createElement("canvas");
     canvas.width = cropW; canvas.height = cropH;
@@ -300,7 +310,7 @@ export default function StyleUploadPage() {
     }, "image/jpeg", 0.95);
   }
 
-  const getFrame   = useCallback(() => {
+  const getFrame = useCallback(() => {
     const el = frameRef.current;
     if (!el) return { w: 0, h: 0 };
     return { w: el.clientWidth, h: el.clientHeight };
@@ -333,8 +343,7 @@ export default function StyleUploadPage() {
     img.onload = () => {
       setNatural({ w: img.naturalWidth, h: img.naturalHeight });
       setTransform({ scale: 1, x: 0, y: 0 });
-      setSrc(url);
-      setSavedPhoto(null);
+      setSrc(url); setSavedPhoto(null);
     };
     img.src = url; e.target.value = "";
   }
@@ -353,7 +362,7 @@ export default function StyleUploadPage() {
     } else if (pointers.current.size === 2) {
       const [p1, p2] = Array.from(pointers.current.values());
       gesture.current.mode = "pinch";
-      gesture.current.startDist = dist(p1, p2);
+      gesture.current.startDist  = dist(p1, p2);
       gesture.current.startScale = transform.scale;
     }
   }
@@ -370,7 +379,7 @@ export default function StyleUploadPage() {
       const d = dist(p1, p2);
       if (gesture.current.startDist > 0) {
         const ratio = d / gesture.current.startDist;
-        const next = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * ratio));
+        const next  = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * ratio));
         setTransform(t => clamp({ ...t, scale: next }));
       }
     }
@@ -397,16 +406,14 @@ export default function StyleUploadPage() {
     setTransform(t => clamp({ ...t, scale: Number(e.target.value) }));
   }
 
-  // AI 생성 호출 (fire-and-forget, 로딩 중 병렬 실행)
   async function callAIGenerate(photoDataUrl: string) {
     try {
-      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
       const res = await fetch("/api/style/generate", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ photoDataUrl, answers }),
-        signal:  AbortSignal.timeout(30_000),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoDataUrl, answers }),
+        signal: AbortSignal.timeout(30_000),
       });
       const data = await res.json() as { ok: boolean; imageUrl?: string };
       if (data.ok && data.imageUrl) {
@@ -415,15 +422,13 @@ export default function StyleUploadPage() {
     } catch { /**/ }
   }
 
-  // 데이터 제출 (Google Sheets + Blob)
   async function submitDiagnosis(photoDataUrl: string) {
     try {
-      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
       await fetch("/api/submit-diagnosis", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ photoDataUrl, answers: toSheetAnswers(answers), treatmentCounts: {} }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoDataUrl, answers: toSheetAnswers(answers), treatmentCounts: {} }),
       });
     } catch { /**/ }
   }
@@ -432,12 +437,12 @@ export default function StyleUploadPage() {
     if (!src || !natural) return;
     setBusy(true);
     try {
-      const f  = getFrame(); const s = coverScale() * transform.scale;
+      const f = getFrame(); const s = coverScale() * transform.scale;
       const rw = natural.w * s, rh = natural.h * s;
       const imgLeft = f.w / 2 + transform.x - rw / 2;
       const imgTop  = f.h / 2 + transform.y - rh / 2;
       let sx = (0 - imgLeft) / s, sy = (0 - imgTop) / s;
-      let sw = f.w / s,          sh = f.h / s;
+      let sw = f.w / s,           sh = f.h / s;
       sx = Math.max(0, Math.min(sx, natural.w));
       sy = Math.max(0, Math.min(sy, natural.h));
       sw = Math.min(sw, natural.w - sx);
@@ -453,11 +458,8 @@ export default function StyleUploadPage() {
       ctx.drawImage(imgElRef.current, sx, sy, sw, sh, 0, 0, outW, outH);
       const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       try { sessionStorage.setItem(STYLE_PHOTO_KEY, dataUrl); } catch { /**/ }
-
-      // 병렬: Sheets 저장 + AI 생성 (로딩 타이머와 독립 실행)
       void submitDiagnosis(dataUrl);
       void callAIGenerate(dataUrl);
-
       setIsLoading(true);
     } finally {
       setBusy(false);
@@ -470,25 +472,41 @@ export default function StyleUploadPage() {
     pointers.current.clear(); gesture.current.mode = null;
   }
 
-  const s          = natural ? coverScale() * transform.scale : 1;
-  const rw         = natural ? natural.w * s : 0;
-  const showChooser = !src && !camera && !savedPhoto;
+  const s = natural ? coverScale() * transform.scale : 1;
+  const rw = natural ? natural.w * s : 0;
+
+  // 현재 상태 플래그
+  const showSavedPreview = Boolean(savedPhoto && !src && !camera);
+  const showImageCrop    = Boolean(src && !camera);
+  const showChooser      = !src && !camera && !savedPhoto;
 
   if (showGuide) return <PhotoGuide onConfirm={() => setShowGuide(false)} />;
 
   return (
-    // ★ flex h-[100svh] flex-col — 버튼 영역이 flex-none으로 항상 하단 고정
-    <main className="flex h-[100svh] flex-col bg-[#0C0B0A] text-cream">
+    // [요구사항 3] h-[100dvh] flex-col — 모바일 브라우저 하단 바 포함 전체 높이
+    <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0C0B0A] text-cream">
 
-      {/* 로딩 오버레이 (fixed, 레이아웃 무관) */}
+      {/* 로딩 오버레이 (fixed) */}
       <AnimatePresence>
-        {isLoading && (
-          <LoadingOverlay onDone={() => router.push("/style/result")} />
+        {isLoading && <LoadingOverlay onDone={() => router.push("/style/result")} />}
+      </AnimatePresence>
+
+      {/* [요구사항 2] 셔터 플래시 — 흰 화면 번쩍임 (0.15초) */}
+      <AnimatePresence>
+        {flash && (
+          <motion.div
+            key="shutter-flash"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "linear" }}
+            onAnimationComplete={() => setFlash(false)}
+            className="pointer-events-none fixed inset-0 z-40 bg-white"
+          />
         )}
       </AnimatePresence>
 
       {/* ── 헤더 (flex-none) ── */}
-      <header className="flex-none flex items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-3.5 backdrop-blur-md">
+      <header className="flex flex-none items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-3.5 backdrop-blur-md">
         <button onClick={() => router.push("/style/survey")}
           className="text-sm font-medium text-cream/40 transition-colors hover:text-cream">
           ← 질문으로
@@ -497,143 +515,179 @@ export default function StyleUploadPage() {
         <div className="w-16" />
       </header>
 
-      {/* ── 스크롤 콘텐츠 (flex-1, min-h-0) ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="mx-auto w-full max-w-lg px-5">
+      {/* ── [요구사항 3] 카메라/이미지 뷰 (flex-1 relative overflow-hidden) ──
+           비디오·이미지·가이드 SVG 모두 이 안에서 absolute로 존재
+           버튼 영역과 물리적으로 분리되어 절대 겹치지 않음                    */}
+      <div
+        ref={frameRef}
+        className="relative flex-1 overflow-hidden bg-black"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onWheel={onWheel}
+      >
+        {/* 카메라 피드 — object-cover로 영역 꽉 채움 */}
+        {camera && (
+          <video ref={videoRef} playsInline muted autoPlay
+            className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
+        )}
 
-          {/* 타이틀 */}
-          <div className="pb-3 pt-5 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">Step · Photo</p>
-            <h1 className="mt-1.5 font-serif text-xl font-bold leading-snug text-cream">
-              정면 얼굴 사진을 올려주세요
-            </h1>
-            <p className="mt-1.5 text-sm text-cream/40">
-              원본 사진은 안전하게 보관되며, 헤어스타일만 AI로 시뮬레이션돼요.
+        {/* 촬영/업로드 이미지 (드래그+줌 크롭 모드) */}
+        {showImageCrop && natural && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            ref={imgElRef}
+            src={src!}
+            alt="업로드한 사진"
+            draggable={false}
+            style={{
+              position: "absolute", display: "block",
+              left: "50%", top: "50%",
+              width: `${rw}px`,
+              aspectRatio: `${natural.w} / ${natural.h}`,
+              maxWidth: "none", minWidth: 0, minHeight: 0,
+              transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px))`,
+            }}
+          />
+        )}
+
+        {/* 저장된 이전 사진 미리보기 */}
+        {showSavedPreview && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={savedPhoto!}
+            alt="이전 사진"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+
+        {/* 촬영/갤러리 선택 화면 (사진 없을 때) */}
+        {showChooser && (
+          <>
+            <FaceGuide />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
+              <button onClick={startCamera}
+                className="flex w-56 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
+                카메라로 촬영
+              </button>
+              <button onClick={() => fileInputRef.current?.click()}
+                className="flex w-56 items-center justify-center gap-2 rounded-2xl border border-white/25 bg-black/60 py-3.5 text-base font-medium text-cream/85 backdrop-blur-sm transition-colors hover:border-white/45 active:scale-[0.98]">
+                갤러리에서 선택
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* 카메라 활성 시 얼굴 가이드 오버레이 */}
+        {camera && <FaceGuide />}
+
+        {/* 카메라 오류 토스트 */}
+        {camError && (
+          <div className="absolute inset-x-4 top-4 z-30 flex justify-center">
+            <p className="rounded-xl bg-black/75 px-4 py-2.5 text-center text-sm text-red-300/90 backdrop-blur-sm">
+              {camError}
             </p>
           </div>
+        )}
 
-          {savedPhoto && !src && !camera ? (
-            <CachedPreview
-              photo={savedPhoto}
-              onRetake={() => {
+        {/* 줌 슬라이더 — 크롭 모드일 때 카메라 영역 하단 오버레이 */}
+        {showImageCrop && (
+          <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center px-6">
+            <div className="flex items-center gap-3 rounded-2xl bg-black/65 px-5 py-2.5 backdrop-blur-sm">
+              <span className="text-sm text-white/45">－</span>
+              <input
+                type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
+                value={transform.scale} onChange={onSlide}
+                className="w-36 cursor-pointer accent-gold sm:w-48"
+                aria-label="확대/축소"
+              />
+              <span className="text-sm text-white/45">＋</span>
+            </div>
+          </div>
+        )}
+
+        {/* 저장된 사진 안내 텍스트 */}
+        {showSavedPreview && (
+          <div className="absolute inset-x-4 top-4 z-10 flex justify-center">
+            <p className="rounded-xl bg-black/65 px-4 py-2 text-center text-sm text-cream/70 backdrop-blur-sm">
+              이전에 올린 사진이에요. 계속 진행하거나 다시 등록할 수 있어요.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── [요구사항 3] 액션 버튼 영역 (shrink-0 — 카메라 뷰와 물리적 분리) ──
+           bg-black/90으로 반투명 처리, safe-area padding 적용                  */}
+      <div
+        className="shrink-0 z-50 bg-black/90 px-6 pt-5 backdrop-blur-md"
+        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
+      >
+        {camera ? (
+          /* 카메라 촬영 모드 */
+          <div className="flex gap-3">
+            <button onClick={stopCamera}
+              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              닫기
+            </button>
+            <button onClick={capturePhoto}
+              className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold hover:brightness-105 active:scale-[0.98]">
+              <span className="text-lg leading-none">●</span> 촬영하기
+            </button>
+          </div>
+
+        ) : showSavedPreview ? (
+          /* 저장된 사진 확인 모드 */
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
                 setSavedPhoto(null);
                 try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
               }}
-              onContinue={() => {
-                // 캐시 사진으로 AI 재생성
-                void callAIGenerate(savedPhoto);
-                setIsLoading(true);
-              }}
-            />
-          ) : (
-            <>
-              {/* 카메라/이미지 프레임 */}
-              <div className="flex justify-center pb-3">
-                <div
-                  ref={frameRef}
-                  onPointerDown={onPointerDown} onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
-                  onWheel={onWheel}
-                  style={{ aspectRatio: String(FRAME_RATIO) }}
-                  className="relative w-full max-w-sm touch-none select-none overflow-hidden rounded-3xl border border-white/15 bg-black/40"
-                >
-                  {camera && (
-                    <video ref={videoRef} playsInline muted autoPlay
-                      className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
-                  )}
-                  {!camera && src && natural && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img ref={imgElRef} src={src} alt="업로드한 사진" draggable={false}
-                      style={{
-                        position: "absolute", display: "block",
-                        left: "50%", top: "50%", width: `${rw}px`,
-                        aspectRatio: natural ? `${natural.w} / ${natural.h}` : undefined,
-                        maxWidth: "none", minWidth: 0, minHeight: 0,
-                        transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px))`,
-                      }} />
-                  )}
-                  {showChooser && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6">
-                      <button onClick={startCamera}
-                        className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
-                        카메라로 촬영
-                      </button>
-                      <button onClick={() => fileInputRef.current?.click()}
-                        className="flex w-full max-w-[14rem] items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/5 py-3.5 text-base font-medium text-cream/85 transition-colors hover:border-white/45 active:scale-[0.98]">
-                        갤러리에서 선택
-                      </button>
-                    </div>
-                  )}
-                  <FaceGuide />
-                </div>
-              </div>
-
-              {camError && (
-                <p className="mb-3 text-center text-sm text-red-300/90">{camError}</p>
-              )}
-
-              {/* 줌 슬라이더 */}
-              {src && !camera && (
-                <div className="mx-auto mb-3 flex w-full max-w-sm items-center gap-3">
-                  <span className="text-sm text-cream/40">－</span>
-                  <input type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
-                    value={transform.scale} onChange={onSlide}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold"
-                    aria-label="확대/축소" />
-                  <span className="text-sm text-cream/40">＋</span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── Sticky Bottom 버튼 영역 (flex-none — 카메라 프레임과 절대 겹치지 않음) ── */}
-      <div className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/90 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-lg items-center gap-3 px-5 py-4 pb-8">
-          {camera ? (
-            <>
-              <button onClick={stopCamera}
-                className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
-                닫기
-              </button>
-              <button onClick={capturePhoto}
-                className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold hover:brightness-105 active:scale-[0.98]">
-                <span className="text-xl leading-none">●</span> 촬영하기
-              </button>
-            </>
-          ) : src ? (
-            <>
-              <button onClick={resetSrc}
-                className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
-                다시 선택
-              </button>
-              <motion.button
-                key={src}
-                onClick={confirmPhoto}
-                disabled={busy}
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={busy ? { scale: 1, opacity: 0.6 } : {
-                  scale: [1, 1.03, 1], opacity: 1,
-                  boxShadow: ["0 0 0 0 rgba(200,168,107,0)", "0 0 0 8px rgba(200,168,107,0.35)", "0 0 0 0 rgba(200,168,107,0)"],
-                }}
-                transition={busy ? { duration: 0.2 } : {
-                  scale:     { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
-                  boxShadow: { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
-                  opacity:   { duration: 0.25 },
-                }}
-                className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal disabled:opacity-60"
-              >
-                {busy ? "처리 중…" : "이 사진으로 분석하기"}
-              </motion.button>
-            </>
-          ) : (
-            <button onClick={() => router.push("/style/survey")}
-              className="flex h-14 flex-1 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] text-base font-medium text-cream/60 hover:text-cream">
-              ← 설문으로 돌아가기
+              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              다시 등록
             </button>
-          )}
-        </div>
+            <button
+              onClick={() => { void callAIGenerate(savedPhoto!); setIsLoading(true); }}
+              className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold hover:brightness-105 active:scale-[0.98]">
+              이 사진으로 계속
+            </button>
+          </div>
+
+        ) : showImageCrop ? (
+          /* 이미지 크롭/확인 모드 */
+          <div className="flex gap-3">
+            <button onClick={resetSrc}
+              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              다시 선택
+            </button>
+            <motion.button
+              key={src ?? ""}
+              onClick={confirmPhoto}
+              disabled={busy}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={busy ? { scale: 1, opacity: 0.6 } : {
+                scale: [1, 1.03, 1], opacity: 1,
+                boxShadow: ["0 0 0 0 rgba(200,168,107,0)", "0 0 0 8px rgba(200,168,107,0.35)", "0 0 0 0 rgba(200,168,107,0)"],
+              }}
+              transition={busy ? { duration: 0.2 } : {
+                scale:     { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
+                boxShadow: { duration: 1.6, repeat: Infinity, repeatDelay: 0.6, ease: "easeInOut", delay: 0.3 },
+                opacity:   { duration: 0.25 },
+              }}
+              className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal disabled:opacity-60"
+            >
+              {busy ? "처리 중…" : "이 사진으로 분석하기"}
+            </motion.button>
+          </div>
+
+        ) : (
+          /* 초기 선택 화면 — 뒤로가기 */
+          <button onClick={() => router.push("/style/survey")}
+            className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] text-base font-medium text-cream/60 hover:text-cream">
+            ← 설문으로 돌아가기
+          </button>
+        )}
       </div>
 
       <input ref={fileInputRef} type="file" accept="image/*" onChange={onPick} className="hidden" />
