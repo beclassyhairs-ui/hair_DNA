@@ -5,10 +5,11 @@
 // 청담동 프리미엄 헤어살롱 AI 앱 컨셉
 // ============================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { STYLE_ANSWERS_KEY } from "./style/constants";
+import { getStyleProduct } from "./style/recommend";
 
 // ─── 4문항 빠른 진단 데이터 ──────────────────────────────────────────────────
 
@@ -63,6 +64,77 @@ const QUESTIONS = [
 
 type QId = typeof QUESTIONS[number]["id"];
 type Answers = Record<string, string>;
+
+// ─── 진단 결과 저장 타입 ──────────────────────────────────────────────────────
+
+interface SavedDiagnosis {
+  answers: Record<string, string>;
+  styleName: string;
+  savedAt: number;
+  isSevereDamage: boolean;
+  isLowDensity:   boolean;
+  isFineHair:     boolean;
+  isCurly:        boolean;
+}
+
+// ─── 맞춤 제품 배너 ───────────────────────────────────────────────────────────
+
+function PersonalizedBanner({
+  diagnosis, onDismiss,
+}: { diagnosis: SavedDiagnosis; onDismiss: () => void }) {
+  const product = getStyleProduct(diagnosis.answers);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="mb-6 w-full overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.08] to-transparent"
+    >
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
+      <div className="px-4 py-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">맞춤 홈케어 추천</p>
+            <p className="mt-0.5 text-sm font-semibold text-cream/80">
+              {diagnosis.styleName} 고객님께 맞는 제품이에요
+            </p>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="ml-3 flex h-6 w-6 flex-none items-center justify-center rounded-full text-cream/30 transition-colors hover:text-cream/60"
+            aria-label="닫기"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={2}>
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <a
+          href={product.coupangUrl}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="mt-3 flex items-center gap-3.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 transition-colors hover:bg-white/[0.07] active:scale-[0.98]"
+        >
+          <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full border border-gold/20 bg-gold/10 text-lg">
+            {product.emoji}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-gold/60">{product.category}</p>
+            <p className="truncate text-sm font-bold text-cream/85">{product.name}</p>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 flex-none text-cream/30" stroke="currentColor" strokeWidth={2}>
+            <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+        <p className="mt-2 text-center text-[9px] text-cream/18">
+          이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받습니다.
+        </p>
+      </div>
+    </motion.div>
+  );
+}
 
 const slideVariants = {
   enter:  (dir: number) => ({ opacity: 0, x: dir > 0 ? 64 : -64 }),
@@ -151,7 +223,13 @@ const FEATURES = [
   { icon: "◆", label: "전문가 스타일 처방", sub: "60종 헤어 데이터베이스" },
 ];
 
-function LandingView({ onStart }: { onStart: () => void }) {
+function LandingView({
+  onStart, savedDiagnosis, onDismissDiagnosis,
+}: {
+  onStart: () => void;
+  savedDiagnosis: SavedDiagnosis | null;
+  onDismissDiagnosis: () => void;
+}) {
   return (
     <motion.main
       key="landing"
@@ -185,7 +263,7 @@ function LandingView({ onStart }: { onStart: () => void }) {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="flex flex-col items-center text-center"
+        className="flex w-full max-w-xs flex-col items-center text-center"
       >
         {/* 스캔 아이콘 */}
         <AIScanIcon />
@@ -201,33 +279,39 @@ function LandingView({ onStart }: { onStart: () => void }) {
             헤어 분석
           </span>
         </h1>
-        <p className="mt-4 max-w-xs text-sm leading-relaxed text-cream/45 sm:text-base">
+        <p className="mt-4 text-sm leading-relaxed text-cream/45 sm:text-base">
           청담동 헤어 전문가가 설계한 AI가<br />
           나만의 최적 헤어스타일을 처방합니다.
         </p>
 
-        {/* 피처 배지 */}
-        <div className="mt-8 flex flex-col gap-2.5 w-full max-w-xs">
-          {FEATURES.map((f, i) => (
-            <motion.div
-              key={f.label}
-              initial={{ opacity: 0, x: -16 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.35 + i * 0.08 }}
-              className="flex items-center gap-3.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3"
-            >
-              <span className="flex-none text-base text-gold/60">{f.icon}</span>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-cream/80">{f.label}</p>
-                <p className="text-[11px] text-cream/30">{f.sub}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* 맞춤 배너 OR 피처 배지 */}
+        {savedDiagnosis ? (
+          <div className="mt-6 w-full">
+            <PersonalizedBanner diagnosis={savedDiagnosis} onDismiss={onDismissDiagnosis} />
+          </div>
+        ) : (
+          <div className="mt-8 flex w-full flex-col gap-2.5">
+            {FEATURES.map((f, i) => (
+              <motion.div
+                key={f.label}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35 + i * 0.08 }}
+                className="flex items-center gap-3.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-4 py-3"
+              >
+                <span className="flex-none text-base text-gold/60">{f.icon}</span>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-cream/80">{f.label}</p>
+                  <p className="text-[11px] text-cream/30">{f.sub}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* 소요시간 */}
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
-          className="mt-6 text-xs text-cream/22">
+          className="mt-5 text-xs text-cream/22">
           약 1분 소요 · 사진 1장 · 무료
         </motion.p>
       </motion.div>
@@ -424,11 +508,29 @@ type Phase = "landing" | "survey" | "done";
 
 export default function HomePage() {
   const router = useRouter();
-  const [phase,   setPhase]   = useState<Phase>("landing");
-  const [qIdx,    setQIdx]    = useState(0);
-  const [dir,     setDir]     = useState(1);
-  const [answers, setAnswers] = useState<Answers>({});
-  const [pending, setPending] = useState(false);
+  const [phase,          setPhase]          = useState<Phase>("landing");
+  const [qIdx,           setQIdx]           = useState(0);
+  const [dir,            setDir]            = useState(1);
+  const [answers,        setAnswers]        = useState<Answers>({});
+  const [pending,        setPending]        = useState(false);
+  const [savedDiagnosis, setSavedDiagnosis] = useState<SavedDiagnosis | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("abeauty:savedDiagnosis");
+      if (!raw) return;
+      const data = JSON.parse(raw) as SavedDiagnosis;
+      // 7일 이내 저장 데이터만 표시
+      if (Date.now() - data.savedAt < 7 * 24 * 60 * 60 * 1000) {
+        setSavedDiagnosis(data);
+      }
+    } catch { /**/ }
+  }, []);
+
+  function handleDismissDiagnosis() {
+    setSavedDiagnosis(null);
+    try { localStorage.removeItem("abeauty:savedDiagnosis"); } catch { /**/ }
+  }
 
   const q = QUESTIONS[qIdx];
 
@@ -461,7 +563,12 @@ export default function HomePage() {
   return (
     <AnimatePresence mode="wait">
       {phase === "landing" && (
-        <LandingView key="landing" onStart={() => setPhase("survey")} />
+        <LandingView
+          key="landing"
+          onStart={() => setPhase("survey")}
+          savedDiagnosis={savedDiagnosis}
+          onDismissDiagnosis={handleDismissDiagnosis}
+        />
       )}
       {phase === "survey" && (
         <SurveyView

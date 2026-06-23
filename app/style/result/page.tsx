@@ -190,48 +190,65 @@ function BeforeAfterSection({
   const [refErr, setRefErr] = useState(false);
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-3">
 
       {/* BEFORE */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-cream/50">
-            Before
-          </span>
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+        style={{ aspectRatio: "3/4" }}
+      >
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt="원본 사진" className="h-full w-full object-cover" style={{ objectPosition: "50% 10%" }} />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-[9px] uppercase tracking-widest text-cream/20">Your Photo</p>
+          </div>
+        )}
+        {/* 하단 레이블 */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-cream/60">Before</span>
         </div>
-        <div className={`relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-black/30 transition-all duration-700 ${locked ? "blur-sm" : ""}`}>
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt="원본 사진" className="h-full w-full object-cover" style={{ objectPosition: "50% 10%" }} />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-[9px] uppercase tracking-widest text-cream/20">Your Photo</p>
-            </div>
-          )}
-          {locked && <div className="absolute inset-0 flex items-center justify-center bg-black/50"><span className="text-xl">🔒</span></div>}
-        </div>
+        {locked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-cream/40" stroke="currentColor" strokeWidth={1.5}>
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+            </svg>
+          </div>
+        )}
       </div>
 
       {/* AFTER */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold border border-gold/30 bg-gold/10">
-            After ✦
-          </span>
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+        style={{ aspectRatio: "3/4" }}
+      >
+        {!refErr ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={getRefImagePath(answers)} alt="추천 스타일" className="h-full w-full object-cover" onError={() => setRefErr(true)} />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-[9px] uppercase tracking-widest text-cream/20">Style Ref</p>
+          </div>
+        )}
+        {/* 하단 레이블 */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
         </div>
-        <div className={`relative aspect-square overflow-hidden rounded-xl border border-gold/20 bg-black/30 transition-all duration-700 ${locked ? "blur-sm" : ""}`}>
-          {!refErr ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={getRefImagePath(answers)} alt="추천 스타일" className="h-full w-full object-cover" onError={() => setRefErr(true)} />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-[9px] uppercase tracking-widest text-cream/20">Style Ref</p>
-            </div>
-          )}
-          {locked && <div className="absolute inset-0 flex items-center justify-center bg-black/50"><span className="text-xl">🔒</span></div>}
-          {/* After 글로우 */}
-          {!locked && <div className="pointer-events-none absolute inset-0 rounded-xl" style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />}
-        </div>
+        {/* 골드 프레임 글로우 */}
+        {!locked && (
+          <div className="pointer-events-none absolute inset-0 rounded-2xl"
+            style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />
+        )}
+        {locked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-gold/40" stroke="currentColor" strokeWidth={1.5}>
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+            </svg>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -242,26 +259,23 @@ function BeforeAfterSection({
 function CareSummary({ answers }: { answers: StyleAnswers }) {
   const care = buildCarePrescription(answers);
 
-  // 핵심 3줄만 선택
   const lines = [
-    care.isSevereDamage
-      ? { icon: "⚠️", text: care.historyNote }
-      : { icon: "💊", text: care.historyNote },
+    care.historyNote,
     answers.q8_density === "thin_density" || answers.q7_thickness === "fine"
-      ? { icon: "💎", text: care.densityNote }
-      : { icon: "🌀", text: care.curlNote },
-    { icon: "🧵", text: care.thicknessNote },
-  ].slice(0, 3);
+      ? care.densityNote
+      : care.curlNote,
+    care.thicknessNote,
+  ];
 
   return (
-    <div className={`space-y-2.5 ${care.isSevereDamage ? "rounded-xl border border-amber-400/20 bg-amber-400/[0.04] p-4" : ""}`}>
+    <div className={`space-y-3 ${care.isSevereDamage ? "rounded-xl border border-gold/15 bg-gold/[0.04] p-4" : ""}`}>
       {care.isSevereDamage && (
-        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">⚠️ 집중 케어 필요</p>
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/70">집중 케어 필요</p>
       )}
-      {lines.map((l, i) => (
-        <div key={i} className="flex items-start gap-2.5">
-          <span className="mt-0.5 flex-none text-sm">{l.icon}</span>
-          <p className="text-sm leading-relaxed text-cream/72">{l.text}</p>
+      {lines.map((text, i) => (
+        <div key={i} className="flex items-start gap-3">
+          <span className="mt-2 h-1 w-1 flex-none rounded-full bg-gold/55" />
+          <p className="text-sm leading-relaxed text-cream/70">{text}</p>
         </div>
       ))}
     </div>
@@ -352,11 +366,10 @@ export default function StyleResultPage() {
           <div className="overflow-hidden rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.07] to-transparent">
             <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
             <div className="px-5 py-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✨ 추천 스타일</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">추천 스타일</p>
               <h2 className="mt-1.5 font-serif text-2xl font-extrabold text-gold-light">
                 {entry.name}
               </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-cream/65">{entry.mood}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {[LENGTH_LABEL[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
                   .filter(Boolean)
@@ -373,25 +386,6 @@ export default function StyleResultPage() {
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4">
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">모발 케어 처방</p>
             <CareSummary answers={answers} />
-          </div>
-
-          {/* 맞춤 제품 */}
-          <div>
-            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">맞춤 제품 처방</p>
-            <a href={product.coupangUrl} target="_blank" rel="noopener noreferrer sponsored"
-              className="group flex items-start gap-4 overflow-hidden rounded-2xl px-5 py-4 font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, #FF7C98, #C084FC)" }}>
-              <span className="flex-none text-2xl">{product.emoji}</span>
-              <div className="flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider opacity-75">{product.category}</p>
-                <p className="mt-0.5 text-sm font-black">{product.name}</p>
-                <p className="text-xs opacity-75">{product.tagline}</p>
-              </div>
-              <span className="flex-none pt-0.5 text-base opacity-65 transition-transform group-hover:translate-x-1">→</span>
-            </a>
-            <p className="mt-1.5 text-center text-[10px] text-cream/18">
-              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받습니다.
-            </p>
           </div>
 
           {/* 저장 + 공유 버튼 */}

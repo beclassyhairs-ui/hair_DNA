@@ -5,7 +5,7 @@
 // STEP 1(1~4) 스타일 결정 → STEP 2(5~8) 모질 파악 → /style/upload
 // ============================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -36,11 +36,17 @@ const slideVariants = {
 
 export default function StyleSurveyPage() {
   const router = useRouter();
-  // ★ 항상 Q1(index 0)부터 시작 — sessionStorage 복원 없음
   const [qIdx,    setQIdx]    = useState(0);
   const [dir,     setDir]     = useState(1);
   const [answers, setAnswers] = useState<StyleAnswers>({});
   const [pending, setPending] = useState(false);
+
+  // ★ Next.js Router Cache 대응: 네비게이션 복원 상태가 남아있어도 항상 Q1부터 강제 시작
+  useEffect(() => {
+    setQIdx(0);
+    setDir(1);
+    setAnswers({});
+  }, []);
 
   const q      = ALL_STYLE_QUESTIONS[qIdx];
   const isLast = qIdx === STYLE_TOTAL - 1;

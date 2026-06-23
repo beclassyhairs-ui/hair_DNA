@@ -53,7 +53,7 @@ function FakeLoadingOverlay({ onDone }: { onDone: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.5 } }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-charcoal px-6 py-14"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#0C0B0A] px-6 py-14"
     >
       {/* 상단 브랜드 */}
       <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-5 py-2 text-sm font-bold tracking-wide text-gold">
