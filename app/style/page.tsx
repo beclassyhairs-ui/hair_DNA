@@ -1,30 +1,37 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { STYLE_ANSWERS_KEY } from "./constants";
+import {
+  STYLE_ANSWERS_KEY,
+  STYLE_GENERATED_KEY,
+  STYLE_PHOTO_KEY,
+  STYLE_UNLOCKED_KEY,
+} from "./constants";
 
 export default function StyleLandingPage() {
-  function clearAndStart() {
-    try { sessionStorage.removeItem(STYLE_ANSWERS_KEY); } catch { /**/ }
-  }
+  // ★ 마운트 시 이전 세션 데이터 전체 초기화 — 어떤 경로로 진입해도 동일 화면 보장
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(STYLE_ANSWERS_KEY);
+      sessionStorage.removeItem(STYLE_PHOTO_KEY);
+      sessionStorage.removeItem(STYLE_GENERATED_KEY);
+      sessionStorage.removeItem(STYLE_UNLOCKED_KEY);
+    } catch { /**/ }
+  }, []);
 
   return (
     <main className="relative flex h-screen flex-col items-center justify-center overflow-hidden bg-[#0C0B0A] px-6 text-cream">
 
       {/* 배경 그리드 */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.025]"
+      <div className="pointer-events-none absolute inset-0 opacity-[0.025]"
         style={{
-          backgroundImage:
-            "linear-gradient(rgba(200,168,107,1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,107,1) 1px,transparent 1px)",
+          backgroundImage: "linear-gradient(rgba(200,168,107,1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,107,1) 1px,transparent 1px)",
           backgroundSize: "52px 52px",
-        }}
-      />
-      <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[36rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.05]"
-        style={{ background: "radial-gradient(circle,rgba(200,168,107,1) 0%,transparent 70%)" }}
-      />
+        }} />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[36rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.05]"
+        style={{ background: "radial-gradient(circle,rgba(200,168,107,1) 0%,transparent 70%)" }} />
 
       <motion.div
         initial={{ opacity: 0, y: 22 }}
@@ -42,41 +49,39 @@ export default function StyleLandingPage() {
         {/* 메인 타이틀 */}
         <h1 className="mt-8 font-serif text-[2rem] font-bold leading-[1.2] tracking-tight text-cream sm:text-4xl">
           AI가 분석해주는<br />
-          <span
-            className="bg-clip-text text-transparent"
-            style={{ backgroundImage: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)" }}
-          >
+          <span className="bg-clip-text text-transparent"
+            style={{ backgroundImage: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)" }}>
             내 인생 헤어스타일
           </span>
         </h1>
 
-        {/* 서브 타이틀 */}
         <p className="mt-4 text-sm leading-relaxed text-cream/50 sm:text-base">
           나의 모질과 희망 스타일을 분석해 최적의 헤어를 처방합니다.
         </p>
 
-        {/* CTA */}
+        {/* CTA 버튼 2개 */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="mt-8 w-full"
+          className="mt-8 w-full space-y-3"
         >
           <Link
             href="/style/survey"
-            onClick={clearAndStart}
             className="flex h-16 w-full items-center justify-center rounded-2xl text-base font-black text-charcoal shadow-[0_8px_30px_rgba(200,168,107,0.38)] transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(200,168,107,0.55)] active:scale-[0.98]"
             style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)" }}
           >
             나의 맞춤 스타일 분석하기 →
           </Link>
-          <p className="mt-2.5 text-center text-[11px] text-cream/25">
+
+          <p className="text-center text-[11px] text-cream/22">
             개인정보 미저장 · 약 2분 소요 · 무료
           </p>
-          {/* 재방문 유저 다이어리 링크 — 메인 버튼과 동일 체급, 투명 배경 */}
+
+          {/* 재방문 다이어리 링크 — 메인 버튼과 동일 체급 */}
           <Link
             href="/my-diary"
-            className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl border border-white/[0.1] bg-transparent text-base font-semibold text-cream/45 underline underline-offset-[5px] transition-all duration-200 hover:border-white/20 hover:text-cream/70 active:scale-[0.98]"
+            className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/[0.1] bg-transparent text-base font-semibold text-cream/45 underline underline-offset-[5px] transition-all duration-200 hover:border-white/20 hover:text-cream/70 active:scale-[0.98]"
           >
             이미 분석받으셨나요? · 내 다이어리 보기
           </Link>

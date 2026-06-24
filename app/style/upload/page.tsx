@@ -282,48 +282,38 @@ export default function StyleUploadPage() {
     return Math.hypot(a.x - b.x, a.y - b.y);
   }
 
+  // ★ 팬(이동) 비활성화 — 핀치 줌만 허용, 이미지 항상 중앙 고정
   function onPointerDown(e: React.PointerEvent) {
     if (!src) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pointers.current.size === 1) {
-      gesture.current.mode = "drag";
-      gesture.current.lastX = e.clientX; gesture.current.lastY = e.clientY;
-    } else if (pointers.current.size === 2) {
+    if (pointers.current.size === 2) {
       const [p1, p2] = Array.from(pointers.current.values());
-      gesture.current.mode = "pinch";
+      gesture.current.mode       = "pinch";
       gesture.current.startDist  = dist(p1, p2);
       gesture.current.startScale = transform.scale;
     }
+    // 단일 터치 드래그(팬) 비활성화
   }
 
   function onPointerMove(e: React.PointerEvent) {
     if (!src || !pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (gesture.current.mode === "drag" && pointers.current.size === 1) {
-      const dx = e.clientX - gesture.current.lastX, dy = e.clientY - gesture.current.lastY;
-      gesture.current.lastX = e.clientX; gesture.current.lastY = e.clientY;
-      setTransform(t => clamp({ ...t, x: t.x + dx, y: t.y + dy }));
-    } else if (gesture.current.mode === "pinch" && pointers.current.size >= 2) {
+    // 줌(핀치)만 처리 — 팬(드래그) 무시
+    if (gesture.current.mode === "pinch" && pointers.current.size >= 2) {
       const [p1, p2] = Array.from(pointers.current.values());
       const d = dist(p1, p2);
       if (gesture.current.startDist > 0) {
         const ratio = d / gesture.current.startDist;
         const next  = Math.min(MAX_SCALE, Math.max(MIN_SCALE, gesture.current.startScale * ratio));
-        setTransform(t => clamp({ ...t, scale: next }));
+        setTransform({ scale: next, x: 0, y: 0 }); // 항상 중앙 고정
       }
     }
   }
 
   function onPointerUp(e: React.PointerEvent) {
     pointers.current.delete(e.pointerId);
-    if (pointers.current.size === 1) {
-      const [p] = Array.from(pointers.current.values());
-      gesture.current.mode = "drag";
-      gesture.current.lastX = p.x; gesture.current.lastY = p.y;
-    } else if (pointers.current.size === 0) {
-      gesture.current.mode = null;
-    }
+    if (pointers.current.size < 2) gesture.current.mode = null;
   }
 
   function onWheel(e: React.WheelEvent) {
@@ -371,6 +361,9 @@ export default function StyleUploadPage() {
   function resetSrc() {
     if (src) URL.revokeObjectURL(src);
     setSrc(null); setNatural(null); setTransform({ scale: 1, x: 0, y: 0 });
+    // 저장 사진도 초기화 → 선택 화면(showChooser)으로 복귀 → 가이드라인 자동 표시
+    setSavedPhoto(null);
+    try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
     pointers.current.clear(); gesture.current.mode = null;
   }
 
@@ -462,7 +455,6 @@ export default function StyleUploadPage() {
         {/* 촬영/갤러리 선택 화면 (사진 없을 때) */}
         {showChooser && (
           <>
-            <FaceGuide />
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
               {/* 카메라 권한 안내 문구 */}
               <p className="mb-1 max-w-xs text-center text-xs leading-relaxed text-cream/50">
@@ -480,11 +472,9 @@ export default function StyleUploadPage() {
           </>
         )}
 
-        {/* 카메라 활성 시 얼굴 가이드 오버레이 */}
-        {camera && <FaceGuide />}
-
-        {/* 캡처 후에도 얼굴 가이드 유지 (위치 확인용) */}
-        {showImageCrop && <FaceGuide />}
+        {/* ★ FaceGuide — 저장사진 미리보기 외 모든 상태에서 항상 표시
+             다시하기 클릭 시에도 showChooser=true로 복귀하므로 자동 유지됨 */}
+        {(camera || showChooser || showImageCrop) && <FaceGuide />}
 
         {/* 전/후면 전환 버튼 (카메라 활성 시만) */}
         {camera && (

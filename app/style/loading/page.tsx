@@ -46,7 +46,7 @@ export default function StyleLoadingPage() {
 
         if (!photo) { router.replace("/style/upload"); return; }
 
-        // Sheets/Blob 저장 — fire-and-forget (결과지 라우팅을 막지 않음)
+        // Sheets/Blob 저장 — fire-and-forget
         void fetch("/api/submit-diagnosis", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -57,19 +57,29 @@ export default function StyleLoadingPage() {
           }),
         });
 
-        // Replicate AI 합성 — 완료까지 대기
-        const res  = await fetch("/api/hair-transform", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ userPhoto: photo, answers }),
-          signal:  AbortSignal.timeout(62_000),
-        });
-        const data = await res.json() as { ok: boolean; imageUrl?: string };
-        if (data.ok && data.imageUrl) {
-          try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-        }
+        // ★ Promise.allSettled — 두 작업을 병렬 실행, 둘 다 끝났을 때만 결과지로 이동
+        // [1] 최소 15초 대기 (광고 노출 + AdSense 수익 보장)
+        // [2] Replicate AI 합성 (62초 타임아웃)
+        // → API가 15초보다 빠르면 15초 채운 뒤 이동, 느리면 API 완료 시 이동
+        await Promise.allSettled([
+          new Promise<void>(resolve => setTimeout(resolve, 15_000)),
+          (async () => {
+            try {
+              const res  = await fetch("/api/hair-transform", {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ userPhoto: photo, answers }),
+                signal:  AbortSignal.timeout(62_000),
+              });
+              const data = await res.json() as { ok: boolean; imageUrl?: string };
+              if (data.ok && data.imageUrl) {
+                try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+              }
+            } catch { /**/ }
+          })(),
+        ]);
       } catch { /**/ } finally {
-        // 성공/실패 무관하게 즉시 결과지로 이동
+        // 15초 + API 모두 완료 → 결과지 이동 (결과지에서 이중 로딩 없음)
         router.push("/style/result");
       }
     }

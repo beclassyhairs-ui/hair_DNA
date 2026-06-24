@@ -203,17 +203,26 @@ function OptionList({
                 </svg>
               )}
             </span>
-            {/* 텍스트 */}
-            <span className="flex flex-1 items-baseline gap-2.5">
-              <span className={`font-semibold leading-tight ${compact ? "text-sm" : "text-base"} ${isSel ? "text-gold-light" : "text-cream/85"}`}>
-                {opt.label}
-              </span>
-              {opt.desc && (
-                <span className={`text-xs ${isSel ? "text-cream/60" : "text-cream/35"}`}>
-                  {opt.desc}
+            {/* 텍스트 — compact(Q1)은 한 줄, 나머지는 flex-col 상하 배치 */}
+            {compact ? (
+              <span className="flex flex-1 items-baseline gap-2">
+                <span className={`text-sm font-semibold leading-tight ${isSel ? "text-gold-light" : "text-cream/85"}`}>
+                  {opt.label}
                 </span>
-              )}
-            </span>
+                {opt.desc && (
+                  <span className={`text-xs ${isSel ? "text-cream/60" : "text-cream/35"}`}>{opt.desc}</span>
+                )}
+              </span>
+            ) : (
+              <span className="flex flex-1 flex-col gap-0.5">
+                <span className={`text-base font-semibold leading-tight ${isSel ? "text-gold-light" : "text-cream/85"}`}>
+                  {opt.label}
+                </span>
+                {opt.desc && (
+                  <span className={`text-xs ${isSel ? "text-cream/60" : "text-cream/35"}`}>{opt.desc}</span>
+                )}
+              </span>
+            )}
           </motion.button>
         );
       })}

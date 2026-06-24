@@ -1,10 +1,29 @@
 "use client";
 
+// ============================================================================
+// 결과지 — 이중 로딩 없음, 세션에서 즉시 렌더링
+// 캡처 방지 + 알림 신청 버튼 + 배열 다이어리 저장
+// ============================================================================
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { KAKAO_LOGGED_IN_KEY, STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
+import {
+  KAKAO_LOGGED_IN_KEY,
+  STYLE_ANSWERS_KEY,
+  STYLE_GENERATED_KEY,
+  STYLE_PHOTO_KEY,
+  STYLE_UNLOCKED_KEY,
+} from "../constants";
+import {
+  getStyleEntry,
+  buildCarePrescription,
+  getStyleProduct,
+  getSecondStyleProduct,
+  buildAIDiagnosisText,
+} from "../recommend";
+import type { StyleAnswers } from "../surveyData";
 
 // ─── 카카오 세션 헬퍼 ─────────────────────────────────────────────────────────
 function isKakaoLoggedIn(): boolean {
@@ -13,15 +32,12 @@ function isKakaoLoggedIn(): boolean {
 function markKakaoLoggedIn() {
   try { localStorage.setItem(KAKAO_LOGGED_IN_KEY, "1"); } catch { /**/ }
 }
-import {
-  getStyleEntry,
-  buildCarePrescription,
-  getStyleProduct,
-  getSecondStyleProduct,
-  buildAIDiagnosisText,
-} from "../recommend";
-// getRefImagePath 의도적 미임포트 — 레퍼런스 이미지는 저작권 보호상 폴백 미사용
-import type { StyleAnswers } from "../surveyData";
+
+// UUID 생성 (저장 시 고유 ID)
+function uid(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 
 // ─── Kakao 타입 ───────────────────────────────────────────────────────────────
 
@@ -75,23 +91,19 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
     if (loading) return;
     setLoading(true);
     await kakaoLogin(() => {
-      markKakaoLoggedIn(); // 로그인 완료 → 세션 플래그 저장
+      markKakaoLoggedIn();
       setLoading(false);
       onUnlock();
     });
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center px-6"
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-40 flex items-center justify-center px-6">
       <div className="absolute inset-0 bg-charcoal/85 backdrop-blur-xl" />
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 280, damping: 24 }}
-        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-gold/25 bg-[#141210]"
-      >
+        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-gold/25 bg-[#141210]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
         <div className="px-7 py-8 text-center">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">A-Beauty</p>
@@ -101,7 +113,7 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
           <button onClick={handleLogin} disabled={loading}
             className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
             {loading
-              ? <><motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block">⏳</motion.span> 로그인 중...</>
+              ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
               : <><span className="text-xl">💬</span> 카카오 1초 로그인하고 결과 확인하기</>}
           </button>
           <p className="mt-2.5 text-[11px] text-cream/25">별도 가입 없이 카카오 계정으로 바로 확인</p>
@@ -111,7 +123,7 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
-// ─── 카카오 저장 → 메인 라우팅 모달 ─────────────────────────────────────────
+// ─── 카카오 저장 → 다이어리 라우팅 모달 ─────────────────────────────────────
 
 function KakaoSaveModal({
   answers, styleName, onClose,
@@ -122,82 +134,69 @@ function KakaoSaveModal({
   function executeSaveAndRoute() {
     try {
       const generatedImageUrl = sessionStorage.getItem(STYLE_GENERATED_KEY) ?? null;
-      localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify({
+      const id = uid();
+      const entry = {
+        id,
         answers,
         styleName,
-        savedAt: Date.now(),
+        savedAt:           Date.now(),
         generatedImageUrl,
-        isSevereDamage: answers.q10_history_count === "count_7plus",
-        isLowDensity:   answers.q8_density === "thin_density",
-        isFineHair:     answers.q7_thickness === "fine",
-        isCurly:        answers.q3_curl === "curly_hair",
-      }));
+        isSevereDamage:    answers.q10_history_count === "count_7plus",
+        isLowDensity:      answers.q8_density === "thin_density",
+        isFineHair:        answers.q7_thickness === "fine",
+        isCurly:           answers.q3_curl === "curly_hair",
+      };
+      // 배열에 누적 저장 (UUID로 중복 방지)
+      let arr: typeof entry[] = [];
+      try {
+        const raw = localStorage.getItem("abeauty:diaryEntries");
+        if (raw) arr = JSON.parse(raw);
+      } catch { /**/ }
+      // 중복 ID 방어
+      arr = arr.filter(e => e.id !== id);
+      arr.unshift(entry);
+      localStorage.setItem("abeauty:diaryEntries", JSON.stringify(arr));
+      // 최신 진단 단일 키도 유지 (하위 호환)
+      localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify(entry));
     } catch { /**/ }
     router.push("/my-diary");
   }
 
   async function handleSaveAndRoute() {
     if (loading) return;
-
-    // ★ 이미 카카오 로그인 완료된 유저 → 모달 없이 즉시 저장/라우팅
-    if (isKakaoLoggedIn()) {
-      executeSaveAndRoute();
-      return;
-    }
-
+    if (isKakaoLoggedIn()) { executeSaveAndRoute(); return; }
     setLoading(true);
-    await kakaoLogin(() => {
-      markKakaoLoggedIn();
-      executeSaveAndRoute();
-    });
+    await kakaoLogin(() => { markKakaoLoggedIn(); executeSaveAndRoute(); });
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      onClick={onClose}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <motion.div
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl border-t border-gold/20 bg-[#141210] px-6 pb-10 pt-5"
-        onClick={(e) => e.stopPropagation()}
-      >
+        onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/20" />
-
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">A-Beauty Diary</p>
-        <h3 className="mt-2 font-serif text-xl font-bold text-cream">
-          내 다이어리에 저장하고 평생 소장하기
-        </h3>
+        <h3 className="mt-2 font-serif text-xl font-bold text-cream">내 다이어리에 저장하고 평생 소장하기</h3>
         <p className="mt-2 text-sm text-cream/45 leading-relaxed">
-          진단 결과를 저장하면 나만의 맞춤 홈케어 제품과<br className="hidden sm:block" />
-          스타일 히스토리가 메인 페이지에서 계속 확인됩니다.
+          진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
         </p>
-
-        {/* 저장 혜택 */}
         <div className="mt-4 space-y-2">
-          {[
-            "맞춤 홈케어 제품 상단 노출 (시술 이력 기반)",
-            "내 헤어 스타일 히스토리 보관",
-            "전문가 케어 처방전 PDF 저장",
-          ].map((b) => (
+          {["맞춤 홈케어 제품 상단 노출 (시술 이력 기반)", "내 헤어 스타일 히스토리 보관", "전문가 케어 처방전 저장"].map(b => (
             <div key={b} className="flex items-center gap-2.5 text-sm text-cream/65">
-              <span className="text-gold text-xs">✦</span>
-              {b}
+              <span className="text-gold text-xs">✦</span>{b}
             </div>
           ))}
         </div>
-
         <button onClick={handleSaveAndRoute} disabled={loading}
           className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
           {loading
-            ? <><motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block">⏳</motion.span> 저장 중...</>
+            ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
             : <><span className="text-xl">💬</span> 카카오 1초 로그인/가입으로 저장하기</>}
         </button>
-        <button onClick={onClose}
-          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-xl text-sm text-cream/40 hover:text-cream/70">
+        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-xl text-sm text-cream/40 hover:text-cream/70">
           나중에 저장하기
         </button>
       </motion.div>
@@ -206,32 +205,26 @@ function KakaoSaveModal({
 }
 
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
-
-// After 섹션 상태 타입
-type AfterState =
-  | { kind: "generating" }           // 폴링 중 (Replicate 처리 중)
-  | { kind: "done"; url: string }    // 생성 완료
-  | { kind: "error" };               // 실패 / 타임아웃
+// ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시
 
 function BeforeAfterSection({
-  photo, locked, afterState, onRetry,
+  photo, locked, generatedUrl, onRetry,
 }: {
-  photo:      string | null;
-  locked:     boolean;
-  afterState: AfterState;
-  onRetry:    () => void;
+  photo:        string | null;
+  locked:       boolean;
+  generatedUrl: string | null;
+  onRetry:      () => void;
 }) {
   return (
     <div className="grid grid-cols-2 gap-3">
-
       {/* BEFORE */}
-      <div
-        className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
-        style={{ aspectRatio: "3/4" }}
-      >
+      <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+        style={{ aspectRatio: "3/4" }}>
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photo} alt="원본 사진" className="h-full w-full object-cover" style={{ objectPosition: "50% 10%" }} />
+          <img src={photo} alt="원본 사진" draggable={false}
+            className="h-full w-full select-none object-cover"
+            style={{ objectPosition: "50% 10%", pointerEvents: "none", WebkitTouchCallout: "none" }} />
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="text-[9px] uppercase tracking-widest text-cream/20">Your Photo</p>
@@ -243,70 +236,43 @@ function BeforeAfterSection({
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/55">
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-cream/40" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+              <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
             </svg>
           </div>
         )}
       </div>
 
-      {/* AFTER — 레퍼런스 이미지 폴백 없음, 생성 실패 시 에러 UI만 표시 */}
-      <div
-        className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
-        style={{ aspectRatio: "3/4" }}
-      >
-        {afterState.kind === "done" ? (
-          // AI 생성 완료 — Replicate 결과물만 표시
+      {/* AFTER */}
+      <div className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+        style={{ aspectRatio: "3/4" }}>
+        {generatedUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={afterState.url} alt="AI 변신 스타일" className="h-full w-full object-cover" />
-
-        ) : afterState.kind === "generating" ? (
-          // 생성 중 — 골드 스피너
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-3">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
-              className="h-8 w-8 rounded-full"
-              style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.9)", borderRightColor: "rgba(200,168,107,0.2)" }}
-            />
-            <p className="text-center text-[10px] font-medium leading-snug text-cream/45">
-              AI 합성 중...
-            </p>
-          </div>
-
+          <img src={generatedUrl} alt="AI 변신 스타일" draggable={false}
+            className="h-full w-full select-none object-cover"
+            style={{ pointerEvents: "none", WebkitTouchCallout: "none" }} />
         ) : (
-          // 생성 실패 — 에러 UI + 다시 시도 버튼 (레퍼런스 이미지 절대 미노출)
           <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
             <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-cream/25" stroke="currentColor" strokeWidth={1.2}>
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v4m0 4h.01" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
             </svg>
-            <p className="text-[11px] leading-snug text-cream/40">
-              AI 합성에<br />실패했어요
-            </p>
-            <button
-              onClick={onRetry}
-              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[11px] font-bold text-gold transition-colors hover:bg-gold/15"
-            >
+            <p className="text-[11px] leading-snug text-cream/40">AI 합성에<br />실패했어요</p>
+            <button onClick={onRetry}
+              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[11px] font-bold text-gold transition-colors hover:bg-gold/15">
               다시 시도
             </button>
           </div>
         )}
-
-        {/* 하단 레이블 */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
         </div>
-        {/* 골드 프레임 글로우 */}
-        {!locked && afterState.kind === "done" && (
+        {!locked && generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
             style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />
         )}
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/55">
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-gold/40" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="5" y="11" width="14" height="10" rx="2" />
-              <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+              <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
             </svg>
           </div>
         )}
@@ -315,24 +281,18 @@ function BeforeAfterSection({
   );
 }
 
-// ─── 케어 요약 3줄 ────────────────────────────────────────────────────────────
+// ─── 케어 요약 ────────────────────────────────────────────────────────────────
 
 function CareSummary({ answers }: { answers: StyleAnswers }) {
   const care = buildCarePrescription(answers);
-
   const lines = [
     care.historyNote,
-    answers.q8_density === "thin_density" || answers.q7_thickness === "fine"
-      ? care.densityNote
-      : care.curlNote,
+    answers.q8_density === "thin_density" || answers.q7_thickness === "fine" ? care.densityNote : care.curlNote,
     care.thicknessNote,
   ];
-
   return (
     <div className={`space-y-3 ${care.isSevereDamage ? "rounded-xl border border-gold/15 bg-gold/[0.04] p-4" : ""}`}>
-      {care.isSevereDamage && (
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/70">집중 케어 필요</p>
-      )}
+      {care.isSevereDamage && <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/70">집중 케어 필요</p>}
       {lines.map((text, i) => (
         <div key={i} className="flex items-start gap-3">
           <span className="mt-2 h-1 w-1 flex-none rounded-full bg-gold/55" />
@@ -343,25 +303,69 @@ function CareSummary({ answers }: { answers: StyleAnswers }) {
   );
 }
 
-// ============================================================================
-// 메인 결과 페이지
-// ============================================================================
+// ─── 알림 신청 버튼 (하단 고정 CTA 교체) ──────────────────────────────────────
 
-// 최대 폴링 시간 (Replicate가 13초 로딩 이후에도 처리 중일 수 있음)
-const POLL_INTERVAL_MS = 1_500;
-const POLL_MAX_ATTEMPTS = 30; // 최대 45초 (30 × 1.5s)
+type NotifyState = "idle" | "loading" | "done";
+
+function NotifyButton() {
+  const [state, setState] = useState<NotifyState>("idle");
+
+  async function handleNotify() {
+    if (state !== "idle") return;
+    setState("loading");
+    try {
+      localStorage.setItem("abeauty:notifyConsent", JSON.stringify({ ts: Date.now(), src: "result" }));
+      void fetch("/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ event: "notify_consent" }),
+      });
+      await new Promise(r => setTimeout(r, 700));
+      setState("done");
+    } catch { setState("done"); }
+  }
+
+  if (state === "done") {
+    return (
+      <div className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-gold/30 bg-gold/[0.1] text-base font-semibold text-gold-light">
+        ✓ 알림 신청이 완료되었습니다!
+      </div>
+    );
+  }
+  return (
+    <button onClick={handleNotify} disabled={state === "loading"}
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-60">
+      {state === "loading"
+        ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block">⏳</motion.span>
+        : "🔔 새로운 AI 분석 서비스 오픈 알림 받기"}
+    </button>
+  );
+}
+
+// ============================================================================
+// 메인 결과 페이지 — 폴링 없음, sessionStorage 즉시 읽기
+// ============================================================================
 
 export default function StyleResultPage() {
   const router = useRouter();
 
-  const [photo,      setPhoto]      = useState<string | null>(null);
-  const [afterState, setAfterState] = useState<AfterState>({ kind: "generating" });
-  const [answers,    setAnswers]    = useState<StyleAnswers>({});
-  const [locked,     setLocked]     = useState(true);
-  const [ready,      setReady]      = useState(false);
-  const [showSave,   setShowSave]   = useState(false);
+  const [photo,     setPhoto]     = useState<string | null>(null);
+  const [generated, setGenerated] = useState<string | null>(null);
+  const [answers,   setAnswers]   = useState<StyleAnswers>({});
+  const [locked,    setLocked]    = useState(true);
+  const [ready,     setReady]     = useState(false);
+  const [showSave,  setShowSave]  = useState(false);
 
-  // ─── 초기 데이터 로드 ──────────────────────────────────────────────────────
+  // 캡처 방지 viewport 설정
+  useEffect(() => {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
+    return () => {
+      if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1.0");
+    };
+  }, []);
+
+  // 세션 데이터 즉시 로드 (폴링 없음)
   useEffect(() => {
     try {
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
@@ -369,40 +373,11 @@ export default function StyleResultPage() {
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) setAnswers(JSON.parse(a) as StyleAnswers);
       if (sessionStorage.getItem(STYLE_UNLOCKED_KEY) === "1") setLocked(false);
+      // ★ AI 이미지 — 한 번만 읽기, 폴링 없음 (loading 페이지가 완성 후 넘겨줌)
+      const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
+      if (g) setGenerated(g);
     } catch { /**/ }
     setReady(true);
-  }, []);
-
-  // ─── Replicate 결과 폴링 ─────────────────────────────────────────────────
-  // 로딩 13초 이후 페이지 진입 시점에도 아직 처리 중일 수 있음 → 최대 45초 폴링
-  // 성공: afterState = { kind: "done", url }
-  // 실패/타임아웃: afterState = { kind: "error" } — 레퍼런스 이미지 절대 미노출
-  useEffect(() => {
-    // 즉시 확인
-    try {
-      const cached = sessionStorage.getItem(STYLE_GENERATED_KEY);
-      if (cached) { setAfterState({ kind: "done", url: cached }); return; }
-    } catch { /**/ }
-
-    // sessionStorage에 없으면 폴링 시작
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts += 1;
-      try {
-        const url = sessionStorage.getItem(STYLE_GENERATED_KEY);
-        if (url) {
-          clearInterval(timer);
-          setAfterState({ kind: "done", url });
-          return;
-        }
-      } catch { /**/ }
-      if (attempts >= POLL_MAX_ATTEMPTS) {
-        clearInterval(timer);
-        setAfterState({ kind: "error" });
-      }
-    }, POLL_INTERVAL_MS);
-
-    return () => clearInterval(timer);
   }, []);
 
   function handleUnlock() {
@@ -410,106 +385,78 @@ export default function StyleResultPage() {
     setLocked(false);
   }
 
-  function handleRetryGenerate() {
-    // 세션 초기화 후 업로드 페이지로 이동 → 재촬영/재생성
+  function handleRetry() {
     try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
     router.push("/style/upload");
   }
 
-  if (!ready) return (
-    <main className="flex min-h-screen items-center justify-center bg-charcoal">
-      <p className="text-cream/40">결과를 불러오는 중...</p>
-    </main>
-  );
+  if (!ready) return <main className="min-h-screen bg-charcoal" />;
 
-  const entry      = getStyleEntry(answers);
-  const product    = getStyleProduct(answers);
-  const product2   = getSecondStyleProduct(answers);
-  const diagnosis  = buildAIDiagnosisText(answers);
+  const entry     = getStyleEntry(answers);
+  const product   = getStyleProduct(answers);
+  const product2  = getSecondStyleProduct(answers);
+  const diagnosis = buildAIDiagnosisText(answers);
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "일자", medium: "소프트", light: "허쉬컷" };
   const LENGTH_LABEL: Record<string, string> = { short: "숏", bob: "숏단발", shoulder: "단발", collarbone: "중단발", chest: "긴머리" };
 
   return (
-    <main className="min-h-screen bg-charcoal text-cream">
+    <main className="min-h-screen bg-charcoal text-cream" style={{ touchAction: "pan-y" }}>
 
-      {/* 결과 잠금 모달 */}
       <AnimatePresence>{locked && <KakaoLockModal onUnlock={handleUnlock} />}</AnimatePresence>
-
-      {/* 저장 바텀시트 */}
       <AnimatePresence>
-        {showSave && (
-          <KakaoSaveModal
-            answers={answers}
-            styleName={entry.name}
-            onClose={() => setShowSave(false)}
-          />
-        )}
+        {showSave && <KakaoSaveModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
       </AnimatePresence>
 
       <div className="mx-auto max-w-lg px-4 py-6 pb-32 sm:px-6">
 
         {/* 헤더 */}
         <div className="flex items-center justify-between pb-4">
-          <Link href="/style/upload"
-            className="flex items-center gap-1 text-sm font-medium text-cream/40 hover:text-cream transition-colors">
+          <Link href="/style/upload" className="flex items-center gap-1 text-sm font-medium text-cream/40 hover:text-cream transition-colors">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             다시 찍기
           </Link>
           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">스타일 결과지</span>
-          <Link href="/style" className="text-sm font-medium text-cream/40 hover:text-cream transition-colors">
-            처음부터
-          </Link>
+          <Link href="/style" className="text-sm font-medium text-cream/40 hover:text-cream transition-colors">처음부터</Link>
         </div>
 
-        {/* Before / After — 레퍼런스 이미지 폴백 없음, 에러 시 retry UI */}
-        <BeforeAfterSection
-          photo={photo}
-          locked={locked}
-          afterState={afterState}
-          onRetry={handleRetryGenerate}
-        />
+        {/* Before / After — 세션 즉시 렌더 */}
+        <BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} onRetry={handleRetry} />
 
-        {/* 스크롤 유도 bounce 화살표 */}
-        <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
-          <motion.div
-            animate={{ y: [0, 7, 0] }}
-            transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gold/55" stroke="currentColor" strokeWidth={2}>
+        {/* 스크롤 유도 — 강조 텍스트 */}
+        <div className="mt-4 flex flex-col items-center gap-2 text-center">
+          <motion.div animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}>
+            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-gold/60" stroke="currentColor" strokeWidth={2}>
               <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </motion.div>
-          <p className="text-xs text-cream/35">아래로 내려서 AI 맞춤 처방과 제품을 확인하세요</p>
+          <p className="text-base font-medium text-cream/55">
+            아래로 내려서 AI 맞춤 처방을 확인하세요 ⬇️
+          </p>
         </div>
 
-        {/* 콘텐츠 (잠금 시 블러) */}
+        {/* 잠금 시 블러 */}
         <div className={`mt-5 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
 
-          {/* 추천 스타일 카드 */}
+          {/* 추천 스타일 */}
           <div className="overflow-hidden rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.07] to-transparent">
             <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
             <div className="px-5 py-4">
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">추천 스타일</p>
-              <h2 className="mt-1.5 font-serif text-2xl font-extrabold text-gold-light">
-                {entry.name}
-              </h2>
+              <h2 className="mt-1.5 font-serif text-2xl font-extrabold text-gold-light">{entry.name}</h2>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {[LENGTH_LABEL[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
-                  .filter(Boolean)
-                  .map((tag) => (
-                    <span key={tag} className="rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-0.5 text-xs font-semibold text-gold-light">
-                      {tag}
-                    </span>
+                  .filter(Boolean).map(tag => (
+                    <span key={tag} className="rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-0.5 text-xs font-semibold text-gold-light">{tag}</span>
                   ))}
               </div>
             </div>
           </div>
 
-          {/* 케어 처방 3줄 요약 */}
+          {/* 케어 처방 */}
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4">
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">모발 케어 처방</p>
             <CareSummary answers={answers} />
@@ -517,38 +464,27 @@ export default function StyleResultPage() {
 
           {/* AI 진단 소견 */}
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              전문가 AI 진단 소견
-            </p>
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">전문가 AI 진단 소견</p>
             <p className="text-sm leading-relaxed text-cream/70">{diagnosis}</p>
           </div>
 
-          {/* 맞춤 제품 카드 2개 */}
+          {/* 맞춤 제품 2개 */}
           <div>
-            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              맞춤 추천 제품
-            </p>
+            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">맞춤 추천 제품</p>
             <div className="space-y-2.5">
               {[product, product2].map((p, i) => (
                 <div key={i} className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-                  {/* 제품 이미지 영역 */}
                   <div className="flex h-[72px] items-center justify-center border-b border-white/[0.05] bg-gradient-to-r from-gold/[0.05] to-transparent">
                     <span className="text-3xl">{p.emoji}</span>
                   </div>
-                  {/* 제품 정보 */}
                   <div className="px-4 py-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-gold/60">{p.category}</p>
                     <p className="mt-0.5 text-sm font-bold text-cream/85">{p.name}</p>
                     <p className="mt-0.5 text-xs text-cream/45">{p.tagline}</p>
                   </div>
-                  {/* CTA */}
                   <div className="px-4 pb-4">
-                    <a
-                      href={p.coupangUrl}
-                      target="_blank"
-                      rel="noopener noreferrer sponsored"
-                      className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-xs font-bold text-charcoal transition-all hover:brightness-105 active:scale-[0.98]"
-                    >
+                    <a href={p.coupangUrl} target="_blank" rel="noopener noreferrer sponsored"
+                      className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-xs font-bold text-charcoal transition-all hover:brightness-105 active:scale-[0.98]">
                       나의 맞춤 제품 구매하러 가기 →
                     </a>
                   </div>
@@ -560,16 +496,12 @@ export default function StyleResultPage() {
             </p>
           </div>
 
-          {/* 저장 + 공유 버튼 */}
+          {/* 저장 + 공유 */}
           <div className="space-y-2.5 pt-2">
-            {/* 저장 → 카카오 로그인 → 메인 라우팅 */}
-            <button
-              onClick={() => setShowSave(true)}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/[0.08] text-base font-bold text-gold-light transition-all hover:bg-gold/15 active:scale-[0.98]"
-            >
+            <button onClick={() => setShowSave(true)}
+              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/[0.08] text-base font-bold text-gold-light transition-all hover:bg-gold/15 active:scale-[0.98]">
               🤍 내 다이어리에 저장하고 평생 소장하기
             </button>
-
             <div className="flex gap-2.5">
               <Link href="/style/survey"
                 className="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/12 text-sm font-medium text-cream/50 transition-all hover:border-white/25 hover:text-cream">
@@ -586,26 +518,20 @@ export default function StyleResultPage() {
               </button>
             </div>
           </div>
-
         </div>
       </div>
 
-      {/* 하단 고정 CTA */}
+      {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-charcoal/95 px-4 py-4 backdrop-blur-md">
         <div className="mx-auto max-w-lg">
           {locked ? (
             <button
               className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] hover:brightness-95 active:scale-[0.98]"
-              onClick={() => {/* 모달은 자동 표시 중 */}}
-            >
+              onClick={() => {/* 모달 자동 표시 */}}>
               <span className="text-lg">💬</span> 카카오 로그인하고 결과 보기
             </button>
           ) : (
-            <a href={product.coupangUrl} target="_blank" rel="noopener noreferrer sponsored"
-              className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)" }}>
-              맞춤 제품 확인하기 →
-            </a>
+            <NotifyButton />
           )}
         </div>
       </div>
