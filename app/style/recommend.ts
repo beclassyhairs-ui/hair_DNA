@@ -192,6 +192,79 @@ export function getStyleProduct(answers: StyleAnswers): StyleProduct {
   };
 }
 
+// ─── 두 번째 보완 제품 ────────────────────────────────────────────────────────
+
+export function getSecondStyleProduct(answers: StyleAnswers): StyleProduct {
+  if (answers.q10_history_count === "count_7plus") {
+    return {
+      emoji: "💎", category: "손상 복구",
+      name: "어뷰티 딥 리페어 트리트먼트",
+      tagline: "극손상 모발 집중 단백질 복구 마스크",
+      coupangUrl: "https://link.coupang.com/a/eEnDYZ4YEe",
+    };
+  }
+  if (answers.q7_thickness === "fine" || answers.q8_density === "thin_density") {
+    return {
+      emoji: "🌿", category: "두피 강화",
+      name: "어뷰티 스칼프 볼류마이저 샴푸",
+      tagline: "모근부터 풍성하게, 탈모 예방 강화 루틴",
+      coupangUrl: "https://link.coupang.com/a/eEoal2SxC8",
+    };
+  }
+  if (answers.q3_curl === "curly_hair" || answers.q3_curl === "wavy_hair") {
+    return {
+      emoji: "💧", category: "수분 집중",
+      name: "어뷰티 모이스처 인텐시브 마스크",
+      tagline: "곱슬 모발 24시간 수분 잠금 팩",
+      coupangUrl: "https://link.coupang.com/a/eEn6wxl4Oy",
+    };
+  }
+  return {
+    emoji: "🌟", category: "두피 토닉",
+    name: "어뷰티 스칼프 클렌징 에센스",
+    tagline: "두피 건강부터 챙기는 데일리 두피 케어",
+    coupangUrl: "https://link.coupang.com/a/eEnlw9bAnQ",
+  };
+}
+
+// ─── AI 진단 소견 텍스트 ──────────────────────────────────────────────────────
+
+export function buildAIDiagnosisText(answers: StyleAnswers): string {
+  const isSevere = answers.q10_history_count === "count_7plus";
+  const isFine   = answers.q7_thickness === "fine";
+  const isThin   = answers.q8_density   === "thin_density";
+  const isCurly  = answers.q3_curl === "curly_hair";
+  const isWavy   = answers.q3_curl === "wavy_hair";
+  const isCoarse = answers.q7_thickness === "coarse";
+  const isDense  = answers.q8_density   === "thick_density";
+
+  if (isSevere && (isFine || isThin)) {
+    return "잦은 새치 염색으로 인한 극손상·가는 모발입니다. 단백질 케어와 약산성 홈케어가 시급합니다.";
+  }
+  if (isSevere) {
+    return "잦은 시술로 인한 손상 모발입니다. 두피 진정 + 손상 복구 이중 케어가 필요합니다.";
+  }
+  if (isFine && isThin) {
+    return "가늘고 숱 없는 극세·박모입니다. 볼륨 에센스와 모근 강화 루틴이 효과적입니다.";
+  }
+  if (isFine) {
+    return "얇고 가는 세모질입니다. 저자극 샴푸와 단백질 트리트먼트로 탄력을 살려주세요.";
+  }
+  if (isThin) {
+    return "숱이 적은 박모 타입입니다. 볼류마이징 루틴과 두피 케어를 병행하세요.";
+  }
+  if (isCurly) {
+    return "곱슬이 강한 모발입니다. 수분 공급이 핵심이며 컬 크림으로 결을 정돈하세요.";
+  }
+  if (isWavy) {
+    return "반곱슬 모발로 날씨 따라 부스스해지기 쉽습니다. 촉촉한 크림 제품으로 마무리하세요.";
+  }
+  if (isCoarse && isDense) {
+    return "굵고 숱 많은 건강한 모발입니다. 가볍게 틴닝해 스타일 유지력을 높이세요.";
+  }
+  return "균형 잡힌 정상 모질입니다. 지금의 케어 루틴을 꾸준히 유지하면 충분합니다.";
+}
+
 // ─── 구글 시트 제출용 answers 변환 ───────────────────────────────────────────
 
 export function toSheetAnswers(answers: StyleAnswers): Record<string, string | string[]> {

@@ -78,63 +78,62 @@ export default function StyleLoadingPage() {
   }, [router]);
 
   return (
-    <main className="flex h-[100dvh] flex-col items-center justify-between overflow-hidden bg-[#0C0B0A] px-6 py-14 text-cream">
+    <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#0C0B0A] text-cream">
 
-      {/* 브랜드 배지 */}
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-5 py-2 text-sm font-bold tracking-wide text-gold">
-        ✦ 어뷰티 AI 스타일 합성 중
-      </span>
+      {/* ── 상단 40% — 브랜드 배지 + 스피너 + 텍스트 ── */}
+      <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
+        style={{ flex: "0 0 40%" }}>
 
-      {/* 스피너 + 텍스트 */}
-      <div className="flex flex-col items-center gap-8 text-center">
-        {/* 골드 링 스피너 */}
-        <div className="relative flex h-32 w-32 items-center justify-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-4 py-1.5 text-xs font-bold tracking-wide text-gold">
+          ✦ AI 스타일 합성 중
+        </span>
+
+        {/* 소형 골드 링 스피너 */}
+        <div className="relative flex h-20 w-20 items-center justify-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
             className="absolute inset-0 rounded-full"
-            style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }}
-          />
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-5 rounded-full"
-            style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }}
-          />
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
+            style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.2)" }} />
+          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-4 rounded-full"
+            style={{ border: "1.5px solid transparent", borderTopColor: "rgba(200,168,107,0.5)", borderLeftColor: "rgba(200,168,107,0.15)" }} />
+          <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            className="h-2.5 w-2.5 rounded-full bg-gold"
-          />
+            className="h-2 w-2 rounded-full bg-gold" />
         </div>
 
         <AnimatePresence mode="wait">
           <motion.p
             key={stepIdx}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.4 }}
-            className="max-w-xs text-center text-base font-medium leading-relaxed text-cream sm:text-lg"
+            className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-cream/75"
           >
             {STEPS[stepIdx]}
           </motion.p>
         </AnimatePresence>
       </div>
 
-      {/* 구글 AdSense 플레이스홀더 */}
-      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025]">
-        <div className="border-b border-white/[0.05] px-4 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/35">
-            Sponsored · A-Beauty
-          </p>
-        </div>
-        <div className="flex min-h-[90px] items-center justify-center px-5 py-6 text-center">
-          <div>
-            <p className="text-sm leading-relaxed text-cream/22">
+      {/* ── 하단 60% — 구글 AdSense 전면 광고 영역 (300×250 이상) ── */}
+      <div className="flex flex-1 flex-col items-center justify-center px-5 pb-8">
+        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]"
+          style={{ minHeight: "300px" }}>
+          <div className="border-b border-white/[0.05] px-4 py-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/35">
+              Sponsored · A-Beauty
+            </p>
+          </div>
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-8 text-center">
+            <div className="mb-3 h-8 w-8 rounded-full border border-gold/20 bg-gold/[0.06] flex items-center justify-center">
+              <span className="text-gold/50 text-sm">A</span>
+            </div>
+            <p className="text-sm font-medium text-cream/22">
               맞춤형 뷰티 정보가 준비 중입니다
             </p>
-            <p className="mt-1 text-[10px] text-cream/12">(Google Ads Area)</p>
+            <p className="mt-2 text-[11px] text-cream/12">
+              Google Ads 300×250 영역
+            </p>
           </div>
         </div>
       </div>

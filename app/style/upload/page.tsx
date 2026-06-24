@@ -53,14 +53,14 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
   return (
     <main className="flex h-[100dvh] flex-col bg-[#0C0B0A] text-cream">
 
-      {/* 스크롤 가능한 가이드 영역 */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-sm px-4 pt-6">
+      {/* 가이드 이미지 — 중앙 정렬 */}
+      <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
+        <div className="w-full max-w-sm">
           <div className="overflow-hidden rounded-2xl border border-gold/20">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={guideImg.src} alt="촬영 가이드" className="h-auto w-full" />
           </div>
-          <p className="mt-4 px-2 text-center text-sm text-cream/40">
+          <p className="mt-3 px-2 text-center text-sm text-cream/40">
             정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
           </p>
         </div>
@@ -132,11 +132,11 @@ export default function StyleUploadPage() {
   const [natural,    setNatural]    = useState<{ w: number; h: number } | null>(null);
   const [savedPhoto, setSavedPhoto] = useState<string | null>(null);
   const [transform,  setTransform]  = useState<Transform>({ scale: 1, x: 0, y: 0 });
-  const [busy,       setBusy]       = useState(false);
-  const [camera,     setCamera]     = useState(false);
-  const [camError,   setCamError]   = useState<string | null>(null);
-  // [요구사항 2] 셔터 플래시 상태
-  const [flash,      setFlash]      = useState(false);
+  const [busy,        setBusy]        = useState(false);
+  const [camera,      setCamera]      = useState(false);
+  const [camError,    setCamError]    = useState<string | null>(null);
+  const [flash,       setFlash]       = useState(false);
+  const [facingMode,  setFacingMode]  = useState<"user" | "environment">("user");
 
   const frameRef     = useRef<HTMLDivElement>(null);
   const imgElRef     = useRef<HTMLImageElement>(null);
@@ -173,24 +173,33 @@ export default function StyleUploadPage() {
     setCamera(false);
   }, []);
 
-  async function startCamera() {
+  async function startCamera(mode: "user" | "environment" = facingMode) {
     setCamError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       setCamError("이 브라우저에서는 카메라를 사용할 수 없어요. 갤러리에서 선택해 주세요.");
       return;
     }
     try {
+      // 기존 스트림 정리
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: { facingMode: mode, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       if (src) { URL.revokeObjectURL(src); setSrc(null); setNatural(null); }
       streamRef.current = stream;
       setSavedPhoto(null);
+      setFacingMode(mode);
       setCamera(true);
     } catch {
       setCamError("카메라 접근이 거부됐어요. 권한을 허용하거나 갤러리에서 선택해 주세요.");
     }
+  }
+
+  async function toggleFacing() {
+    const next = facingMode === "user" ? "environment" : "user";
+    await startCamera(next);
   }
 
   function capturePhoto() {
@@ -415,10 +424,10 @@ export default function StyleUploadPage() {
         onPointerCancel={onPointerUp}
         onWheel={onWheel}
       >
-        {/* 카메라 피드 — object-cover로 영역 꽉 채움 */}
+        {/* 카메라 피드 — 전면 미러, 후면 정방향 */}
         {camera && (
           <video ref={videoRef} playsInline muted autoPlay
-            className="absolute inset-0 h-full w-full -scale-x-100 object-cover" />
+            className={`absolute inset-0 h-full w-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""}`} />
         )}
 
         {/* 촬영/업로드 이미지 (드래그+줌 크롭 모드) */}
@@ -455,7 +464,11 @@ export default function StyleUploadPage() {
           <>
             <FaceGuide />
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
-              <button onClick={startCamera}
+              {/* 카메라 권한 안내 문구 */}
+              <p className="mb-1 max-w-xs text-center text-xs leading-relaxed text-cream/50">
+                💡 정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
+              </p>
+              <button onClick={() => startCamera("user")}
                 className="flex w-56 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold to-gold-dark py-3.5 text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]">
                 카메라로 촬영
               </button>
@@ -469,6 +482,23 @@ export default function StyleUploadPage() {
 
         {/* 카메라 활성 시 얼굴 가이드 오버레이 */}
         {camera && <FaceGuide />}
+
+        {/* 캡처 후에도 얼굴 가이드 유지 (위치 확인용) */}
+        {showImageCrop && <FaceGuide />}
+
+        {/* 전/후면 전환 버튼 (카메라 활성 시만) */}
+        {camera && (
+          <button
+            onClick={toggleFacing}
+            className="absolute right-3 top-3 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition-colors hover:bg-black/75 active:scale-95"
+            aria-label="카메라 전환"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth={1.8}>
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
 
         {/* 카메라 오류 토스트 */}
         {camError && (

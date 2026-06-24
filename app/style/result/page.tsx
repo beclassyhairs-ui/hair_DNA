@@ -9,6 +9,8 @@ import {
   getStyleEntry,
   buildCarePrescription,
   getStyleProduct,
+  getSecondStyleProduct,
+  buildAIDiagnosisText,
 } from "../recommend";
 // getRefImagePath 의도적 미임포트 — 레퍼런스 이미지는 저작권 보호상 폴백 미사용
 import type { StyleAnswers } from "../surveyData";
@@ -400,8 +402,10 @@ export default function StyleResultPage() {
     </main>
   );
 
-  const entry   = getStyleEntry(answers);
-  const product = getStyleProduct(answers);
+  const entry      = getStyleEntry(answers);
+  const product    = getStyleProduct(answers);
+  const product2   = getSecondStyleProduct(answers);
+  const diagnosis  = buildAIDiagnosisText(answers);
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "일자", medium: "소프트", light: "허쉬컷" };
@@ -449,6 +453,19 @@ export default function StyleResultPage() {
           onRetry={handleRetryGenerate}
         />
 
+        {/* 스크롤 유도 bounce 화살표 */}
+        <div className="mt-4 flex flex-col items-center gap-1.5 text-center">
+          <motion.div
+            animate={{ y: [0, 7, 0] }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 text-gold/55" stroke="currentColor" strokeWidth={2}>
+              <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </motion.div>
+          <p className="text-xs text-cream/35">아래로 내려서 AI 맞춤 처방과 제품을 확인하세요</p>
+        </div>
+
         {/* 콘텐츠 (잠금 시 블러) */}
         <div className={`mt-5 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
 
@@ -476,6 +493,51 @@ export default function StyleResultPage() {
           <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4">
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">모발 케어 처방</p>
             <CareSummary answers={answers} />
+          </div>
+
+          {/* AI 진단 소견 */}
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
+              전문가 AI 진단 소견
+            </p>
+            <p className="text-sm leading-relaxed text-cream/70">{diagnosis}</p>
+          </div>
+
+          {/* 맞춤 제품 카드 2개 */}
+          <div>
+            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
+              맞춤 추천 제품
+            </p>
+            <div className="space-y-2.5">
+              {[product, product2].map((p, i) => (
+                <div key={i} className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+                  {/* 제품 이미지 영역 */}
+                  <div className="flex h-[72px] items-center justify-center border-b border-white/[0.05] bg-gradient-to-r from-gold/[0.05] to-transparent">
+                    <span className="text-3xl">{p.emoji}</span>
+                  </div>
+                  {/* 제품 정보 */}
+                  <div className="px-4 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-gold/60">{p.category}</p>
+                    <p className="mt-0.5 text-sm font-bold text-cream/85">{p.name}</p>
+                    <p className="mt-0.5 text-xs text-cream/45">{p.tagline}</p>
+                  </div>
+                  {/* CTA */}
+                  <div className="px-4 pb-4">
+                    <a
+                      href={p.coupangUrl}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-xs font-bold text-charcoal transition-all hover:brightness-105 active:scale-[0.98]"
+                    >
+                      쿠팡에서 최저가 확인하기 →
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-1.5 text-center text-[10px] text-cream/18">
+              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받습니다.
+            </p>
           </div>
 
           {/* 저장 + 공유 버튼 */}
