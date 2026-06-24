@@ -117,10 +117,10 @@ export default function StyleSurveyPage() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-1 flex-col py-4"
+            className="flex flex-1 flex-col py-7"
           >
             {/* 질문 헤더 */}
-            <div className="mb-4">
+            <div className="mb-6">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-gold">
                 Q{q.no}
               </p>
@@ -132,8 +132,8 @@ export default function StyleSurveyPage() {
               )}
             </div>
 
-            {/* 선택지 */}
-            <OptionList q={q} selected={answers[q.id]} onSelect={handleSelect} pending={pending} />
+            {/* 선택지 — Q1(연령대)만 compact, Q2~Q8 풀사이즈 */}
+            <OptionList q={q} selected={answers[q.id]} onSelect={handleSelect} pending={pending} compact={qIdx === 0} />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -164,15 +164,16 @@ export default function StyleSurveyPage() {
 // ─── 선택지 목록 ──────────────────────────────────────────────────────────────
 
 function OptionList({
-  q, selected, onSelect, pending,
+  q, selected, onSelect, pending, compact = false,
 }: {
   q: StyleQuestion;
   selected: string | undefined;
   onSelect: (id: string) => void;
   pending: boolean;
+  compact?: boolean; // true = Q1(연령대) 전용 축소 모드
 }) {
   return (
-    <div className="space-y-2">
+    <div className={compact ? "space-y-2" : "space-y-2.5"}>
       {q.options.map((opt) => {
         const isSel = selected === opt.id;
         return (
@@ -181,26 +182,30 @@ function OptionList({
             type="button"
             onClick={() => !pending && onSelect(opt.id)}
             whileTap={{ scale: 0.985 }}
-            className={`flex h-12 w-full items-center gap-3.5 rounded-xl border-2 px-4 text-left transition-all duration-200 ${
+            className={`flex w-full items-center text-left transition-all duration-200 ${
+              compact
+                ? "h-12 gap-3.5 rounded-xl border-2 px-4"
+                : "h-14 gap-4 rounded-xl border-2 px-5"
+            } ${
               isSel
-                ? "border-gold bg-gold/[0.1] shadow-[0_2px_14px_rgba(200,168,107,0.2)]"
+                ? "border-gold bg-gold/[0.1] shadow-[0_2px_18px_rgba(200,168,107,0.2)]"
                 : "border-white/[0.1] bg-white/[0.03] hover:border-gold/40 hover:bg-white/[0.06]"
             }`}
           >
             {/* 라디오 */}
-            <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
-              isSel ? "border-gold bg-gold" : "border-white/25"
-            }`}>
+            <span className={`flex flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
+              compact ? "h-5 w-5" : "h-6 w-6"
+            } ${isSel ? "border-gold bg-gold" : "border-white/25"}`}>
               {isSel && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3 text-charcoal">
+                <svg viewBox="0 0 24 24" fill="none" className={compact ? "h-3 w-3 text-charcoal" : "h-3.5 w-3.5 text-charcoal"}>
                   <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3"
                     strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </span>
             {/* 텍스트 */}
-            <span className="flex flex-1 items-baseline gap-2">
-              <span className={`text-sm font-semibold leading-tight ${isSel ? "text-gold-light" : "text-cream/85"}`}>
+            <span className="flex flex-1 items-baseline gap-2.5">
+              <span className={`font-semibold leading-tight ${compact ? "text-sm" : "text-base"} ${isSel ? "text-gold-light" : "text-cream/85"}`}>
                 {opt.label}
               </span>
               {opt.desc && (

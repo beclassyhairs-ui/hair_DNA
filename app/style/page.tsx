@@ -73,16 +73,13 @@ export default function StyleLandingPage() {
           <p className="mt-2.5 text-center text-[11px] text-cream/25">
             개인정보 미저장 · 약 2분 소요 · 무료
           </p>
-          {/* 재방문 유저 다이어리 링크 — 메인 버튼보다 톤다운 */}
-          <p className="mt-3 text-center text-sm text-cream/30">
-            이미 분석을 받으셨나요?{" "}
-            <Link
-              href="/my-diary"
-              className="text-gold/55 underline underline-offset-4 transition-colors hover:text-gold/80"
-            >
-              내 다이어리 보기
-            </Link>
-          </p>
+          {/* 재방문 유저 다이어리 링크 — 메인 버튼과 동일 체급, 투명 배경 */}
+          <Link
+            href="/my-diary"
+            className="mt-3 flex h-14 w-full items-center justify-center rounded-2xl border border-white/[0.1] bg-transparent text-base font-semibold text-cream/45 underline underline-offset-[5px] transition-all duration-200 hover:border-white/20 hover:text-cream/70 active:scale-[0.98]"
+          >
+            이미 분석받으셨나요? · 내 다이어리 보기
+          </Link>
         </motion.div>
       </motion.div>
     </main>

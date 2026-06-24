@@ -2,14 +2,12 @@
 
 // ============================================================================
 // /my-diary — 내 헤어 다이어리
-// 저장된 변신 결과(Before/After) + 8문항 분석 데이터 + 케어 메모
-// 추후 맞춤 커머스 제품 리스트 추가 예정
+// 저장된 변신 결과(Before/After) + 8문항 분석 데이터 + 케어 알림
 // ============================================================================
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { STYLE_PHOTO_KEY } from "@/app/style/constants";
 
 // ─── 8문항 레이블 매핑 ───────────────────────────────────────────────────────
 
@@ -53,7 +51,7 @@ interface SavedDiagnosis {
   isCurly:           boolean;
 }
 
-// ─── 컴포넌트 ─────────────────────────────────────────────────────────────────
+// ─── 페이지 ──────────────────────────────────────────────────────────────────
 
 export default function MyDiaryPage() {
   const [diagnosis, setDiagnosis] = useState<SavedDiagnosis | null>(null);
@@ -64,30 +62,42 @@ export default function MyDiaryPage() {
     try {
       const raw = localStorage.getItem("abeauty:savedDiagnosis");
       if (raw) setDiagnosis(JSON.parse(raw) as SavedDiagnosis);
-      const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
+    } catch { /**/ }
+    try {
+      const photo = sessionStorage.getItem("style:photo");
       if (photo) setSelfie(photo);
     } catch { /**/ }
     setReady(true);
   }, []);
 
-  if (!ready) return null;
+  // 로딩 중 — 다크 배경만 표시 (hydration mismatch 방지)
+  if (!ready) {
+    return <main className="min-h-screen bg-[#0C0B0A]" aria-hidden="true" />;
+  }
 
   // 저장된 데이터 없음
   if (!diagnosis) {
     return (
-      <main className="flex h-[100dvh] flex-col items-center justify-center bg-[#0C0B0A] px-6 text-cream">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0C0B0A] px-6" style={{ color: "#FDFBFA" }}>
         <div className="text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/50 mb-4">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.55)" }}>
             A-Beauty Diary
           </p>
-          <p className="text-cream/40 text-sm mb-6">아직 저장된 진단 결과가 없어요.</p>
+          <p className="mb-6 text-sm" style={{ color: "rgba(253,251,250,0.4)" }}>
+            아직 저장된 진단 결과가 없어요.
+          </p>
           <Link
             href="/style"
-            className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold text-charcoal"
-            style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)" }}
+            className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold"
+            style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)", color: "#0C0B0A" }}
           >
             AI 헤어 분석 시작하기 →
           </Link>
+          <div className="mt-4">
+            <Link href="/" className="text-sm underline underline-offset-4" style={{ color: "rgba(200,168,107,0.5)" }}>
+              홈으로 돌아가기
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -98,32 +108,36 @@ export default function MyDiaryPage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#0C0B0A] text-cream">
+    <main className="min-h-screen bg-[#0C0B0A]" style={{ color: "#FDFBFA" }}>
 
       {/* 헤더 */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-4 backdrop-blur-md">
-        <Link href="/" className="text-sm font-medium text-cream/40 hover:text-cream transition-colors">
+        <Link href="/" className="text-sm font-medium transition-colors" style={{ color: "rgba(253,251,250,0.4)" }}>
           ← 홈
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">내 다이어리</span>
-        <div className="w-12" />
+        <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "#C8A86B" }}>
+          내 다이어리
+        </span>
+        <div className="w-10" />
       </header>
 
       <div className="mx-auto max-w-lg space-y-5 px-4 pb-24 pt-6">
 
-        {/* 날짜 + 타이틀 */}
+        {/* 날짜 + 스타일 명 */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/55">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.55)" }}>
             A-Beauty Hair Diary
           </p>
-          <h1 className="mt-1.5 font-serif text-xl font-bold text-cream">
+          <h1 className="mt-1.5 font-serif text-xl font-bold" style={{ color: "#FDFBFA" }}>
             {diagnosis.styleName}
           </h1>
-          <p className="mt-0.5 text-xs text-cream/30">{savedDate} 진단 완료</p>
+          <p className="mt-0.5 text-xs" style={{ color: "rgba(253,251,250,0.3)" }}>
+            {savedDate} 진단 완료
+          </p>
         </motion.div>
 
         {/* Before / After 사진 */}
@@ -135,10 +149,10 @@ export default function MyDiaryPage() {
         >
           {/* Before */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-cream/40">Before</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(253,251,250,0.4)" }}>Before</span>
             <div
-              className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40"
-              style={{ aspectRatio: "3/4" }}
+              className="relative overflow-hidden rounded-2xl bg-black/40"
+              style={{ aspectRatio: "3/4", border: "1px solid rgba(255,255,255,0.1)" }}
             >
               {selfie ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -146,33 +160,39 @@ export default function MyDiaryPage() {
                   style={{ objectPosition: "50% 10%" }} />
               ) : (
                 <div className="flex h-full items-center justify-center">
-                  <p className="text-[9px] uppercase tracking-widest text-cream/20">No Photo</p>
+                  <p className="text-[9px] uppercase tracking-widest" style={{ color: "rgba(253,251,250,0.2)" }}>Before</p>
                 </div>
               )}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-8">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-cream/55">Before</span>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 px-3 pb-2.5 pt-8"
+                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)" }}>
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(253,251,250,0.55)" }}>Before</span>
               </div>
             </div>
           </div>
 
           {/* After */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#C8A86B" }}>After ✦</span>
             <div
-              className="relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40"
-              style={{ aspectRatio: "3/4" }}
+              className="relative overflow-hidden rounded-2xl bg-black/40"
+              style={{ aspectRatio: "3/4", border: "1px solid rgba(200,168,107,0.25)" }}
             >
               {diagnosis.generatedImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={diagnosis.generatedImageUrl} alt="AI 변신 스타일"
                   className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full items-center justify-center px-3 text-center">
-                  <p className="text-[10px] leading-snug text-cream/25">결과 이미지</p>
+                <div className="flex h-full flex-col items-center justify-center px-3 text-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" stroke="rgba(200,168,107,0.3)" strokeWidth={1.2}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01" strokeLinecap="round" />
+                  </svg>
+                  <p className="text-[10px] leading-snug" style={{ color: "rgba(253,251,250,0.25)" }}>AI 이미지 없음</p>
                 </div>
               )}
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2.5 pt-8">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 px-3 pb-2.5 pt-8"
+                style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#C8A86B" }}>After ✦</span>
               </div>
               <div className="pointer-events-none absolute inset-0 rounded-2xl"
                 style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.25)" }} />
@@ -185,9 +205,10 @@ export default function MyDiaryPage() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15 }}
-          className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4"
+          className="rounded-2xl px-5 py-4"
+          style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
         >
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: "#C8A86B" }}>
             진단 데이터 · 8문항
           </p>
           <div className="grid grid-cols-2 gap-2">
@@ -196,46 +217,48 @@ export default function MyDiaryPage() {
               const label = Q_LABELS[qId] ?? qId;
               const ans   = A_LABELS[qId]?.[val] ?? "—";
               return (
-                <div key={qId} className="rounded-xl bg-white/[0.03] px-3.5 py-3">
-                  <p className="text-[10px] text-cream/38">{label}</p>
-                  <p className="mt-0.5 text-sm font-semibold text-cream/80">{ans}</p>
+                <div key={qId} className="rounded-xl px-3.5 py-3" style={{ background: "rgba(255,255,255,0.03)" }}>
+                  <p className="text-[10px]" style={{ color: "rgba(253,251,250,0.38)" }}>{label}</p>
+                  <p className="mt-0.5 text-sm font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>{ans}</p>
                 </div>
               );
             })}
           </div>
         </motion.div>
 
-        {/* 집중 케어 알림 (잦은 시술 유저) */}
+        {/* 집중 케어 알림 */}
         {diagnosis.isSevereDamage && (
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="rounded-2xl border border-gold/15 bg-gold/[0.04] px-5 py-4"
+            className="rounded-2xl px-5 py-4"
+            style={{ border: "1px solid rgba(200,168,107,0.15)", background: "rgba(200,168,107,0.04)" }}
           >
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/70">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: "rgba(200,168,107,0.7)" }}>
               집중 케어 필요
             </p>
-            <p className="text-sm leading-relaxed text-cream/60">
+            <p className="text-sm leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
               잦은 새치 염색으로 두피와 모발이 예민해진 상태예요.
               약산성 홈케어와 시술 주기를 줄이는 것을 추천합니다.
             </p>
           </motion.div>
         )}
 
-        {/* 맞춤 커머스 영역 (추후 확장) */}
+        {/* 맞춤 커머스 영역 */}
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
-          className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]"
+          className="overflow-hidden rounded-2xl"
+          style={{ border: "1px solid rgba(255,255,255,0.06)" }}
         >
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-gold/30 to-transparent" />
+          <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.3), transparent)" }} />
           <div className="px-5 py-5 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold/45">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: "rgba(200,168,107,0.45)" }}>
               맞춤 홈케어 라인업
             </p>
-            <p className="mt-2 text-xs text-cream/25">
+            <p className="mt-2 text-xs" style={{ color: "rgba(253,251,250,0.25)" }}>
               진단 데이터 기반 맞춤 제품이 곧 추가될 예정입니다.
             </p>
           </div>
@@ -249,7 +272,8 @@ export default function MyDiaryPage() {
         >
           <Link
             href="/style/survey"
-            className="flex h-14 w-full items-center justify-center rounded-2xl border border-gold/25 bg-gold/[0.06] text-base font-bold text-gold-light transition-all hover:bg-gold/12 active:scale-[0.98]"
+            className="flex h-14 w-full items-center justify-center rounded-2xl font-bold text-base transition-all active:scale-[0.98]"
+            style={{ border: "1px solid rgba(200,168,107,0.25)", background: "rgba(200,168,107,0.06)", color: "#E4D2A8" }}
           >
             새로운 스타일로 다시 진단하기
           </Link>

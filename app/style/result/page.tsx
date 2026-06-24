@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
+import { KAKAO_LOGGED_IN_KEY, STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
+
+// ─── 카카오 세션 헬퍼 ─────────────────────────────────────────────────────────
+function isKakaoLoggedIn(): boolean {
+  try { return localStorage.getItem(KAKAO_LOGGED_IN_KEY) === "1"; } catch { return false; }
+}
+function markKakaoLoggedIn() {
+  try { localStorage.setItem(KAKAO_LOGGED_IN_KEY, "1"); } catch { /**/ }
+}
 import {
   getStyleEntry,
   buildCarePrescription,
@@ -66,7 +74,11 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
   async function handleLogin() {
     if (loading) return;
     setLoading(true);
-    await kakaoLogin(() => { setLoading(false); onUnlock(); });
+    await kakaoLogin(() => {
+      markKakaoLoggedIn(); // 로그인 완료 → 세션 플래그 저장
+      setLoading(false);
+      onUnlock();
+    });
   }
 
   return (
@@ -107,28 +119,36 @@ function KakaoSaveModal({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  function executeSaveAndRoute() {
+    try {
+      const generatedImageUrl = sessionStorage.getItem(STYLE_GENERATED_KEY) ?? null;
+      localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify({
+        answers,
+        styleName,
+        savedAt: Date.now(),
+        generatedImageUrl,
+        isSevereDamage: answers.q10_history_count === "count_7plus",
+        isLowDensity:   answers.q8_density === "thin_density",
+        isFineHair:     answers.q7_thickness === "fine",
+        isCurly:        answers.q3_curl === "curly_hair",
+      }));
+    } catch { /**/ }
+    router.push("/my-diary");
+  }
+
   async function handleSaveAndRoute() {
     if (loading) return;
+
+    // ★ 이미 카카오 로그인 완료된 유저 → 모달 없이 즉시 저장/라우팅
+    if (isKakaoLoggedIn()) {
+      executeSaveAndRoute();
+      return;
+    }
+
     setLoading(true);
-
     await kakaoLogin(() => {
-      try {
-        // AI 생성 이미지 URL 포함 저장 (다이어리 페이지에서 사용)
-        const generatedImageUrl = sessionStorage.getItem(STYLE_GENERATED_KEY) ?? null;
-        localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify({
-          answers,
-          styleName,
-          savedAt: Date.now(),
-          generatedImageUrl,
-          isSevereDamage: answers.q10_history_count === "count_7plus",
-          isLowDensity:   answers.q8_density === "thin_density",
-          isFineHair:     answers.q7_thickness === "fine",
-          isCurly:        answers.q3_curl === "curly_hair",
-        }));
-      } catch { /**/ }
-
-      // 내 다이어리로 강제 이동
-      router.push("/my-diary");
+      markKakaoLoggedIn();
+      executeSaveAndRoute();
     });
   }
 
@@ -529,7 +549,7 @@ export default function StyleResultPage() {
                       rel="noopener noreferrer sponsored"
                       className="flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-xs font-bold text-charcoal transition-all hover:brightness-105 active:scale-[0.98]"
                     >
-                      쿠팡에서 최저가 확인하기 →
+                      나의 맞춤 제품 구매하러 가기 →
                     </a>
                   </div>
                 </div>
