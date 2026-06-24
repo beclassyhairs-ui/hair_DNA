@@ -11,93 +11,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
-import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
-import { toSheetAnswers } from "../recommend";
-import type { StyleAnswers } from "../surveyData";
+import { STYLE_PHOTO_KEY } from "../constants";
+// API 호출은 /style/loading 페이지에서 전담
 
 const OUTPUT_MAX   = 512;
 const JPEG_QUALITY = 0.9;
 const MIN_SCALE    = 1;
 const MAX_SCALE    = 4;
-const LOADING_MS   = 13_000;
 
 type Transform = { scale: number; x: number; y: number };
-
-// ─── 로딩 오버레이 ────────────────────────────────────────────────────────────
-
-const LOADING_STEPS = [
-  "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
-  "두상 구조와 희망 스타일 데이터를 정밀 매칭하고 있습니다...",
-  "전문가 헤어 데이터베이스에서 최적 스타일을 도출하고 있습니다...",
-  "맞춤 케어 처방전과 스타일을 최종 생성하고 있습니다...",
-  "마지막 세부 조정 중입니다. 결과지가 곧 완성됩니다...",
-];
-
-function LoadingOverlay({ onDone }: { onDone: () => void }) {
-  const [stepIdx,  setStepIdx]  = useState(0);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    let elapsed = 0;
-    const t = setInterval(() => {
-      elapsed += 120;
-      const p = Math.min(100, Math.round((elapsed / LOADING_MS) * 100));
-      setProgress(p);
-      setStepIdx(Math.min(LOADING_STEPS.length - 1,
-        Math.floor((elapsed / LOADING_MS) * LOADING_STEPS.length)));
-      if (elapsed >= LOADING_MS) { clearInterval(t); onDone(); }
-    }, 120);
-    return () => clearInterval(t);
-  }, [onDone]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.5 } }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#0C0B0A] px-6 py-14"
-    >
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-5 py-2 text-sm font-bold tracking-wide text-gold">
-        ✦ 어뷰티 AI 스타일 합성 중
-      </span>
-
-      <div className="flex flex-col items-center gap-8 text-center">
-        <div className="relative flex h-32 w-32 items-center justify-center">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full"
-            style={{ border: "2.5px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.25)" }} />
-          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-5 rounded-full"
-            style={{ border: "1.8px solid transparent", borderTopColor: "rgba(200,168,107,0.55)", borderLeftColor: "rgba(200,168,107,0.18)" }} />
-          <motion.div animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            className="h-2.5 w-2.5 rounded-full bg-gold" />
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.p key={stepIdx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.4 }}
-            className="max-w-xs text-center text-base font-medium leading-relaxed text-cream sm:text-lg">
-            {LOADING_STEPS[stepIdx]}
-          </motion.p>
-        </AnimatePresence>
-
-        <div className="w-56">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-            <motion.div className="h-full rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-dark"
-              animate={{ width: `${progress}%` }} transition={{ duration: 0.15, ease: "linear" }} />
-          </div>
-          <p className="mt-2 text-center text-sm font-semibold tabular-nums text-gold/60">{progress}%</p>
-        </div>
-      </div>
-
-      <div className="w-full max-w-sm rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-4 text-center">
-        <p className="text-[10px] uppercase tracking-widest text-cream/20">Advertisement</p>
-        <div className="mt-2 h-16 w-full rounded-xl bg-white/[0.03]" />
-      </div>
-    </motion.div>
-  );
-}
 
 // ─── 얼굴 가이드 SVG ─────────────────────────────────────────────────────────
 
@@ -211,7 +133,6 @@ export default function StyleUploadPage() {
   const [savedPhoto, setSavedPhoto] = useState<string | null>(null);
   const [transform,  setTransform]  = useState<Transform>({ scale: 1, x: 0, y: 0 });
   const [busy,       setBusy]       = useState(false);
-  const [isLoading,  setIsLoading]  = useState(false);
   const [camera,     setCamera]     = useState(false);
   const [camError,   setCamError]   = useState<string | null>(null);
   // [요구사항 2] 셔터 플래시 상태
@@ -406,34 +327,6 @@ export default function StyleUploadPage() {
     setTransform(t => clamp({ ...t, scale: Number(e.target.value) }));
   }
 
-  async function callAIGenerate(photoDataUrl: string) {
-    try {
-      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
-      // /api/hair-transform: 4차원 디렉토리 매핑 → Replicate IP-Adapter 호출
-      const res = await fetch("/api/hair-transform", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userPhoto: photoDataUrl, answers }),
-        signal: AbortSignal.timeout(60_000), // Replicate 최대 60초 대기
-      });
-      const data = await res.json() as { ok: boolean; imageUrl?: string };
-      if (data.ok && data.imageUrl) {
-        try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-      }
-    } catch { /**/ }
-  }
-
-  async function submitDiagnosis(photoDataUrl: string) {
-    try {
-      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
-      await fetch("/api/submit-diagnosis", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoDataUrl, answers: toSheetAnswers(answers), treatmentCounts: {} }),
-      });
-    } catch { /**/ }
-  }
-
   function confirmPhoto() {
     if (!src || !natural) return;
     setBusy(true);
@@ -459,9 +352,8 @@ export default function StyleUploadPage() {
       ctx.drawImage(imgElRef.current, sx, sy, sw, sh, 0, 0, outW, outH);
       const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       try { sessionStorage.setItem(STYLE_PHOTO_KEY, dataUrl); } catch { /**/ }
-      void submitDiagnosis(dataUrl);
-      void callAIGenerate(dataUrl);
-      setIsLoading(true);
+      // API 호출은 /style/loading 페이지에서 처리
+      router.push("/style/loading");
     } finally {
       setBusy(false);
     }
@@ -486,11 +378,6 @@ export default function StyleUploadPage() {
   return (
     // [요구사항 3] h-[100dvh] flex-col — 모바일 브라우저 하단 바 포함 전체 높이
     <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0C0B0A] text-cream">
-
-      {/* 로딩 오버레이 (fixed) */}
-      <AnimatePresence>
-        {isLoading && <LoadingOverlay onDone={() => router.push("/style/result")} />}
-      </AnimatePresence>
 
       {/* [요구사항 2] 셔터 플래시 — 흰 화면 번쩍임 (0.15초) */}
       <AnimatePresence>
@@ -649,7 +536,7 @@ export default function StyleUploadPage() {
               다시 등록
             </button>
             <button
-              onClick={() => { void callAIGenerate(savedPhoto!); setIsLoading(true); }}
+              onClick={() => router.push("/style/loading")}
               className="flex h-14 flex-1 items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark text-base font-bold text-charcoal shadow-gold hover:brightness-105 active:scale-[0.98]">
               이 사진으로 계속
             </button>

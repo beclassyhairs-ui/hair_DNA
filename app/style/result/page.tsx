@@ -110,13 +110,14 @@ function KakaoSaveModal({
     setLoading(true);
 
     await kakaoLogin(() => {
-      // 진단 결과를 localStorage에 영구 저장 (메인 페이지 제품 타겟팅용)
       try {
+        // AI 생성 이미지 URL 포함 저장 (다이어리 페이지에서 사용)
+        const generatedImageUrl = sessionStorage.getItem(STYLE_GENERATED_KEY) ?? null;
         localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify({
           answers,
           styleName,
           savedAt: Date.now(),
-          // 7회 이상 시술 트리거 등 타겟팅 데이터
+          generatedImageUrl,
           isSevereDamage: answers.q10_history_count === "count_7plus",
           isLowDensity:   answers.q8_density === "thin_density",
           isFineHair:     answers.q7_thickness === "fine",
@@ -124,8 +125,8 @@ function KakaoSaveModal({
         }));
       } catch { /**/ }
 
-      // 메인 플랫폼으로 강제 이동 (맞춤 제품 노출 트리거)
-      router.push("/");
+      // 내 다이어리로 강제 이동
+      router.push("/my-diary");
     });
   }
 

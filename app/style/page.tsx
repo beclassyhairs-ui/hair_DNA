@@ -60,7 +60,7 @@ export default function StyleLandingPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="mt-10 w-full"
+          className="mt-8 w-full"
         >
           <Link
             href="/style/survey"
@@ -70,8 +70,18 @@ export default function StyleLandingPage() {
           >
             나의 맞춤 스타일 분석하기 →
           </Link>
-          <p className="mt-3 text-center text-[11px] text-cream/25">
+          <p className="mt-2.5 text-center text-[11px] text-cream/25">
             개인정보 미저장 · 약 2분 소요 · 무료
+          </p>
+          {/* 재방문 유저 다이어리 링크 — 메인 버튼보다 톤다운 */}
+          <p className="mt-3 text-center text-sm text-cream/30">
+            이미 분석을 받으셨나요?{" "}
+            <Link
+              href="/my-diary"
+              className="text-gold/55 underline underline-offset-4 transition-colors hover:text-gold/80"
+            >
+              내 다이어리 보기
+            </Link>
           </p>
         </motion.div>
       </motion.div>
