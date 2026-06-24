@@ -4,13 +4,16 @@
 //
 // 환경변수 (Vercel 대시보드):
 //   REPLICATE_API_TOKEN     — Replicate API 키 (필수)
+//   NEXT_PUBLIC_SITE_URL    — 프로덕션 절대 URL (권장: https://your-domain.com)
 //   REPLICATE_MODEL_OWNER   — 기본값: "tencentarc"
 //   REPLICATE_MODEL_NAME    — 기본값: "photomaker-style"
 //
-// 빈 폴더 방어:
-//   1.jpg~5.jpg 랜덤 시도 → 없으면 default_style.jpg 로 자동 폴백
-//   어떤 경우에도 레퍼런스 이미지 URL은 클라이언트에 미반환
+// ※ fs/promises 사용으로 Node.js 런타임 고정 (Edge 런타임 불가)
 // ============================================================================
+
+// [요구사항 1] Vercel Serverless Function 타임아웃 60초로 연장
+// fs/promises 사용 → Node.js 런타임 유지 (edge 선언 금지)
+export const maxDuration = 60;
 
 import { access }  from "fs/promises";
 import { join }    from "path";
@@ -29,6 +32,30 @@ const MODEL_OWNER = process.env.REPLICATE_MODEL_OWNER ?? "tencentarc";
 const MODEL_NAME  = process.env.REPLICATE_MODEL_NAME  ?? "photomaker-style";
 const REPLICATE_ENDPOINT =
   `https://api.replicate.com/v1/models/${MODEL_OWNER}/${MODEL_NAME}/predictions`;
+
+// ─── [요구사항 2] 절대 URL 조립 ──────────────────────────────────────────────
+// Replicate 서버가 레퍼런스 이미지를 다운로드하려면 반드시 공개 절대 URL 필요
+// 우선순위:
+//   1. NEXT_PUBLIC_SITE_URL  — 커스텀 도메인 (Vercel 환경변수 권장)
+//   2. VERCEL_URL            — Vercel 자동 배포 URL (preview/production)
+//   3. 요청 헤더             — 로컬 개발 환경 fallback
+
+function getBaseUrl(req: NextRequest): string {
+  // 1순위: 명시적으로 설정한 프로덕션 URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (siteUrl) return siteUrl.replace(/\/$/, "");
+
+  // 2순위: Vercel이 자동으로 주입하는 배포 URL
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) return `https://${vercelUrl}`;
+
+  // 3순위: 요청 헤더에서 추출 (로컬 개발)
+  const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
+  const host  = req.headers.get("x-forwarded-host")
+    ?? req.headers.get("host")
+    ?? "localhost:3000";
+  return `${proto}://${host}`;
+}
 
 // ─── 빈 폴더 완벽 방어 레퍼런스 URL 확정 ─────────────────────────────────────
 //
@@ -137,12 +164,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, reason: "missing_photo" }, { status: 400 });
   }
 
-  // 3. 서버 baseUrl 조립
-  const protocol = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
-  const host     = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "localhost:3000";
-  const baseUrl  = `${protocol}://${host}`;
+  // 3. 절대 base URL 조립 (NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더 순)
+  const baseUrl = getBaseUrl(req);
 
   // 4. 레퍼런스 이미지 URL 확정 (빈 폴더 안전 방어 포함)
+  //    baseUrl이 반드시 https:// 로 시작하는 공개 URL 이어야 Replicate가 접근 가능
   const { url: referenceUrl, isDefault } = await safeResolveReferenceUrl(answers, baseUrl);
 
   // 5. 프롬프트 생성
