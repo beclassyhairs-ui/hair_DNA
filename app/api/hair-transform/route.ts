@@ -103,9 +103,14 @@ async function safeResolveReferenceUrl(
 // PhotoMaker-Style, InstantID, IP-Adapter 등 주요 모델의 입력 키를 모두 포함
 // 모델이 인식하지 못하는 키는 자동 무시됨
 
+// ★ 로컬호스트 감지: localhost URL은 Replicate 서버가 접근 불가 → null 반환
+function isPublicUrl(url: string): boolean {
+  return url.startsWith("https://") && !url.includes("localhost") && !url.includes("127.0.0.1");
+}
+
 function buildReplicateInput(
-  userPhoto:    string,  // 유저 셀카 (base64 data URL)
-  referenceUrl: string,  // 레퍼런스 이미지 절대 URL (내부 전용)
+  userPhoto:    string,        // 유저 셀카 (base64 data URL)
+  referenceUrl: string | null, // 레퍼런스 이미지 (프로덕션에서만 유효한 https URL)
   prompt:       string,
 ) {
   return {
@@ -119,10 +124,13 @@ function buildReplicateInput(
     image:       userPhoto,   // InstantID / IP-Adapter SDXL
     face_image:  userPhoto,   // 일부 face ID 모델
 
-    // 헤어 스타일 레퍼런스 (백엔드 전용 — 절대 클라이언트 미노출)
-    style_image:      referenceUrl,
-    ip_adapter_image: referenceUrl,
-    style_reference:  referenceUrl,
+    // 헤어 스타일 레퍼런스 (프로덕션 https URL일 때만 포함)
+    // 로컬 localhost URL은 Replicate 서버가 접근 불가 → undefined로 제외
+    ...(referenceUrl ? {
+      style_image:      referenceUrl,
+      ip_adapter_image: referenceUrl,
+      style_reference:  referenceUrl,
+    } : {}),
 
     // 생성 파라미터
     num_outputs:         1,
@@ -167,17 +175,24 @@ export async function POST(req: NextRequest) {
   // 3. 절대 base URL 조립 (NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더 순)
   const baseUrl = getBaseUrl(req);
 
-  // 4. 레퍼런스 이미지 URL 확정 (빈 폴더 안전 방어 포함)
-  //    baseUrl이 반드시 https:// 로 시작하는 공개 URL 이어야 Replicate가 접근 가능
-  const { url: referenceUrl, isDefault } = await safeResolveReferenceUrl(answers, baseUrl);
+  // 4. 레퍼런스 이미지 URL 확정
+  // ★ localhost 환경: Replicate 서버가 접근 불가 → null (텍스트 프롬프트만으로 실행)
+  // ★ 프로덕션 https: 레퍼런스 이미지 포함 → 스타일 트랜스퍼 품질 향상
+  const isLocal = !isPublicUrl(baseUrl);
+  let referenceUrl: string | null = null;
+
+  if (isLocal) {
+    console.log("[hair-transform] 🔧 로컬 환경 감지 — 레퍼런스 이미지 제외 (텍스트 프롬프트만 사용)");
+  } else {
+    const { url, isDefault } = await safeResolveReferenceUrl(answers, baseUrl);
+    referenceUrl = url;
+    console.log(`[hair-transform] 레퍼런스: ${isDefault ? "default_style.jpg (폴백)" : url.split("/references/")[1] ?? url}`);
+  }
 
   // 5. 프롬프트 생성
   const prompt = buildHairStylePrompt(answers);
 
-  console.log(
-    `[hair-transform] 모델: ${MODEL_OWNER}/${MODEL_NAME} | ` +
-    `레퍼런스: ${isDefault ? "default_style.jpg (폴백)" : referenceUrl.split("/references/")[1]}`,
-  );
+  console.log(`[hair-transform] 모델: ${MODEL_OWNER}/${MODEL_NAME} | baseUrl: ${baseUrl}`);
 
   // 6. Replicate API 호출
   try {

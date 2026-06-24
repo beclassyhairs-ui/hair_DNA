@@ -249,7 +249,8 @@ function BeforeAfterSection({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={generatedUrl} alt="AI 변신 스타일" draggable={false}
             className="h-full w-full select-none object-cover"
-            style={{ pointerEvents: "none", WebkitTouchCallout: "none" }} />
+            style={{ pointerEvents: "none", WebkitTouchCallout: "none" }}
+            onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
             <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-cream/25" stroke="currentColor" strokeWidth={1.2}>
@@ -373,9 +374,11 @@ export default function StyleResultPage() {
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) setAnswers(JSON.parse(a) as StyleAnswers);
       if (sessionStorage.getItem(STYLE_UNLOCKED_KEY) === "1") setLocked(false);
-      // ★ AI 이미지 — 한 번만 읽기, 폴링 없음 (loading 페이지가 완성 후 넘겨줌)
+      // ★ AI 이미지 — 한 번만 읽기 (loading 페이지가 완성 후 넘겨줌)
       const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
+      console.log("[Result] sessionStorage STYLE_GENERATED_KEY 값:", g ?? "(없음)");
       if (g) setGenerated(g);
+      else console.warn("[Result] ⚠️ AI 이미지 URL 없음 — 로딩 페이지에서 저장이 실패했을 수 있습니다.");
     } catch { /**/ }
     setReady(true);
   }, []);

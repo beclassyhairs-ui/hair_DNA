@@ -65,17 +65,27 @@ export default function StyleLoadingPage() {
           new Promise<void>(resolve => setTimeout(resolve, 15_000)),
           (async () => {
             try {
+              console.log("[AI] /api/hair-transform 호출 시작...");
               const res  = await fetch("/api/hair-transform", {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
                 body:    JSON.stringify({ userPhoto: photo, answers }),
                 signal:  AbortSignal.timeout(62_000),
               });
-              const data = await res.json() as { ok: boolean; imageUrl?: string };
+              const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string };
+
+              // ★ 콘솔 디버그 — 어떤 URL이 돌아오는지 확인
+              console.log("[AI] 응답 전체:", data);
               if (data.ok && data.imageUrl) {
+                console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
                 try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+              } else {
+                console.warn("[AI] ⚠️ 이미지 생성 실패 — reason:", data.reason ?? "unknown");
+                console.warn("[AI] ⚠️ REPLICATE_API_TOKEN이 .env.local에 설정되어 있는지 확인하세요.");
               }
-            } catch { /**/ }
+            } catch (e) {
+              console.error("[AI] ❌ API 호출 예외:", e);
+            }
           })(),
         ]);
       } catch { /**/ } finally {
