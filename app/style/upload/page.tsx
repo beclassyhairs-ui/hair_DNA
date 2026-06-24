@@ -408,12 +408,13 @@ export default function StyleUploadPage() {
 
   async function callAIGenerate(photoDataUrl: string) {
     try {
-      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
-      const res = await fetch("/api/style/generate", {
+      // /api/hair-transform: 4차원 디렉토리 매핑 → Replicate IP-Adapter 호출
+      const res = await fetch("/api/hair-transform", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ photoDataUrl, answers }),
-        signal: AbortSignal.timeout(30_000),
+        body: JSON.stringify({ userPhoto: photoDataUrl, answers }),
+        signal: AbortSignal.timeout(60_000), // Replicate 최대 60초 대기
       });
       const data = await res.json() as { ok: boolean; imageUrl?: string };
       if (data.ok && data.imageUrl) {

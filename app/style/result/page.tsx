@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY, STYLE_UNLOCKED_KEY } from "../constants";
 import {
   getStyleEntry,
-  getRefImagePath,
   buildCarePrescription,
   getStyleProduct,
 } from "../recommend";
+// getRefImagePath 의도적 미임포트 — 레퍼런스 이미지는 저작권 보호상 폴백 미사용
 import type { StyleAnswers } from "../surveyData";
 
 // ─── Kakao 타입 ───────────────────────────────────────────────────────────────
@@ -184,11 +184,20 @@ function KakaoSaveModal({
 
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
 
-function BeforeAfterSection({
-  photo, answers, locked, generated,
-}: { photo: string | null; answers: StyleAnswers; locked: boolean; generated: string | null }) {
-  const [refErr, setRefErr] = useState(false);
+// After 섹션 상태 타입
+type AfterState =
+  | { kind: "generating" }           // 폴링 중 (Replicate 처리 중)
+  | { kind: "done"; url: string }    // 생성 완료
+  | { kind: "error" };               // 실패 / 타임아웃
 
+function BeforeAfterSection({
+  photo, locked, afterState, onRetry,
+}: {
+  photo:      string | null;
+  locked:     boolean;
+  afterState: AfterState;
+  onRetry:    () => void;
+}) {
   return (
     <div className="grid grid-cols-2 gap-3">
 
@@ -205,7 +214,6 @@ function BeforeAfterSection({
             <p className="text-[9px] uppercase tracking-widest text-cream/20">Your Photo</p>
           </div>
         )}
-        {/* 하단 레이블 */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10">
           <span className="text-[10px] font-bold uppercase tracking-widest text-cream/60">Before</span>
         </div>
@@ -219,30 +227,55 @@ function BeforeAfterSection({
         )}
       </div>
 
-      {/* AFTER */}
+      {/* AFTER — 레퍼런스 이미지 폴백 없음, 생성 실패 시 에러 UI만 표시 */}
       <div
         className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
         style={{ aspectRatio: "3/4" }}
       >
-        {generated ? (
-          // Replicate AI 생성 이미지 (우선 표시)
+        {afterState.kind === "done" ? (
+          // AI 생성 완료 — Replicate 결과물만 표시
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={generated} alt="AI 변신 스타일" className="h-full w-full object-cover" />
-        ) : !refErr ? (
-          // 레퍼런스 이미지 (폴백)
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={getRefImagePath(answers)} alt="추천 스타일" className="h-full w-full object-cover" onError={() => setRefErr(true)} />
+          <img src={afterState.url} alt="AI 변신 스타일" className="h-full w-full object-cover" />
+
+        ) : afterState.kind === "generating" ? (
+          // 생성 중 — 골드 스피너
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-3">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+              className="h-8 w-8 rounded-full"
+              style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.9)", borderRightColor: "rgba(200,168,107,0.2)" }}
+            />
+            <p className="text-center text-[10px] font-medium leading-snug text-cream/45">
+              AI 합성 중...
+            </p>
+          </div>
+
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-[9px] uppercase tracking-widest text-cream/20">Style Ref</p>
+          // 생성 실패 — 에러 UI + 다시 시도 버튼 (레퍼런스 이미지 절대 미노출)
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
+            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-cream/25" stroke="currentColor" strokeWidth={1.2}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4m0 4h.01" strokeLinecap="round" />
+            </svg>
+            <p className="text-[11px] leading-snug text-cream/40">
+              AI 합성에<br />실패했어요
+            </p>
+            <button
+              onClick={onRetry}
+              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[11px] font-bold text-gold transition-colors hover:bg-gold/15"
+            >
+              다시 시도
+            </button>
           </div>
         )}
+
         {/* 하단 레이블 */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
         </div>
         {/* 골드 프레임 글로우 */}
-        {!locked && (
+        {!locked && afterState.kind === "done" && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
             style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />
         )}
@@ -291,20 +324,25 @@ function CareSummary({ answers }: { answers: StyleAnswers }) {
 // 메인 결과 페이지
 // ============================================================================
 
-export default function StyleResultPage() {
-  const [photo,     setPhoto]     = useState<string | null>(null);
-  const [generated, setGenerated] = useState<string | null>(null); // Replicate AI 생성 이미지
-  const [answers,   setAnswers]   = useState<StyleAnswers>({});
-  const [locked,    setLocked]    = useState(true);
-  const [ready,     setReady]     = useState(false);
-  const [showSave,  setShowSave]  = useState(false);
+// 최대 폴링 시간 (Replicate가 13초 로딩 이후에도 처리 중일 수 있음)
+const POLL_INTERVAL_MS = 1_500;
+const POLL_MAX_ATTEMPTS = 30; // 최대 45초 (30 × 1.5s)
 
+export default function StyleResultPage() {
+  const router = useRouter();
+
+  const [photo,      setPhoto]      = useState<string | null>(null);
+  const [afterState, setAfterState] = useState<AfterState>({ kind: "generating" });
+  const [answers,    setAnswers]    = useState<StyleAnswers>({});
+  const [locked,     setLocked]     = useState(true);
+  const [ready,      setReady]      = useState(false);
+  const [showSave,   setShowSave]   = useState(false);
+
+  // ─── 초기 데이터 로드 ──────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (p) setPhoto(p);
-      const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
-      if (g) setGenerated(g);
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) setAnswers(JSON.parse(a) as StyleAnswers);
       if (sessionStorage.getItem(STYLE_UNLOCKED_KEY) === "1") setLocked(false);
@@ -312,9 +350,47 @@ export default function StyleResultPage() {
     setReady(true);
   }, []);
 
+  // ─── Replicate 결과 폴링 ─────────────────────────────────────────────────
+  // 로딩 13초 이후 페이지 진입 시점에도 아직 처리 중일 수 있음 → 최대 45초 폴링
+  // 성공: afterState = { kind: "done", url }
+  // 실패/타임아웃: afterState = { kind: "error" } — 레퍼런스 이미지 절대 미노출
+  useEffect(() => {
+    // 즉시 확인
+    try {
+      const cached = sessionStorage.getItem(STYLE_GENERATED_KEY);
+      if (cached) { setAfterState({ kind: "done", url: cached }); return; }
+    } catch { /**/ }
+
+    // sessionStorage에 없으면 폴링 시작
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      try {
+        const url = sessionStorage.getItem(STYLE_GENERATED_KEY);
+        if (url) {
+          clearInterval(timer);
+          setAfterState({ kind: "done", url });
+          return;
+        }
+      } catch { /**/ }
+      if (attempts >= POLL_MAX_ATTEMPTS) {
+        clearInterval(timer);
+        setAfterState({ kind: "error" });
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, []);
+
   function handleUnlock() {
     try { sessionStorage.setItem(STYLE_UNLOCKED_KEY, "1"); } catch { /**/ }
     setLocked(false);
+  }
+
+  function handleRetryGenerate() {
+    // 세션 초기화 후 업로드 페이지로 이동 → 재촬영/재생성
+    try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
+    router.push("/style/upload");
   }
 
   if (!ready) return (
@@ -364,8 +440,13 @@ export default function StyleResultPage() {
           </Link>
         </div>
 
-        {/* Before / After */}
-        <BeforeAfterSection photo={photo} answers={answers} locked={locked} generated={generated} />
+        {/* Before / After — 레퍼런스 이미지 폴백 없음, 에러 시 retry UI */}
+        <BeforeAfterSection
+          photo={photo}
+          locked={locked}
+          afterState={afterState}
+          onRetry={handleRetryGenerate}
+        />
 
         {/* 콘텐츠 (잠금 시 블러) */}
         <div className={`mt-5 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
