@@ -1,36 +1,43 @@
 // ============================================================================
 // lib/styleReference.ts
-// 설문 답변 → public/references/ 디렉토리 동적 매핑 + 랜덤 이미지 픽
+// 설문 답변 → public/references/ 최종 확정 디렉토리 매핑
 //
-// 디렉토리 구조: /references/[age]/[length]/[wave]/[layer]/1.jpg ~ 5.jpg
-// 예) 30대 + 단발 + C컬 + 무거움 → /references/30s/bob/c_curl/heavy/3.jpg
+// 구조: /references/[age 2그룹]/[length 6그룹]/[wave 4그룹]/[layer 3그룹]/
+// 예)  30대 + 단발(bob) + C컬 + 중간층 → /references/group_2040/bob/c_curl/soft/
 //
-// ※ 레퍼런스 이미지는 Replicate API 호출용 내부 자원 — 유저 화면 미노출
+// ※ 레퍼런스 이미지는 Replicate 백엔드 전용 — 유저 브라우저 절대 미노출
 // ============================================================================
 
 import type { StyleAnswers } from "@/app/style/surveyData";
 
-// ─── 연령대 매핑 ──────────────────────────────────────────────────────────────
+// ─── [나이] 2그룹 ─────────────────────────────────────────────────────────────
+// 20대·30대·40대 → group_2040 / 50대·60대 이상 → group_5060
 
 const AGE_DIR: Record<string, string> = {
-  age_20:     "20s",
-  age_30:     "30s",
-  age_40:     "40s",
-  age_50:     "50s",
-  age_60plus: "60s",
+  age_20:     "group_2040",
+  age_30:     "group_2040",
+  age_40:     "group_2040",
+  age_50:     "group_5060",
+  age_60plus: "group_5060",
 };
 
-// ─── 기장(Length) 매핑 ────────────────────────────────────────────────────────
+// ─── [기장] 6그룹 ─────────────────────────────────────────────────────────────
+// 설문값(q11_length)  →  실제 폴더명
+// short     (숏)     → short
+// bob       (숏단발) → short_bob
+// shoulder  (단발)   → bob
+// collarbone(중단발) → shoulder
+// chest     (긴머리) → collarbone
 
 const LENGTH_DIR: Record<string, string> = {
   short:      "short",
-  bob:        "bob",
-  shoulder:   "shoulder",
-  collarbone: "collarbone",
-  chest:      "chest",
+  bob:        "short_bob",
+  shoulder:   "bob",
+  collarbone: "shoulder",
+  chest:      "collarbone",
 };
 
-// ─── 웨이브/디자인 매핑 ────────────────────────────────────────────────────────
+// ─── [웨이브] 4그룹 ───────────────────────────────────────────────────────────
 
 const WAVE_DIR: Record<string, string> = {
   straight: "straight",
@@ -39,56 +46,44 @@ const WAVE_DIR: Record<string, string> = {
   wave:     "wave",
 };
 
-// ─── 레이어드 매핑 ────────────────────────────────────────────────────────────
+// ─── [레이어드/질감] 3그룹 ────────────────────────────────────────────────────
+// heavy  (무거움/층없음)  → none
+// medium (중간/층약간)    → soft
+// light  (가벼움/층많이)  → rich
 
 const LAYER_DIR: Record<string, string> = {
-  heavy:  "heavy",
-  medium: "medium",
-  light:  "light",
+  heavy:  "none",
+  medium: "soft",
+  light:  "rich",
 };
 
-// 각 폴더 내 이미지 수 (1.jpg ~ MAX_IMG.jpg)
-const MAX_IMG = 5;
+// 기본 대체 이미지 경로 (빈 폴더 방어용)
+export const DEFAULT_REFERENCE_PATH = "/references/default_style.jpg";
 
-// ─── 핵심 함수 ────────────────────────────────────────────────────────────────
+// 폴더당 최대 이미지 수 (1.jpg ~ MAX_IMG.jpg)
+export const MAX_IMG = 5;
+
+// ─── 핵심 매핑 함수 ───────────────────────────────────────────────────────────
 
 /**
- * 설문 답변 4가지 → 레퍼런스 이미지 디렉토리 상대 경로
- * (예) { q1_age: "age_30", q11_length: "bob", q13_design: "c_curl", q14_layer: "heavy" }
- *   → "/references/30s/bob/c_curl/heavy/"
+ * 설문 답변 4가지 → 4차원 디렉토리 경로 (trailing slash 포함)
+ *
+ * @example
+ * getStyleDirectoryPath({ q1_age:"age_30", q11_length:"shoulder",
+ *                         q13_design:"c_curl", q14_layer:"medium" })
+ * // → "/references/group_2040/bob/c_curl/soft/"
  */
 export function getStyleDirectoryPath(answers: StyleAnswers): string {
-  const age    = AGE_DIR[answers.q1_age      ?? ""] ?? "40s";
-  const length = LENGTH_DIR[answers.q11_length ?? ""] ?? "shoulder";
+  const age    = AGE_DIR[answers.q1_age      ?? ""] ?? "group_2040";
+  const length = LENGTH_DIR[answers.q11_length ?? ""] ?? "bob";
   const wave   = WAVE_DIR[answers.q13_design  ?? ""] ?? "straight";
-  const layer  = LAYER_DIR[answers.q14_layer  ?? ""] ?? "medium";
+  const layer  = LAYER_DIR[answers.q14_layer  ?? ""] ?? "soft";
   return `/references/${age}/${length}/${wave}/${layer}/`;
 }
 
 /**
- * 디렉토리 경로 + 랜덤 인덱스 → 절대 URL
- * 같은 경로에서 1~5 중 매번 다른 이미지 → '다시하기' 시 자동 로테이션
- *
- * @param dirPath   getStyleDirectoryPath() 반환값
- * @param baseUrl   서버 origin (e.g. "https://your-domain.com" | "http://localhost:3001")
- */
-export function pickRandomReferenceUrl(dirPath: string, baseUrl: string): string {
-  const index = Math.floor(Math.random() * MAX_IMG) + 1;
-  return `${baseUrl}${dirPath}${index}.jpg`;
-}
-
-/**
- * answers → 랜덤 레퍼런스 이미지 절대 URL (원스텝 헬퍼)
- */
-export function getRandomReferenceUrl(answers: StyleAnswers, baseUrl: string): string {
-  return pickRandomReferenceUrl(getStyleDirectoryPath(answers), baseUrl);
-}
-
-// ─── 헤어 스타일 프롬프트 빌더 ────────────────────────────────────────────────
-
-/**
- * 설문 답변 → Replicate API 텍스트 프롬프트
- * 텍스트 프롬프트는 레퍼런스 이미지를 보강하는 역할만 담당
+ * 서버 baseUrl 없이 디렉토리 경로만 필요할 때 사용
+ * (파일 존재 체크 없이 순수 경로 계산)
  */
 export function buildHairStylePrompt(answers: StyleAnswers): string {
   const LENGTH_LABEL: Record<string, string> = {
