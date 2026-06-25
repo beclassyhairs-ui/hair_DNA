@@ -1,27 +1,26 @@
 // ============================================================================
 // POST /api/hair-transform
-// 유저 셀카(image) + 레퍼런스 헤어 사진(pose_image) → InstantID 합성
+// 유저 셀카(swap_image) + 레퍼런스 헤어 사진(target_image) → Face Swap 합성
 //
-// 모델: zsxkib/instant-id
-//   - /v1/models/zsxkib/instant-id/predictions 엔드포인트 사용 (항상 최신 버전)
-//   - 검증된 버전 해시: 6af8583c541261472e92155d87bba80d5ad98461665802f2ba196ac099aaedc9
-//   - 스키마 출처: https://replicate.com/zsxkib/instant-id/versions/6af8583c.../api
+// 모델: codeplugtech/face-swap
+//   - 엔드포인트: /v1/predictions  (커뮤니티 모델 → version hash 필수)
+//   - 버전 해시:  278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34
+//   - 출처: https://replicate.com/codeplugtech/face-swap/versions (Latest 확인)
+//   - 1.6M 실행, CPU 동작, 평균 64초
 //
-// 핵심 비즈니스 로직:
-//   image      → 유저 셀카 (Base64 data URI) — 얼굴 identity 보존
-//   pose_image → /public/references/... 레퍼런스 사진 (공개 절대 URL) — 헤어 스타일 전이
+// 파라미터:
+//   target_image → 레퍼런스 헤어 사진 (얼굴이 교체될 캔버스, 공개 https URL)
+//   swap_image   → 유저 셀카 (삽입할 얼굴, Base64 data URI 또는 공개 URL)
 //
 // 환경변수:
-//   REPLICATE_API_TOKEN     — 필수
-//   NEXT_PUBLIC_SITE_URL    — 프로덕션 절대 URL (예: https://your-domain.com)
-//   REPLICATE_MODEL_OWNER   — 기본값: "zsxkib"
-//   REPLICATE_MODEL_NAME    — 기본값: "instant-id"
+//   REPLICATE_API_TOKEN  — 필수
+//   NEXT_PUBLIC_SITE_URL — 프로덕션 절대 URL (예: https://your-domain.com)
 // ============================================================================
 
-export const maxDuration = 60; // Vercel Serverless Function 60초 연장 (Node.js 런타임 고정)
+export const maxDuration = 60; // Node.js 런타임 고정 (fs 사용)
 
-import { access }  from "fs/promises";
-import { join }    from "path";
+import { access } from "fs/promises";
+import { join }   from "path";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStyleDirectoryPath,
@@ -32,14 +31,31 @@ import {
 import type { StyleAnswers } from "@/app/style/surveyData";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// /v1/models/{owner}/{name}/predictions 엔드포인트 → 버전 해시 불필요, 항상 최신 버전
-const MODEL_OWNER = process.env.REPLICATE_MODEL_OWNER ?? "zsxkib";
-const MODEL_NAME  = process.env.REPLICATE_MODEL_NAME  ?? "instant-id";
-const REPLICATE_ENDPOINT =
-  `https://api.replicate.com/v1/models/${MODEL_OWNER}/${MODEL_NAME}/predictions`;
+// 커뮤니티 모델 → /v1/predictions + version hash 방식 (NOT /v1/models/ 엔드포인트)
+const REPLICATE_VERSION =
+  process.env.REPLICATE_VERSION ??
+  "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34";
+const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
+
+// 로컬 개발 전용 레퍼런스 폴백 URL
+// Replicate 서버는 localhost URL에 접근 불가 → 공개 도메인 초상화로 대체
+// 프로덕션(Vercel)에서는 절대 사용되지 않음
+const LOCAL_DEV_REFERENCE_URL =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/" +
+  "Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/" +
+  "402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg";
+
+// ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
+function isPublicHttpsUrl(url: string): boolean {
+  return (
+    url.startsWith("https://") &&
+    !url.includes("localhost") &&
+    !url.includes("127.0.0.1")
+  );
+}
 
 // ─── 절대 base URL 조립 ───────────────────────────────────────────────────────
-// 우선순위: NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더 (로컬 fallback)
+// 우선순위: NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더
 function getBaseUrl(req: NextRequest): string {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (siteUrl) return siteUrl.replace(/\/$/, "");
@@ -54,59 +70,37 @@ function getBaseUrl(req: NextRequest): string {
   return `${proto}://${host}`;
 }
 
-// ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
-// Replicate 서버가 다운로드 가능한 URL = https:// + 로컬호스트 아닌 것
-function isPublicHttpsUrl(url: string): boolean {
-  return (
-    url.startsWith("https://") &&
-    !url.includes("localhost") &&
-    !url.includes("127.0.0.1")
-  );
-}
-
 // ─── [요구사항 2] 레퍼런스 이미지 랜덤 픽 + Fallback ──────────────────────────
-//
-// 알고리즘:
-//   1. 설문 답변으로 조합된 폴더(예: /references/group_2040/bob/c_curl/soft/) 안에서
-//      1~MAX_IMG(5) 번 중 랜덤 인덱스로 시작해 파일 존재를 순환 체크
-//   2. 찾으면 → {baseUrl}/{relPath} 로 절대 URL 반환
-//   3. 폴더가 비어 있으면 → /references/default_style.jpg 로 안전 폴백
-//
-// 반환값의 isDefault 플래그로 폴백 여부 식별 가능
+// 1. 설문 결과로 조합된 폴더에서 1~MAX_IMG(5) 중 랜덤 시작 인덱스로 순환 탐색
+// 2. 파일 존재 확인(fs.access) → 확정
+// 3. 폴더 전체 비어있으면 /references/default_style.jpg 로 안전 폴백
 async function pickReferenceUrl(
   answers: StyleAnswers,
   baseUrl: string,
 ): Promise<{ url: string; isDefault: boolean }> {
-  const dir    = getStyleDirectoryPath(answers);               // "/references/group_2040/bob/c_curl/soft/"
-  const relDir = dir.replace(/^\//, "");                       // "references/group_2040/bob/c_curl/soft/"
+  const dir    = getStyleDirectoryPath(answers);      // e.g. "/references/group_2040/bob/c_curl/soft/"
+  const relDir = dir.replace(/^\//, "");              // "references/group_2040/bob/c_curl/soft/"
 
-  const startIdx = Math.floor(Math.random() * MAX_IMG) + 1;   // 랜덤 시작 인덱스 (1~5)
+  const startIdx = Math.floor(Math.random() * MAX_IMG) + 1; // 랜덤 시작 (1~5)
 
   for (let i = 0; i < MAX_IMG; i++) {
     const idx     = ((startIdx - 1 + i) % MAX_IMG) + 1;
     const relPath = `${relDir}${idx}.jpg`;
     const absPath = join(process.cwd(), "public", relPath);
-
     try {
-      await access(absPath);                                   // Node.js fs — 파일 실재 확인
+      await access(absPath);
       const url = `${baseUrl}/${relPath}`;
-      console.log(`[hair-transform] ✅ 레퍼런스 픽: ${dir}${idx}.jpg → ${url}`);
+      console.log(`[hair-transform] ✅ 레퍼런스 픽: ${relPath} → ${url}`);
       return { url, isDefault: false };
-    } catch {
-      // 파일 없음 → 다음 인덱스로 순환
-    }
+    } catch { /* 파일 없음 → 다음 인덱스 */ }
   }
 
-  // 폴더 내 이미지 전부 없음 → default_style.jpg 폴백
   const url = `${baseUrl}${DEFAULT_REFERENCE_PATH}`;
-  console.warn(`[hair-transform] ⚠️ 빈 폴더(${dir}) → 폴백: ${url}`);
+  console.warn(`[hair-transform] ⚠️ 빈 폴더(${dir}) → default_style.jpg 폴백`);
   return { url, isDefault: true };
 }
 
 // ─── base64 Data URI 정규화 ───────────────────────────────────────────────────
-// Replicate는 "data:image/jpeg;base64,..." 형식 필요.
-// canvas.toDataURL("image/jpeg") 는 항상 올바른 형식을 생성하지만,
-// 혹시 접두사가 없거나 잘못된 경우 강제 보정한다.
 function normalizeBase64(raw: string): string {
   if (raw.startsWith("data:image/") && raw.includes(";base64,")) return raw;
   if (raw.startsWith("data:")) {
@@ -117,52 +111,22 @@ function normalizeBase64(raw: string): string {
 }
 
 // ─── [요구사항 3] Replicate 입력 빌더 ────────────────────────────────────────
-// 모델: zsxkib/instant-id
-// 스키마 기준: https://replicate.com/zsxkib/instant-id/versions/6af8583c.../api
+// 모델: codeplugtech/face-swap
+// 스키마: target_image(캔버스) + swap_image(삽입할 얼굴)
 //
-//  image      (string, required) — 유저 얼굴 (Base64 data URI)
-//  pose_image (string, optional) — 레퍼런스 헤어 스타일 (공개 https URL)
+// 비즈니스 로직:
+//   target_image = 레퍼런스 헤어 사진 → 이 사진의 얼굴이 유저 얼굴로 교체됨
+//   swap_image   = 유저 셀카           → 이 얼굴이 레퍼런스 사진에 합성됨
+//   결과:         유저 얼굴 + 레퍼런스 헤어 스타일 = 변신 미리보기
 //
-// ⚠️ 이 스키마에 없는 파라미터를 포함하면 HTTP 422(Invalid input) 에러 발생.
-//    검증된 파라미터만 사용한다.
+// ⚠️ 이 스키마에 없는 파라미터 포함 시 HTTP 422 발생
 function buildReplicateInput(
-  userPhoto:    string,        // normalizeBase64() 처리 후 전달
-  poseImageUrl: string | null, // 반드시 공개 https URL, 없으면 null
-  prompt:       string,
+  swapImage:   string, // 유저 셀카 (Base64 data URI)
+  targetImage: string, // 레퍼런스 헤어 사진 (공개 https URL)
 ) {
-  const hasPose = poseImageUrl !== null;
-
   return {
-    // ── 필수 이미지 입력 ───────────────────────────────────────────────────
-    image: userPhoto,                                // 유저 셀카 — 얼굴 identity 보존
-
-    // ── 레퍼런스 헤어 스타일 (핵심 비즈니스 로직) ──────────────────────────
-    ...(hasPose ? { pose_image: poseImageUrl } : {}),
-
-    // ── 텍스트 프롬프트 ────────────────────────────────────────────────────
-    prompt,
-    negative_prompt:
-      "blurry, low quality, distorted face, ugly, disfigured, watermark, " +
-      "bad anatomy, multiple people, extra limbs, deformed, nsfw, cartoon, anime",
-
-    // ── 출력 규격 ──────────────────────────────────────────────────────────
-    width:  640,
-    height: 640,
-
-    // ── 추론 파라미터 ──────────────────────────────────────────────────────
-    num_inference_steps:           30,    // 1-500, 기본 30
-    guidance_scale:                7.5,   // 1-50, 기본 7.5
-    ip_adapter_scale:              0.8,   // 0-1.5, identity 보존 강도
-    controlnet_conditioning_scale: 0.8,   // 0-1.5, fidelity 강도
-
-    // ── 포즈/스타일 컨트롤 ─────────────────────────────────────────────────
-    enable_pose_controlnet: hasPose,      // pose_image 있을 때만 활성화
-    pose_strength:          0.6,          // 0-1, 헤어 스타일 전이 강도
-    enable_canny_controlnet: false,
-    enable_depth_controlnet: false,
-    enhance_nonface_region:  true,        // 배경/비얼굴 영역 보정
-
-    disable_safety_checker: true,         // 헤어 사진 오검출 방지
+    target_image: targetImage, // 레퍼런스 헤어 사진 (얼굴이 교체될 캔버스)
+    swap_image:   swapImage,   // 유저 셀카 (삽입할 얼굴)
   };
 }
 
@@ -170,7 +134,7 @@ function buildReplicateInput(
 
 export async function POST(req: NextRequest) {
 
-  // ── 1. API 키 하드 체크 ──────────────────────────────────────────────────
+  // 1. API 키 하드 체크
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
     const msg = "REPLICATE_API_TOKEN이 환경변수에 없습니다. Vercel 대시보드 또는 .env.local을 확인하세요.";
@@ -181,7 +145,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── 2. 요청 파싱 ─────────────────────────────────────────────────────────
+  // 2. 요청 파싱
   let userPhoto: string;
   let answers: StyleAnswers;
   try {
@@ -201,9 +165,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ── 3. 유저 사진 포맷 검증 + 정규화 ─────────────────────────────────────
+  // 3. 유저 사진 포맷 검증 + 정규화
   if (userPhoto.startsWith("blob:") || userPhoto.startsWith("http:")) {
-    const msg = `userPhoto 포맷 오류. Blob/HTTP URL은 Replicate 처리 불가. 받은 값: "${userPhoto.slice(0, 80)}"`;
+    const msg = `userPhoto 포맷 오류 — blob:/http: URL은 Replicate 처리 불가. 받은 값: "${userPhoto.slice(0, 80)}"`;
     console.error("[hair-transform]", msg);
     return NextResponse.json(
       { ok: false, reason: "invalid_photo_format", debugError: msg },
@@ -211,59 +175,58 @@ export async function POST(req: NextRequest) {
     );
   }
   const normalizedPhoto = normalizeBase64(userPhoto);
-  console.log(`[hair-transform] 유저 사진 포맷: ${normalizedPhoto.slice(0, 30)}... (${normalizedPhoto.length} chars)`);
+  console.log(`[hair-transform] 유저 사진: ${normalizedPhoto.slice(0, 30)}... (${normalizedPhoto.length}chars)`);
 
-  // ── 4. [요구사항 2] 레퍼런스 이미지 랜덤 픽 + Fallback ─────────────────
+  // 4. [요구사항 2] 레퍼런스 이미지 URL 확정 (랜덤 픽 + Fallback)
   const baseUrl = getBaseUrl(req);
-  let poseImageUrl: string | null = null;
+  let targetImageUrl: string;
 
   if (!isPublicHttpsUrl(baseUrl)) {
-    // 로컬 개발 환경: Replicate 서버가 localhost URL에 접근 불가
-    // → 프로덕션(Vercel)에서는 항상 공개 HTTPS URL이 제공됨
+    // [요구사항 3] 로컬 환경: Replicate 서버가 localhost에 접근 불가
+    // → 외부 접근 가능한 공개 URL 폴백 사용 (로컬 테스트 전용)
+    targetImageUrl = LOCAL_DEV_REFERENCE_URL;
     console.warn(
-      "[hair-transform] ⚠️ 로컬 환경(baseUrl=" + baseUrl + ") — " +
-      "Replicate 서버가 localhost URL을 다운로드할 수 없습니다. " +
-      "NEXT_PUBLIC_SITE_URL 환경변수에 프로덕션 URL을 설정하면 로컬에서도 레퍼런스 이미지 전송 가능.",
+      `[hair-transform] ⚠️ 로컬 환경(${baseUrl}) — ` +
+      `레퍼런스 이미지를 LOCAL_DEV_REFERENCE_URL로 대체합니다. ` +
+      `NEXT_PUBLIC_SITE_URL을 프로덕션 URL로 설정하면 실제 레퍼런스 사용 가능.`,
     );
   } else {
-    // 프로덕션: 공개 절대 URL 확정 (랜덤 픽 + fallback 포함)
+    // 프로덕션: 설문 결과 기반 랜덤 픽 + fallback
     const { url, isDefault } = await pickReferenceUrl(answers, baseUrl);
 
-    // 2차 방어: 혹시 URL이 공개 HTTPS가 아닌 경우 차단
+    // 2차 방어: URL이 공개 https인지 재확인
     if (!isPublicHttpsUrl(url)) {
-      console.error("[hair-transform] ❌ 레퍼런스 URL이 공개 HTTPS가 아님:", url);
+      console.error("[hair-transform] ❌ 레퍼런스 URL이 공개 HTTPS 아님:", url);
+      targetImageUrl = LOCAL_DEV_REFERENCE_URL; // 최후 안전망
     } else {
-      poseImageUrl = url;
-      console.log(`[hair-transform] pose_image: ${isDefault ? "[DEFAULT FALLBACK]" : ""} ${url}`);
+      targetImageUrl = url;
     }
+    console.log(`[hair-transform] target_image: ${isDefault ? "[DEFAULT]" : ""} ${targetImageUrl}`);
   }
 
-  // ── 5. 프롬프트 생성 ─────────────────────────────────────────────────────
+  // 5. 프롬프트 생성 (로그용, face-swap 모델은 프롬프트 미사용)
   const prompt = buildHairStylePrompt(answers);
+  console.log(`[hair-transform] 스타일 프롬프트(참고): ${prompt}`);
 
-  // ── 6. Payload 로그 (base64 내용 제외) ───────────────────────────────────
+  // 6. Payload 로그
   console.log("[hair-transform] → Replicate payload:", JSON.stringify({
-    model:        `${MODEL_OWNER}/${MODEL_NAME}`,
-    image:        `[base64 ${normalizedPhoto.length}chars]`,
-    pose_image:   poseImageUrl ?? "(로컬 환경 — 미전송)",
-    prompt,
-    num_inference_steps: 30,
-    ip_adapter_scale:    0.8,
-    controlnet_conditioning_scale: 0.8,
-    enable_pose_controlnet: poseImageUrl !== null,
+    version:      REPLICATE_VERSION.slice(0, 8) + "...",
+    target_image: targetImageUrl,
+    swap_image:   `[base64 ${normalizedPhoto.length}chars]`,
   }));
 
-  // ── 7. Replicate API 호출 ─────────────────────────────────────────────────
+  // 7. Replicate API 호출 (/v1/predictions + version hash)
   try {
     const res = await fetch(REPLICATE_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization:  `Bearer ${token}`,
         "Content-Type": "application/json",
-        Prefer:         "wait=55",       // 55초 동기 대기 (타임아웃 직전까지)
+        Prefer:         "wait=55",
       },
       body: JSON.stringify({
-        input: buildReplicateInput(normalizedPhoto, poseImageUrl, prompt),
+        version: REPLICATE_VERSION,
+        input:   buildReplicateInput(normalizedPhoto, targetImageUrl),
       }),
       signal: AbortSignal.timeout(60_000),
     });
@@ -303,7 +266,7 @@ export async function POST(req: NextRequest) {
 
     const imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
     if (!imageUrl) {
-      const debugError = `output 없음. 응답: ${JSON.stringify(data).slice(0, 400)}`;
+      const debugError = `output 없음. 응답 전체: ${JSON.stringify(data).slice(0, 400)}`;
       console.error("[hair-transform] No output:", data);
       return NextResponse.json({ ok: false, reason: "no_output", debugError });
     }
@@ -322,7 +285,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ─── Replicate 폴링 (processing 상태 처리) ───────────────────────────────────
+// ─── Replicate 폴링 ───────────────────────────────────────────────────────────
 
 async function pollUntilDone(
   pollUrl: string,

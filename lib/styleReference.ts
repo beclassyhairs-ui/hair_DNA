@@ -22,19 +22,21 @@ const AGE_DIR: Record<string, string> = {
 };
 
 // ─── [기장] 6그룹 ─────────────────────────────────────────────────────────────
-// 설문값(q11_length)  →  실제 폴더명
-// short     (숏)     → short
-// bob       (숏단발) → short_bob
-// shoulder  (단발)   → bob
-// collarbone(중단발) → shoulder
-// chest     (긴머리) → collarbone
+// 설문값(q11_length) ↔ /references/ 폴더명 — 1:1 직접 매핑
+// short      (숏)    → short
+// short_bob  (숏단발) → short_bob
+// bob        (단발)   → bob
+// shoulder   (어깨선) → shoulder
+// collarbone (쇄골선) → collarbone
+// chest      (가슴선) → chest
 
 const LENGTH_DIR: Record<string, string> = {
   short:      "short",
-  bob:        "short_bob",
-  shoulder:   "bob",
-  collarbone: "shoulder",
-  chest:      "collarbone",
+  short_bob:  "short_bob",
+  bob:        "bob",
+  shoulder:   "shoulder",
+  collarbone: "collarbone",
+  chest:      "chest",
 };
 
 // ─── [웨이브] 4그룹 ───────────────────────────────────────────────────────────

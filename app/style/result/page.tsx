@@ -416,7 +416,7 @@ export default function StyleResultPage() {
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "일자", medium: "소프트", light: "허쉬컷" };
-  const LENGTH_LABEL: Record<string, string> = { short: "숏", bob: "숏단발", shoulder: "단발", collarbone: "중단발", chest: "긴머리" };
+  const LENGTH_LABEL: Record<string, string> = { short: "숏", short_bob: "숏단발", bob: "단발", shoulder: "어깨선", collarbone: "쇄골선", chest: "가슴선" };
 
   return (
     <main className="min-h-screen bg-charcoal text-cream" style={{ touchAction: "pan-y" }}>
