@@ -121,30 +121,28 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
   const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft feathered layers with gentle movement";
   const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "soft C-curl, ends curling gently inward";
 
+  // 5060 그룹에만 anti-youthening 경고를 추가 (30대에게 적용하면 강제 노화 유발)
+  const isOlderGroup = ["age_50", "age_60plus"].includes(answers.q1_age ?? "");
+  const ageLockLine = isOlderGroup
+    ? `AGE LOCK: Do NOT make this person appear younger. Preserve her mature appearance exactly.`
+    : `AGE LOCK: Do NOT alter her apparent age in any direction — neither younger nor older.`;
+
   return [
-    `TASK: Hairstyle change ONLY. Everything else is completely frozen.`,
+    `TASK: Change ONLY the hairstyle. Keep everything else identical to the source photo.`,
     ``,
     `=== TARGET HAIRSTYLE ===`,
     `${length}, ${layer}, ${wave}.`,
-    `Style must be elegant and age-appropriate for a ${age} Korean woman.`,
+    `Style must be elegant and fitting for a ${age}.`,
     ``,
-    `=== FACE — ABSOLUTE FREEZE (ZERO MODIFICATION PERMITTED) ===`,
-    `DO NOT touch the face under any circumstances.`,
-    `Strictly preserve every wrinkle, deep line, nasolabial fold,`,
-    `forehead crease, crow's feet, and all skin texture exactly as photographed.`,
-    `Preserve all age spots, pigmentation marks, and skin imperfections.`,
-    `Preserve the exact eye shape, eyelid structure, nose shape, lip shape, and face contour.`,
-    `Preserve skin tone and complexion without any correction or enhancement.`,
+    `=== FACE — COPY EXACTLY AS IN SOURCE PHOTO ===`,
+    `Reproduce the face exactly as it appears in the source photo. Do not modify it in any way.`,
+    `Preserve all skin details, texture, tone, and features precisely as visible in the source.`,
+    `Preserve exact eye shape, eyelid, nose, lips, face contour, and jawline.`,
+    `Do not smooth, retouch, enhance, or alter the skin in any way.`,
+    `Do not westernize or change any facial feature.`,
+    `Do not apply any makeup, filters, or visual effects to the face.`,
     ``,
-    `STRICTLY FORBIDDEN:`,
-    `- Skin smoothing, retouching, or beautification of any kind`,
-    `- Making the person appear younger by even one year`,
-    `- Reducing or softening any wrinkle or line`,
-    `- Westernizing or altering any facial feature`,
-    `- Applying virtual makeup or enhancing eyes, brows, or lips`,
-    ``,
-    `AGE LOCK: This person must appear exactly as a ${age} Korean woman.`,
-    `Any output where she appears younger is a complete failure.`,
+    ageLockLine,
     ``,
     `=== BODY, CLOTHING & BACKGROUND — IDENTICAL COPY ===`,
     `Keep clothing, neckline, collar, and all accessories exactly unchanged.`,
