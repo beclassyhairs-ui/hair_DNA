@@ -104,13 +104,16 @@ function normalizeBase64(raw: string): string {
 // 모델: black-forest-labs/flux-kontext-pro
 // 스키마: input_image(편집할 이미지) + prompt(지시문)
 //
-// 비즈니스 로직:
-//   input_image = 유저 셀카 (Blob URL) → 헤어만 변경, 얼굴·옷·배경 동결
-//   prompt      = 마스터 프롬프트      → 4차원 헤어 조합 + 극한 보존 지시
+// guidance (기본값 ~3.5):
+//   높을수록 프롬프트를 "창의적으로" 따름 → 얼굴 재해석 위험 증가
+//   낮을수록 원본 이미지에 충실         → 얼굴 보존력 향상
+//   2.5: 헤어 변경은 적용하되 얼굴 Identity 보존을 우선
 function buildReplicateInput(inputImage: string, prompt: string) {
   return {
-    input_image: inputImage,
+    input_image:    inputImage,
     prompt,
+    guidance:       2.5,
+    output_quality: 90,
   };
 }
 
