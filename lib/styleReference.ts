@@ -84,55 +84,93 @@ export function getStyleDirectoryPath(answers: StyleAnswers): string {
 }
 
 /**
- * flux-kontext-pro 마스터 프롬프트 템플릿
- * 4개 설문 변수(연령·기장·레이어드·웨이브)를 조합해 헤어 전이 지시문 생성.
- * 얼굴·연령·피부·옷·배경의 극한 보존을 명시하여 연령 퇴행·서양화를 차단.
+ * flux-kontext-pro 마스터 프롬프트 — 연령대별 듀얼 매핑
+ *
+ * 핵심 설계 원칙:
+ * · Young (2040): 헤어 묘사에 fresh/natural/bouncy 계열 어휘만 사용
+ *   → "sophisticated/luxurious/Cheongdam-dong/glamorous" 같은 중년 연상 어휘 완전 배제
+ * · Mature (5060): 볼륨·우아함 계열 어휘 유지, anti-youthening AGE LOCK 적용
+ * · 얼굴 보존: 노화 특징 열거 없이 "원본 그대로 복사" 중립 언어만 사용
  */
 export function buildHairStylePrompt(answers: StyleAnswers): string {
+
+  // ── 연령 그룹 판별 ──────────────────────────────────────────────────────────
+  const isYoung = ["age_20", "age_30", "age_40"].includes(answers.q1_age ?? "");
+
+  // ── AGE LABEL — "mature" 제거, 중립 표현만 사용 ────────────────────────────
   const AGE_LABEL: Record<string, string> = {
-    age_20:     "young woman in her twenties",
+    age_20:     "woman in her twenties",
     age_30:     "woman in her thirties",
-    age_40:     "mature woman in her forties",
-    age_50:     "distinguished woman in her fifties",
-    age_60plus: "senior woman in her sixties or seventies",
+    age_40:     "woman in her forties",
+    age_50:     "woman in her fifties",
+    age_60plus: "woman in her sixties or older",
   };
+
+  // ── 기장 — 연령 무관, 중립 묘사 ────────────────────────────────────────────
   const LENGTH_LABEL: Record<string, string> = {
     short:      "very short pixie cut, above the ears",
     short_bob:  "short bob, ear to chin length",
-    bob:        "classic bob, jaw length",
-    shoulder:   "shoulder-length lob",
+    bob:        "classic bob, jaw to chin length",
+    shoulder:   "shoulder-length hair",
     collarbone: "collarbone-length hair",
-    chest:      "long hair, chest length or longer",
+    chest:      "long hair reaching the chest",
   };
-  const LAYER_LABEL: Record<string, string> = {
+
+  // ── 레이어드 듀얼 매핑 ──────────────────────────────────────────────────────
+  // Young: fresh/airy/natural / Mature: classic graduation terminology 유지
+  const LAYER_LABEL_YOUNG: Record<string, string> = {
+    heavy:  "blunt one-length cut, clean and sleek, full uniform weight",
+    medium: "soft layers with natural airy movement, light and bouncy",
+    light:  "heavily layered hush-cut, strong texture, light and breezy",
+  };
+  const LAYER_LABEL_MATURE: Record<string, string> = {
     heavy:  "blunt one-length cut with zero layering, heavy and uniform",
     medium: "soft feathered layers with gentle movement and subtle graduation",
-    light:  "heavily layered hush-cut with strong texture graduation and airy lightweight finish",
+    light:  "heavily layered hush-cut with strong texture graduation and lightweight finish",
   };
-  const WAVE_LABEL: Record<string, string> = {
-    straight: "perfectly straight and sleek, no wave or curl whatsoever",
-    c_curl:   "soft C-curl, ends curling gently inward, smooth rounded silhouette, classic Korean salon finish",
-    s_curl:   "luxurious flowing S-wave, elegant waves cascading from roots to ends, voluminous root lift, sophisticated Cheongdam-dong high-end salon style, smooth and polished finish, no tight or frizzy curl",
-    wave:     "rich voluminous body wave, generous sweeping waves throughout, strong root volume, glamorous and luscious, premium Korean salon wave perm, deep lustrous finish",
+
+  // ── 웨이브 듀얼 매핑 — 핵심 변경 지점 ──────────────────────────────────────
+  // Young: "sophisticated/Cheongdam-dong/luxurious/glamorous" 완전 배제
+  //        → fresh/natural/bouncy/airy/K-beauty 계열로 교체
+  // Mature: 볼륨·우아함 어휘 유지
+  const WAVE_LABEL_YOUNG: Record<string, string> = {
+    straight: "perfectly straight and sleek, smooth and glossy, clean fresh finish",
+    c_curl:   "soft C-curl, ends curling gently inward, bouncy smooth silhouette, natural K-beauty style",
+    s_curl:   "natural flowing S-wave, soft airy waves from mid-lengths to ends, light and bouncy, fresh youthful finish",
+    wave:     "natural bouncy body wave, lively waves throughout, full-bodied and airy, fresh Korean wave perm finish",
   };
+  const WAVE_LABEL_MATURE: Record<string, string> = {
+    straight: "perfectly straight and sleek, no wave or curl, refined and polished",
+    c_curl:   "soft C-curl, ends curling gently inward, smooth rounded silhouette, refined Korean salon finish",
+    s_curl:   "flowing S-wave, elegant waves from roots to ends, voluminous root lift, polished salon finish",
+    wave:     "rich voluminous body wave, generous sweeping waves throughout, strong root volume, Korean salon wave perm",
+  };
+
+  // ── 최종 레이블 선택 ────────────────────────────────────────────────────────
+  const LAYER_LABEL = isYoung ? LAYER_LABEL_YOUNG : LAYER_LABEL_MATURE;
+  const WAVE_LABEL  = isYoung ? WAVE_LABEL_YOUNG  : WAVE_LABEL_MATURE;
 
   const age    = AGE_LABEL[answers.q1_age       ?? ""] ?? "Korean woman";
-  const length = LENGTH_LABEL[answers.q11_length ?? ""] ?? "shoulder-length lob";
-  const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft feathered layers with gentle movement";
+  const length = LENGTH_LABEL[answers.q11_length ?? ""] ?? "shoulder-length hair";
+  const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft layers with natural airy movement";
   const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "soft C-curl, ends curling gently inward";
 
-  // 5060 그룹에만 anti-youthening 경고를 추가 (30대에게 적용하면 강제 노화 유발)
-  const isOlderGroup = ["age_50", "age_60plus"].includes(answers.q1_age ?? "");
-  const ageLockLine = isOlderGroup
-    ? `AGE LOCK: Do NOT make this person appear younger. Preserve her mature appearance exactly.`
-    : `AGE LOCK: Do NOT alter her apparent age in any direction — neither younger nor older.`;
+  // ── AGE LOCK 분기 ──────────────────────────────────────────────────────────
+  const ageLockLine = isYoung
+    ? `AGE LOCK: Do NOT alter her apparent age in any direction — keep her looking exactly her age.`
+    : `AGE LOCK: Do NOT make this person appear younger. Preserve her natural appearance exactly.`;
+
+  // ── Quality Standard — "dignified" 제거 (중년 연상) ─────────────────────────
+  const qualityLine = isYoung
+    ? `Fresh, natural Korean salon quality. Clean and polished finish.`
+    : `Elegant, refined Korean salon quality. Clean and polished finish.`;
 
   return [
     `TASK: Change ONLY the hairstyle. Keep everything else identical to the source photo.`,
     ``,
     `=== TARGET HAIRSTYLE ===`,
     `${length}, ${layer}, ${wave}.`,
-    `Style must be elegant and fitting for a ${age}.`,
+    `Style must be fitting for a ${age}.`,
     ``,
     `=== FACE — COPY EXACTLY AS IN SOURCE PHOTO ===`,
     `Reproduce the face exactly as it appears in the source photo. Do not modify it in any way.`,
@@ -150,8 +188,7 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
     `Keep posture, shoulder width, and body position unchanged.`,
     ``,
     `=== QUALITY STANDARD ===`,
-    `Natural, dignified Korean salon quality.`,
+    qualityLine,
     `Avoid any western hair texture unless specified.`,
-    `Clean, polished, professional finish.`,
   ].join("\n");
 }
