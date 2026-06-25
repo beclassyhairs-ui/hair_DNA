@@ -29,6 +29,7 @@ import {
   MAX_IMG,
 } from "@/lib/styleReference";
 import type { StyleAnswers } from "@/app/style/surveyData";
+import { uploadPhotoToBlob } from "@/lib/storage";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
 // 커뮤니티 모델 → /v1/predictions + version hash 방식 (NOT /v1/models/ 엔드포인트)
@@ -177,6 +178,30 @@ export async function POST(req: NextRequest) {
   const normalizedPhoto = normalizeBase64(userPhoto);
   console.log(`[hair-transform] 유저 사진: ${normalizedPhoto.slice(0, 30)}... (${normalizedPhoto.length}chars)`);
 
+  // 3-1. 유저 셀카 → Vercel Blob 공개 URL 변환
+  // lucataco/faceswap 모델은 data: URI를 URL로 처리해 NoneType 에러 발생
+  // → Blob에 업로드 후 반환된 https:// URL을 swap_image로 전송
+  let swapImageUrl: string;
+  try {
+    swapImageUrl = await uploadPhotoToBlob(normalizedPhoto);
+    if (!swapImageUrl) {
+      const msg = "BLOB_READ_WRITE_TOKEN이 환경변수에 없습니다. Vercel 대시보드 → Storage에서 Blob을 연결하세요.";
+      console.error("[hair-transform]", msg);
+      return NextResponse.json(
+        { ok: false, reason: "blob_token_missing", debugError: msg },
+        { status: 500 },
+      );
+    }
+    console.log("[hair-transform] ✅ Blob 업로드 완료:", swapImageUrl);
+  } catch (blobErr) {
+    const msg = blobErr instanceof Error ? blobErr.message : String(blobErr);
+    console.error("[hair-transform] ❌ Blob 업로드 실패:", msg);
+    return NextResponse.json(
+      { ok: false, reason: "blob_upload_failed", debugError: `Vercel Blob 업로드 실패: ${msg}` },
+      { status: 500 },
+    );
+  }
+
   // 4. [요구사항 2] 레퍼런스 이미지 URL 확정 (랜덤 픽 + Fallback)
   const baseUrl = getBaseUrl(req);
   let targetImageUrl: string;
@@ -212,7 +237,7 @@ export async function POST(req: NextRequest) {
   console.log("[hair-transform] → Replicate payload:", JSON.stringify({
     version:      REPLICATE_VERSION.slice(0, 8) + "...",
     target_image: targetImageUrl,
-    swap_image:   `[base64 ${normalizedPhoto.length}chars]`,
+    swap_image:   swapImageUrl,
   }));
 
   // 7. Replicate API 호출 (/v1/predictions + version hash)
@@ -226,7 +251,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         version: REPLICATE_VERSION,
-        input:   buildReplicateInput(normalizedPhoto, targetImageUrl),
+        input:   buildReplicateInput(swapImageUrl, targetImageUrl),
       }),
       signal: AbortSignal.timeout(60_000),
     });
