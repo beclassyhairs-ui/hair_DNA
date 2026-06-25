@@ -84,37 +84,76 @@ export function getStyleDirectoryPath(answers: StyleAnswers): string {
 }
 
 /**
- * 서버 baseUrl 없이 디렉토리 경로만 필요할 때 사용
- * (파일 존재 체크 없이 순수 경로 계산)
+ * flux-kontext-pro 마스터 프롬프트 템플릿
+ * 4개 설문 변수(연령·기장·레이어드·웨이브)를 조합해 헤어 전이 지시문 생성.
+ * 얼굴·연령·피부·옷·배경의 극한 보존을 명시하여 연령 퇴행·서양화를 차단.
  */
 export function buildHairStylePrompt(answers: StyleAnswers): string {
-  const LENGTH_LABEL: Record<string, string> = {
-    short:      "very short pixie cut hair above ears",
-    bob:        "chin length bob haircut",
-    shoulder:   "shoulder length lob haircut",
-    collarbone: "collarbone length medium length hair",
-    chest:      "long hair below collarbone",
+  const AGE_LABEL: Record<string, string> = {
+    age_20:     "young woman in her twenties",
+    age_30:     "woman in her thirties",
+    age_40:     "mature woman in her forties",
+    age_50:     "distinguished woman in her fifties",
+    age_60plus: "senior woman in her sixties or seventies",
   };
-  const WAVE_LABEL: Record<string, string> = {
-    straight: "sleek straight hair without any waves",
-    c_curl:   "C-curl perm with hair gently curling inward at ends",
-    s_curl:   "natural S-wave perm with flowing waves",
-    wave:     "loose beach waves with wavy texture throughout",
+  const LENGTH_LABEL: Record<string, string> = {
+    short:      "very short pixie cut, above the ears",
+    short_bob:  "short bob, ear to chin length",
+    bob:        "classic bob, jaw length",
+    shoulder:   "shoulder-length lob",
+    collarbone: "collarbone-length hair",
+    chest:      "long hair, chest length or longer",
   };
   const LAYER_LABEL: Record<string, string> = {
-    heavy:  "blunt one-length cut with no layers",
-    medium: "soft feathered layers with natural movement",
-    light:  "heavy hush-cut layers with lots of texture and volume",
+    heavy:  "blunt one-length cut with zero layering, heavy and uniform",
+    medium: "soft feathered layers with gentle movement and subtle graduation",
+    light:  "heavily layered hush-cut with strong texture graduation and airy lightweight finish",
+  };
+  const WAVE_LABEL: Record<string, string> = {
+    straight: "perfectly straight and sleek, no wave or curl whatsoever",
+    c_curl:   "soft C-curl, ends curling gently inward, smooth rounded silhouette, classic Korean salon finish",
+    s_curl:   "luxurious flowing S-wave, elegant waves cascading from roots to ends, voluminous root lift, sophisticated Cheongdam-dong high-end salon style, smooth and polished finish, no tight or frizzy curl",
+    wave:     "rich voluminous body wave, generous sweeping waves throughout, strong root volume, glamorous and luscious, premium Korean salon wave perm, deep lustrous finish",
   };
 
-  const length = LENGTH_LABEL[answers.q11_length ?? ""] ?? "medium length hair";
-  const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "natural hair";
-  const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "layered hair";
+  const age    = AGE_LABEL[answers.q1_age       ?? ""] ?? "Korean woman";
+  const length = LENGTH_LABEL[answers.q11_length ?? ""] ?? "shoulder-length lob";
+  const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft feathered layers with gentle movement";
+  const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "soft C-curl, ends curling gently inward";
 
-  // InstantID 는 트리거 워드 불필요 — pose_image 가 헤어 스타일을 담당
-  return (
-    `professional hair salon portrait, Korean woman, ` +
-    `${length}, ${wave}, ${layer}, ` +
-    `high quality photography, sharp focus, studio lighting, beautiful skin`
-  );
+  return [
+    `TASK: Hairstyle change ONLY. Everything else is completely frozen.`,
+    ``,
+    `=== TARGET HAIRSTYLE ===`,
+    `${length}, ${layer}, ${wave}.`,
+    `Style must be elegant and age-appropriate for a ${age} Korean woman.`,
+    ``,
+    `=== FACE — ABSOLUTE FREEZE (ZERO MODIFICATION PERMITTED) ===`,
+    `DO NOT touch the face under any circumstances.`,
+    `Strictly preserve every wrinkle, deep line, nasolabial fold,`,
+    `forehead crease, crow's feet, and all skin texture exactly as photographed.`,
+    `Preserve all age spots, pigmentation marks, and skin imperfections.`,
+    `Preserve the exact eye shape, eyelid structure, nose shape, lip shape, and face contour.`,
+    `Preserve skin tone and complexion without any correction or enhancement.`,
+    ``,
+    `STRICTLY FORBIDDEN:`,
+    `- Skin smoothing, retouching, or beautification of any kind`,
+    `- Making the person appear younger by even one year`,
+    `- Reducing or softening any wrinkle or line`,
+    `- Westernizing or altering any facial feature`,
+    `- Applying virtual makeup or enhancing eyes, brows, or lips`,
+    ``,
+    `AGE LOCK: This person must appear exactly as a ${age} Korean woman.`,
+    `Any output where she appears younger is a complete failure.`,
+    ``,
+    `=== BODY, CLOTHING & BACKGROUND — IDENTICAL COPY ===`,
+    `Keep clothing, neckline, collar, and all accessories exactly unchanged.`,
+    `Keep background, room, lighting, shadows, and environment pixel-identical.`,
+    `Keep posture, shoulder width, and body position unchanged.`,
+    ``,
+    `=== QUALITY STANDARD ===`,
+    `Natural, dignified Korean salon quality.`,
+    `Avoid any western hair texture unless specified.`,
+    `Clean, polished, professional finish.`,
+  ].join("\n");
 }

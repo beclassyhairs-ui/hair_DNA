@@ -1,20 +1,19 @@
 // ============================================================================
 // POST /api/hair-transform
-// 유저 셀카(swap_image) + 레퍼런스 헤어 사진(target_image) → Face Swap 합성
+// 유저 셀카(input_image) + 마스터 프롬프트 → flux-kontext-pro 헤어 전이
 //
-// 모델: codeplugtech/face-swap
-//   - 엔드포인트: /v1/predictions  (커뮤니티 모델 → version hash 필수)
-//   - 버전 해시:  278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34
-//   - 출처: https://replicate.com/codeplugtech/face-swap/versions (Latest 확인)
-//   - 1.6M 실행, CPU 동작, 평균 64초
+// 모델: black-forest-labs/flux-kontext-pro
+//   - 엔드포인트: /v1/models/black-forest-labs/flux-kontext-pro/predictions
+//     (공식 모델 엔드포인트 — version hash 불필요, 항상 최신 버전)
+//   - 비용: $0.04/run | 속도: 6~10초
 //
 // 파라미터:
-//   target_image → 레퍼런스 헤어 사진 (얼굴이 교체될 캔버스, 공개 https URL)
-//   swap_image   → 유저 셀카 (삽입할 얼굴, Base64 data URI 또는 공개 URL)
+//   input_image → 유저 셀카 (Vercel Blob 공개 URL)
+//   prompt      → 4차원 마스터 프롬프트 (연령·기장·레이어드·웨이브 + 얼굴 보존 강제)
 //
 // 환경변수:
-//   REPLICATE_API_TOKEN  — 필수
-//   NEXT_PUBLIC_SITE_URL — 프로덕션 절대 URL (예: https://your-domain.com)
+//   REPLICATE_API_TOKEN   — 필수
+//   BLOB_READ_WRITE_TOKEN — 필수 (유저 셀카 Blob 업로드용)
 // ============================================================================
 
 export const maxDuration = 60; // Node.js 런타임 고정 (fs 사용)
@@ -32,19 +31,9 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob } from "@/lib/storage";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// 커뮤니티 모델 → /v1/predictions + version hash 방식 (NOT /v1/models/ 엔드포인트)
-const REPLICATE_VERSION =
-  process.env.REPLICATE_VERSION ??
-  "9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d";
-const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
-
-// 로컬 개발 전용 레퍼런스 폴백 URL
-// Replicate 서버는 localhost URL에 접근 불가 → 공개 도메인 초상화로 대체
-// 프로덕션(Vercel)에서는 절대 사용되지 않음
-const LOCAL_DEV_REFERENCE_URL =
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/" +
-  "Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg/" +
-  "402px-Mona_Lisa%2C_by_Leonardo_da_Vinci%2C_from_C2RMF_retouched.jpg";
+// /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
+const REPLICATE_ENDPOINT =
+  "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions";
 
 // ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
 function isPublicHttpsUrl(url: string): boolean {
@@ -111,23 +100,17 @@ function normalizeBase64(raw: string): string {
   return `data:image/jpeg;base64,${raw}`;
 }
 
-// ─── [요구사항 3] Replicate 입력 빌더 ────────────────────────────────────────
-// 모델: codeplugtech/face-swap
-// 스키마: target_image(캔버스) + swap_image(삽입할 얼굴)
+// ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
+// 모델: black-forest-labs/flux-kontext-pro
+// 스키마: input_image(편집할 이미지) + prompt(지시문)
 //
 // 비즈니스 로직:
-//   target_image = 레퍼런스 헤어 사진 → 이 사진의 얼굴이 유저 얼굴로 교체됨
-//   swap_image   = 유저 셀카           → 이 얼굴이 레퍼런스 사진에 합성됨
-//   결과:         유저 얼굴 + 레퍼런스 헤어 스타일 = 변신 미리보기
-//
-// ⚠️ 이 스키마에 없는 파라미터 포함 시 HTTP 422 발생
-function buildReplicateInput(
-  swapImage:   string, // 유저 셀카 (Base64 data URI)
-  targetImage: string, // 레퍼런스 헤어 사진 (공개 https URL)
-) {
+//   input_image = 유저 셀카 (Blob URL) → 헤어만 변경, 얼굴·옷·배경 동결
+//   prompt      = 마스터 프롬프트      → 4차원 헤어 조합 + 극한 보존 지시
+function buildReplicateInput(inputImage: string, prompt: string) {
   return {
-    target_image: targetImage, // 레퍼런스 헤어 사진 (얼굴이 교체될 캔버스)
-    swap_image:   swapImage,   // 유저 셀카 (삽입할 얼굴)
+    input_image: inputImage,
+    prompt,
   };
 }
 
@@ -202,45 +185,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. [요구사항 2] 레퍼런스 이미지 URL 확정 (랜덤 픽 + Fallback)
-  const baseUrl = getBaseUrl(req);
-  let targetImageUrl: string;
-
-  if (!isPublicHttpsUrl(baseUrl)) {
-    // [요구사항 3] 로컬 환경: Replicate 서버가 localhost에 접근 불가
-    // → 외부 접근 가능한 공개 URL 폴백 사용 (로컬 테스트 전용)
-    targetImageUrl = LOCAL_DEV_REFERENCE_URL;
-    console.warn(
-      `[hair-transform] ⚠️ 로컬 환경(${baseUrl}) — ` +
-      `레퍼런스 이미지를 LOCAL_DEV_REFERENCE_URL로 대체합니다. ` +
-      `NEXT_PUBLIC_SITE_URL을 프로덕션 URL로 설정하면 실제 레퍼런스 사용 가능.`,
-    );
-  } else {
-    // 프로덕션: 설문 결과 기반 랜덤 픽 + fallback
-    const { url, isDefault } = await pickReferenceUrl(answers, baseUrl);
-
-    // 2차 방어: URL이 공개 https인지 재확인
-    if (!isPublicHttpsUrl(url)) {
-      console.error("[hair-transform] ❌ 레퍼런스 URL이 공개 HTTPS 아님:", url);
-      targetImageUrl = LOCAL_DEV_REFERENCE_URL; // 최후 안전망
-    } else {
-      targetImageUrl = url;
-    }
-    console.log(`[hair-transform] target_image: ${isDefault ? "[DEFAULT]" : ""} ${targetImageUrl}`);
-  }
-
-  // 5. 프롬프트 생성 (로그용, face-swap 모델은 프롬프트 미사용)
+  // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
   const prompt = buildHairStylePrompt(answers);
-  console.log(`[hair-transform] 스타일 프롬프트(참고): ${prompt}`);
 
-  // 6. Payload 로그
+  // 5. Payload 로그
   console.log("[hair-transform] → Replicate payload:", JSON.stringify({
-    version:      REPLICATE_VERSION.slice(0, 8) + "...",
-    target_image: targetImageUrl,
-    swap_image:   swapImageUrl,
+    model:        "black-forest-labs/flux-kontext-pro",
+    input_image:  swapImageUrl,
+    prompt:       prompt.slice(0, 120) + "...",
   }));
 
-  // 7. Replicate API 호출 (/v1/predictions + version hash)
+  // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
   try {
     const res = await fetch(REPLICATE_ENDPOINT, {
       method: "POST",
@@ -250,8 +205,7 @@ export async function POST(req: NextRequest) {
         Prefer:         "wait=55",
       },
       body: JSON.stringify({
-        version: REPLICATE_VERSION,
-        input:   buildReplicateInput(swapImageUrl, targetImageUrl),
+        input: buildReplicateInput(swapImageUrl, prompt),
       }),
       signal: AbortSignal.timeout(60_000),
     });
