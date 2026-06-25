@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 
@@ -46,6 +46,9 @@ export default function StyleLoadingPage() {
 
         if (!photo) { router.replace("/style/upload"); return; }
 
+        // 이전 디버그 에러 초기화
+        try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+
         // Sheets/Blob 저장 — fire-and-forget
         void fetch("/api/submit-diagnosis", {
           method:  "POST",
@@ -72,16 +75,19 @@ export default function StyleLoadingPage() {
                 body:    JSON.stringify({ userPhoto: photo, answers }),
                 signal:  AbortSignal.timeout(62_000),
               });
-              const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string };
+              const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string; debugError?: string };
 
               // ★ 콘솔 디버그 — 어떤 URL이 돌아오는지 확인
               console.log("[AI] 응답 전체:", data);
               if (data.ok && data.imageUrl) {
                 console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
                 try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+                try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
               } else {
-                console.warn("[AI] ⚠️ 이미지 생성 실패 — reason:", data.reason ?? "unknown");
-                console.warn("[AI] ⚠️ REPLICATE_API_TOKEN이 .env.local에 설정되어 있는지 확인하세요.");
+                const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
+                console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
+                // 결과 페이지에서 붉은 글씨로 표시할 실제 에러 저장
+                try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
               }
             } catch (e) {
               console.error("[AI] ❌ API 호출 예외:", e);

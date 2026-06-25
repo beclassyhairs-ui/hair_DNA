@@ -99,63 +99,72 @@ async function safeResolveReferenceUrl(
   return { url: `${baseUrl}${DEFAULT_REFERENCE_PATH}`, isDefault: true };
 }
 
-// ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
-// PhotoMaker-Style, InstantID, IP-Adapter 등 주요 모델의 입력 키를 모두 포함
-// 모델이 인식하지 못하는 키는 자동 무시됨
+// ─── base64 포맷 정규화 ───────────────────────────────────────────────────────
+// Replicate는 "data:image/jpeg;base64,..." 형식의 Data URI를 요구한다.
+// 업로드 페이지는 canvas.toDataURL("image/jpeg") 로 항상 올바른 형식을 생성하지만
+// 혹시라도 접두사가 없거나 잘못된 경우 강제 보정한다.
+function normalizeBase64(raw: string): string {
+  // 이미 올바른 형식
+  if (raw.startsWith("data:image/") && raw.includes(";base64,")) return raw;
+  // "data:..." 있지만 ";base64," 없는 비정상 케이스 → jpeg 접두사로 교정
+  if (raw.startsWith("data:")) {
+    const b64 = raw.includes(",") ? raw.split(",")[1] : raw.replace(/^data:[^,]*,?/, "");
+    return `data:image/jpeg;base64,${b64}`;
+  }
+  // 순수 base64 문자열 (접두사 전혀 없음) → jpeg 접두사 추가
+  return `data:image/jpeg;base64,${raw}`;
+}
 
-// ★ 로컬호스트 감지: localhost URL은 Replicate 서버가 접근 불가 → null 반환
+// ─── 공개 절대 URL 검증 ───────────────────────────────────────────────────────
 function isPublicUrl(url: string): boolean {
   return url.startsWith("https://") && !url.includes("localhost") && !url.includes("127.0.0.1");
 }
 
+// ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
+// tencentarc/photomaker-style 공식 스펙 기준 (2024)
+// https://replicate.com/tencentarc/photomaker-style
+//
+// 허용 파라미터:
+//   prompt                — 필수. "img" 트리거 워드 포함 필수
+//   input_image           — 필수. 유저 얼굴 (Data URI 또는 공개 URL)
+//   negative_prompt       — 선택
+//   num_steps             — 선택 (integer, 1-100, 기본 50)
+//   style_strength_ratio  — 선택 (integer, 15-50, 기본 20)
+//   num_outputs           — 선택 (integer, 1-4, 기본 1)
+//   guidance_scale        — 선택 (float, 1-10, 기본 5)
+//
+// ⚠️ 이 모델은 style_image / ip_adapter_image 등 별도 스타일 이미지 파라미터가 없다.
+//    인식 못하는 파라미터를 포함하면 HTTP 422(Invalid input) 에러가 발생한다.
+
 function buildReplicateInput(
-  userPhoto:    string,        // 유저 셀카 (base64 data URL)
-  referenceUrl: string | null, // 레퍼런스 이미지 (프로덕션에서만 유효한 https URL)
-  prompt:       string,
+  userPhoto: string,  // normalizeBase64() 처리 후 전달
+  prompt:    string,
 ) {
   return {
-    prompt,
+    prompt,           // "img" 트리거 워드 필수 포함 (buildHairStylePrompt 에서 보장)
     negative_prompt:
       "blurry, low quality, distorted face, ugly, disfigured, watermark, " +
       "bad anatomy, multiple people, extra limbs, deformed, nsfw",
-
-    // 유저 얼굴 정체성 보존 (모델별 키 이름 중복 포함)
-    input_image: userPhoto,   // PhotoMaker-Style
-    image:       userPhoto,   // InstantID / IP-Adapter SDXL
-    face_image:  userPhoto,   // 일부 face ID 모델
-
-    // 헤어 스타일 레퍼런스 (프로덕션 https URL일 때만 포함)
-    // 로컬 localhost URL은 Replicate 서버가 접근 불가 → undefined로 제외
-    ...(referenceUrl ? {
-      style_image:      referenceUrl,
-      ip_adapter_image: referenceUrl,
-      style_reference:  referenceUrl,
-    } : {}),
-
-    // 생성 파라미터
-    num_outputs:         1,
-    num_inference_steps: 30,
-    guidance_scale:      7.0,
-
-    // 얼굴 정체성 강도
-    face_strength:                 0.8,
-    ip_adapter_scale:              0.7,
-    controlnet_conditioning_scale: 0.8,
-
-    // 스타일 전이 강도
-    style_strength_radio: 0.5,
-    strength:             0.55,
+    input_image:          userPhoto, // ← 유일한 이미지 입력 키
+    num_steps:            30,        // ← num_inference_steps 아님!
+    num_outputs:          1,
+    guidance_scale:       5.0,       // 범위 1-10
+    style_strength_ratio: 20,        // ← style_strength_radio(오타) 아님! 범위 15-50
   };
 }
 
 // ─── 라우트 핸들러 ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // 1. 인증 토큰 확인
+  // ─── [지시 3] API 키 하드 체크 ─────────────────────────────────────────────
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
-    console.warn("[hair-transform] REPLICATE_API_TOKEN 미설정 — 생성 건너뜀");
-    return NextResponse.json({ ok: false, reason: "no_token" });
+    const msg = "REPLICATE_API_TOKEN이 환경변수에 없습니다. Vercel 대시보드 또는 .env.local을 확인하세요.";
+    console.error("[hair-transform]", msg);
+    return NextResponse.json(
+      { ok: false, reason: "no_token", debugError: msg },
+      { status: 500 },
+    );
   }
 
   // 2. 요청 파싱
@@ -166,33 +175,66 @@ export async function POST(req: NextRequest) {
     userPhoto = body.userPhoto as string;
     answers   = (body.answers ?? {}) as StyleAnswers;
   } catch {
-    return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, reason: "bad_request", debugError: "요청 JSON 파싱 실패" },
+      { status: 400 },
+    );
   }
   if (!userPhoto) {
-    return NextResponse.json({ ok: false, reason: "missing_photo" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, reason: "missing_photo", debugError: "userPhoto 필드가 비어 있습니다" },
+      { status: 400 },
+    );
   }
 
-  // 3. 절대 base URL 조립 (NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더 순)
+  // ─── [요구사항 1] 유저 사진 포맷 엄격 검증 + 정규화 ────────────────────────
+  // blob:// 나 http:// → Replicate 처리 불가 → 즉시 거부
+  if (
+    userPhoto.startsWith("blob:") ||
+    userPhoto.startsWith("http:") ||
+    (!userPhoto.startsWith("data:") && !userPhoto.match(/^[A-Za-z0-9+/]/)  )
+  ) {
+    const msg = `userPhoto 포맷 오류. Replicate는 Data URI(data:image/...)만 허용합니다. 받은 값: "${userPhoto.slice(0, 80)}..."`;
+    console.error("[hair-transform]", msg);
+    return NextResponse.json(
+      { ok: false, reason: "invalid_photo_format", debugError: msg },
+      { status: 400 },
+    );
+  }
+  // data:image/jpeg;base64,... 형식으로 정규화 (접두사 누락 시 강제 보정)
+  const normalizedPhoto = normalizeBase64(userPhoto);
+
+  // ─── [요구사항 2] 레퍼런스 URL — 공개 절대 경로 검증 (디버그 용도, Replicate 미전송) ──
+  // PhotoMaker-Style 모델은 style_image 파라미터를 지원하지 않는다.
+  // 향후 다른 모델 전환 시를 대비해 URL 계산 로직만 유지.
   const baseUrl = getBaseUrl(req);
-
-  // 4. 레퍼런스 이미지 URL 확정
-  // ★ localhost 환경: Replicate 서버가 접근 불가 → null (텍스트 프롬프트만으로 실행)
-  // ★ 프로덕션 https: 레퍼런스 이미지 포함 → 스타일 트랜스퍼 품질 향상
   const isLocal = !isPublicUrl(baseUrl);
-  let referenceUrl: string | null = null;
-
   if (isLocal) {
-    console.log("[hair-transform] 🔧 로컬 환경 감지 — 레퍼런스 이미지 제외 (텍스트 프롬프트만 사용)");
+    console.log("[hair-transform] 로컬 환경 — baseUrl:", baseUrl);
   } else {
-    const { url, isDefault } = await safeResolveReferenceUrl(answers, baseUrl);
-    referenceUrl = url;
-    console.log(`[hair-transform] 레퍼런스: ${isDefault ? "default_style.jpg (폴백)" : url.split("/references/")[1] ?? url}`);
+    // 레퍼런스 URL 계산 (로그용, Replicate payload에는 포함 안 함)
+    const { url: refUrl, isDefault } = await safeResolveReferenceUrl(answers, baseUrl);
+    console.log(`[hair-transform] 레퍼런스(미사용): ${isDefault ? "default_style.jpg" : refUrl.split("/references/")[1] ?? refUrl}`);
+    // 공개 https URL인지 2차 방어 검증
+    if (!isPublicUrl(refUrl)) {
+      console.warn("[hair-transform] ⚠️ 레퍼런스 URL이 공개 절대경로가 아님 → 무시:", refUrl);
+    }
   }
 
-  // 5. 프롬프트 생성
+  // 5. 프롬프트 생성 ("img" 트리거 워드 포함)
   const prompt = buildHairStylePrompt(answers);
 
-  console.log(`[hair-transform] 모델: ${MODEL_OWNER}/${MODEL_NAME} | baseUrl: ${baseUrl}`);
+  // Replicate에 전송할 payload 로그 (base64 제외)
+  const payloadForLog = {
+    prompt,
+    input_image:          `[base64 ${normalizedPhoto.length} chars, prefix: ${normalizedPhoto.slice(0, 30)}]`,
+    num_steps:            30,
+    num_outputs:          1,
+    guidance_scale:       5.0,
+    style_strength_ratio: 20,
+  };
+  console.log(`[hair-transform] → Replicate payload:`, JSON.stringify(payloadForLog));
+  console.log(`[hair-transform] 모델: ${MODEL_OWNER}/${MODEL_NAME}`);
 
   // 6. Replicate API 호출
   try {
@@ -204,15 +246,16 @@ export async function POST(req: NextRequest) {
         Prefer:         "wait=55",
       },
       body: JSON.stringify({
-        input: buildReplicateInput(userPhoto, referenceUrl, prompt),
+        input: buildReplicateInput(normalizedPhoto, prompt),
       }),
       signal: AbortSignal.timeout(60_000),
     });
 
     if (!res.ok) {
       const errText = await res.text().catch(() => res.status.toString());
+      const debugError = `Replicate HTTP ${res.status}: ${errText.slice(0, 400)}`;
       console.error("[hair-transform] Replicate HTTP error:", res.status, errText.slice(0, 200));
-      return NextResponse.json({ ok: false, reason: "api_error" });
+      return NextResponse.json({ ok: false, reason: "api_error", debugError });
     }
 
     const data = await res.json() as {
@@ -226,19 +269,26 @@ export async function POST(req: NextRequest) {
     if (data.status === "processing" && data.urls?.get) {
       const pollResult = await pollUntilDone(data.urls.get, token);
       if (!pollResult) {
-        return NextResponse.json({ ok: false, reason: "poll_timeout" });
+        return NextResponse.json({
+          ok: false,
+          reason: "poll_timeout",
+          debugError: "Replicate 폴링 타임아웃: 50초 내에 이미지가 생성되지 않았습니다",
+        });
       }
       return NextResponse.json({ ok: true, imageUrl: pollResult });
     }
 
     if (data.error) {
+      const debugError = `Replicate prediction error: ${data.error}`;
       console.error("[hair-transform] Prediction error:", data.error);
-      return NextResponse.json({ ok: false, reason: "prediction_error" });
+      return NextResponse.json({ ok: false, reason: "prediction_error", debugError });
     }
 
     const imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
     if (!imageUrl) {
-      return NextResponse.json({ ok: false, reason: "no_output" });
+      const debugError = `Replicate 응답에 output이 없습니다. 응답 전체: ${JSON.stringify(data).slice(0, 300)}`;
+      console.error("[hair-transform] No output:", data);
+      return NextResponse.json({ ok: false, reason: "no_output", debugError });
     }
 
     return NextResponse.json({ ok: true, imageUrl });
@@ -246,7 +296,11 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[hair-transform] Exception:", msg);
-    return NextResponse.json({ ok: false, reason: "exception" });
+    return NextResponse.json({
+      ok: false,
+      reason: "exception",
+      debugError: `예외 발생: ${msg}`,
+    });
   }
 }
 

@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   KAKAO_LOGGED_IN_KEY,
   STYLE_ANSWERS_KEY,
+  STYLE_DEBUG_ERROR_KEY,
   STYLE_GENERATED_KEY,
   STYLE_PHOTO_KEY,
   STYLE_UNLOCKED_KEY,
@@ -208,11 +209,12 @@ function KakaoSaveModal({
 // ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시
 
 function BeforeAfterSection({
-  photo, locked, generatedUrl, onRetry,
+  photo, locked, generatedUrl, debugError, onRetry,
 }: {
   photo:        string | null;
   locked:       boolean;
   generatedUrl: string | null;
+  debugError:   string | null;
   onRetry:      () => void;
 }) {
   return (
@@ -252,11 +254,17 @@ function BeforeAfterSection({
             style={{ pointerEvents: "none", WebkitTouchCallout: "none" }}
             onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center">
-            <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8 text-cream/25" stroke="currentColor" strokeWidth={1.2}>
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-cream/25" stroke="currentColor" strokeWidth={1.2}>
               <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
             </svg>
             <p className="text-[11px] leading-snug text-cream/40">AI 합성에<br />실패했어요</p>
+            {debugError && (
+              <div className="w-full rounded-lg border border-red-500/40 bg-red-950/60 px-2 py-2 text-left">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-red-400 mb-1">[개발자 디버그] 에러 원인:</p>
+                <p className="text-[10px] leading-snug text-red-300 break-all">{debugError}</p>
+              </div>
+            )}
             <button onClick={onRetry}
               className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[11px] font-bold text-gold transition-colors hover:bg-gold/15">
               다시 시도
@@ -350,12 +358,13 @@ function NotifyButton() {
 export default function StyleResultPage() {
   const router = useRouter();
 
-  const [photo,     setPhoto]     = useState<string | null>(null);
-  const [generated, setGenerated] = useState<string | null>(null);
-  const [answers,   setAnswers]   = useState<StyleAnswers>({});
-  const [locked,    setLocked]    = useState(true);
-  const [ready,     setReady]     = useState(false);
-  const [showSave,  setShowSave]  = useState(false);
+  const [photo,      setPhoto]      = useState<string | null>(null);
+  const [generated,  setGenerated]  = useState<string | null>(null);
+  const [debugError, setDebugError] = useState<string | null>(null);
+  const [answers,    setAnswers]    = useState<StyleAnswers>({});
+  const [locked,     setLocked]     = useState(true);
+  const [ready,      setReady]      = useState(false);
+  const [showSave,   setShowSave]   = useState(false);
 
   // 캡처 방지 viewport 설정
   useEffect(() => {
@@ -377,8 +386,13 @@ export default function StyleResultPage() {
       // ★ AI 이미지 — 한 번만 읽기 (loading 페이지가 완성 후 넘겨줌)
       const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
       console.log("[Result] sessionStorage STYLE_GENERATED_KEY 값:", g ?? "(없음)");
-      if (g) setGenerated(g);
-      else console.warn("[Result] ⚠️ AI 이미지 URL 없음 — 로딩 페이지에서 저장이 실패했을 수 있습니다.");
+      if (g) {
+        setGenerated(g);
+      } else {
+        const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
+        console.warn("[Result] ⚠️ AI 이미지 URL 없음. debugError:", dbgErr ?? "(없음)");
+        if (dbgErr) setDebugError(dbgErr);
+      }
     } catch { /**/ }
     setReady(true);
   }, []);
@@ -427,7 +441,7 @@ export default function StyleResultPage() {
         </div>
 
         {/* Before / After — 세션 즉시 렌더 */}
-        <BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} onRetry={handleRetry} />
+        <BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />
 
         {/* 스크롤 유도 — 강조 텍스트 */}
         <div className="mt-4 flex flex-col items-center gap-2 text-center">
