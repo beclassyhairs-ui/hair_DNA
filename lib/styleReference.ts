@@ -109,9 +109,9 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
   const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "natural hair";
   const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "layered hair";
 
-  // "img" = PhotoMaker-Style 필수 트리거 워드 — 없으면 얼굴 id가 무시됨
+  // InstantID 는 트리거 워드 불필요 — pose_image 가 헤어 스타일을 담당
   return (
-    `a photo of img, professional hair salon portrait, Korean woman, ` +
+    `professional hair salon portrait, Korean woman, ` +
     `${length}, ${wave}, ${layer}, ` +
     `high quality photography, sharp focus, studio lighting, beautiful skin`
   );
