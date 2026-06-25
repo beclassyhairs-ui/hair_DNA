@@ -34,7 +34,7 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 // 커뮤니티 모델 → /v1/predictions + version hash 방식 (NOT /v1/models/ 엔드포인트)
 const REPLICATE_VERSION =
   process.env.REPLICATE_VERSION ??
-  "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34";
+  "9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d";
 const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
 
 // 로컬 개발 전용 레퍼런스 폴백 URL
