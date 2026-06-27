@@ -89,8 +89,10 @@ export function getStyleDirectoryPath(answers: StyleAnswers): string {
  * 핵심 설계 원칙:
  * · Young (2040): 헤어 묘사에 fresh/natural/bouncy 계열 어휘만 사용
  *   → "sophisticated/luxurious/Cheongdam-dong/glamorous" 같은 중년 연상 어휘 완전 배제
- * · Mature (5060): 볼륨·우아함 계열 어휘 유지, anti-youthening AGE LOCK 적용
+ * · Mature (5060): 볼륨·우아함 계열 어휘 유지
+ * · 나이 조작 일체 금지: AGE LOCK 문구 삭제 — "젊어 보이지 말라" 류 지시가 역노화 역효과를 일으킴
  * · 얼굴 보존: 노화 특징 열거 없이 "원본 그대로 복사" 중립 언어만 사용
+ * · 민족성 고정: 100% Korean(동양인) 강제 — 서구화/혼혈화 차단
  */
 export function buildHairStylePrompt(answers: StyleAnswers): string {
 
@@ -155,41 +157,44 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
   const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft layers with natural airy movement";
   const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "soft C-curl, ends curling gently inward";
 
-  // ── AGE LOCK 분기 ──────────────────────────────────────────────────────────
-  const ageLockLine = isYoung
-    ? `AGE LOCK: Do NOT alter her apparent age in any direction — keep her looking exactly her age.`
-    : `AGE LOCK: Do NOT make this person appear younger. Preserve her natural appearance exactly.`;
-
   // ── Quality Standard — "dignified" 제거 (중년 연상) ─────────────────────────
   const qualityLine = isYoung
     ? `Fresh, natural Korean salon quality. Clean and polished finish.`
     : `Elegant, refined Korean salon quality. Clean and polished finish.`;
 
   return [
-    `TASK: Apply a new hairstyle ONLY. The face is NOT a creative zone — do not edit it.`,
+    `TASK: Apply a new hairstyle ONLY. The face is a FROZEN, READ-ONLY LAYER — do not touch it.`,
     ``,
     `=== HAIRSTYLE TO APPLY ===`,
     `${length}, ${layer}, ${wave}.`,
     `Style for a ${age}.`,
     ``,
-    `=== FACIAL IDENTITY LOCK — ZERO TOLERANCE ===`,
-    `The person in the output MUST be the IDENTICAL individual from the source photo.`,
-    `Treat the face as a locked layer that cannot be painted over, reshaped, or reinterpreted.`,
+    `=== FACIAL IDENTITY LOCK — ABSOLUTE ZERO TOLERANCE ===`,
+    `The person in the output MUST be the PIXEL-FOR-PIXEL IDENTICAL individual from the source photo.`,
+    `Treat the face as a locked, immovable stamp. Do NOT repaint, reinterpret, reshape, or redraw ANY part of it.`,
     ``,
-    `Freeze each feature with pixel-level precision:`,
-    `- Eye shape, eyelid crease type, eye size, and exact inter-eye distance`,
-    `- Nose bridge width, nose length, nostril shape, and nose tip`,
-    `- Lip outer contour, cupid's bow shape, and mouth width`,
-    `- Jawline curve, chin shape, and the full face outline`,
-    `- Cheekbone position, under-eye area, and temple width`,
-    `- Face shape category — do NOT change it (oval stays oval, round stays round)`,
-    `- Eyebrow shape, arch height, and thickness`,
-    `- All spatial distances and proportions between facial landmarks`,
+    `Freeze each feature with exact pixel-level precision — no drift allowed:`,
+    `- Eye shape, eyelid crease type (monolid / hooded / inner fold — KEEP AS-IS), eye size, inter-eye distance`,
+    `- Nose bridge width and height, nose length, nostril shape, nose tip — do NOT raise the bridge`,
+    `- Lip outer contour, cupid's bow shape, mouth width`,
+    `- Jawline curve, chin shape, full face outline`,
+    `- Cheekbone position, under-eye area, temple width`,
+    `- Face shape category — do NOT change it (round stays round, square stays square, oval stays oval)`,
+    `- Eyebrow shape, arch height, thickness`,
+    `- All spatial distances and proportions between every facial landmark`,
     ``,
-    `If the output person looks different from the source in ANY of the above, the task has FAILED.`,
+    `If the output person looks different from the source in ANY of the above features, the task has COMPLETELY FAILED.`,
     `Do not alter any facial feature even if it would better complement the hairstyle.`,
+    `Do NOT make the person look younger or older — age manipulation is PROHIBITED.`,
     ``,
-    ageLockLine,
+    `=== ETHNICITY LOCK — NON-NEGOTIABLE ===`,
+    `This person is 100% Korean (East Asian). This is a hard constraint, not a preference.`,
+    `- Strictly preserve 100% Korean/Asian facial characteristics`,
+    `- Do NOT westernize ANY feature — no higher nose bridge, no enlarged eyes, no sharper chin`,
+    `- Do NOT add a double eyelid if the original has monolids (inner fold or no fold)`,
+    `- Do NOT apply any Caucasian/Western bone structure or facial proportion`,
+    `- Do NOT introduce any mixed-race or half-foreign appearance`,
+    `Any output with westernized facial features is a FAILED output.`,
     ``,
     `=== SKIN — AS PHOTOGRAPHED ===`,
     `Copy skin tone, texture, and all visible skin details exactly from the source.`,

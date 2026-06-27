@@ -102,18 +102,21 @@ function normalizeBase64(raw: string): string {
 
 // ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
 // 모델: black-forest-labs/flux-kontext-pro
-// 스키마: input_image(편집할 이미지) + prompt(지시문)
 //
-// guidance (기본값 ~3.5):
-//   높을수록 프롬프트를 "창의적으로" 따름 → 얼굴 재해석 위험 증가
-//   낮을수록 원본 이미지에 충실         → 얼굴 보존력 향상
-//   2.5: 헤어 변경은 적용하되 얼굴 Identity 보존을 우선
+// guidance (기본값 3.5):
+//   낮을수록 원본 이미지에 충실 → 얼굴 훼손 위험 감소
+//   2.0: 프롬프트 지시(헤어)는 적용하되 원본 이미지 충실도를 최대화
+//
+// prompt_upsampling (기본값 true):
+//   true이면 FLUX가 프롬프트를 AI가 자동 확장·재해석 → 얼굴 서구화 원인 중 하나
+//   false: 우리가 작성한 프롬프트를 literal하게 그대로 따름 → 얼굴 보존 우선
 function buildReplicateInput(inputImage: string, prompt: string) {
   return {
-    input_image:    inputImage,
+    input_image:       inputImage,
     prompt,
-    guidance:       2.5,
-    output_quality: 90,
+    guidance:          2.0,   // 2.5 → 2.0: 원본 이미지 충실도 극대화
+    output_quality:    90,
+    prompt_upsampling: false,  // AI 프롬프트 자동 재해석 차단 — literal 준수 강제
   };
 }
 
