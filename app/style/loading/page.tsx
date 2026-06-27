@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
+import { incrementUsage } from "@/lib/dailyLimit";
 
 const STEPS = [
   "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
@@ -68,6 +69,7 @@ export default function StyleLoadingPage() {
           new Promise<void>(resolve => setTimeout(resolve, 15_000)),
           (async () => {
             try {
+              incrementUsage(); // 실제 API 비용 발생 시점에 횟수 차감
               console.log("[AI] /api/hair-transform 호출 시작...");
               const res  = await fetch("/api/hair-transform", {
                 method:  "POST",
