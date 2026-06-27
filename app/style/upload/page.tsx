@@ -63,6 +63,13 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           <p className="mt-3 px-2 text-center text-sm text-cream/40">
             정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
           </p>
+          <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-3">
+            <p className="text-center text-xs leading-relaxed text-amber-400/80">
+              ⚠️ <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
+              손가락이 머리카락과 겹치면 AI가 손 모양을 변형할 수 있어요.<br />
+              손은 아래로 자연스럽게 내린 자세로 촬영해 주세요.
+            </p>
+          </div>
         </div>
       </div>
 
