@@ -84,29 +84,18 @@ export function getStyleDirectoryPath(answers: StyleAnswers): string {
 }
 
 /**
- * flux-kontext-pro 마스터 프롬프트 — 연령대별 듀얼 매핑
+ * flux-kontext-pro 마스터 프롬프트 — 단일 age-neutral 어휘
  *
  * 핵심 설계 원칙:
- * · Young (2040): 헤어 묘사에 fresh/natural/bouncy 계열 어휘만 사용
- *   → "sophisticated/luxurious/Cheongdam-dong/glamorous" 같은 중년 연상 어휘 완전 배제
- * · Mature (5060): 볼륨·우아함 계열 어휘 유지
- * · 나이 조작 일체 금지: AGE LOCK 문구 삭제 — "젊어 보이지 말라" 류 지시가 역노화 역효과를 일으킴
- * · 얼굴 보존: 노화 특징 열거 없이 "원본 그대로 복사" 중립 언어만 사용
+ * · Young/Mature 듀얼 어휘 시스템 완전 폐기
+ *   → "Korean salon wave perm" / "elegant" / "refined" / "voluminous root lift" 등
+ *      FLUX의 중년 여성 이미지 prior를 활성화하는 어휘가 흰머리 강제 생성의 원인이었음
+ * · 모든 연령대에 동일한 fresh/natural/bouncy/airy 계열 어휘 적용
+ * · q1_age는 레퍼런스 이미지 경로 분기에만 사용 — 프롬프트 어휘 선택에 관여하지 않음
+ * · 얼굴 보존: 원본 그대로 복사 중립 언어만 사용
  * · 민족성 고정: 100% Korean(동양인) 강제 — 서구화/혼혈화 차단
  */
 export function buildHairStylePrompt(answers: StyleAnswers): string {
-
-  // ── 연령 그룹 판별 ──────────────────────────────────────────────────────────
-  const isYoung = ["age_20", "age_30", "age_40"].includes(answers.q1_age ?? "");
-
-  // ── AGE LABEL — "mature" 제거, 중립 표현만 사용 ────────────────────────────
-  const AGE_LABEL: Record<string, string> = {
-    age_20:     "woman in her twenties",
-    age_30:     "woman in her thirties",
-    age_40:     "woman in her forties",
-    age_50:     "woman in her fifties",
-    age_60plus: "woman in her sixties or older",
-  };
 
   // ── 기장 — 연령 무관, 중립 묘사 ────────────────────────────────────────────
   const LENGTH_LABEL: Record<string, string> = {
@@ -118,49 +107,27 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
     chest:      "long hair reaching the chest",
   };
 
-  // ── 레이어드 듀얼 매핑 ──────────────────────────────────────────────────────
-  // Young: fresh/airy/natural / Mature: classic graduation terminology 유지
-  const LAYER_LABEL_YOUNG: Record<string, string> = {
+  // ── 레이어드 — 단일 age-neutral 어휘 ─────────────────────────────────────────
+  // "feathered" / "graduation" 등 중년 연상 어휘 제거
+  const LAYER_LABEL: Record<string, string> = {
     heavy:  "blunt one-length cut, clean and sleek, full uniform weight",
     medium: "soft layers with natural airy movement, light and bouncy",
     light:  "heavily layered hush-cut, strong texture, light and breezy",
   };
-  const LAYER_LABEL_MATURE: Record<string, string> = {
-    heavy:  "blunt one-length cut with zero layering, heavy and uniform",
-    medium: "soft feathered layers with gentle movement and subtle graduation",
-    light:  "heavily layered hush-cut with strong texture graduation and lightweight finish",
-  };
 
-  // ── 웨이브 듀얼 매핑 — 핵심 변경 지점 ──────────────────────────────────────
-  // Young: "sophisticated/Cheongdam-dong/luxurious/glamorous" 완전 배제
-  //        → fresh/natural/bouncy/airy/K-beauty 계열로 교체
-  // Mature: 볼륨·우아함 어휘 유지
-  const WAVE_LABEL_YOUNG: Record<string, string> = {
+  // ── 웨이브 — 단일 age-neutral 어휘 ──────────────────────────────────────────
+  // "Korean salon wave perm" / "elegant" / "voluminous root lift" / "polished" /
+  // "refined" 전부 제거 — FLUX 학습 데이터에서 이 단어들이 흰머리 prior를 활성화함
+  const WAVE_LABEL: Record<string, string> = {
     straight: "perfectly straight and sleek, smooth and glossy, clean fresh finish",
     c_curl:   "soft C-curl, ends curling gently inward, bouncy smooth silhouette, natural K-beauty style",
-    s_curl:   "natural flowing S-wave, soft airy waves from mid-lengths to ends, light and bouncy, fresh youthful finish",
-    wave:     "natural bouncy body wave, lively waves throughout, full-bodied and airy, fresh Korean wave perm finish",
-  };
-  const WAVE_LABEL_MATURE: Record<string, string> = {
-    straight: "perfectly straight and sleek, no wave or curl, refined and polished",
-    c_curl:   "soft C-curl, ends curling gently inward, smooth rounded silhouette, refined Korean salon finish",
-    s_curl:   "flowing S-wave, elegant waves from roots to ends, voluminous root lift, polished salon finish",
-    wave:     "rich voluminous body wave, generous sweeping waves throughout, strong root volume, Korean salon wave perm",
+    s_curl:   "natural flowing S-wave, soft airy waves from mid-lengths to ends, light and bouncy",
+    wave:     "natural bouncy body wave, lively waves throughout, full-bodied and airy",
   };
 
-  // ── 최종 레이블 선택 ────────────────────────────────────────────────────────
-  const LAYER_LABEL = isYoung ? LAYER_LABEL_YOUNG : LAYER_LABEL_MATURE;
-  const WAVE_LABEL  = isYoung ? WAVE_LABEL_YOUNG  : WAVE_LABEL_MATURE;
-
-  const age    = AGE_LABEL[answers.q1_age       ?? ""] ?? "Korean woman";
   const length = LENGTH_LABEL[answers.q11_length ?? ""] ?? "shoulder-length hair";
   const layer  = LAYER_LABEL[answers.q14_layer  ?? ""] ?? "soft layers with natural airy movement";
   const wave   = WAVE_LABEL[answers.q13_design  ?? ""] ?? "soft C-curl, ends curling gently inward";
-
-  // ── Quality Standard — "dignified" 제거 (중년 연상) ─────────────────────────
-  const qualityLine = isYoung
-    ? `Fresh, natural Korean salon quality. Clean and polished finish.`
-    : `Elegant, refined Korean salon quality. Clean and polished finish.`;
 
   return [
     `TASK: Apply a new hairstyle ONLY. The face is a FROZEN, READ-ONLY LAYER — do not touch it.`,
@@ -211,7 +178,7 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
     `Keep clothing, neckline, accessories, background, lighting, and posture unchanged.`,
     ``,
     `=== QUALITY ===`,
-    qualityLine,
+    `Natural Korean salon quality. Clean and polished finish.`,
     `No western hair texture unless specified.`,
   ].join("\n");
 }
