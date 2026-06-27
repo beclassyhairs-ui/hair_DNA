@@ -114,7 +114,7 @@ function buildReplicateInput(inputImage: string, prompt: string) {
   return {
     input_image:       inputImage,
     prompt,
-    guidance:          2.0,   // 2.5 → 2.0: 원본 이미지 충실도 극대화
+    guidance:          3.0,   // 2.0 → 3.0: 프롬프트 지시(얼굴 동결 명령)의 영향력 복원
     output_quality:    90,
     prompt_upsampling: false,  // AI 프롬프트 자동 재해석 차단 — literal 준수 강제
   };
