@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "./components/Analytics";
@@ -18,6 +18,13 @@ const notoSerif = Noto_Serif_KR({
   variable: "--font-serif",
   display: "swap",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 export const metadata: Metadata = {
   // 소셜 미리보기 이미지 절대 URL 해석 기준 — 배포 도메인으로 교체

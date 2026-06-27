@@ -58,7 +58,7 @@ export default function AiLoadingPage() {
       if (next >= 100 && !done.current) {
         done.current = true;
         clearInterval(id);
-        setTimeout(() => router.push("/result"), 400);
+        setTimeout(() => router.replace("/result"), 400);
       }
     }, TICK_MS);
 

@@ -366,14 +366,6 @@ export default function StyleResultPage() {
   const [ready,      setReady]      = useState(false);
   const [showSave,   setShowSave]   = useState(false);
 
-  // 캡처 방지 viewport 설정
-  useEffect(() => {
-    const vp = document.querySelector('meta[name="viewport"]');
-    if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
-    return () => {
-      if (vp) vp.setAttribute("content", "width=device-width, initial-scale=1.0");
-    };
-  }, []);
 
   // 세션 데이터 즉시 로드 (폴링 없음)
   useEffect(() => {
@@ -517,8 +509,11 @@ export default function StyleResultPage() {
           <div className="space-y-2.5 pt-2">
             <button onClick={() => setShowSave(true)}
               className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/[0.08] text-base font-bold text-gold-light transition-all hover:bg-gold/15 active:scale-[0.98]">
-              🤍 내 다이어리에 저장하고 평생 소장하기
+              📥 사진 다운받기 (다이어리 저장 후 가능)
             </button>
+            <p className="text-center text-xs text-cream/40 -mt-1">
+              다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
+            </p>
             <div className="flex gap-2.5">
               <Link href="/style/survey"
                 className="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/12 text-sm font-medium text-cream/50 transition-all hover:border-white/25 hover:text-cream">

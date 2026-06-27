@@ -93,8 +93,26 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
 
 // ─── 다이어리 카드 ────────────────────────────────────────────────────────────
 
+async function downloadImage(url: string, styleName: string) {
+  try {
+    const res       = await fetch(url);
+    const blob      = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a         = document.createElement("a");
+    a.href          = objectUrl;
+    a.download      = `abeauty-${styleName}-${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    alert("다운로드에 실패했어요. 이미지를 길게 눌러 저장해 주세요.");
+  }
+}
+
 function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: number; onOpenModal: (url: string) => void; }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded,     setExpanded]     = useState(false);
+  const [downloading,  setDownloading]  = useState(false);
   const product = getProduct(entry.answers);
   const date    = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 
@@ -125,18 +143,32 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
 
         {/* After 이미지 썸네일 */}
         {entry.generatedImageUrl && (
-          <button
-            onClick={() => onOpenModal(entry.generatedImageUrl!)}
-            className="mx-4 mb-3 block w-[calc(100%-2rem)] overflow-hidden rounded-xl active:scale-[0.98] transition-transform"
-            style={{ border: "1px solid rgba(200,168,107,0.2)" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={entry.generatedImageUrl} alt="AI 변신 결과"
-              className="h-48 w-full object-cover" />
-            <div className="px-3 py-1.5 text-center" style={{ background: "rgba(200,168,107,0.06)" }}>
-              <p className="text-[10px]" style={{ color: "rgba(200,168,107,0.7)" }}>탭하면 크게 볼 수 있어요</p>
-            </div>
-          </button>
+          <>
+            <button
+              onClick={() => onOpenModal(entry.generatedImageUrl!)}
+              className="mx-4 mb-2 block w-[calc(100%-2rem)] overflow-hidden rounded-xl active:scale-[0.98] transition-transform"
+              style={{ border: "1px solid rgba(200,168,107,0.2)" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={entry.generatedImageUrl} alt="AI 변신 결과"
+                className="h-48 w-full object-cover" />
+              <div className="px-3 py-1.5 text-center" style={{ background: "rgba(200,168,107,0.06)" }}>
+                <p className="text-[10px]" style={{ color: "rgba(200,168,107,0.7)" }}>탭하면 크게 볼 수 있어요</p>
+              </div>
+            </button>
+            <button
+              onClick={async () => {
+                setDownloading(true);
+                await downloadImage(entry.generatedImageUrl!, entry.styleName);
+                setDownloading(false);
+              }}
+              disabled={downloading}
+              className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-60"
+              style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}
+            >
+              {downloading ? "저장 중..." : "📥 사진 갤러리에 저장하기"}
+            </button>
+          </>
         )}
 
         {/* 접기/펼치기 */}
