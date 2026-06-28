@@ -14,6 +14,7 @@ import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_PH
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
+import AdBanner from "@/app/components/AdBanner";
 
 const STEPS = [
   "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
@@ -143,26 +144,10 @@ export default function StyleLoadingPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── 하단 60% — 구글 AdSense 전면 광고 영역 (300×250 이상) ── */}
+      {/* ── 하단 60% — 구글 AdSense 전면 광고 영역 ── */}
       <div className="flex flex-1 flex-col items-center justify-center px-5 pb-8">
-        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02]"
-          style={{ minHeight: "300px" }}>
-          <div className="border-b border-white/[0.05] px-4 py-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/35">
-              Sponsored · A-Beauty
-            </p>
-          </div>
-          <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-8 text-center">
-            <div className="mb-3 h-8 w-8 rounded-full border border-gold/20 bg-gold/[0.06] flex items-center justify-center">
-              <span className="text-gold/50 text-sm">A</span>
-            </div>
-            <p className="text-sm font-medium text-cream/22">
-              맞춤형 뷰티 정보가 준비 중입니다
-            </p>
-            <p className="mt-2 text-[11px] text-cream/12">
-              Google Ads 300×250 영역
-            </p>
-          </div>
+        <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
+          <AdBanner />
         </div>
       </div>
 

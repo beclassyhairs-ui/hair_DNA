@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Analytics } from "./components/Analytics";
 
@@ -44,6 +45,12 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${notoSans.variable} ${notoSerif.variable}`}>
       <body className="font-sans">
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3733126974731035"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <Analytics />
         {children}
       </body>
