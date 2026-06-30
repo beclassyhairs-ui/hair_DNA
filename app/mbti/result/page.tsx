@@ -223,12 +223,6 @@ function MbtiResultPage() {
   }
   const data = HAIR_TYPES[id] ?? HAIR_TYPES[9];
 
-  function handleMainCta() {
-    console.log("notification_button_clicked");
-    window.gtag?.("event", "notification_cta_click");
-    window.open("http://pf.kakao.com/_xxxxxx", "_blank");
-  }
-
   function handleShare() {
     const shareUrl = typeof window !== "undefined"
       ? `${window.location.origin}/mbti?utm_source=friend_share`
@@ -413,21 +407,19 @@ function MbtiResultPage() {
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.07] bg-charcoal/95 px-5 py-4 backdrop-blur-md">
         <div className="mx-auto w-full max-w-lg">
           <button
-            onClick={handleMainCta}
-            className="group relative w-full overflow-hidden rounded-2xl py-5 text-base font-bold text-white shadow-[0_8px_32px_rgba(168,85,247,0.40)] transition-all active:scale-[0.98] hover:brightness-110"
-            style={{ background: "linear-gradient(135deg, #e879f9, #8b5cf6, #3b82f6)" }}
+            onClick={() => router.push("/style")}
+            className="relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98]"
           >
-            <span
-              className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12), transparent)" }}
+            <motion.span
+              className="pointer-events-none absolute inset-0"
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.45) 0%, transparent 70%)" }}
             />
-            <span className="relative leading-snug">
-              👉 무료 AI 헤어 진단, 정식 오픈 알림 받기
-              <span className="mt-0.5 block text-sm font-medium opacity-80">오픈 즉시 알려드릴게요 ✦</span>
-            </span>
+            <span className="relative">✨ AI 헤어 분석으로 내 스타일 찾기!</span>
           </button>
           <p className="mt-2 text-center text-xs text-cream/25">
-            정식 오픈 시 무료 체험 · 알림 우선 발송
+            AI가 두상·모질을 분석해 최적 스타일을 찾아드립니다
           </p>
         </div>
       </div>

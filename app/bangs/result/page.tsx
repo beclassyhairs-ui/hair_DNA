@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY } from "../constants";
@@ -218,6 +219,7 @@ export default function BangsResultPage() {
   const [survey,       setSurvey]       = useState<BangsSurveyAnswers | null>(null);
   const [faceKey,      setFaceKey]      = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
+  const router = useRouter();
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
 
@@ -444,17 +446,23 @@ export default function BangsResultPage() {
 
       {/* ── 하단 고정 CTA ── */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-charcoal/95 px-5 py-4 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-lg gap-3">
-          <Link href="/bangs"
-            className="flex h-14 flex-none items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] px-5 text-sm font-medium text-cream/50 transition-colors hover:text-cream/80">
-            처음부터
-          </Link>
-          <a
-            href={product.link} target="_blank" rel="noopener noreferrer sponsored"
-            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98]"
+        <div className="mx-auto w-full max-w-lg space-y-2">
+          <button
+            onClick={() => router.push("/style")}
+            className="relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98]"
           >
-            맞춤 제품 확인하기 →
-          </a>
+            <motion.span
+              className="pointer-events-none absolute inset-0"
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.45) 0%, transparent 70%)" }}
+            />
+            <span className="relative">✨ AI 헤어 분석으로 내 스타일 찾기!</span>
+          </button>
+          <Link href="/bangs"
+            className="flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium text-cream/30 transition-colors hover:text-cream/60">
+            ← 처음부터 다시 하기
+          </Link>
         </div>
       </div>
 
