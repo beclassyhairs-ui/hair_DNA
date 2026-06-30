@@ -39,18 +39,40 @@ export const FACE_OVAL_SEQUENCE = [
 ] as const;
 
 // ─── THRESHOLDS — 미세 조정 시 이 객체만 수정 ─────────────────────────────────
-// MediaPipe LM 132/361(하관)은 LM 234/454(광대)와 윤곽선상 2칸 차이라
-// jawRatio가 실제 얼굴 어느 유형이든 0.82~0.93 대에 몰리는 경향이 있음.
-// 이를 반영해 WIDE_JAW_RATIO를 0.85→0.92로 대폭 상향,
-// SHORT_FACE_RATIO를 1.15→1.23으로 상향해 둥근형 판정 가용 범위를 확장.
+//
+// [비율 개요] MediaPipe 정규화 좌표 기준 실측 분포
+//   jawRatio      일반 성인: 0.78~0.94 (LM 132/361 ↔ 234/454 비율)
+//   foreheadRatio 일반 성인: 0.68~0.92 (LM 71/301 ↔ 234/454 비율)
+//   lengthRatio   일반 성인: 1.05~1.45 (LM 10/152 ↔ 234/454 비율)
+//
+// [8대 얼굴형 예상 구간]
+//   각진형   jawRatio > 0.92
+//   둥근형   jawRatio 0.78~0.92 + lengthRatio < 1.23
+//   계란형   jawRatio 0.73~0.85 + lengthRatio 1.23~1.32  (default)
+//   긴형     lengthRatio > 1.32
+//   하트형   jawRatio < 0.72 + foreheadRatio ≥ 0.76  (역삼각)
+//   다이아몬드 jawRatio < 0.72 + foreheadRatio < 0.76 + taperDelta < 0.10
+//   땅콩형   jawRatio 0.72~0.92 + foreheadRatio < 0.76
+//   육각형   jawRatio 0.80~0.92 + foreheadRatio > 0.87
 export const FACE_THRESHOLDS = {
-  LONG_FACE_RATIO:       1.32, // lengthRatio > this → 긴형 (기존 1.35)
-  SHORT_FACE_RATIO:      1.23, // lengthRatio < this → 둥근형 후보 (기존 1.15)
-  WIDE_JAW_RATIO:        0.92, // jawRatio > this → 각진형 (기존 0.85 → 상향)
-  NARROW_JAW_RATIO:      0.72, // jawRatio < this → 하트/다이아몬드 (기존 0.70)
-  NARROW_FOREHEAD_RATIO: 0.76, // foreheadRatio < this → 다이아몬드/땅콩형 (기존 0.75)
-  WIDE_FOREHEAD_RATIO:   0.87, // foreheadRatio > this → 육각형 후보 (신규)
-  HEXAGON_JAW_MIN:       0.80, // 육각형 최소 하관 비율 (신규)
+  // 세로/가로 비율 구분점
+  LONG_FACE_RATIO:       1.32,  // lengthRatio > this → 긴형
+  SHORT_FACE_RATIO:      1.23,  // lengthRatio < this (중간 하관 구간) → 둥근형
+
+  // 하관/광대 비율 구분점
+  WIDE_JAW_RATIO:        0.92,  // jawRatio > this → 각진형
+  NARROW_JAW_RATIO:      0.72,  // jawRatio < this → V라인 계열
+
+  // 이마(관자놀이)/광대 비율 구분점
+  NARROW_FOREHEAD_RATIO: 0.76,  // foreheadRatio < this → 다이아몬드 / 땅콩형
+  WIDE_FOREHEAD_RATIO:   0.87,  // foreheadRatio > this → 육각형 / 하트형 후보
+
+  // 육각형 보조 조건
+  HEXAGON_JAW_MIN:       0.80,  // 육각형: 하관도 넓어야 함
+
+  // 하트형 vs 다이아몬드형 구분
+  // (foreheadRatio - jawRatio) > this → 이마가 하관보다 뚜렷이 넓음 → 하트
+  HEART_TAPER_MIN:       0.10,
 } as const;
 
 // ─── 거리 계산 헬퍼 ───────────────────────────────────────────────────────────
@@ -105,45 +127,60 @@ export function extractLandmarkData(lm: Landmark[]): FaceLandmarkData {
 
 // ─── 8대 얼굴형 판별 로직 — FACE_THRESHOLDS 기반 if/else 트리 ─────────────────
 //
-// 판정 흐름 요약:
-//   긴형(oblong) → 각진형(square) → V라인(heart/diamond)
-//   → 둥근형(round) → 땅콩형(peanut) → 육각형(hexagon) → 계란형(oval)
+// 판정 흐름:
+//   긴형 → 각진형 → [V라인: 다이아몬드 / 하트]
+//   → 둥근형 → 땅콩형 → 육각형 → 계란형(default)
 //
-// 핵심 수정: 각진형 임계값을 0.85→0.92로 올려 대부분 얼굴이
-//           square에 수렴하던 버그를 해소. 둥근형 판정 범위도
-//           SHORT_FACE_RATIO 1.15→1.23 상향으로 확장.
+// taperDelta = foreheadRatio - jawRatio
+//   · 양수가 클수록 "이마가 하관보다 뚜렷이 넓음" → 하트형에 가까움
+//   · 0에 가깝거나 음수 → 위아래 모두 비슷하게 좁거나 좁지 않음
 export function classifyFaceShape(landmarks: Landmark[]): FaceShapeKey {
   const T = FACE_THRESHOLDS;
   const lengthRatio   = calcLengthRatio(landmarks);
   const jawRatio      = calcJawRatio(landmarks);
   const foreheadRatio = calcForeheadRatio(landmarks);
+  const taperDelta    = foreheadRatio - jawRatio; // +: 이마 > 하관
 
-  // 1. 긴형: 세로/가로 > 1.32
+  // ── 1. 긴형: 세로/가로 > 1.32 ────────────────────────────────────────────────
   if (lengthRatio > T.LONG_FACE_RATIO) return "oblong";
 
-  // 2. 각진형: 하관이 광대의 92% 이상 — 명확한 사각 하관만 해당
-  //    (기존 0.85는 대부분 얼굴을 여기서 걸러냈음)
+  // ── 2. 각진형: 하관이 광대의 92% 이상 — 뚜렷한 사각 하관 ─────────────────────
   if (jawRatio > T.WIDE_JAW_RATIO) return "square";
 
-  // 3. V라인 계열: 하관이 광대의 72% 미만 — 좁은 턱선
+  // ── 3. V라인 계열: 하관 < 72% — 좁은 턱선 ────────────────────────────────────
   if (jawRatio < T.NARROW_JAW_RATIO) {
-    // 이마(관자놀이)도 좁음 → 광대만 돌출 → 다이아몬드
-    if (foreheadRatio < T.NARROW_FOREHEAD_RATIO) return "diamond";
-    // 이마는 정상 이상 → 역삼각 → 하트
+
+    // 다이아몬드형:
+    //   · 이마(관자놀이)도 좁음 (< 0.76)
+    //   · 이마-하관 차이가 작음 (< 0.10) → 위아래 모두 좁고 광대만 돌출
+    if (foreheadRatio < T.NARROW_FOREHEAD_RATIO && taperDelta < T.HEART_TAPER_MIN) {
+      return "diamond";
+    }
+
+    // 하트형(역삼각형):
+    //   · 이마가 넓음 (≥ 0.76) — 조건 A
+    //   · OR 이마가 좁아도 하관보다 뚜렷이 넓음 (taperDelta ≥ 0.10) — 조건 B
+    //   → 두 조건 모두 이마가 하관보다 우세 → 역삼각 실루엣
     return "heart";
   }
 
-  // 4. 중간 하관 범위 (0.72 ~ 0.92) — 세부 분류
-  // 4-a. 둥근형: 짧은 얼굴 (이미 각진형 아님이 확인된 jawRatio 범위)
+  // ── 4. 중간 하관 범위 (0.72 ~ 0.92) ──────────────────────────────────────────
+
+  // 4-a. 둥근형: 짧은 얼굴 + 중간 하관
+  //      (각진형 체크를 통과했으므로 jawRatio ≤ 0.92 보장)
   if (lengthRatio < T.SHORT_FACE_RATIO) return "round";
 
-  // 4-b. 땅콩형: 관자놀이가 눈에 띄게 좁음 (측두부 패임)
+  // 4-b. 땅콩형: 관자놀이(이마)가 눈에 띄게 좁음
+  //      중간 하관 + 좁은 이마 → 광대가 얼굴에서 유독 두드러짐
+  //      (긴형·각진형·둥근형 아님이 이미 확인된 상태)
   if (foreheadRatio < T.NARROW_FOREHEAD_RATIO) return "peanut";
 
   // 4-c. 육각형: 이마·광대·하관 세 구간이 모두 넓음
+  //      위아래가 동시에 발달한 풍성한 골격
+  //      (이 조건에 도달하면 길이는 1.23~1.32로 제한됨)
   if (foreheadRatio > T.WIDE_FOREHEAD_RATIO && jawRatio > T.HEXAGON_JAW_MIN) return "hexagon";
 
-  // 5. 균형잡힌 비율 → 계란형 (default)
+  // ── 5. 계란형: 균형잡힌 비율 (default) ──────────────────────────────────────
   return "oval";
 }
 

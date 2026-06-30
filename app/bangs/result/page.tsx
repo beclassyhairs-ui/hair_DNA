@@ -322,11 +322,12 @@ export default function BangsResultPage() {
             ▶ DEBUG — MediaPipe Raw 수치
           </p>
           <div className="space-y-0.5 text-[11px] text-yellow-200/80">
-            <p>하관 비율&nbsp;&nbsp;(jawRatio)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.jawRatio.toFixed(4)}</span></p>
-            <p>세로 비율&nbsp;&nbsp;(lengthRatio)&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.lengthRatio.toFixed(4)}</span></p>
-            <p>이마 비율&nbsp;&nbsp;(foreheadRatio): <span className="font-bold text-yellow-300">{debugRatios.foreheadRatio.toFixed(4)}</span></p>
+            <p>하관 비율&nbsp;&nbsp;(jawRatio)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.jawRatio.toFixed(4)}</span></p>
+            <p>세로 비율&nbsp;&nbsp;(lengthRatio)&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.lengthRatio.toFixed(4)}</span></p>
+            <p>이마 비율&nbsp;&nbsp;(foreheadRatio)&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.foreheadRatio.toFixed(4)}</span></p>
+            <p>이마-하관 차&nbsp;(taperDelta)&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{(debugRatios.foreheadRatio - debugRatios.jawRatio).toFixed(4)}</span></p>
           </div>
-          <p className="mt-2 text-[11px] font-bold text-yellow-400">
+          <p className="mt-2 border-t border-yellow-400/20 pt-2 text-[11px] font-bold text-yellow-400">
             → 최종 AI 판정: {faceInfo.title}
           </p>
         </div>
