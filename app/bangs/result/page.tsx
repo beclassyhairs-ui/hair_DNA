@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY } from "../constants";
+import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY, BANGS_DEBUG_RATIOS_KEY } from "../constants";
 import {
   FACE_SHAPE_INFO,
   recommendBang,
@@ -222,6 +222,7 @@ export default function BangsResultPage() {
   const router = useRouter();
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
+  const [debugRatios, setDebugRatios] = useState<{ lengthRatio: number; jawRatio: number; foreheadRatio: number } | null>(null);
 
   useEffect(() => {
     try {
@@ -233,6 +234,8 @@ export default function BangsResultPage() {
       if (f && f in FACE_SHAPE_INFO) setFaceKey(f);
       const l = sessionStorage.getItem(BANGS_LANDMARKS_KEY);
       if (l) setLandmarkData(JSON.parse(l) as FaceLandmarkData);
+      const dr = sessionStorage.getItem(BANGS_DEBUG_RATIOS_KEY);
+      if (dr) setDebugRatios(JSON.parse(dr) as { lengthRatio: number; jawRatio: number; foreheadRatio: number });
     } catch { /**/ }
   }, []);
 
@@ -309,6 +312,23 @@ export default function BangsResultPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI DIAGNOSIS</p>
             <p className="mt-1 font-serif text-2xl font-bold text-gold-light">{faceInfo.title}</p>
           </div>
+        </div>
+      )}
+
+      {/* ── [TEST] MediaPipe 수치 디버그 UI ── */}
+      {debugRatios && (
+        <div className="mx-4 mt-3 rounded-xl border border-yellow-400/30 bg-yellow-400/[0.06] px-4 py-3 font-mono">
+          <p className="mb-2 text-[9px] font-black uppercase tracking-[0.25em] text-yellow-400">
+            ▶ DEBUG — MediaPipe Raw 수치
+          </p>
+          <div className="space-y-0.5 text-[11px] text-yellow-200/80">
+            <p>하관 비율&nbsp;&nbsp;(jawRatio)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.jawRatio.toFixed(4)}</span></p>
+            <p>세로 비율&nbsp;&nbsp;(lengthRatio)&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.lengthRatio.toFixed(4)}</span></p>
+            <p>이마 비율&nbsp;&nbsp;(foreheadRatio): <span className="font-bold text-yellow-300">{debugRatios.foreheadRatio.toFixed(4)}</span></p>
+          </div>
+          <p className="mt-2 text-[11px] font-bold text-yellow-400">
+            → 최종 AI 판정: {faceInfo.title}
+          </p>
         </div>
       )}
 

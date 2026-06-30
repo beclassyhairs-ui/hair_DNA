@@ -10,8 +10,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_LANDMARKS_KEY } from "../constants";
-import { analyzeFaceShape, type FaceShapeKey, type FaceLandmarkData } from "../../../lib/faceAnalysis";
+import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_LANDMARKS_KEY, BANGS_DEBUG_RATIOS_KEY } from "../constants";
+import { analyzeFaceShape, type FaceShapeKey, type FaceLandmarkData, type FaceRatios } from "../../../lib/faceAnalysis";
 
 const FACE_SHAPE_OPTIONS: { value: FaceShapeKey; label: string }[] = [
   { value: "oval",    label: "계란형" },
@@ -161,6 +161,7 @@ export default function BangsUploadPage() {
   // MediaPipe 분석 결과를 10s 로딩과 병렬로 수신해 저장
   const mpResultRef     = useRef<FaceShapeKey | null>(null);
   const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
+  const mpRatiosRef     = useRef<FaceRatios | null>(null);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -233,6 +234,7 @@ export default function BangsUploadPage() {
       if (result) {
         mpResultRef.current    = result.shape;
         mpLandmarksRef.current = result.landmarks;
+        mpRatiosRef.current    = result.ratios;
         setMpStatus("done");
       } else {
         setMpStatus("failed");
@@ -257,6 +259,10 @@ export default function BangsUploadPage() {
       // 랜드마크 데이터 저장 (Canvas 시각화용)
       if (mpLandmarksRef.current) {
         try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
+      }
+      // 비율 수치 저장 (디버그 UI용)
+      if (mpRatiosRef.current) {
+        try { sessionStorage.setItem(BANGS_DEBUG_RATIOS_KEY, JSON.stringify(mpRatiosRef.current)); } catch { /**/ }
       }
       setIsLoading(false);
       router.push("/bangs/result");

@@ -148,9 +148,16 @@ export function classifyFaceShape(landmarks: Landmark[]): FaceShapeKey {
 }
 
 // ─── 공개 API 타입 ─────────────────────────────────────────────────────────────
+export interface FaceRatios {
+  lengthRatio:   number;
+  jawRatio:      number;
+  foreheadRatio: number;
+}
+
 export interface FaceAnalysisResult {
   shape:     FaceShapeKey;
   landmarks: FaceLandmarkData | null;
+  ratios:    FaceRatios;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -189,6 +196,11 @@ export async function analyzeFaceShape(
           resolve({
             shape:     classifyFaceShape(asLm),
             landmarks: extractLandmarkData(asLm),
+            ratios: {
+              lengthRatio:   calcLengthRatio(asLm),
+              jawRatio:      calcJawRatio(asLm),
+              foreheadRatio: calcForeheadRatio(asLm),
+            },
           });
         }
         faceMesh.close().catch(() => {});
