@@ -25,19 +25,29 @@ const STEPS = [
 ];
 
 const HAIR_TIPS = [
-  "드라이 마지막엔 찬바람 — 큐티클이 닫혀 윤기와 형태가 오래 유지돼요.",
-  "젖은 모발은 타월로 비비지 말고 꾹꾹 눌러 물기를 제거해야 손상이 줄어요.",
-  "샴푸는 두피 위주로, 린스·트리트먼트는 모발 위주로 사용하는 게 기본이에요.",
+  "드라이 마지막 10초는 찬바람으로 마무리하세요. 큐티클이 닫히며 윤기가 살고, 아침에 잡은 스타일이 저녁까지 유지됩니다.",
+  "샴푸 전 건식 브러싱 2분이면 두피 노폐물이 떠오르고 모발 엉킴이 풀려, 같은 샴푸로도 세정력이 훨씬 높아집니다.",
+  "트리트먼트가 두피에 닿으면 모공을 막아 탈모를 유발합니다. 반드시 귀 아래 모발에만 얇게 도포하세요.",
+  "열 스타일링 전 열 보호제는 선택이 아닌 필수입니다. 180°C 고온 한 번이 모발 단백질 구조를 영구 손상시킵니다.",
+  "샴푸 시 손끝으로 두피를 30초 마사지하면 혈액순환이 활성화되어 모발 성장 주기 자체가 달라집니다.",
+  "펌·컬러 후 48시간은 황금 시간입니다. 이 시간 안에 모발이 젖으면 웨이브가 풀리거나 색이 빠질 수 있어요.",
 ];
 
 export default function StyleLoadingPage() {
   const router     = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
+  const [tipIdx,  setTipIdx]  = useState(0);
   const calledRef  = useRef(false); // 중복 호출 방지
 
   // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립)
   useEffect(() => {
     const t = setInterval(() => setStepIdx(i => (i + 1) % STEPS.length), 3_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 꿀팁 롤링 (2.5초 간격 — STEPS 와 독립)
+  useEffect(() => {
+    const t = setInterval(() => setTipIdx(i => (i + 1) % HAIR_TIPS.length), 2_500);
     return () => clearInterval(t);
   }, []);
 
@@ -153,17 +163,35 @@ export default function StyleLoadingPage() {
       {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 + AdSense 광고 ── */}
       <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
 
-        {/* 헤어 꿀팁 — 구글이 인식하는 게시자 콘텐츠 영역 */}
+        {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
         <div className="flex-none">
-          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/60">
+          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-gold/60">
             기다리는 동안 읽는 헤어 꿀팁
           </p>
-          <div className="space-y-2">
-            {HAIR_TIPS.map((tip, i) => (
-              <div key={i} className="flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5">
-                <span className="mt-0.5 flex-none text-[10px] text-gold">✦</span>
-                <p className="text-[11px] leading-relaxed text-cream/65">{tip}</p>
-              </div>
+
+          {/* 단일 팁 카드 — fade 롤링 */}
+          <div className="relative min-h-[72px] rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-4 flex items-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={tipIdx}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.4 }}
+                className="flex items-start gap-3"
+              >
+                <span className="mt-0.5 flex-none text-[11px] text-gold">✦</span>
+                <p className="text-[12px] leading-relaxed text-cream/70">{HAIR_TIPS[tipIdx]}</p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* 진행 도트 */}
+          <div className="mt-2.5 flex justify-center gap-1.5">
+            {HAIR_TIPS.map((_, i) => (
+              <span key={i}
+                className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-gold/70" : "w-1 bg-white/20"}`}
+              />
             ))}
           </div>
         </div>

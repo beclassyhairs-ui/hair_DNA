@@ -448,10 +448,9 @@ export default function StyleResultPage() {
           </p>
         </div>
 
-        {/* AdSense 광고 — 진단 결과 진입부 (블러 바깥, 항상 표시) */}
-        {/* TODO: AdSense 대시보드에서 발급받은 결과 페이지 전용 슬롯 ID로 교체 */}
+        {/* AdSense 수평 띠 배너 — 블러 바깥, 항상 표시 */}
         <div className="mt-5 w-full">
-          <AdBanner slot="4013466421" />
+          <AdBanner slot="4013466421" format="horizontal" />
         </div>
 
         {/* 잠금 시 블러 */}

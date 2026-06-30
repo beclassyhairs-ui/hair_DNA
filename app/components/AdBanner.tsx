@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-export default function AdBanner({ slot }: { slot?: string }) {
+export default function AdBanner({ slot, format = "auto" }: { slot?: string; format?: string }) {
   useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -20,10 +20,10 @@ export default function AdBanner({ slot }: { slot?: string }) {
   return (
     <ins
       className="adsbygoogle"
-      style={{ display: "block", width: "100%", minHeight: "250px" }}
+      style={{ display: "block", width: "100%" }}
       data-ad-client="ca-pub-3733126974731035"
       data-ad-slot={slot || "4013466421"}
-      data-ad-format="auto"
+      data-ad-format={format}
       data-full-width-responsive="true"
     />
   );
