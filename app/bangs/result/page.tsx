@@ -13,6 +13,7 @@ import {
   buildConcernBlocks,
   getProductRecommendation,
   type FaceShapeKey,
+  type FaceShapeInfo,
 } from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
 import type { FaceLandmarkData } from "../../../lib/faceAnalysis";
@@ -47,75 +48,96 @@ function loadKakaoSDK(): Promise<void> {
   });
 }
 
-// ─── Canvas 관련 유틸 ──────────────────────────────────────────────────────────
+// ─── 세로형 프로필 카드 ───────────────────────────────────────────────────────
 
-type Pt = { x: number; y: number };
-
-
-function getApproxOval(): Pt[] {
-  return Array.from({ length: 36 }, (_, i) => {
-    const a = (i / 36) * 2 * Math.PI - Math.PI / 2;
-    return { x: 0.5 + 0.365 * Math.cos(a), y: 0.475 + 0.425 * Math.sin(a) };
-  });
-}
-
-function calcPathLength(pts: Pt[]): number {
-  let len = 0;
-  for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i].x - pts[i - 1].x;
-    const dy = pts[i].y - pts[i - 1].y;
-    len += Math.sqrt(dx * dx + dy * dy);
-  }
-  const dx = pts[0].x - pts[pts.length - 1].x;
-  const dy = pts[0].y - pts[pts.length - 1].y;
-  return len + Math.sqrt(dx * dx + dy * dy);
-}
-
-
-function drawScanFrame(
-  ctx: CanvasRenderingContext2D,
-  W: number, H: number, progress: number,
-  ovalPts: Pt[],
-) {
-  ctx.clearRect(0, 0, W, H);
-  if (ovalPts.length < 2) return;
-
-  // 실제 MediaPipe FACE_OVAL 좌표를 따라 딥 골드 윤곽선 스캐닝
-  const scaled = ovalPts.map(p => ({ x: p.x * W, y: p.y * H }));
-  const L = calcPathLength(scaled) + 4;
-
-  ctx.beginPath();
-  ctx.moveTo(scaled[0].x, scaled[0].y);
-  for (let i = 1; i < scaled.length; i++) ctx.lineTo(scaled[i].x, scaled[i].y);
-  ctx.closePath();
-
-  ctx.strokeStyle = "#D4AF37";
-  ctx.lineWidth   = Math.max(1.8, W * 0.0032);
-  ctx.shadowColor = "rgba(212,175,55,0.55)";
-  ctx.shadowBlur  = Math.max(6, W * 0.018);
-  ctx.setLineDash([L, L]);
-  ctx.lineDashOffset = L * (1 - progress);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.lineDashOffset = 0;
-  ctx.shadowBlur = 0;
-}
-
-// ─── 컴팩트 사진 + Canvas 시각화 ─────────────────────────────────────────────
-
-function FaceAnalysisCanvas({
-  photo, faceKey, landmarkData,
+function PortraitCard({
+  photo,
+  faceInfo,
+  onScanClick,
 }: {
-  photo: string; faceKey: FaceShapeKey; landmarkData: FaceLandmarkData | null;
+  photo:       string;
+  faceInfo:    FaceShapeInfo;
+  onScanClick: () => void;
+}) {
+  return (
+    <div className="mx-auto max-w-[260px] pt-6">
+      {/* 3:4 세로 비율 카드 */}
+      <div
+        className="relative w-full overflow-hidden rounded-2xl border border-gold/20"
+        style={{ aspectRatio: "3/4" }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={photo}
+          alt="AI 분석 사진"
+          draggable={false}
+          className="h-full w-full select-none object-cover"
+          style={{ objectPosition: "50% 20%", pointerEvents: "none", WebkitTouchCallout: "none" }}
+        />
+
+        {/* AI SCAN 뱃지 */}
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-teal-400/50 bg-black/65 px-3 py-1.5 backdrop-blur-sm">
+          <motion.span
+            animate={{ opacity: [1, 0.2, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+            className="h-1.5 w-1.5 rounded-full bg-teal-400"
+          />
+          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-teal-300">AI SCAN</span>
+        </div>
+
+        {/* 하단 그라데이션 */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20"
+          style={{ background: "linear-gradient(to top, rgba(28,26,24,0.92) 0%, transparent 100%)" }}
+        />
+
+        {/* 얼굴형 라벨 */}
+        <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-3.5">
+          <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-gold/60">Face Shape</p>
+          <p className="mt-0.5 font-serif text-base font-bold leading-tight text-gold-light">
+            {faceInfo.title}
+          </p>
+        </div>
+      </div>
+
+      {/* AI 스캔 보기 버튼 */}
+      <button
+        onClick={onScanClick}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-teal-400/25 bg-teal-400/[0.06] py-2.5 text-sm font-semibold text-teal-300 transition-colors hover:bg-teal-400/[0.12] active:scale-[0.98]"
+      >
+        <span className="text-sm">🔬</span>
+        AI 정밀 분석 스캔 보기
+      </button>
+    </div>
+  );
+}
+
+// ─── AI 스캔 모달 ─────────────────────────────────────────────────────────────
+
+function ScanModal({
+  photo,
+  faceInfo,
+  landmarkData,
+  onClose,
+}: {
+  photo:        string;
+  faceInfo:     FaceShapeInfo;
+  landmarkData: FaceLandmarkData | null;
+  onClose:      () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgRef    = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
-  const ovalPoints = landmarkData?.oval ?? getApproxOval();
-
+  // 모달 열리는 동안 배경 스크롤 잠금
   useEffect(() => {
-    if (!imgLoaded || !canvasRef.current || !imgRef.current) return;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  // 랜드마크 Canvas 정적 렌더링 (애니메이션 없음 — 선명하고 전문적)
+  useEffect(() => {
+    if (!imgLoaded || !canvasRef.current || !imgRef.current || !landmarkData) return;
     const canvas = canvasRef.current;
     const img    = imgRef.current;
     canvas.width  = img.naturalWidth;
@@ -123,65 +145,122 @@ function FaceAnalysisCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const W = canvas.width, H = canvas.height;
-    const startTime = performance.now();
-    const DURATION  = 1500;
-    let rafId: number;
-    function frame(ts: number) {
-      const progress = Math.min(1, (ts - startTime) / DURATION);
-      drawScanFrame(ctx!, W, H, progress, ovalPoints);
-      if (progress < 1) rafId = requestAnimationFrame(frame);
-    }
-    rafId = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(rafId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [imgLoaded, faceKey]);
+    ctx.clearRect(0, 0, W, H);
 
-  const faceInfo = FACE_SHAPE_INFO[faceKey];
+    const { oval, shape } = landmarkData;
+
+    // 1. 윤곽 연결선 — 청록, 가느다랗게
+    if (oval.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(oval[0].x * W, oval[0].y * H);
+      for (let i = 1; i < oval.length; i++) ctx.lineTo(oval[i].x * W, oval[i].y * H);
+      ctx.closePath();
+      ctx.strokeStyle = "rgba(0, 220, 180, 0.70)";
+      ctx.lineWidth   = Math.max(1.2, W * 0.002);
+      ctx.shadowColor = "rgba(0, 220, 180, 0.45)";
+      ctx.shadowBlur  = 8;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+    }
+
+    // 2. 윤곽 점 36개 — 소형 청록
+    const R_OVAL = Math.max(2, W * 0.0035);
+    oval.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, R_OVAL, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 220, 180, 0.80)";
+      ctx.fill();
+    });
+
+    // 3. 핵심 랜드마크 8개 — 대형 골드 글로우
+    const R_KEY = Math.max(3.5, W * 0.006);
+    const keyPts = [
+      shape.top,        shape.chin,
+      shape.leftCheek,  shape.rightCheek,
+      shape.leftJaw,    shape.rightJaw,
+      shape.leftTemple, shape.rightTemple,
+    ];
+    keyPts.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, R_KEY, 0, Math.PI * 2);
+      ctx.fillStyle   = "rgba(200, 168, 107, 0.95)";
+      ctx.shadowColor = "rgba(200, 168, 107, 0.55)";
+      ctx.shadowBlur  = 10;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+    });
+  }, [imgLoaded, landmarkData]);
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: "26vh" }}>
-      {/* 골드 프레임 */}
-      <div className="absolute inset-0 z-10 rounded-none border-x-0 border-b border-t border-gold/20 pointer-events-none" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.22 } }}
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/92 px-4 backdrop-blur-sm"
+    >
+      {/* 배경 탭으로 닫기 */}
+      <div className="absolute inset-0" onClick={onClose} />
 
-      {/* 사진 */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imgRef}
-        src={photo}
-        alt="AI 분석 사진"
-        className="h-full w-full object-cover"
-        style={{ objectPosition: "50% 12%" }}
-        onLoad={() => setImgLoaded(true)}
-      />
+      <div className="relative z-10 flex w-full max-w-xs flex-col">
+        {/* 모달 헤더 */}
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <motion.span
+              animate={{ opacity: [1, 0.2, 1] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+              className="h-2 w-2 rounded-full bg-teal-400"
+            />
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-teal-300">
+              AI Face Scan
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/[0.08] text-sm text-cream/70 transition-colors hover:bg-white/15"
+          >
+            ✕
+          </button>
+        </div>
 
-      {/* Canvas 오버레이 */}
-      <canvas
-        ref={canvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        style={{ mixBlendMode: "screen" }}
-      />
+        {/* 사진 + Canvas 오버레이 */}
+        <div
+          className="relative w-full overflow-hidden rounded-2xl border border-teal-400/20"
+          style={{ aspectRatio: "3/4", maxHeight: "72vh" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imgRef}
+            src={photo}
+            alt="AI 스캔 사진"
+            draggable={false}
+            className="h-full w-full select-none object-cover"
+            style={{ objectPosition: "50% 20%", pointerEvents: "none" }}
+            onLoad={() => setImgLoaded(true)}
+          />
+          <canvas
+            ref={canvasRef}
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            style={{ mixBlendMode: "screen" }}
+          />
 
-      {/* 상단 왼쪽: AI SCAN 뱃지 */}
-      <div className="absolute left-4 top-4 z-20 flex items-center gap-1.5 rounded-full border border-gold/50 bg-black/65 px-3 py-1.5 backdrop-blur-sm">
-        <motion.span
-          animate={{ opacity: [1, 0.15, 1] }}
-          transition={{ duration: 1.1, repeat: Infinity }}
-          className="h-1.5 w-1.5 rounded-full bg-gold"
-        />
-        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-gold">AI SCAN</span>
+          {/* 수평 스캔 라인 애니메이션 */}
+          <motion.div
+            className="pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-teal-400/55 to-transparent"
+            animate={{ top: ["8%", "92%", "8%"] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+
+        {/* 분석 결과 요약 */}
+        <div className="mt-3 rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3">
+          <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-teal-400/70">
+            분석 완료 · Face Shape
+          </p>
+          <p className="mt-1 font-serif text-lg font-bold text-gold-light">{faceInfo.title}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-cream/45">{faceInfo.summary}</p>
+        </div>
       </div>
-
-      {/* 하단 오른쪽: 얼굴형 결과 */}
-      <div className="absolute bottom-4 right-4 z-20 rounded-full border border-gold/35 bg-black/70 px-4 py-1.5 backdrop-blur-sm">
-        <span className="text-[11px] font-bold tracking-widest text-gold-light">{faceInfo.title}</span>
-      </div>
-
-      {/* 하단 그라데이션 페이드 */}
-      <div
-        className="absolute bottom-0 left-0 right-0 z-10 h-16"
-        style={{ background: "linear-gradient(to top, #1C1A18 0%, transparent 100%)" }}
-      />
-    </div>
+    </motion.div>
   );
 }
 
@@ -220,9 +299,10 @@ export default function BangsResultPage() {
   const [faceKey,      setFaceKey]      = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
   const router = useRouter();
-  const [copied,    setCopied]    = useState(false);
-  const [kakaoSent, setKakaoSent] = useState(false);
-  const [debugRatios, setDebugRatios] = useState<{ lengthRatio: number; jawRatio: number; foreheadRatio: number } | null>(null);
+  const [copied,       setCopied]       = useState(false);
+  const [kakaoSent,    setKakaoSent]    = useState(false);
+  const [debugRatios,  setDebugRatios]  = useState<{ lengthRatio: number; jawRatio: number; foreheadRatio: number } | null>(null);
+  const [scanModalOpen, setScanModalOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -303,17 +383,33 @@ export default function BangsResultPage() {
         </button>
       </header>
 
-      {/* ── 사진 + Canvas ── */}
+      {/* ── 세로형 프로필 카드 ── */}
       {photo ? (
-        <FaceAnalysisCanvas photo={photo} faceKey={faceKey} landmarkData={landmarkData} />
+        <PortraitCard
+          photo={photo}
+          faceInfo={faceInfo}
+          onScanClick={() => setScanModalOpen(true)}
+        />
       ) : (
-        <div className="flex h-[26vh] items-center justify-center border-b border-gold/15 bg-black/20">
+        <div className="flex items-center justify-center py-14">
           <div className="text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI DIAGNOSIS</p>
             <p className="mt-1 font-serif text-2xl font-bold text-gold-light">{faceInfo.title}</p>
           </div>
         </div>
       )}
+
+      {/* ── AI 스캔 모달 ── */}
+      <AnimatePresence>
+        {scanModalOpen && photo && (
+          <ScanModal
+            photo={photo}
+            faceInfo={faceInfo}
+            landmarkData={landmarkData}
+            onClose={() => setScanModalOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── [TEST] MediaPipe 수치 디버그 UI ── */}
       {debugRatios && (
