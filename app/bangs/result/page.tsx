@@ -364,19 +364,15 @@ export default function BangsResultPage() {
             </div>
           </motion.div>
 
-          {/* BLOCK B: AI 추천 앞머리 */}
+          {/* BLOCK B: AI 인생 앞머리 처방 — 단일 결론 */}
           <motion.div variants={FADE_UP}
             className="overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent">
             <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
             <div className="px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✦ AI 인생 앞머리 처방</p>
-              <div className="mt-3 flex flex-wrap items-center gap-2.5">
-                <span className="rounded-lg bg-gold px-5 py-2 font-serif text-xl font-black text-charcoal">
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✦ 고객님의 인생 앞머리</p>
+              <div className="mt-4 flex justify-center">
+                <span className="rounded-xl bg-gold px-8 py-2.5 font-serif text-2xl font-black text-charcoal shadow-gold">
                   {bangRec.primaryLabel}
-                </span>
-                <span className="text-cream/30 text-sm">+</span>
-                <span className="rounded-lg border border-gold/40 px-4 py-1.5 font-serif text-lg font-bold text-gold-light">
-                  {bangRec.secondaryLabel}
                 </span>
               </div>
               <p className="mt-4 text-base leading-[1.85] text-cream/75">
@@ -384,7 +380,7 @@ export default function BangsResultPage() {
               </p>
               <div className="mt-4 rounded-xl border border-red-400/15 bg-red-400/[0.06] px-4 py-3">
                 <p className="text-sm font-medium text-red-300/80">
-                  ❌ 무거운 일자 뱅·강한 블록뱅은 피해주세요.
+                  ❌ 피해주세요 — {bangRec.ngStyle}
                 </p>
               </div>
             </div>
