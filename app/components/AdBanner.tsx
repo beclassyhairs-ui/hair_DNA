@@ -8,7 +8,7 @@ declare global {
   }
 }
 
-export default function AdBanner() {
+export default function AdBanner({ slot }: { slot?: string }) {
   useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -22,7 +22,7 @@ export default function AdBanner() {
       className="adsbygoogle"
       style={{ display: "block", width: "100%", minHeight: "250px" }}
       data-ad-client="ca-pub-3733126974731035"
-      data-ad-slot="1234567890"
+      data-ad-slot={slot || "4013466421"}
       data-ad-format="auto"
       data-full-width-responsive="true"
     />

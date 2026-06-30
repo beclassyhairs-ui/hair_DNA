@@ -24,6 +24,12 @@ const STEPS = [
   "마지막 세부 조정 중입니다. 결과지가 곧 완성됩니다...",
 ];
 
+const HAIR_TIPS = [
+  "드라이 마지막엔 찬바람 — 큐티클이 닫혀 윤기와 형태가 오래 유지돼요.",
+  "젖은 모발은 타월로 비비지 말고 꾹꾹 눌러 물기를 제거해야 손상이 줄어요.",
+  "샴푸는 두피 위주로, 린스·트리트먼트는 모발 위주로 사용하는 게 기본이에요.",
+];
+
 export default function StyleLoadingPage() {
   const router     = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
@@ -144,11 +150,31 @@ export default function StyleLoadingPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── 하단 60% — 구글 AdSense 전면 광고 영역 ── */}
-      <div className="flex flex-1 flex-col items-center justify-center px-5 pb-8">
-        <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
-          <AdBanner />
+      {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 + AdSense 광고 ── */}
+      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
+
+        {/* 헤어 꿀팁 — 구글이 인식하는 게시자 콘텐츠 영역 */}
+        <div className="flex-none">
+          <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/60">
+            기다리는 동안 읽는 헤어 꿀팁
+          </p>
+          <div className="space-y-2">
+            {HAIR_TIPS.map((tip, i) => (
+              <div key={i} className="flex items-start gap-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-2.5">
+                <span className="mt-0.5 flex-none text-[10px] text-gold">✦</span>
+                <p className="text-[11px] leading-relaxed text-cream/65">{tip}</p>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* 구글 AdSense — 슬롯 ID는 AdSense 대시보드에서 발급 후 입력 */}
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
+            <AdBanner slot="4013466421" />
+          </div>
+        </div>
+
       </div>
 
     </main>

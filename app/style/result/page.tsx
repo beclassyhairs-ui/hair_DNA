@@ -25,6 +25,7 @@ import {
   buildAIDiagnosisText,
 } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
+import AdBanner from "@/app/components/AdBanner";
 
 // ─── 카카오 세션 헬퍼 ─────────────────────────────────────────────────────────
 function isKakaoLoggedIn(): boolean {
@@ -445,6 +446,12 @@ export default function StyleResultPage() {
           <p className="text-base font-medium text-cream/55">
             아래로 내려서 AI 맞춤 처방을 확인하세요 ⬇️
           </p>
+        </div>
+
+        {/* AdSense 광고 — 진단 결과 진입부 (블러 바깥, 항상 표시) */}
+        {/* TODO: AdSense 대시보드에서 발급받은 결과 페이지 전용 슬롯 ID로 교체 */}
+        <div className="mt-5 w-full">
+          <AdBanner slot="4013466421" />
         </div>
 
         {/* 잠금 시 블러 */}
