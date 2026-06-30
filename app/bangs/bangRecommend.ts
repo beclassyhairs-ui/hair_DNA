@@ -105,14 +105,18 @@ function applyQ2Gate(q2: Q2ForeheadConcern | ""): BangType | null {
 // none 허용 풀: 전체 9종
 function applyFaceShape(face: FaceShapeKey, q2: Q2ForeheadConcern | ""): BangType {
   if (q2 === "wide_forehead") {
+    // [전문가 매핑 룰]
+    // 둥근형·각진형은 풀뱅이 세로를 단절시켜 얼굴을 더 크고 둥글어 보이게 함 →
+    //   세로 시선을 열어주는 see_through / curtain 계열이 원칙
+    // 긴형만 예외적으로 soft_full이 유효 (세로 길이를 확실히 단축)
     const map: Record<FaceShapeKey, BangType> = {
-      round:   "soft_full",    // 이마 덮기 + 세로 시선 확보
-      square:  "curtain",      // 이마 덮기 + 하관 각 중화
-      heart:   "curtain",      // 넓은 이마에 커튼뱅은 필수
-      oblong:  "see_through",  // 이마 커버하되 세로 강조 금지
+      round:   "see_through",  // 세로 여백 열기 + 옆 광대 슬림 (풀뱅 금지)
+      square:  "curtain",      // 이마 양끝 채우고 하관 각을 길게 감쌈
+      heart:   "curtain",      // 넓은 이마 커버
+      oblong:  "soft_full",    // 유일하게 풀뱅이 맞음 — 세로 길이 확실히 단축
       oval:    "see_through",  // 가벼운 커버면 충분
-      diamond: "curtain",      // 상단 커버로 골격 균형
-      hexagon: "soft_full",    // 강한 골격 + 넓은 이마 → 풍성하게
+      diamond: "curtain",      // 관자놀이 볼륨 채우기 + 상단 커버
+      hexagon: "see_through",  // 강한 골격에 공기감 주입 (풀뱅 금지)
       peanut:  "curtain",      // 관자놀이 이슈 겸 이마 처방
     };
     return map[face] ?? "curtain";
@@ -255,9 +259,19 @@ function buildReasonText(
     if (q4 === "angular_jaw") return `각지거나 뾰족한 턱선을 부드럽게 감싸주는 **${label}**이 최적 처방입니다. 얼굴 하단을 자연스럽게 중화해주는 흐름을 만들어줍니다.`;
   }
 
-  // Stage 2: 얼굴형 × Q2 기반
+  // Stage 2: 얼굴형 × Q2 기반 (wide_forehead — 얼굴형별 전문 이유)
   if (q2 === "wide_forehead") {
-    return `넓은 이마(M자 헤어라인 포함)를 채우는 처방이 필요해요. **${faceTitle}**의 골격 특성을 함께 고려하면 **${label}**이 이마 여백을 자연스럽게 정리하면서 가장 완성도 높은 비율을 만들어줍니다.`;
+    const wideReasonMap: Record<FaceShapeKey, string> = {
+      round:   `**${faceTitle}**에 풀뱅은 세로 시선을 단절시켜 얼굴을 더 둥글고 크게 보이게 합니다. **${label}**으로 이마를 살짝만 가리고 세로 여백을 열어주면 얼굴이 갸름하고 입체적으로 보정돼요.`,
+      square:  `넓은 이마와 **${faceTitle}** 특유의 각진 하관이 함께 있을 때, **${label}**이 이마 양끝 여백을 채우면서 양옆으로 길게 떨어지는 선이 턱의 각을 부드럽게 감싸줍니다.`,
+      heart:   `**${faceTitle}**의 넓은 이마를 커버하는 데 **${label}**이 최적 처방입니다. 양 옆으로 자연스럽게 벌어지는 형태가 역삼각형 실루엣을 균형 있게 보정해줘요.`,
+      oblong:  `**${faceTitle}**에는 이마를 확실하게 덮어 세로 길이를 단축하는 **${label}**이 정답입니다. 넓은 이마까지 더해지면 가로 폭을 채워주는 처방이 반드시 필요해요.`,
+      oval:    `**${faceTitle}**은 넓은 이마도 유연하게 커버할 수 있는 얼굴형이에요. **${label}**으로 이마를 가볍게 정리하면 자연스러운 균형미가 완성됩니다.`,
+      diamond: `**${faceTitle}**에 넓은 이마가 더해지면 관자놀이 볼륨을 채우는 **${label}**이 최적 처방입니다. 상단 커버와 동시에 골격 균형을 잡아줍니다.`,
+      hexagon: `**${faceTitle}**에 풀뱅은 이미 강한 골격을 더욱 육중하게 만듭니다. **${label}**으로 이마를 가볍게 정리하면서 공기감을 유지하는 것이 핵심이에요.`,
+      peanut:  `**${faceTitle}**에 넓은 이마가 더해지면 **${label}**이 관자놀이 이슈와 이마 여백을 동시에 처방하는 가장 효율적인 선택입니다.`,
+    };
+    return wideReasonMap[face] ?? `넓은 이마를 채우는 처방이 필요해요. **${label}**이 **${faceTitle}**의 골격 특성과 함께 가장 완성도 높은 비율을 만들어줍니다.`;
   }
 
   const faceMap: Record<FaceShapeKey, string> = {
