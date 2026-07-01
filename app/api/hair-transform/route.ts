@@ -23,6 +23,7 @@ import { join }   from "path";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStyleDirectoryPath,
+  buildHairStylePrompt,
   DEFAULT_REFERENCE_PATH,
   MAX_IMG,
 } from "@/lib/styleReference";
@@ -30,9 +31,9 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob } from "@/lib/storage";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// lucataco/faceswap: base_image(헤어 레퍼런스) + swap_image(유저 얼굴) → 합성
+// /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
 const REPLICATE_ENDPOINT =
-  "https://api.replicate.com/v1/models/lucataco/faceswap/predictions";
+  "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions";
 
 // ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
 function isPublicHttpsUrl(url: string): boolean {
@@ -100,14 +101,14 @@ function normalizeBase64(raw: string): string {
 }
 
 // ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
-// 모델: lucataco/faceswap
-//   base_image : 헤어 레퍼런스 이미지 (유지할 헤어스타일이 있는 이미지)
-//   swap_image : 유저 셀카 (유지할 얼굴이 있는 이미지)
-// → 결과: 레퍼런스 헤어 + 유저 얼굴 합성
-function buildFaceswapInput(baseImageUrl: string, swapImageUrl: string) {
+// 모델: black-forest-labs/flux-kontext-pro
+function buildReplicateInput(inputImage: string, prompt: string) {
   return {
-    base_image: baseImageUrl,
-    swap_image: swapImageUrl,
+    input_image:       inputImage,
+    prompt,
+    guidance:          3.0,
+    output_quality:    90,
+    prompt_upsampling: false,
   };
 }
 
@@ -182,19 +183,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. 레퍼런스 이미지 선택 (설문 답변 → 4차원 폴더 경로 → 랜덤 픽)
-  const baseUrl = getBaseUrl(req);
-  const refImg  = await pickReferenceUrl(answers, baseUrl);
+  // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
+  const prompt = buildHairStylePrompt(answers);
 
   // 5. Payload 로그
-  console.log("[hair-transform] → Faceswap payload:", JSON.stringify({
-    model:      "lucataco/faceswap",
-    base_image: refImg.url,
-    swap_image: swapImageUrl,
-    isDefault:  refImg.isDefault,
+  console.log("[hair-transform] → flux-kontext-pro payload:", JSON.stringify({
+    model:       "black-forest-labs/flux-kontext-pro",
+    input_image: swapImageUrl,
+    prompt:      prompt.slice(0, 120) + "...",
   }));
 
-  // 6. Replicate API 호출 (faceswap)
+  // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
   try {
     const res = await fetch(REPLICATE_ENDPOINT, {
       method: "POST",
@@ -204,7 +203,7 @@ export async function POST(req: NextRequest) {
         Prefer:         "wait=55",
       },
       body: JSON.stringify({
-        input: buildFaceswapInput(refImg.url, swapImageUrl),
+        input: buildReplicateInput(swapImageUrl, prompt),
       }),
       signal: AbortSignal.timeout(60_000),
     });
