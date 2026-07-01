@@ -338,13 +338,28 @@ export default function BangsUploadPage() {
 
     setIsLoading(false);
 
-    // ③ GPT 실패 시 → 에러를 화면에 노출하고 결과 페이지 이동 중단
-    if (!gptShapeRef.current && gptErrorMsgRef.current) {
-      setGptDebugError(gptErrorMsgRef.current);
-      return; // 결과 페이지로 넘어가지 않음
+    // ③ 실행 증거 로그 — 이 줄이 브라우저 콘솔에 찍히면 새 코드가 실행된 것
+    console.log(
+      `[디버그 v${Date.now()}] Promise.allSettled 완료`,
+      `gptShape=${gptShapeRef.current}`,
+      `gptErr=${gptErrorMsgRef.current ?? "null"}`,
+    );
+
+    // ④ GPT shape이 없으면 무조건 에러 표시 (에러 메시지 유무와 무관)
+    //    기존: !shape && !!errMsg → errMsg가 null이면 에러 표시 안 됨 (결함)
+    //    수정: !shape → 항상 에러 표시
+    if (!gptShapeRef.current) {
+      const errMsg = gptErrorMsgRef.current
+        ?? "GPT 응답 없음 — gptErrorMsgRef가 null (구버전 번들 캐시 의심)";
+      console.error("[디버그] 에러 박스 표시:", errMsg);
+      // sessionStorage에도 백업 — 혹시 navigate 되어도 확인 가능
+      try { sessionStorage.setItem("bangs:gptError", errMsg); } catch { /**/ }
+      setGptDebugError(errMsg);
+      return; // 결과 페이지로 이동하지 않음
     }
 
-    // ④ GPT 결과 저장 후 결과 페이지 이동
+    // ⑤ GPT 결과 저장 후 결과 페이지 이동
+    try { sessionStorage.removeItem("bangs:gptError"); } catch { /**/ }
     const finalShape: FaceShapeKey = gptShapeRef.current ?? "oval";
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
@@ -368,6 +383,8 @@ export default function BangsUploadPage() {
         <div className="mx-auto flex w-full max-w-lg items-center justify-between">
           <a href="/bangs/survey" className="text-base font-medium text-cream/40 hover:text-cream">← 이전</a>
           <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold">인생뱅 · 사진</span>
+          {/* 캐시 확인용 버전 태그 — 이 숫자가 콘솔에서 확인됨 */}
+          <span className="text-[8px] text-cream/20 ml-1">v{process.env.NEXT_PUBLIC_BUILD_TIME ?? "dev"}</span>
           <div className="w-12" />
         </div>
       </header>
