@@ -12,6 +12,7 @@ import {
   getProductRecommendation,
   type FaceShapeKey,
   type FaceShapeInfo,
+  type BangType,
 } from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
 import type { FaceLandmarkData } from "../../../lib/faceAnalysis";
@@ -46,66 +47,183 @@ function loadKakaoSDK(): Promise<void> {
   });
 }
 
-// ─── 세로형 프로필 카드 ───────────────────────────────────────────────────────
+// ─── 앞머리 화보 이미지 경로 매핑 ───────────────────────────────────────────────
+// /public/images/bangs/[type].jpg 에 화보 이미지 준비 필요
 
-function PortraitCard({
+const BANG_IMAGE_PATH: Record<BangType, string> = {
+  see_through: "/images/bangs/see_through.jpg",
+  curtain:     "/images/bangs/curtain.jpg",
+  side_swept:  "/images/bangs/side_swept.jpg",
+  long_side:   "/images/bangs/long_side.jpg",
+  wisp:        "/images/bangs/wisp.jpg",
+  soft_full:   "/images/bangs/soft_full.jpg",
+  inner:       "/images/bangs/inner.jpg",
+  hippy:       "/images/bangs/hippy.jpg",
+  block:       "/images/bangs/block.jpg",
+};
+
+// ─── 왼쪽 카드: AI 스캔 (사진 + 랜드마크 Canvas) ─────────────────────────────
+
+function ScanCard({
   photo,
+  landmarkData,
   faceInfo,
-  onScanClick,
+  onExpand,
 }: {
-  photo:       string;
-  faceInfo:    FaceShapeInfo;
-  onScanClick: () => void;
+  photo:        string;
+  landmarkData: FaceLandmarkData | null;
+  faceInfo:     FaceShapeInfo;
+  onExpand:     () => void;
 }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef    = useRef<HTMLImageElement>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!loaded || !canvasRef.current || !imgRef.current || !landmarkData) return;
+    const canvas = canvasRef.current;
+    const img    = imgRef.current;
+    canvas.width  = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const { oval, shape } = landmarkData;
+
+    // 윤곽 연결선 — 청록
+    if (oval.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(oval[0].x * W, oval[0].y * H);
+      for (let i = 1; i < oval.length; i++) ctx.lineTo(oval[i].x * W, oval[i].y * H);
+      ctx.closePath();
+      ctx.strokeStyle = "rgba(0, 220, 180, 0.75)";
+      ctx.lineWidth   = Math.max(1, W * 0.002);
+      ctx.shadowColor = "rgba(0, 220, 180, 0.4)";
+      ctx.shadowBlur  = 6;
+      ctx.stroke();
+      ctx.shadowBlur  = 0;
+    }
+    // 윤곽 점 36개 — 소형 청록
+    const Ro = Math.max(1.5, W * 0.0033);
+    oval.forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, Ro, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 220, 180, 0.80)";
+      ctx.fill();
+    });
+    // 핵심 랜드마크 8개 — 골드 글로우
+    const Rk = Math.max(2.5, W * 0.006);
+    [shape.top, shape.chin, shape.leftCheek, shape.rightCheek,
+     shape.leftJaw, shape.rightJaw, shape.leftTemple, shape.rightTemple].forEach(p => {
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, Rk, 0, Math.PI * 2);
+      ctx.fillStyle   = "rgba(200, 168, 107, 0.95)";
+      ctx.shadowColor = "rgba(200, 168, 107, 0.5)";
+      ctx.shadowBlur  = 8;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+    });
+  }, [loaded, landmarkData]);
+
   return (
-    <div className="mx-auto max-w-[260px] pt-6">
-      {/* 3:4 세로 비율 카드 */}
-      <div
-        className="relative w-full overflow-hidden rounded-2xl border border-gold/20"
-        style={{ aspectRatio: "3/4" }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={photo}
-          alt="AI 분석 사진"
-          draggable={false}
-          className="h-full w-full select-none object-cover"
-          style={{ objectPosition: "50% 20%", pointerEvents: "none", WebkitTouchCallout: "none" }}
-        />
+    <div
+      className="relative cursor-pointer overflow-hidden rounded-2xl border border-teal-400/20 active:scale-[0.97]"
+      style={{ aspectRatio: "3/4" }}
+      onClick={onExpand}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={imgRef}
+        src={photo}
+        alt="AI 스캔"
+        draggable={false}
+        className="h-full w-full select-none object-cover"
+        style={{ objectPosition: "50% 20%", pointerEvents: "none" }}
+        onLoad={() => setLoaded(true)}
+      />
+      <canvas
+        ref={canvasRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        style={{ mixBlendMode: "screen" }}
+      />
 
-        {/* AI SCAN 뱃지 */}
-        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-teal-400/50 bg-black/65 px-3 py-1.5 backdrop-blur-sm">
-          <motion.span
-            animate={{ opacity: [1, 0.2, 1] }}
-            transition={{ duration: 1.2, repeat: Infinity }}
-            className="h-1.5 w-1.5 rounded-full bg-teal-400"
-          />
-          <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-teal-300">AI SCAN</span>
-        </div>
-
-        {/* 하단 그라데이션 */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20"
-          style={{ background: "linear-gradient(to top, rgba(28,26,24,0.92) 0%, transparent 100%)" }}
-        />
-
-        {/* 얼굴형 라벨 */}
-        <div className="absolute inset-x-0 bottom-0 z-10 px-4 pb-3.5">
-          <p className="text-[9px] font-bold uppercase tracking-[0.22em] text-gold/60">Face Shape</p>
-          <p className="mt-0.5 font-serif text-base font-bold leading-tight text-gold-light">
-            {faceInfo.title}
-          </p>
-        </div>
+      {/* AI SCAN 뱃지 */}
+      <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full border border-teal-400/50 bg-black/65 px-2 py-1 backdrop-blur-sm">
+        <motion.span animate={{ opacity: [1, 0.2, 1] }} transition={{ duration: 1.2, repeat: Infinity }}
+          className="h-1 w-1 rounded-full bg-teal-400" />
+        <span className="text-[8px] font-bold uppercase tracking-wider text-teal-300">AI SCAN</span>
       </div>
 
-      {/* AI 스캔 보기 버튼 */}
-      <button
-        onClick={onScanClick}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-teal-400/25 bg-teal-400/[0.06] py-2.5 text-sm font-semibold text-teal-300 transition-colors hover:bg-teal-400/[0.12] active:scale-[0.98]"
+      {/* 탭 힌트 */}
+      <div className="absolute right-2 top-2 z-10 rounded-full bg-black/50 p-1 backdrop-blur-sm">
+        <svg className="h-3 w-3 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+        </svg>
+      </div>
+
+      {/* 하단 라벨 */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 px-2.5 pb-2.5 pt-8"
+        style={{ background: "linear-gradient(to top, rgba(28,26,24,0.90) 0%, transparent 100%)" }}
       >
-        <span className="text-sm">🔬</span>
-        AI 정밀 분석 스캔 보기
-      </button>
+        <p className="text-[8px] font-bold uppercase tracking-wider text-gold/55">Face Shape</p>
+        <p className="mt-0.5 font-serif text-[11px] font-bold leading-tight text-gold-light">{faceInfo.title}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── 오른쪽 카드: 앞머리 솔루션 화보 ─────────────────────────────────────────
+
+function BangReferenceCard({
+  bangType,
+  bangLabel,
+}: {
+  bangType:  BangType;
+  bangLabel: string;
+}) {
+  const src = BANG_IMAGE_PATH[bangType];
+  const [imgOk, setImgOk] = useState(true);
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl border border-gold/20"
+      style={{ aspectRatio: "3/4" }}
+    >
+      {/* 화보 이미지 */}
+      {imgOk && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={bangLabel}
+          className="h-full w-full object-cover"
+          style={{ objectPosition: "50% 20%" }}
+          onError={() => setImgOk(false)}
+        />
+      )}
+
+      {/* 이미지 없을 때 플레이스홀더 */}
+      {!imgOk && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-gold/[0.08] to-transparent">
+          <span className="text-2xl">💇</span>
+          <p className="px-2 text-center text-[10px] font-bold text-gold-light">{bangLabel}</p>
+        </div>
+      )}
+
+      {/* 처방 뱃지 */}
+      <div className="absolute left-2 top-2 z-10 rounded-full border border-gold/50 bg-black/65 px-2 py-1 backdrop-blur-sm">
+        <span className="text-[8px] font-bold uppercase tracking-wider text-gold">처방</span>
+      </div>
+
+      {/* 하단 라벨 */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 px-2.5 pb-2.5 pt-8"
+        style={{ background: "linear-gradient(to top, rgba(28,26,24,0.90) 0%, transparent 100%)" }}
+      >
+        <p className="text-[8px] font-bold uppercase tracking-wider text-gold/55">인생 앞머리</p>
+        <p className="mt-0.5 font-serif text-[11px] font-bold leading-tight text-gold-light">{bangLabel}</p>
+      </div>
     </div>
   );
 }
@@ -376,13 +494,27 @@ export default function BangsResultPage() {
         </button>
       </header>
 
-      {/* ── 세로형 프로필 카드 ── */}
+      {/* ── 두 축 대시보드: AI 스캔 + 앞머리 솔루션 화보 ── */}
       {photo ? (
-        <PortraitCard
-          photo={photo}
-          faceInfo={faceInfo}
-          onScanClick={() => setScanModalOpen(true)}
-        />
+        <div className="mx-auto max-w-lg px-4 pt-6">
+          <div className="grid grid-cols-2 gap-3">
+            {/* 왼쪽: AI 스캔 카드 (랜드마크 Canvas) */}
+            <ScanCard
+              photo={photo}
+              landmarkData={landmarkData}
+              faceInfo={faceInfo}
+              onExpand={() => setScanModalOpen(true)}
+            />
+            {/* 오른쪽: 앞머리 솔루션 화보 */}
+            <BangReferenceCard
+              bangType={bangRec.primary}
+              bangLabel={bangRec.primaryLabel}
+            />
+          </div>
+          <p className="mt-1.5 text-center text-[9px] text-cream/25">
+            왼쪽 카드를 탭하면 정밀 스캔 보기 · 확대 가능
+          </p>
+        </div>
       ) : (
         <div className="flex items-center justify-center py-14">
           <div className="text-center">

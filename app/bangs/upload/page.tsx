@@ -158,7 +158,8 @@ export default function BangsUploadPage() {
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const imgRef          = useRef<HTMLImageElement | null>(null);
   // MediaPipe 분석 결과를 10s 로딩과 병렬로 수신해 저장
-  const mpResultRef     = useRef<FaceShapeKey | null>(null);
+  const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정
+  const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe (랜드마크 추출용 부산물)
   const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
   const mpRatiosRef     = useRef<FaceRatios | null>(null);
 
@@ -218,7 +219,26 @@ export default function BangsUploadPage() {
     e.target.value = "";
   }
 
-  // MediaPipe 분석 시작 (사진 확정 직후 비동기 — 10s 로딩과 병렬)
+  // ─── GPT-4o-mini 얼굴형 판정 (핵심 판정 담당) ───────────────────────────────
+  async function runGptFaceAnalysis(dataUrl: string) {
+    try {
+      const res = await fetch("/api/analyze-face", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ image: dataUrl }),
+        signal:  AbortSignal.timeout(25_000),
+      });
+      const data = await res.json() as { ok: boolean; shape?: string };
+      if (data.ok && data.shape) {
+        gptShapeRef.current = data.shape as FaceShapeKey;
+        console.log("[GPT] ✅ 얼굴형 판정:", data.shape);
+      }
+    } catch (e) {
+      console.warn("[GPT] 얼굴형 판정 실패 — oval fallback:", e);
+    }
+  }
+
+  // ─── MediaPipe 랜드마크 추출 (Canvas 시각화 전용 — 판정에는 미사용) ──────────
   async function runFaceAnalysis(dataUrl: string) {
     setMpStatus("analyzing");
     try {
@@ -256,16 +276,15 @@ export default function BangsUploadPage() {
     try { sessionStorage.setItem(BANGS_PHOTO_KEY, src); } catch { /**/ }
     setIsLoading(true);
 
-    // ② 로딩 최소 10초 + MediaPipe 완료 — 둘 다 끝난 뒤 결과 저장
-    // (setTimeout 경쟁 대신 Promise.allSettled 사용 — style/loading 페이지와 동일 패턴)
+    // ② 로딩 최소 10초 + GPT 판정 + MediaPipe 랜드마크 — 모두 병렬 실행
     await Promise.allSettled([
       new Promise<void>(resolve => setTimeout(resolve, LOADING_MS)),
-      runFaceAnalysis(src),
+      runGptFaceAnalysis(src),   // 핵심: GPT-4o-mini 얼굴형 판정
+      runFaceAnalysis(src),      // 보조: MediaPipe 랜드마크 추출 (Canvas 시각화용)
     ]);
 
-    // ③ 두 작업 완료 시점 → mpResultRef 확정
-    // 중립 fallback "oval" 사용 — 이전 결과(square 등) 절대 참조하지 않음
-    const finalShape: FaceShapeKey = mpResultRef.current ?? "oval";
+    // ③ GPT 결과 우선 → MediaPipe 결과 → "oval" 안전 fallback
+    const finalShape: FaceShapeKey = gptShapeRef.current ?? mpResultRef.current ?? "oval";
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
       try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
