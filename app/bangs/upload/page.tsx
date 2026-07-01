@@ -228,7 +228,7 @@ export default function BangsUploadPage() {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.onload = () => {
-        const MAX = 512;
+        const MAX = 1024;
         const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
         const w = Math.round(img.naturalWidth  * scale);
         const h = Math.round(img.naturalHeight * scale);

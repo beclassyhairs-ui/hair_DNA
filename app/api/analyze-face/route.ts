@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         messages: [{
           role: "user",
           content: [
-            { type: "image_url", image_url: { url: image, detail: "low" } },
+            { type: "image_url", image_url: { url: image, detail: "auto" } },
             { type: "text",      text: PROMPT },
           ],
         }],
