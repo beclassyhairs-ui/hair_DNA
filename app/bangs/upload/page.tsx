@@ -150,9 +150,8 @@ export default function BangsUploadPage() {
   const [camError, setCamError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [mpStatus, setMpStatus] = useState<"idle" | "analyzing" | "done" | "failed">("idle");
-  const [mockShape, setMockShape] = useState<FaceShapeKey>(() => {
-    try { return (sessionStorage.getItem(BANGS_FACESHAPE_KEY) as FaceShapeKey) ?? "round"; } catch { return "round"; }
-  });
+  // mockShape 제거 — sessionStorage에서 이전 결과를 읽어 fallback으로 쓰면
+  // 한 번 "square"가 기록되면 이후 모든 분석이 square로 고착되는 독약 루프 발생
 
   const videoRef        = useRef<HTMLVideoElement>(null);
   const streamRef       = useRef<MediaStream | null>(null);
@@ -244,29 +243,39 @@ export default function BangsUploadPage() {
     }
   }
 
-  function confirmPhoto() {
+  async function confirmPhoto() {
     if (!src) return;
-    // sessionStorage에 사진 저장
+
+    // ① 이전 분석 오염 데이터 초기화 — 독약 루프 원천 차단
+    try {
+      sessionStorage.removeItem(BANGS_FACESHAPE_KEY);
+      sessionStorage.removeItem(BANGS_LANDMARKS_KEY);
+      sessionStorage.removeItem(BANGS_DEBUG_RATIOS_KEY);
+    } catch { /**/ }
+
     try { sessionStorage.setItem(BANGS_PHOTO_KEY, src); } catch { /**/ }
-    // MediaPipe 분석 + Fake Loading 병렬 시작
-    void runFaceAnalysis(src);
     setIsLoading(true);
 
-    setTimeout(() => {
-      // 10초 후: MediaPipe 결과 또는 mock fallback 저장
-      const finalShape: FaceShapeKey = mpResultRef.current ?? mockShape;
-      try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
-      // 랜드마크 데이터 저장 (Canvas 시각화용)
-      if (mpLandmarksRef.current) {
-        try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
-      }
-      // 비율 수치 저장 (디버그 UI용)
-      if (mpRatiosRef.current) {
-        try { sessionStorage.setItem(BANGS_DEBUG_RATIOS_KEY, JSON.stringify(mpRatiosRef.current)); } catch { /**/ }
-      }
-      setIsLoading(false);
-      router.push("/bangs/result");
-    }, LOADING_MS);
+    // ② 로딩 최소 10초 + MediaPipe 완료 — 둘 다 끝난 뒤 결과 저장
+    // (setTimeout 경쟁 대신 Promise.allSettled 사용 — style/loading 페이지와 동일 패턴)
+    await Promise.allSettled([
+      new Promise<void>(resolve => setTimeout(resolve, LOADING_MS)),
+      runFaceAnalysis(src),
+    ]);
+
+    // ③ 두 작업 완료 시점 → mpResultRef 확정
+    // 중립 fallback "oval" 사용 — 이전 결과(square 등) 절대 참조하지 않음
+    const finalShape: FaceShapeKey = mpResultRef.current ?? "oval";
+    try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
+    if (mpLandmarksRef.current) {
+      try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
+    }
+    if (mpRatiosRef.current) {
+      try { sessionStorage.setItem(BANGS_DEBUG_RATIOS_KEY, JSON.stringify(mpRatiosRef.current)); } catch { /**/ }
+    }
+
+    setIsLoading(false);
+    router.push("/bangs/result");
   }
 
   const showChooser = !src && !camera;
