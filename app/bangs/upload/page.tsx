@@ -149,9 +149,8 @@ export default function BangsUploadPage() {
   const [camera, setCamera]     = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [mpStatus, setMpStatus] = useState<"idle" | "analyzing" | "done" | "failed">("idle");
-  // mockShape 제거 — sessionStorage에서 이전 결과를 읽어 fallback으로 쓰면
-  // 한 번 "square"가 기록되면 이후 모든 분석이 square로 고착되는 독약 루프 발생
+  const [mpStatus,      setMpStatus]      = useState<"idle" | "analyzing" | "done" | "failed">("idle");
+  const [gptDebugError, setGptDebugError] = useState<string | null>(null); // 화면 에러 표시용
 
   const videoRef        = useRef<HTMLVideoElement>(null);
   const streamRef       = useRef<MediaStream | null>(null);
@@ -159,6 +158,7 @@ export default function BangsUploadPage() {
   const imgRef          = useRef<HTMLImageElement | null>(null);
   // MediaPipe 분석 결과를 10s 로딩과 병렬로 수신해 저장
   const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정
+  const gptErrorMsgRef  = useRef<string | null>(null);      // GPT 에러 메시지 (async 전달용)
   const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe (랜드마크 추출용 부산물)
   const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
   const mpRatiosRef     = useRef<FaceRatios | null>(null);
@@ -247,6 +247,7 @@ export default function BangsUploadPage() {
 
   // ─── GPT-4o-mini 얼굴형 판정 (핵심 판정 담당) ───────────────────────────────
   async function runGptFaceAnalysis(dataUrl: string) {
+    gptErrorMsgRef.current = null; // 이전 에러 초기화
     try {
       // 전송 전 압축 (Vercel 4.5MB 한도 대응)
       const compressed = await compressForGpt(dataUrl);
@@ -258,16 +259,35 @@ export default function BangsUploadPage() {
         body:    JSON.stringify({ image: compressed }),
         signal:  AbortSignal.timeout(25_000),
       });
-      const data = await res.json() as { ok: boolean; shape?: string; error?: string };
+
+      // 응답 raw text를 먼저 읽어 HTTP 상태 코드와 함께 저장
+      const rawText = await res.text();
+      console.log(`[GPT] HTTP ${res.status} 응답:`, rawText.slice(0, 300));
+
+      if (!res.ok) {
+        gptErrorMsgRef.current = `HTTP ${res.status} — ${rawText.slice(0, 400)}`;
+        return;
+      }
+
+      let data: { ok: boolean; shape?: string; error?: string };
+      try {
+        data = JSON.parse(rawText) as { ok: boolean; shape?: string; error?: string };
+      } catch {
+        gptErrorMsgRef.current = `JSON 파싱 실패 — 응답: ${rawText.slice(0, 300)}`;
+        return;
+      }
+
       if (data.ok && data.shape) {
         gptShapeRef.current = data.shape as FaceShapeKey;
         console.log("[GPT] ✅ 얼굴형 판정:", data.shape);
       } else {
-        // ok:false일 때도 명시적으로 로그 → 이 줄이 찍히면 API 오류로 oval fallback
-        console.warn("[GPT] ⚠️ API ok:false — fallback oval. 사유:", data.error ?? "unknown");
+        gptErrorMsgRef.current = `API ok:false — ${data.error ?? "이유 불명"}`;
+        console.warn("[GPT] ⚠️ API ok:false:", data);
       }
     } catch (e) {
-      console.warn("[GPT] ❌ 네트워크 실패 — oval fallback:", e);
+      const msg = e instanceof Error ? e.message : String(e);
+      gptErrorMsgRef.current = `네트워크/타임아웃 오류 — ${msg}`;
+      console.error("[GPT] ❌ 예외:", msg);
     }
   }
 
@@ -316,9 +336,15 @@ export default function BangsUploadPage() {
       runFaceAnalysis(src),      // 보조: MediaPipe 랜드마크 추출 (Canvas 시각화용)
     ]);
 
-    // ③ GPT 결과 우선 → "oval" 중립 fallback
-    // MediaPipe shape(mpResultRef)는 절대 fallback으로 사용하지 않음
-    // — classifyFaceShape()의 LM 비율 오류가 여전히 존재하기 때문
+    setIsLoading(false);
+
+    // ③ GPT 실패 시 → 에러를 화면에 노출하고 결과 페이지 이동 중단
+    if (!gptShapeRef.current && gptErrorMsgRef.current) {
+      setGptDebugError(gptErrorMsgRef.current);
+      return; // 결과 페이지로 넘어가지 않음
+    }
+
+    // ④ GPT 결과 저장 후 결과 페이지 이동
     const finalShape: FaceShapeKey = gptShapeRef.current ?? "oval";
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
@@ -328,7 +354,6 @@ export default function BangsUploadPage() {
       try { sessionStorage.setItem(BANGS_DEBUG_RATIOS_KEY, JSON.stringify(mpRatiosRef.current)); } catch { /**/ }
     }
 
-    setIsLoading(false);
     router.push("/bangs/result");
   }
 
@@ -346,6 +371,34 @@ export default function BangsUploadPage() {
           <div className="w-12" />
         </div>
       </header>
+
+      {/* ── GPT API 에러 디버그 박스 — 에러 발생 시에만 노출 ── */}
+      {gptDebugError && (
+        <div className="mx-4 mt-4 rounded-2xl border border-red-500/50 bg-red-950/70 px-5 py-4">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-red-400">
+            🔴 GPT API 에러 — 이 내용을 캡처해서 보내주세요
+          </p>
+          <p className="break-all text-xs leading-relaxed text-red-300">{gptDebugError}</p>
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => { setGptDebugError(null); setSrc(null); }}
+              className="flex-1 rounded-xl border border-red-500/30 bg-red-950/50 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-900/50"
+            >
+              ← 다시 시도
+            </button>
+            <button
+              onClick={() => {
+                setGptDebugError(null);
+                try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, "oval"); } catch { /**/ }
+                router.push("/bangs/result");
+              }}
+              className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-xs font-medium text-cream/45 transition-colors hover:text-cream/70"
+            >
+              oval로 계속하기
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 사진 프레임 영역 — 높이 제한으로 버튼 겹침 방지 */}
       <div className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-5 pb-6">
