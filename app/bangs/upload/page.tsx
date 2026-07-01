@@ -228,7 +228,7 @@ export default function BangsUploadPage() {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.onload = () => {
-        const MAX = 1024;
+        const MAX = 512;
         const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
         const w = Math.round(img.naturalWidth  * scale);
         const h = Math.round(img.naturalHeight * scale);
@@ -276,11 +276,6 @@ export default function BangsUploadPage() {
         gptErrorMsgRef.current = `JSON 파싱 실패 — 응답: ${rawText.slice(0, 300)}`;
         return;
       }
-
-      // ★ 디버그 alert — GPT 원본 텍스트를 즉시 팝업으로 표시
-      window.alert(
-        `[GPT 원본 응답]\n"${data.rawContent ?? "(rawContent 없음)"}"\n\n파싱 결과: ${data.shape ?? "null"}\nok: ${data.ok}`
-      );
 
       if (data.ok && data.shape) {
         gptShapeRef.current = data.shape as FaceShapeKey;

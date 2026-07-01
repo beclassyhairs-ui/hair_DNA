@@ -16,29 +16,31 @@ const VALID_SHAPES = new Set([
   "heart", "diamond", "hexagon", "peanut",
 ]);
 
-const PROMPT = `You are a professional face shape analyst. Classify the face shape in this photo.
+// CoT(Chain-of-Thought) + JSON 응답 — 낮은 화질을 강한 추론으로 보완
+const PROMPT = `You are a professional face shape analyst for East Asian women.
 
-CRITICAL RULES — READ FIRST:
-1. IGNORE all hair, bangs, and forehead coverage completely.
-   Bangs hiding the forehead must NOT affect your answer.
-2. Focus ONLY on the underlying skeletal structure:
-   cheekbones width, jawline shape, and chin point.
-3. Mentally remove all hair and analyze the bone structure only.
+CRITICAL: Completely IGNORE all hair, bangs, and forehead coverage.
+Analyze ONLY the underlying skeletal bone structure — jaw, cheekbones, chin, face proportions.
 
-Respond with EXACTLY ONE word from this list:
-oval / round / oblong / square / heart / diamond / hexagon / peanut
+Think step by step, then respond ONLY in this exact JSON format:
+{
+  "jaw": "<angular|rounded|pointed|narrow>",
+  "cheek": "<wide|moderate|narrow>",
+  "length": "<longer-than-wide|similar|wider-than-long>",
+  "shape": "<oval|round|oblong|square|heart|diamond|hexagon|peanut>"
+}
 
-Definitions (East Asian female faces):
-- oval    : balanced egg shape, jaw slightly narrower than cheekbones (most common)
-- round   : short and wide, full rounded cheeks, nearly equal width and height
-- oblong  : clearly longer than wide, narrow elongated face
-- square  : strong jaw, jaw width nearly as wide as cheekbones
-- heart   : wide cheekbones+forehead, narrow pointed chin — V shape
-- diamond : widest at cheekbones, narrow BOTH at forehead AND chin
+Shape definitions:
+- oval    : balanced egg, jaw slightly narrower than cheekbones, moderate length
+- round   : short and wide, full rounded cheeks
+- oblong  : clearly longer than wide
+- square  : strong ANGULAR jaw nearly as wide as cheekbones
+- heart   : wide forehead+cheekbones, narrow pointed chin (V-line)
+- diamond : widest at cheekbones, narrow BOTH forehead AND chin
 - hexagon : wide at forehead, cheekbones, AND jaw all similarly wide
-- peanut  : narrowing at temples, creating a pinched look at the sides
+- peanut  : narrow temples creating pinched look at sides
 
-ONE word only. No explanation. No punctuation.`;
+JSON only. No extra text.`;
 
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;
@@ -66,13 +68,14 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model:      "gpt-4o-mini",
-        max_tokens: 10,
-        temperature: 0,
+        model:           "gpt-4o",        // 미니→4o: 강한 추론으로 낮은 화질 보완
+        max_tokens:      200,             // CoT JSON 출력 공간 확보
+        temperature:     0,
+        response_format: { type: "json_object" }, // JSON 형식 강제
         messages: [{
           role: "user",
           content: [
-            { type: "image_url", image_url: { url: image, detail: "auto" } },
+            { type: "image_url", image_url: { url: image, detail: "low" } }, // 85토큰 고정
             { type: "text",      text: PROMPT },
           ],
         }],
@@ -90,14 +93,22 @@ export async function POST(req: NextRequest) {
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    // 첫 단어 추출 후 구두점 제거 ("oval." → "oval", "round," → "round")
-    const raw   = (data.choices?.[0]?.message?.content?.trim().toLowerCase() ?? "")
-                    .split(/\s/)[0]
-                    .replace(/[^a-z]/g, "");
-    const shape = VALID_SHAPES.has(raw) ? raw : "oval";
+    const content = data.choices?.[0]?.message?.content?.trim() ?? "";
 
-    console.log(`[analyze-face] ✅ GPT 판정: ${shape} (raw: "${raw}")`);
-    return NextResponse.json({ ok: true, shape, rawContent: data.choices?.[0]?.message?.content ?? "" });
+    // CoT JSON에서 shape 필드 추출
+    let shape = "oval";
+    try {
+      const parsed = JSON.parse(content) as Record<string, string>;
+      const candidate = (parsed.shape ?? "").toLowerCase().replace(/[^a-z]/g, "");
+      shape = VALID_SHAPES.has(candidate) ? candidate : "oval";
+    } catch {
+      // JSON 파싱 실패 시 첫 단어로 fallback
+      const raw = content.toLowerCase().split(/\s/)[0].replace(/[^a-z]/g, "");
+      shape = VALID_SHAPES.has(raw) ? raw : "oval";
+    }
+
+    console.log(`[analyze-face] ✅ GPT 판정: ${shape} | CoT: ${content.slice(0, 120)}`);
+    return NextResponse.json({ ok: true, shape, rawContent: content });
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
