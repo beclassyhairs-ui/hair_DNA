@@ -47,12 +47,12 @@ export const STYLE_SURVEY: StyleStep[] = [
         no:    "Q2",
         title: "원하는 머리 기장을 골라주세요",
         options: [
-          { id: "short",      label: "숏",    desc: "귀 위로 올라오는 길이" },
-          { id: "short_bob",  label: "숏단발", desc: "귀 아래~턱 선" },
-          { id: "bob",        label: "단발",   desc: "턱~어깨 선" },
-          { id: "shoulder",   label: "어깨선", desc: "어깨 선" },
-          { id: "collarbone", label: "쇄골선", desc: "쇄골 선" },
-          { id: "chest",      label: "가슴선", desc: "쇄골 아래" },
+          { id: "short",      label: "숏",     desc: "귀 위로 올라오는 길이" },
+          { id: "short_bob",  label: "턱선 위", desc: "귀 아래~턱 선" },
+          { id: "bob",        label: "단발",    desc: "턱~어깨 선" },
+          { id: "collarbone", label: "쇄골선",  desc: "쇄골 라인" },
+          { id: "chest",      label: "가슴선",  desc: "쇄골 아래" },
+          { id: "long",       label: "롱",      desc: "가슴선 아래" },
         ],
       },
       {

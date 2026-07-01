@@ -19,10 +19,11 @@ import {
 } from "../constants";
 import {
   getStyleEntry,
-  buildCarePrescription,
   getStyleProduct,
   getSecondStyleProduct,
-  buildAIDiagnosisText,
+  buildAhaText,
+  getPrimaryConcern,
+  type AhaBlock,
 } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import AdBanner from "@/app/components/AdBanner";
@@ -291,25 +292,112 @@ function BeforeAfterSection({
   );
 }
 
-// ─── 케어 요약 ────────────────────────────────────────────────────────────────
+// ─── 아하! 공감형 3-Block 카드 ───────────────────────────────────────────────
 
-function CareSummary({ answers }: { answers: StyleAnswers }) {
-  const care = buildCarePrescription(answers);
-  const lines = [
-    care.historyNote,
-    answers.q8_density === "thin_density" || answers.q7_thickness === "fine" ? care.densityNote : care.curlNote,
-    care.thicknessNote,
-  ];
+function AhaCard({ aha }: { aha: AhaBlock }) {
   return (
-    <div className={`space-y-3 ${care.isSevereDamage ? "rounded-xl border border-gold/15 bg-gold/[0.04] p-4" : ""}`}>
-      {care.isSevereDamage && <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gold/70">집중 케어 필요</p>}
-      {lines.map((text, i) => (
-        <div key={i} className="flex items-start gap-3">
-          <span className="mt-2 h-1 w-1 flex-none rounded-full bg-gold/55" />
-          <p className="text-sm leading-relaxed text-cream/70">{text}</p>
+    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="px-5 py-4 space-y-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI 모발 진단</p>
+
+        {/* Block A: 원인 */}
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex-none rounded-full bg-gold/15 px-2 py-0.5 text-[9px] font-bold text-gold whitespace-nowrap">원인</span>
+          <p className="text-sm leading-relaxed text-cream/70">{aha.cause}</p>
         </div>
-      ))}
+
+        {/* Block B: 아하! 공감 */}
+        <div className="flex items-start gap-3 rounded-xl border border-gold/15 bg-gold/[0.05] px-3.5 py-3">
+          <span className="flex-none text-base leading-none mt-0.5">😮</span>
+          <p className="text-sm font-medium leading-relaxed text-cream/90">{aha.sympathy}</p>
+        </div>
+
+        {/* Block C: 솔루션 */}
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex-none rounded-full bg-teal-400/15 px-2 py-0.5 text-[9px] font-bold text-teal-400 whitespace-nowrap">처방</span>
+          <p className="text-sm leading-relaxed text-cream/70">{aha.solution}</p>
+        </div>
+      </div>
     </div>
+  );
+}
+
+// ─── 기획자용 진단 로직 디버그 패널 ──────────────────────────────────────────
+
+const Q_DEBUG_LABELS: Record<string, [string, Record<string, string>]> = {
+  q1_age:            ["연령대",    { age_20: "20대", age_30: "30대", age_40: "40대", age_50: "50대", age_60plus: "60대+" }],
+  q11_length:        ["기장",      { short: "숏", short_bob: "턱선 위", bob: "단발", collarbone: "쇄골", chest: "가슴선", long: "롱" }],
+  q14_layer:         ["레이어",    { heavy: "층 없음", medium: "층 중간", light: "층 많음" }],
+  q13_design:        ["웨이브",    { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" }],
+  q8_density:        ["숱",        { thick_density: "많음", medium_density: "보통", thin_density: "적음" }],
+  q7_thickness:      ["굵기",      { coarse: "굵음", medium_thickness: "보통", fine: "가늘음" }],
+  q3_curl:           ["곱슬",      { straight_hair: "직모", wavy_hair: "반곱슬", curly_hair: "악성곱슬" }],
+  q10_history_count: ["시술 횟수", { count_1_2: "1~2회", count_3_4: "3~4회", count_5_6: "5~6회", count_7plus: "7회+" }],
+};
+
+function DiagnosisDebugPanel({
+  answers, styleName, concern,
+}: { answers: StyleAnswers; styleName: string; concern: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-24 right-3 z-40 flex items-center gap-1 rounded-full border border-white/15 bg-charcoal/85 px-2.5 py-1.5 text-[9px] font-mono font-bold text-cream/35 backdrop-blur-sm hover:text-cream/65"
+      >
+        🔍 진단 로직
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center"
+            onClick={() => setOpen(false)}
+          >
+            <div className="absolute inset-0 bg-black/70" />
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 280 }}
+              className="relative z-10 max-h-[78vh] w-full max-w-lg overflow-y-auto rounded-t-3xl bg-[#111] px-5 pb-10 pt-5 font-mono text-[11px]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
+              <p className="mb-3 font-bold uppercase tracking-widest text-yellow-400">🔍 진단 로직 디버그</p>
+
+              {/* 유저 답변 */}
+              <div className="mb-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-yellow-400/70">유저 답변 원본</p>
+                {Object.entries(Q_DEBUG_LABELS).map(([key, [label, map]]) => (
+                  <div key={key} className="flex justify-between border-b border-white/[0.05] py-1 last:border-0">
+                    <span className="text-cream/35">{label}</span>
+                    <span className="text-cream/65">{map[answers[key] ?? ""] ?? answers[key] ?? "—"}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 스타일 계산 */}
+              <div className="mb-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-yellow-400/70">스타일 계산 결과</p>
+                <div className="flex justify-between py-1">
+                  <span className="text-cream/35">생성 스타일명</span>
+                  <span className="font-bold text-yellow-300">{styleName}</span>
+                </div>
+              </div>
+
+              {/* 아하! 블록 선택 */}
+              <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-yellow-400/70">아하! 블록 선택</p>
+                <div className="flex justify-between py-1">
+                  <span className="text-cream/35">우선 고민</span>
+                  <span className="font-bold text-yellow-300">{concern}</span>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -402,14 +490,15 @@ export default function StyleResultPage() {
 
   if (!ready) return <main className="min-h-screen bg-charcoal" />;
 
-  const entry     = getStyleEntry(answers);
-  const product   = getStyleProduct(answers);
-  const product2  = getSecondStyleProduct(answers);
-  const diagnosis = buildAIDiagnosisText(answers);
+  const entry   = getStyleEntry(answers);
+  const product  = getStyleProduct(answers);
+  const product2 = getSecondStyleProduct(answers);
+  const aha      = buildAhaText(answers);
+  const concern  = getPrimaryConcern(answers);
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
-  const LAYER_LABEL:  Record<string, string> = { heavy: "일자", medium: "소프트", light: "허쉬컷" };
-  const LENGTH_LABEL: Record<string, string> = { short: "숏", short_bob: "숏단발", bob: "단발", shoulder: "어깨선", collarbone: "쇄골선", chest: "가슴선" };
+  const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
+  const LENGTH_LABEL: Record<string, string> = { short: "숏", short_bob: "턱선 위", bob: "단발", collarbone: "쇄골선", chest: "가슴선", long: "롱" };
 
   return (
     <main className="min-h-screen bg-charcoal text-cream" style={{ touchAction: "pan-y" }}>
@@ -471,17 +560,8 @@ export default function StyleResultPage() {
             </div>
           </div>
 
-          {/* 케어 처방 */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">모발 케어 처방</p>
-            <CareSummary answers={answers} />
-          </div>
-
-          {/* AI 진단 소견 */}
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-5 py-4">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">전문가 AI 진단 소견</p>
-            <p className="text-sm leading-relaxed text-cream/70">{diagnosis}</p>
-          </div>
+          {/* 아하! 공감형 3-Block 모발 진단 카드 */}
+          <AhaCard aha={aha} />
 
           {/* 맞춤 제품 2개 */}
           <div>
@@ -538,6 +618,13 @@ export default function StyleResultPage() {
           </div>
         </div>
       </div>
+
+      {/* 기획자용 진단 로직 디버그 패널 */}
+      <DiagnosisDebugPanel
+        answers={answers}
+        styleName={entry.name}
+        concern={concern}
+      />
 
       {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-charcoal/95 px-4 py-4 backdrop-blur-md">

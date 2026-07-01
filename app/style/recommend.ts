@@ -5,99 +5,151 @@
 
 import type { StyleAnswers } from "./surveyData";
 
-// ─── 60종 스타일 테이블 ───────────────────────────────────────────────────────
-// key: `${q11_length}_${q13_design}_${q14_layer}`
+// ─── 스타일 명칭 조립 시스템 [2×6×3×4 = 144조합] ─────────────────────────────
+// 60종 하드코딩 테이블 전면 폐기 → 런타임 생성 함수로 교체
 
 interface StyleEntry { name: string; mood: string; }
 
-export const STYLE_TABLE: Record<string, StyleEntry> = {
-  // ── 숏 (short) ──────────────────────────────────────────────────────────────
-  "short_straight_heavy": { name: "클래식 숏컷",       mood: "심플하고 단정한 선이 지적인 인상을 만들어요" },
-  "short_straight_medium": { name: "텍스처드 숏컷",    mood: "가벼운 결 처리로 생동감 있는 소프트 숏이에요" },
-  "short_straight_light":  { name: "허쉬 숏컷",        mood: "각도 있는 레이어로 얼굴을 감싸는 모던한 숏이에요" },
-  "short_c_curl_heavy":    { name: "볼드 숏펌",         mood: "볼륨감 있는 C컬이 머리를 풍성하게 보이게 해요" },
-  "short_c_curl_medium":   { name: "소프트 숏펌",       mood: "가볍게 뜨는 C컬이 자연스러운 볼륨을 연출해요" },
-  "short_c_curl_light":    { name: "에어 숏펌",         mood: "공기처럼 가벼운 C컬로 활동적인 매력이 돋보여요" },
-  "short_s_curl_heavy":    { name: "웨이비 볼드 숏",    mood: "풍성한 S컬이 럭셔리한 숏 스타일을 완성해요" },
-  "short_s_curl_medium":   { name: "내추럴 S컬 숏",    mood: "부드러운 S컬이 청순한 여성스러움을 더해요" },
-  "short_s_curl_light":    { name: "에어리 S컬 숏",    mood: "공기감 가득한 S컬로 스타일리시함이 완성돼요" },
-  "short_wave_heavy":      { name: "볼드 숏 웨이브",   mood: "묵직한 웨이브가 특별한 존재감을 발산해요" },
-  "short_wave_medium":     { name: "소프트 숏 웨이브", mood: "경쾌한 웨이브가 얼굴을 밝고 발랄하게 만들어요" },
-  "short_wave_light":      { name: "에어 숏 웨이브",   mood: "흩날리는 웨이브로 낭만적인 무드가 연출돼요" },
-
-  // ── 숏단발 (bob) ────────────────────────────────────────────────────────────
-  "bob_straight_heavy":    { name: "미시 단발",         mood: "기본에 충실한 단발로 세련된 도회적 이미지예요" },
-  "bob_straight_medium":   { name: "소프트 A라인",      mood: "안으로 살짝 말리는 단발이 청초한 느낌을 줘요" },
-  "bob_straight_light":    { name: "허쉬컷 단발",       mood: "층을 넣어 경쾌한 움직임이 완성되는 트렌디한 스타일이에요" },
-  "bob_c_curl_heavy":      { name: "볼드 단발펌",       mood: "볼륨 있는 C컬이 단발을 화사하게 살려줘요" },
-  "bob_c_curl_medium":     { name: "소프트 단발펌",     mood: "안으로 감기는 C컬이 얼굴을 아담하게 감싸요" },
-  "bob_c_curl_light":      { name: "에어 단발펌",       mood: "가벼운 C컬로 발랄하면서 여성스러움을 더해요" },
-  "bob_s_curl_heavy":      { name: "볼드 단발 S컬",     mood: "풍성한 S컬로 시선을 사로잡는 단발이에요" },
-  "bob_s_curl_medium":     { name: "내추럴 단발 S컬",  mood: "자연스러운 S컬이 귀여운 여성미를 높여요" },
-  "bob_s_curl_light":      { name: "에어리 단발 S컬",  mood: "사르르 흐르는 S컬로 걸리시한 무드예요" },
-  "bob_wave_heavy":        { name: "글래머 단발 웨이브", mood: "묵직한 웨이브로 성숙한 매력이 넘쳐요" },
-  "bob_wave_medium":       { name: "로맨틱 단발 웨이브", mood: "부드러운 웨이브가 사랑스러운 감성을 만들어요" },
-  "bob_wave_light":        { name: "루즈 단발 웨이브", mood: "자유로운 웨이브로 세련된 캐주얼 무드예요" },
-
-  // ── 단발 (shoulder) ─────────────────────────────────────────────────────────
-  "shoulder_straight_heavy": { name: "미디엄 단발",       mood: "어깨에 닿는 단발이 성숙하고 안정적인 느낌을 줘요" },
-  "shoulder_straight_medium": { name: "C라인 단발",       mood: "끝을 안으로 감은 단발로 깔끔하고 단정한 이미지예요" },
-  "shoulder_straight_light": { name: "허쉬 미디",         mood: "풍성한 레이어가 얼굴을 갸름하게 만들어요" },
-  "shoulder_c_curl_heavy":   { name: "볼륨 미디 C컬",    mood: "풍성한 C컬이 여성스러운 볼륨을 완성해요" },
-  "shoulder_c_curl_medium":  { name: "소프트 미디 C컬",  mood: "자연스럽게 말리는 C컬로 청순함이 두 배예요" },
-  "shoulder_c_curl_light":   { name: "에어 미디 C컬",    mood: "가볍게 뜨는 C컬이 개성 있는 스타일링이에요" },
-  "shoulder_s_curl_heavy":   { name: "글래머 S컬 미디",  mood: "풍성한 S컬이 화려한 여성미를 발산해요" },
-  "shoulder_s_curl_medium":  { name: "빌드펌 미디",       mood: "쇄골 라인에서 자연스럽게 뻗쳐 여성스러움을 극대화해요" },
-  "shoulder_s_curl_light":   { name: "루즈 S컬 미디",    mood: "느슨하게 흐르는 S컬이 세련된 무드를 연출해요" },
-  "shoulder_wave_heavy":     { name: "볼드 미디 웨이브",  mood: "강렬한 웨이브로 개성이 넘치는 스타일이에요" },
-  "shoulder_wave_medium":    { name: "로맨틱 미디 웨이브", mood: "물결치는 웨이브가 감성적인 아름다움을 더해요" },
-  "shoulder_wave_light":     { name: "에어리 미디 웨이브", mood: "자유로운 웨이브로 낭만적인 인상을 줘요" },
-
-  // ── 중단발 (collarbone) ─────────────────────────────────────────────────────
-  "collarbone_straight_heavy": { name: "클래식 롱 단발",    mood: "쇄골을 넘는 길이로 우아한 여성미가 완성돼요" },
-  "collarbone_straight_medium": { name: "소프트 롱 단발",   mood: "끝을 살짝 다듬어 깔끔하고 세련된 느낌이에요" },
-  "collarbone_straight_light": { name: "허쉬 롱 단발",      mood: "풍성한 레이어가 얼굴을 갸름하게 만들어요" },
-  "collarbone_c_curl_heavy":   { name: "볼드 쇄골 C컬",    mood: "풍성한 C컬이 쇄골 라인을 화려하게 연출해요" },
-  "collarbone_c_curl_medium":  { name: "내추럴 쇄골 C컬",  mood: "자연스러운 C컬이 우아한 여성스러움을 더해요" },
-  "collarbone_c_curl_light":   { name: "에어리 쇄골 C컬",  mood: "가볍게 뜨는 C컬로 생동감 넘치는 스타일이에요" },
-  "collarbone_s_curl_heavy":   { name: "볼드 쇄골 S컬",    mood: "풍성한 S컬로 성숙하고 우아한 매력이에요" },
-  "collarbone_s_curl_medium":  { name: "빌드펌 쇄골",       mood: "쇄골에서 완만하게 펼쳐지는 S컬이 청순함을 더해요" },
-  "collarbone_s_curl_light":   { name: "에어 쇄골 S컬",    mood: "가벼운 S컬이 낭만적이고 걸리시한 무드예요" },
-  "collarbone_wave_heavy":     { name: "글래머 쇄골 웨이브", mood: "풍성한 웨이브로 화려한 존재감을 발산해요" },
-  "collarbone_wave_medium":    { name: "로맨틱 쇄골 웨이브", mood: "부드러운 웨이브가 낭만적인 인상을 만들어요" },
-  "collarbone_wave_light":     { name: "루즈 쇄골 웨이브",  mood: "느슨한 웨이브로 자유롭고 감각적인 스타일이에요" },
-
-  // ── 긴머리 (chest) ──────────────────────────────────────────────────────────
-  "chest_straight_heavy":  { name: "클래식 롱헤어",      mood: "매끄럽고 광택 있는 긴 머리로 시크한 여성미예요" },
-  "chest_straight_medium": { name: "소프트 롱헤어",       mood: "자연스러운 결이 살아있는 우아한 롱헤어예요" },
-  "chest_straight_light":  { name: "허쉬 롱헤어",         mood: "레이어로 경쾌하게 살린 롱헤어가 세련돼요" },
-  "chest_c_curl_heavy":    { name: "볼드 롱 C컬",         mood: "묵직한 C컬이 롱헤어의 볼륨을 극대화해요" },
-  "chest_c_curl_medium":   { name: "내추럴 롱 C컬",      mood: "자연스러운 C컬이 여성스러운 롱헤어를 완성해요" },
-  "chest_c_curl_light":    { name: "에어리 롱 C컬",      mood: "가볍게 흐르는 C컬로 청초한 롱헤어 스타일이에요" },
-  "chest_s_curl_heavy":    { name: "볼드 롱 S컬",         mood: "풍성한 S컬로 화려하고 성숙한 롱헤어예요" },
-  "chest_s_curl_medium":   { name: "로맨틱 롱 S컬",      mood: "우아하게 흐르는 S컬이 로맨틱한 무드를 연출해요" },
-  "chest_s_curl_light":    { name: "에어리 롱 S컬",      mood: "경쾌하게 흐르는 S컬로 봄날 같은 여성스러움이에요" },
-  "chest_wave_heavy":      { name: "글래머 롱 웨이브",   mood: "강렬한 웨이브가 화려한 개성을 발산해요" },
-  "chest_wave_medium":     { name: "비치 롱 웨이브",     mood: "물결치는 웨이브가 자유롭고 감각적인 스타일이에요" },
-  "chest_wave_light":      { name: "루즈 롱 웨이브",     mood: "느슨하게 흐르는 웨이브로 낭만적인 롱헤어예요" },
-};
-
-// ─── 스타일 매칭 ──────────────────────────────────────────────────────────────
-
-export function getStyleEntry(answers: StyleAnswers): StyleEntry {
-  const key = `${answers.q11_length}_${answers.q13_design}_${answers.q14_layer}`;
-  return STYLE_TABLE[key] ?? { name: "내추럴 소프트 스타일", mood: "자연스럽고 편안한 일상 스타일을 추천해요" };
+// [연령 2그룹]
+function getAgeGroup(age: string): "2040" | "5060plus" {
+  return ["age_20", "age_30", "age_40"].includes(age) ? "2040" : "5060plus";
 }
 
-// ─── 레퍼런스 이미지 경로 ─────────────────────────────────────────────────────
+// [효과 접두어] Age 2 × Layer 3 = 6칸
+const EFFECT_PREFIX: Record<"2040" | "5060plus", Record<string, string>> = {
+  "2040": {
+    heavy:  "볼륨감 있는",
+    medium: "손질이 편한",
+    light:  "얼굴이 갸름해 보이는",
+  },
+  "5060plus": {
+    heavy:  "관리하기 쉬운",
+    medium: "손질이 편한",
+    light:  "동안으로 보이는",
+  },
+};
 
-export function getRefImagePath(answers: StyleAnswers): string {
-  const ageGroup = ["age_20", "age_30"].includes(answers.q1_age ?? "") ? "2040" : "5060";
-  const layerMap: Record<string, string> = { heavy: "none", medium: "soft", light: "rich" };
-  const layer    = layerMap[answers.q14_layer ?? ""] ?? "soft";
-  const length   = answers.q11_length  ?? "shoulder";
-  const design   = answers.q13_design  ?? "straight";
-  return `/references/${ageGroup}/${length}/${design}/${layer}/ref_01.png`;
+// [기본 스타일명] Length 6 × Wave 4 = 24칸
+const BASE_STYLE: Record<string, Record<string, string>> = {
+  short:      { straight: "숏컷",           c_curl: "숏컷 C컬",       s_curl: "숏컷 S컬",       wave: "숏컷 웨이브" },
+  short_bob:  { straight: "귀밑 단발",       c_curl: "귀밑 단발 C컬",  s_curl: "귀밑 단발 S컬",  wave: "귀밑 단발 웨이브" },
+  bob:        { straight: "단발컷",          c_curl: "단발 C컬",       s_curl: "단발 S컬",       wave: "단발 웨이브" },
+  collarbone: { straight: "쇄골 레이어드컷", c_curl: "쇄골 C컬",       s_curl: "쇄골 S컬",       wave: "쇄골 웨이브" },
+  chest:      { straight: "가슴선 롱컷",     c_curl: "가슴선 롱 C컬",  s_curl: "가슴선 롱 S컬",  wave: "가슴선 롱 웨이브" },
+  long:       { straight: "롱헤어",          c_curl: "롱 C컬",         s_curl: "롱 S컬",         wave: "롱 웨이브" },
+};
+
+// [무드 문구] Wave 4 × Layer 3 = 12칸
+const STYLE_MOOD: Record<string, Record<string, string>> = {
+  straight: {
+    heavy:  "깔끔하고 단정한 선이 자신감 있는 인상을 만들어요",
+    medium: "자연스럽게 정돈된 직선 라인이 세련된 느낌이에요",
+    light:  "각도 있는 레이어로 가볍고 경쾌한 분위기예요",
+  },
+  c_curl: {
+    heavy:  "볼륨감 있는 C컬이 얼굴을 화사하게 감싸줘요",
+    medium: "안으로 살짝 말리는 C컬이 청순하고 여성스러워요",
+    light:  "가볍게 뜨는 C컬로 생동감 넘치는 스타일이에요",
+  },
+  s_curl: {
+    heavy:  "풍성한 S컬이 고급스럽고 여성스러운 분위기예요",
+    medium: "자연스럽게 흐르는 S컬이 우아함을 더해줘요",
+    light:  "경쾌하게 흐르는 S컬로 발랄한 매력이 돋보여요",
+  },
+  wave: {
+    heavy:  "묵직한 웨이브가 특별한 존재감을 발산해요",
+    medium: "부드러운 웨이브가 로맨틱하고 감성적인 분위기예요",
+    light:  "자유롭게 흐르는 웨이브로 낭만적인 무드가 완성돼요",
+  },
+};
+
+export function getStyleEntry(answers: StyleAnswers): StyleEntry {
+  const ageGroup = getAgeGroup(answers.q1_age ?? "age_30");
+  const layer    = answers.q14_layer  ?? "medium";
+  const length   = answers.q11_length ?? "bob";
+  const design   = answers.q13_design ?? "straight";
+
+  const prefix = EFFECT_PREFIX[ageGroup][layer] ?? "손질이 편한";
+  const base   = BASE_STYLE[length]?.[design]  ?? "단발컷";
+  const name   = `${prefix} ${base}`;
+  const mood   = STYLE_MOOD[design]?.[layer]   ?? "자연스럽고 편안한 스타일이에요";
+
+  return { name, mood };
+}
+
+// ─── 아하! 공감형 3-Block 텍스트 시스템 ───────────────────────────────────────
+// 4가지 모질 변수(곱슬·숱·굵기·시술 횟수) → 우선순위 1개 고민 선택 → 3블록 조립
+
+export type HairConcern =
+  | "severe_damage" | "damage" | "fine_and_thin"
+  | "curly" | "fine" | "thin" | "wavy" | "healthy";
+
+export interface AhaBlock {
+  cause:    string;  // A. 원인 짚어주기
+  sympathy: string;  // B. 아하! 공감
+  solution: string;  // C. 솔루션
+}
+
+const AHA_BLOCKS: Record<HairConcern, AhaBlock> = {
+  severe_damage: {
+    cause:    "새치 때문에 잦은 염색을 반복하셔서 모발이 많이 예민해진 상태예요.",
+    sympathy: "그래서 염색 직후엔 괜찮다가 금방 푸석해지고, 머릿결이 생각보다 빨리 거칠어지셨을 거예요.",
+    solution: "이럴 땐 새치는 마스카라 타입으로 터치업하고 시술 주기를 줄이는 게 최우선이에요. 약산성 샴푸로 두피 pH부터 회복시키세요.",
+  },
+  damage: {
+    cause:    "잦은 펌·염색으로 모발 속 수분과 단백질이 빠져나간 상태예요.",
+    sympathy: "그래서 시술 후 탄력이 금방 사라지거나, 머릿결이 기대보다 빨리 거칠어지셨을 거예요.",
+    solution: "이럴 땐 주 1~2회 단백질 트리트먼트가 핵심이에요. 홈케어를 탄탄히 할수록 다음 시술 결과도 훨씬 오래가요.",
+  },
+  fine_and_thin: {
+    cause:    "모발이 가늘고 숱도 적어서 볼륨을 유지하기가 유독 어려운 상태예요.",
+    sympathy: "그래서 아침에 열심히 드라이해도 2~3시간이면 납작 눌려버려서 '내 머리는 왜 이러지?' 하셨을 거예요.",
+    solution: "이럴 땐 볼륨 에센스를 뿌리에만 집중해서 바르고, 드라이어를 위로 향하게 말리세요. 뿌리부터 세우면 볼륨이 훨씬 오래 유지돼요.",
+  },
+  curly: {
+    cause:    "악성 곱슬 모질이라 수분이 빠지는 속도가 일반 모발보다 훨씬 빠른 상태예요.",
+    sympathy: "그래서 아침마다 머리가 제멋대로 뻗치거나 부스스하게 퍼져서 고생이셨을 거예요.",
+    solution: "이럴 땐 물기가 있을 때 컬 크림을 바르고 자연건조하는 게 포인트예요. '찰랑이는 컬'보다 '살아있는 결'을 목표로 하면 훨씬 편해져요.",
+  },
+  fine: {
+    cause:    "모발이 가늘어서 열이나 외부 자극에 특히 민감한 상태예요.",
+    sympathy: "그래서 드라이나 고데기를 쓸 때마다 머리카락이 자주 끊어지거나 탄력이 빨리 사라지셨을 거예요.",
+    solution: "이럴 땐 저자극 단백질 트리트먼트로 탄력을 채우고, 샴푸 마지막엔 차가운 물로 마무리해 주세요. 큐티클이 닫혀서 훨씬 덜 손상돼요.",
+  },
+  thin: {
+    cause:    "숱이 적어서 머리카락 사이사이가 비어 보이기 쉬운 상태예요.",
+    sympathy: "그래서 거울 앞에서 스타일 완성해도 '왜 이렇게 빈약해 보이지?' 하고 속상하셨을 거예요.",
+    solution: "이럴 땐 볼류마이징 샴푸와 드라이어 방향이 핵심이에요. 뿌리를 먼저 말리고 위로 들어올리면 훨씬 풍성해 보여요.",
+  },
+  wavy: {
+    cause:    "반곱슬 모질이라 날씨나 습도에 따라 머리 상태가 많이 달라지는 편이에요.",
+    sympathy: "그래서 '오늘은 왜 이렇게 부스스하지?' 하고 매일 아침 복불복처럼 느끼셨을 거예요.",
+    solution: "이럴 땐 가벼운 크림 타입 제품으로 마무리하는 게 포인트예요. 마지막에 찬바람으로 큐티클을 닫아주면 훨씬 오래 유지돼요.",
+  },
+  healthy: {
+    cause:    "모발 상태가 전반적으로 건강하고 균형 잡혀 있어요.",
+    sympathy: "어떤 스타일을 해도 잘 소화하고, 큰 고민 없이 지내셨을 거예요.",
+    solution: "지금의 홈케어 루틴을 꾸준히 유지하면 충분해요. 오히려 지금이 새 스타일에 도전하기 딱 좋은 타이밍이에요!",
+  },
+};
+
+export function getPrimaryConcern(answers: StyleAnswers): HairConcern {
+  const h = answers.q10_history_count;
+  const t = answers.q7_thickness;
+  const d = answers.q8_density;
+  const c = answers.q3_curl;
+  if (h === "count_7plus")                            return "severe_damage";
+  if (h === "count_5_6")                              return "damage";
+  if (t === "fine" && d === "thin_density")           return "fine_and_thin";
+  if (c === "curly_hair")                             return "curly";
+  if (t === "fine")                                   return "fine";
+  if (d === "thin_density")                           return "thin";
+  if (c === "wavy_hair")                              return "wavy";
+  return "healthy";
+}
+
+export function buildAhaText(answers: StyleAnswers): AhaBlock {
+  return AHA_BLOCKS[getPrimaryConcern(answers)];
 }
 
 // ─── 케어 처방전 ──────────────────────────────────────────────────────────────

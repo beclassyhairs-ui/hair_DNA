@@ -34,9 +34,9 @@ const LENGTH_DIR: Record<string, string> = {
   short:      "short",
   short_bob:  "short_bob",
   bob:        "bob",
-  shoulder:   "shoulder",
   collarbone: "collarbone",
   chest:      "chest",
+  long:       "long",
 };
 
 // ─── [웨이브] 4그룹 ───────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
     short:      "very short pixie cut, above the ears",
     short_bob:  "short bob, ear to chin length",
     bob:        "classic bob, jaw to chin length",
-    shoulder:   "shoulder-length hair",
+    long:       "long hair past the chest",
     collarbone: "collarbone-length hair",
     chest:      "long hair reaching the chest",
   };
