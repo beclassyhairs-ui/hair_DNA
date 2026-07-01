@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
       choices?: Array<{ message?: { content?: string } }>;
     };
 
-    const raw   = data.choices?.[0]?.message?.content?.trim().toLowerCase().split(/\s/)[0] ?? "";
+    // 첫 단어 추출 후 구두점 제거 ("oval." → "oval", "round," → "round")
+    const raw   = (data.choices?.[0]?.message?.content?.trim().toLowerCase() ?? "")
+                    .split(/\s/)[0]
+                    .replace(/[^a-z]/g, "");
     const shape = VALID_SHAPES.has(raw) ? raw : "oval";
 
     console.log(`[analyze-face] ✅ GPT 판정: ${shape} (raw: "${raw}")`);

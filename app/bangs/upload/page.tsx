@@ -219,22 +219,55 @@ export default function BangsUploadPage() {
     e.target.value = "";
   }
 
+  // ─── 이미지 압축 헬퍼 ────────────────────────────────────────────────────────
+  // Vercel 요청 바디 한도: 4.5MB
+  // 모바일 셀카 base64: 4~15MB → 한도 초과 시 API route 자체가 실행 안 됨
+  // → Canvas로 최대 512px 리사이즈 + JPEG 70% 압축 → ~40~80KB (안전)
+  // GPT-4o-mini detail:low는 512px 이하로 분석하므로 화질 손실 없음
+  async function compressForGpt(dataUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const MAX = 512;
+        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth  * scale);
+        const h = Math.round(img.naturalHeight * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width  = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { resolve(dataUrl); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.70));
+      };
+      img.onerror = () => resolve(dataUrl); // 압축 실패 시 원본 사용
+      img.src = dataUrl;
+    });
+  }
+
   // ─── GPT-4o-mini 얼굴형 판정 (핵심 판정 담당) ───────────────────────────────
   async function runGptFaceAnalysis(dataUrl: string) {
     try {
+      // 전송 전 압축 (Vercel 4.5MB 한도 대응)
+      const compressed = await compressForGpt(dataUrl);
+      console.log(`[GPT] 이미지 압축: ${Math.round(compressed.length / 1024)}KB`);
+
       const res = await fetch("/api/analyze-face", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ image: dataUrl }),
+        body:    JSON.stringify({ image: compressed }),
         signal:  AbortSignal.timeout(25_000),
       });
-      const data = await res.json() as { ok: boolean; shape?: string };
+      const data = await res.json() as { ok: boolean; shape?: string; error?: string };
       if (data.ok && data.shape) {
         gptShapeRef.current = data.shape as FaceShapeKey;
         console.log("[GPT] ✅ 얼굴형 판정:", data.shape);
+      } else {
+        // ok:false일 때도 명시적으로 로그 → 이 줄이 찍히면 API 오류로 oval fallback
+        console.warn("[GPT] ⚠️ API ok:false — fallback oval. 사유:", data.error ?? "unknown");
       }
     } catch (e) {
-      console.warn("[GPT] 얼굴형 판정 실패 — oval fallback:", e);
+      console.warn("[GPT] ❌ 네트워크 실패 — oval fallback:", e);
     }
   }
 
