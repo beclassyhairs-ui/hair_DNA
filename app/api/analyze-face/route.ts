@@ -16,20 +16,29 @@ const VALID_SHAPES = new Set([
   "heart", "diamond", "hexagon", "peanut",
 ]);
 
-const PROMPT = `Analyze the face shape in this photo and respond with EXACTLY ONE word from:
+const PROMPT = `You are a professional face shape analyst. Classify the face shape in this photo.
+
+CRITICAL RULES — READ FIRST:
+1. IGNORE all hair, bangs, and forehead coverage completely.
+   Bangs hiding the forehead must NOT affect your answer.
+2. Focus ONLY on the underlying skeletal structure:
+   cheekbones width, jawline shape, and chin point.
+3. Mentally remove all hair and analyze the bone structure only.
+
+Respond with EXACTLY ONE word from this list:
 oval / round / oblong / square / heart / diamond / hexagon / peanut
 
-Definitions (for East Asian faces):
-- oval    : balanced egg shape, slightly longer than wide, jaw slightly narrower than cheeks
-- round   : short and wide, full cheeks, similar width and height
-- oblong  : clearly long and narrow face
-- square  : strong wide jaw, jaw width close to cheek width
-- heart   : wide forehead, narrow pointed chin (inverted triangle)
-- diamond : prominent wide cheekbones, narrow BOTH forehead AND chin
-- hexagon : wide at forehead, cheekbones, AND jaw simultaneously
-- peanut  : narrow temples creating a pinched look at the sides
+Definitions (East Asian female faces):
+- oval    : balanced egg shape, jaw slightly narrower than cheekbones (most common)
+- round   : short and wide, full rounded cheeks, nearly equal width and height
+- oblong  : clearly longer than wide, narrow elongated face
+- square  : strong jaw, jaw width nearly as wide as cheekbones
+- heart   : wide cheekbones+forehead, narrow pointed chin — V shape
+- diamond : widest at cheekbones, narrow BOTH at forehead AND chin
+- hexagon : wide at forehead, cheekbones, AND jaw all similarly wide
+- peanut  : narrowing at temples, creating a pinched look at the sides
 
-ONE word only. No punctuation. No explanation.`;
+ONE word only. No explanation. No punctuation.`;
 
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;

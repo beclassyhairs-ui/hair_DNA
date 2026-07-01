@@ -283,8 +283,10 @@ export default function BangsUploadPage() {
       runFaceAnalysis(src),      // 보조: MediaPipe 랜드마크 추출 (Canvas 시각화용)
     ]);
 
-    // ③ GPT 결과 우선 → MediaPipe 결과 → "oval" 안전 fallback
-    const finalShape: FaceShapeKey = gptShapeRef.current ?? mpResultRef.current ?? "oval";
+    // ③ GPT 결과 우선 → "oval" 중립 fallback
+    // MediaPipe shape(mpResultRef)는 절대 fallback으로 사용하지 않음
+    // — classifyFaceShape()의 LM 비율 오류가 여전히 존재하기 때문
+    const finalShape: FaceShapeKey = gptShapeRef.current ?? "oval";
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
       try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }
