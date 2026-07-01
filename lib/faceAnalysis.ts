@@ -144,8 +144,15 @@ export function classifyFaceShape(landmarks: Landmark[]): FaceShapeKey {
   // ── 1. 긴형: 세로/가로 > 1.32 ────────────────────────────────────────────────
   if (lengthRatio > T.LONG_FACE_RATIO) return "oblong";
 
-  // ── 2. 각진형: 하관이 광대의 92% 이상 — 뚜렷한 사각 하관 ─────────────────────
-  if (jawRatio > T.WIDE_JAW_RATIO) return "square";
+  // ── 2. 각진형 vs 땅콩형 분기: 하관이 광대의 92% 이상 ─────────────────────────
+  //    jawRatio 단독 판정은 땅콩형을 각진형으로 납치하는 버그를 유발.
+  //    → 관자놀이(foreheadRatio)까지 교차 검증해 분리.
+  //    · foreheadRatio ≥ 0.76 : 관자놀이도 넓음 → 진짜 각진형
+  //    · foreheadRatio < 0.76 : 관자놀이가 좁음 → 각진형이 아닌 땅콩형
+  if (jawRatio > T.WIDE_JAW_RATIO) {
+    if (foreheadRatio < T.NARROW_FOREHEAD_RATIO) return "peanut";
+    return "square";
+  }
 
   // ── 3. V라인 계열: 하관 < 72% — 좁은 턱선 ────────────────────────────────────
   if (jawRatio < T.NARROW_JAW_RATIO) {

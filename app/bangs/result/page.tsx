@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY, BANGS_DEBUG_RATIOS_KEY } from "../constants";
+import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY } from "../constants";
 import {
   FACE_SHAPE_INFO,
   recommendBang,
-  getQ1FactBlock,
-  buildConcernBlocks,
   getProductRecommendation,
   type FaceShapeKey,
   type FaceShapeInfo,
@@ -299,9 +297,8 @@ export default function BangsResultPage() {
   const [faceKey,      setFaceKey]      = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
   const router = useRouter();
-  const [copied,       setCopied]       = useState(false);
-  const [kakaoSent,    setKakaoSent]    = useState(false);
-  const [debugRatios,  setDebugRatios]  = useState<{ lengthRatio: number; jawRatio: number; foreheadRatio: number } | null>(null);
+  const [copied,        setCopied]        = useState(false);
+  const [kakaoSent,     setKakaoSent]     = useState(false);
   const [scanModalOpen, setScanModalOpen] = useState(false);
 
   useEffect(() => {
@@ -314,17 +311,13 @@ export default function BangsResultPage() {
       if (f && f in FACE_SHAPE_INFO) setFaceKey(f);
       const l = sessionStorage.getItem(BANGS_LANDMARKS_KEY);
       if (l) setLandmarkData(JSON.parse(l) as FaceLandmarkData);
-      const dr = sessionStorage.getItem(BANGS_DEBUG_RATIOS_KEY);
-      if (dr) setDebugRatios(JSON.parse(dr) as { lengthRatio: number; jawRatio: number; foreheadRatio: number });
     } catch { /**/ }
   }, []);
 
   const faceInfo    = FACE_SHAPE_INFO[faceKey];
   const safeAnswers = survey ?? { q1: "", q2: "", q3: "", q4: "", q5: "" } as BangsSurveyAnswers;
-  const q1Block       = getQ1FactBlock(safeAnswers.q1, faceKey);
-  const concernBlocks = buildConcernBlocks(safeAnswers.q2, safeAnswers.q3, safeAnswers.q4);
-  const bangRec       = recommendBang(faceKey, safeAnswers);
-  const product       = getProductRecommendation(safeAnswers.q5);
+  const bangRec     = recommendBang(faceKey, safeAnswers);
+  const product     = getProductRecommendation(safeAnswers.q5);
 
   async function handleKakaoShare() {
     const shareUrl = `${SITE_URL}/bangs?utm_source=kakao_share`;
@@ -411,54 +404,11 @@ export default function BangsResultPage() {
         )}
       </AnimatePresence>
 
-      {/* ── [TEST] MediaPipe 수치 디버그 UI ── */}
-      {debugRatios && (
-        <div className="mx-4 mt-3 rounded-xl border border-yellow-400/30 bg-yellow-400/[0.06] px-4 py-3 font-mono">
-          <p className="mb-2 text-[9px] font-black uppercase tracking-[0.25em] text-yellow-400">
-            ▶ DEBUG — MediaPipe Raw 수치
-          </p>
-          <div className="space-y-0.5 text-[11px] text-yellow-200/80">
-            <p>하관 비율&nbsp;&nbsp;(jawRatio)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.jawRatio.toFixed(4)}</span></p>
-            <p>세로 비율&nbsp;&nbsp;(lengthRatio)&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.lengthRatio.toFixed(4)}</span></p>
-            <p>이마 비율&nbsp;&nbsp;(foreheadRatio)&nbsp;: <span className="font-bold text-yellow-300">{debugRatios.foreheadRatio.toFixed(4)}</span></p>
-            <p>이마-하관 차&nbsp;(taperDelta)&nbsp;&nbsp;&nbsp;: <span className="font-bold text-yellow-300">{(debugRatios.foreheadRatio - debugRatios.jawRatio).toFixed(4)}</span></p>
-          </div>
-          <p className="mt-2 border-t border-yellow-400/20 pt-2 text-[11px] font-bold text-yellow-400">
-            → 최종 AI 판정: {faceInfo.title}
-          </p>
-        </div>
-      )}
-
-      {/* ── 스크롤 유도 ── */}
-      <div className="flex flex-col items-center gap-1.5 py-5">
-        <p className="text-[11px] font-medium tracking-widest text-cream/30 uppercase">스크롤하여 전문가 처방을 확인하세요</p>
-        <motion.div
-          animate={{ y: [0, 5, 0] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          className="text-gold/40 text-lg leading-none"
-        >
-          ↓
-        </motion.div>
-      </div>
 
       {/* ── 콘텐츠 블록 ── */}
       <div className="mx-auto w-full max-w-lg px-5">
         <motion.div variants={STAGGER} initial="hidden" animate="show" className="space-y-4">
 
-          {/* BLOCK A: AI 진단 요약 */}
-          <motion.div variants={FADE_UP}
-            className="overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/[0.08] to-transparent">
-            <div className="h-px w-full bg-gradient-to-r from-gold-light/0 via-gold to-gold-light/0" />
-            <div className="px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">AI Diagnosis</p>
-              <h1 className="mt-2 font-serif text-2xl font-bold leading-snug text-cream">
-                고객님은{" "}
-                <span className="text-gold-light">{faceInfo.title}</span>
-                입니다.
-              </h1>
-              <p className="mt-3 text-base leading-relaxed text-cream/60">{faceInfo.summary}</p>
-            </div>
-          </motion.div>
 
           {/* BLOCK B: AI 인생 앞머리 처방 — 단일 결론 */}
           <motion.div variants={FADE_UP}
@@ -482,36 +432,6 @@ export default function BangsResultPage() {
             </div>
           </motion.div>
 
-          {/* BLOCK C: Q1 팩트체크 */}
-          {safeAnswers.q1 && (
-            <motion.div variants={FADE_UP}
-              className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.04] px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-sky-400">
-                현재 스타일 팩트체크 · {q1Block.label}
-              </p>
-              <p className="mt-3 text-base leading-[1.85] text-cream/72">
-                <BoldText text={q1Block.text} />
-              </p>
-            </motion.div>
-          )}
-
-          {/* BLOCK D: 고민 분석 */}
-          {concernBlocks.length > 0 && (
-            <motion.div variants={FADE_UP}
-              className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.04] px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-amber-400">
-                고민 정밀 분석 · {concernBlocks.length}개 감지
-              </p>
-              <div className="mt-4 space-y-3">
-                {concernBlocks.map((b) => (
-                  <div key={b.key} className="rounded-xl border border-amber-400/10 bg-amber-400/[0.05] px-4 py-3.5">
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-amber-400/80">◉ {b.label}</p>
-                    <p className="text-sm leading-[1.8] text-cream/72">{b.text}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
 
           {/* BLOCK E: 맞춤 제품 */}
           <motion.div variants={FADE_UP}>
