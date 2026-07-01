@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     const shape = VALID_SHAPES.has(raw) ? raw : "oval";
 
     console.log(`[analyze-face] ✅ GPT 판정: ${shape} (raw: "${raw}")`);
-    return NextResponse.json({ ok: true, shape });
+    return NextResponse.json({ ok: true, shape, rawContent: data.choices?.[0]?.message?.content ?? "" });
 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

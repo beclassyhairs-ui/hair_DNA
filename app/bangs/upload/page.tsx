@@ -269,13 +269,18 @@ export default function BangsUploadPage() {
         return;
       }
 
-      let data: { ok: boolean; shape?: string; error?: string };
+      let data: { ok: boolean; shape?: string; error?: string; rawContent?: string };
       try {
-        data = JSON.parse(rawText) as { ok: boolean; shape?: string; error?: string };
+        data = JSON.parse(rawText) as { ok: boolean; shape?: string; error?: string; rawContent?: string };
       } catch {
         gptErrorMsgRef.current = `JSON 파싱 실패 — 응답: ${rawText.slice(0, 300)}`;
         return;
       }
+
+      // ★ 디버그 alert — GPT 원본 텍스트를 즉시 팝업으로 표시
+      window.alert(
+        `[GPT 원본 응답]\n"${data.rawContent ?? "(rawContent 없음)"}"\n\n파싱 결과: ${data.shape ?? "null"}\nok: ${data.ok}`
+      );
 
       if (data.ok && data.shape) {
         gptShapeRef.current = data.shape as FaceShapeKey;
