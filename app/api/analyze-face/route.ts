@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         messages: [{
           role: "user",
           content: [
-            { type: "image_url", image_url: { url: image, detail: "low" } }, // 85토큰 고정
+            { type: "image_url", image_url: { url: image, detail: "auto" } }, // 해상도에 맞게 자동 선택 — 턱선·광대 디테일 인식 향상
             { type: "text",      text: PROMPT },
           ],
         }],

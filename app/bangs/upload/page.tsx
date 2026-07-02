@@ -222,13 +222,13 @@ export default function BangsUploadPage() {
   // ─── 이미지 압축 헬퍼 ────────────────────────────────────────────────────────
   // Vercel 요청 바디 한도: 4.5MB
   // 모바일 셀카 base64: 4~15MB → 한도 초과 시 API route 자체가 실행 안 됨
-  // → Canvas로 최대 512px 리사이즈 + JPEG 70% 압축 → ~40~80KB (안전)
-  // GPT-4o-mini detail:low는 512px 이하로 분석하므로 화질 손실 없음
+  // → Canvas로 최대 1024px 리사이즈 + JPEG 70% 압축 (Vercel 한도 내로 축소)
+  // detail:auto로 GPT가 해상도에 맞춰 판단 — 턱선·광대 디테일 인식 향상
   async function compressForGpt(dataUrl: string): Promise<string> {
     return new Promise((resolve) => {
       const img = new window.Image();
       img.onload = () => {
-        const MAX = 512;
+        const MAX = 1024;
         const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
         const w = Math.round(img.naturalWidth  * scale);
         const h = Math.round(img.naturalHeight * scale);
