@@ -2,8 +2,11 @@
 
 // ============================================================================
 // 어뷰티 인생뱅 — 사진 업로드 + MediaPipe 얼굴형 분석 + Fake Loading
-// 사진 확정 즉시 MediaPipe 분석 시작 (비동기, 10s 로딩과 병렬)
-// MediaPipe 실패 시 모의 얼굴형 선택기로 fallback
+//
+// 판정 우선순위 (2026-07-02 롤백):
+//   1순위 MediaPipe classifyFaceShape (v4) — 무료·즉시, 468 랜드마크 기하학적 측정
+//   2순위 GPT-4o Vision (/api/analyze-face) — MediaPipe가 얼굴 인식에 실패했을 때만 호출
+// 정상적인 정면 사진이면 MediaPipe만 돌고 끝 → OpenAI 요청 자체가 발생하지 않음(비용 0원)
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -156,10 +159,9 @@ export default function BangsUploadPage() {
   const streamRef       = useRef<MediaStream | null>(null);
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const imgRef          = useRef<HTMLImageElement | null>(null);
-  // MediaPipe 분석 결과를 10s 로딩과 병렬로 수신해 저장
-  const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정
+  const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정 (2순위 폴백)
   const gptErrorMsgRef  = useRef<string | null>(null);      // GPT 에러 메시지 (async 전달용)
-  const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe (랜드마크 추출용 부산물)
+  const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe 얼굴형 판정 (1순위 메인)
   const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
   const mpRatiosRef     = useRef<FaceRatios | null>(null);
 
@@ -245,7 +247,8 @@ export default function BangsUploadPage() {
     });
   }
 
-  // ─── GPT-4o-mini 얼굴형 판정 (핵심 판정 담당) ───────────────────────────────
+  // ─── GPT-4o Vision 얼굴형 판정 (2순위 폴백 전용) ─────────────────────────────
+  // MediaPipe가 얼굴 인식에 실패했을 때(조명·각도·화질 문제)만 호출된다.
   async function runGptFaceAnalysis(dataUrl: string) {
     gptErrorMsgRef.current = null; // 이전 에러 초기화
     try {
@@ -291,7 +294,9 @@ export default function BangsUploadPage() {
     }
   }
 
-  // ─── MediaPipe 랜드마크 추출 (Canvas 시각화 전용 — 판정에는 미사용) ──────────
+  // ─── MediaPipe 얼굴형 판정 (1순위 메인 로직 — v4 classifyFaceShape) ─────────
+  // 468 랜드마크의 실제 픽셀 비율(턱/광대/이마/길이)로 판정하므로
+  // 헤어스타일·조명 등 GPT Vision이 흔들리는 요인에 영향받지 않는다.
   async function runFaceAnalysis(dataUrl: string) {
     setMpStatus("analyzing");
     try {
@@ -329,38 +334,40 @@ export default function BangsUploadPage() {
     try { sessionStorage.setItem(BANGS_PHOTO_KEY, src); } catch { /**/ }
     setIsLoading(true);
 
-    // ② 로딩 최소 10초 + GPT 판정 + MediaPipe 랜드마크 — 모두 병렬 실행
-    await Promise.allSettled([
-      new Promise<void>(resolve => setTimeout(resolve, LOADING_MS)),
-      runGptFaceAnalysis(src),   // 핵심: GPT-4o-mini 얼굴형 판정
-      runFaceAnalysis(src),      // 보조: MediaPipe 랜드마크 추출 (Canvas 시각화용)
-    ]);
+    // 최소 10초 Fake Loading — 실제 분석 시간과 무관하게 UX 유지
+    const loadingTimer = new Promise<void>(resolve => setTimeout(resolve, LOADING_MS));
 
-    setIsLoading(false);
+    // ② 1순위: MediaPipe 기하학적 판정 (무료·즉시, GPT 호출 전에 먼저 시도)
+    await runFaceAnalysis(src);
 
-    // ③ 실행 증거 로그 — 이 줄이 브라우저 콘솔에 찍히면 새 코드가 실행된 것
-    console.log(
-      `[디버그 v${Date.now()}] Promise.allSettled 완료`,
-      `gptShape=${gptShapeRef.current}`,
-      `gptErr=${gptErrorMsgRef.current ?? "null"}`,
-    );
+    let finalShape: FaceShapeKey;
 
-    // ④ GPT shape이 없으면 무조건 에러 표시 (에러 메시지 유무와 무관)
-    //    기존: !shape && !!errMsg → errMsg가 null이면 에러 표시 안 됨 (결함)
-    //    수정: !shape → 항상 에러 표시
-    if (!gptShapeRef.current) {
-      const errMsg = gptErrorMsgRef.current
-        ?? "GPT 응답 없음 — gptErrorMsgRef가 null (구버전 번들 캐시 의심)";
-      console.error("[디버그] 에러 박스 표시:", errMsg);
-      // sessionStorage에도 백업 — 혹시 navigate 되어도 확인 가능
-      try { sessionStorage.setItem("bangs:gptError", errMsg); } catch { /**/ }
-      setGptDebugError(errMsg);
-      return; // 결과 페이지로 이동하지 않음
+    if (mpResultRef.current) {
+      // MediaPipe 성공 — GPT 호출 없이 확정 (토큰 비용 0원)
+      console.log("[MediaPipe] ✅ 1순위 판정 성공:", mpResultRef.current);
+      finalShape = mpResultRef.current;
+      await loadingTimer;
+      setIsLoading(false);
+    } else {
+      // ③ 2순위: MediaPipe가 얼굴 인식에 실패했을 때만 GPT 폴백 호출
+      console.warn("[MediaPipe] ⚠️ 판정 실패 — GPT 폴백 호출");
+      await Promise.allSettled([loadingTimer, runGptFaceAnalysis(src)]);
+      setIsLoading(false);
+
+      if (!gptShapeRef.current) {
+        const errMsg = gptErrorMsgRef.current
+          ?? "MediaPipe·GPT 모두 실패 — 얼굴 인식 불가";
+        console.error("[디버그] 에러 박스 표시:", errMsg);
+        // sessionStorage에도 백업 — 혹시 navigate 되어도 확인 가능
+        try { sessionStorage.setItem("bangs:gptError", errMsg); } catch { /**/ }
+        setGptDebugError(errMsg);
+        return; // 결과 페이지로 이동하지 않음
+      }
+      finalShape = gptShapeRef.current;
     }
 
-    // ⑤ GPT 결과 저장 후 결과 페이지 이동
+    // ④ 최종 판정 결과 저장 후 결과 페이지 이동
     try { sessionStorage.removeItem("bangs:gptError"); } catch { /**/ }
-    const finalShape: FaceShapeKey = gptShapeRef.current ?? "oval";
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
       try { sessionStorage.setItem(BANGS_LANDMARKS_KEY, JSON.stringify(mpLandmarksRef.current)); } catch { /**/ }

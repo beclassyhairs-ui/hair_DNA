@@ -1,9 +1,10 @@
 // ============================================================================
 // POST /api/analyze-face
-// 유저 셀카(base64) → GPT-4o-mini Vision → 얼굴형(FaceShapeKey) 반환
+// 2순위 폴백 전용 — MediaPipe(lib/faceAnalysis.ts)가 얼굴 인식에 실패했을 때만 호출됨
+// 유저 셀카(base64) → GPT-4o Vision → 얼굴형(FaceShapeKey) 반환
 //
 // 환경변수: OPENAI_API_KEY (필수)
-// 비용: $0.0002~0.0005 / 1회 (gpt-4o-mini + detail:low)
+// 비용: ~$0.0013 / 1회 (gpt-4o + detail:auto) — 정상 촬영 시 호출 자체가 발생하지 않음
 // ============================================================================
 
 export const runtime    = "nodejs";
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, shape: "oval", error: "Invalid request" }, { status: 400 });
   }
 
-  // 2. GPT-4o-mini Vision 호출
+  // 2. GPT-4o Vision 호출 (MediaPipe 폴백 경로에서만 도달)
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
