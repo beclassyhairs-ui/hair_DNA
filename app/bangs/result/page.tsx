@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY } from "../constants";
+import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS_KEY, BANGS_DEBUG_RATIOS_KEY } from "../constants";
 import {
   FACE_SHAPE_INFO,
   recommendBang,
@@ -15,7 +15,7 @@ import {
   type BangType,
 } from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
-import type { FaceLandmarkData } from "../../../lib/faceAnalysis";
+import type { FaceLandmarkData, FaceRatios } from "../../../lib/faceAnalysis";
 
 declare global {
   interface Window {
@@ -414,6 +414,7 @@ export default function BangsResultPage() {
   const [survey,       setSurvey]       = useState<BangsSurveyAnswers | null>(null);
   const [faceKey,      setFaceKey]      = useState<FaceShapeKey>("round");
   const [landmarkData, setLandmarkData] = useState<FaceLandmarkData | null>(null);
+  const [ratios,       setRatios]       = useState<FaceRatios | null>(null); // 임시 디버그용 — 판정 정확도 튜닝 후 제거
   const router = useRouter();
   const [copied,        setCopied]        = useState(false);
   const [kakaoSent,     setKakaoSent]     = useState(false);
@@ -429,6 +430,8 @@ export default function BangsResultPage() {
       if (f && f in FACE_SHAPE_INFO) setFaceKey(f);
       const l = sessionStorage.getItem(BANGS_LANDMARKS_KEY);
       if (l) setLandmarkData(JSON.parse(l) as FaceLandmarkData);
+      const r = sessionStorage.getItem(BANGS_DEBUG_RATIOS_KEY);
+      if (r) setRatios(JSON.parse(r) as FaceRatios);
     } catch { /**/ }
   }, []);
 
@@ -514,6 +517,12 @@ export default function BangsResultPage() {
           <p className="mt-1.5 text-center text-[9px] text-cream/25">
             왼쪽 카드를 탭하면 정밀 스캔 보기 · 확대 가능
           </p>
+          {/* 임시 디버그 — MediaPipe 판정 정확도 튜닝용, 캡처해서 공유해주세요 */}
+          {ratios && (
+            <p className="mt-1 text-center text-[9px] text-teal-300/70">
+              [디버그] jaw {ratios.jawRatio.toFixed(3)} · forehead {ratios.foreheadRatio.toFixed(3)} · length {ratios.lengthRatio.toFixed(3)}
+            </p>
+          )}
         </div>
       ) : (
         <div className="flex items-center justify-center py-14">
