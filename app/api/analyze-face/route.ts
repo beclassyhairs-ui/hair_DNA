@@ -94,24 +94,47 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
+      choices?: Array<{
+        finish_reason?: string;
+        message?: { content?: string | null; refusal?: string | null };
+      }>;
     };
 
-    const content = data.choices?.[0]?.message?.content?.trim() ?? "";
+    const choice   = data.choices?.[0];
+    const content  = choice?.message?.content?.trim() ?? "";
+    const refusal  = choice?.message?.refusal ?? null;
+    const finishReason = choice?.finish_reason ?? "unknown";
+
+    // 빈 응답/거부 응답 진단 로그 — content가 비었을 때 원인 파악용
+    if (!content) {
+      console.error(
+        `[analyze-face] ⚠️ 빈 content — finish_reason=${finishReason} refusal=${refusal ?? "없음"} raw=${JSON.stringify(data).slice(0, 500)}`
+      );
+      return NextResponse.json({
+        ok: false,
+        shape: "oval",
+        error: `GPT 빈 응답 (finish_reason=${finishReason}${refusal ? `, refusal=${refusal}` : ""})`,
+      });
+    }
 
     // CoT JSON에서 shape 필드 추출
-    let shape = "oval";
+    let shape: string | null = null;
     try {
       const parsed = JSON.parse(content) as Record<string, string>;
       const candidate = (parsed.shape ?? "").toLowerCase().replace(/[^a-z]/g, "");
-      shape = VALID_SHAPES.has(candidate) ? candidate : "oval";
+      if (VALID_SHAPES.has(candidate)) shape = candidate;
     } catch {
       // JSON 파싱 실패 시 첫 단어로 fallback
       const raw = content.toLowerCase().split(/\s/)[0].replace(/[^a-z]/g, "");
-      shape = VALID_SHAPES.has(raw) ? raw : "oval";
+      if (VALID_SHAPES.has(raw)) shape = raw;
     }
 
-    console.log(`[analyze-face] ✅ GPT 판정: ${shape} | CoT: ${content.slice(0, 120)}`);
+    if (!shape) {
+      console.error(`[analyze-face] ⚠️ shape 파싱 실패 — content=${content.slice(0, 300)}`);
+      return NextResponse.json({ ok: false, shape: "oval", error: `GPT 응답 파싱 실패: ${content.slice(0, 200)}` });
+    }
+
+    console.log(`[analyze-face] ✅ GPT 판정: ${shape} | CoT: ${content.slice(0, 200)}`);
     return NextResponse.json({ ok: true, shape, rawContent: content });
 
   } catch (e) {
