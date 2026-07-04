@@ -1,13 +1,29 @@
 // ============================================================================
-// 어뷰티 — MediaPipe Face Mesh 얼굴형 분석 라이브러리 v3
+// 어뷰티 — MediaPipe Face Mesh 얼굴형 분석 라이브러리 v5
 //
 // 패키지: npm i @mediapipe/face_mesh@0.4.1633559619 (이미 설치됨)
 // WASM/모델 파일: CDN locateFile (별도 서빙 불필요)
 //
-// 한국인 '둥근형/계란형' 쏠림 방지 → 3가지 독립 비율 교차 검증
-//   lengthRatio    = 세로(10→152) / 가로(234→454)    → 긴형·둥근형
-//   jawRatio       = 턱 너비(132→361) / 가로(234→454) → 각진형·역삼각형
-//   foreheadRatio  = 이마(71→301) / 가로(234→454)    → 다이아몬드·땅콩형
+// [v5 랜드마크 교체 — 2026-07-04]
+//   구버전(132/361, 71/301)을 라벨된 24장 실측 데이터로 검증한 결과,
+//   jawRatio가 모든 얼굴형(각진/하트/다이아몬드/계란 등)에서 예외 없이
+//   0.90~0.95에 몰려 WIDE_JAW_RATIO 문턱을 항상 넘김 → "무한 각진형" 확정 재현.
+//   원인: 132/361이 광대(234/454) 바로 옆(오벌 시퀀스상 2칸 차이)이라
+//   턱이 좁혀지는 지점이 아니라 광대 자체를 다시 재는 꼴이었음.
+//   → 오벌 36점 시퀀스상 광대~턱끝 정중앙(136/365)으로 교체, 실측상 각진/땅콩형이
+//   하트/다이아몬드/계란형보다 유의미하게 높게 나오는 방향성 확인됨(스프레드는 크지 않음).
+//   이마도 오벌 경계선 밖 내부점(71/301) 대신 경계선 위의 관자놀이점(54/284)으로 교체.
+//
+//   3가지 독립 비율 교차 검증
+//   lengthRatio    = 세로(10→152) / 가로(234→454)     → 긴형·둥근형
+//   jawRatio       = 턱 너비(136→365) / 가로(234→454)  → 각진형·역삼각형
+//   foreheadRatio  = 관자놀이(54→284) / 가로(234→454)  → 다이아몬드·땅콩형
+//
+//   [한계 — 정직하게 기록] 라벨된 24장(인터넷 각지 사진, 사진당 각도/크롭/인물이 전부 다름)으로
+//   가능한 랜드마크 조합(9×7)과 임계값 수천 개를 전수 탐색해도 8종 분류 정확도는 최고 29%.
+//   개인차가 얼굴형 간 차이보다 커서, 폭 비율 3개만으로는 8종을 안정적으로 못 가름.
+//   이번 교체는 "무조건 각진형" 파국적 붕괴를 막는 최소 수정이며, 8종 세부 정확도는
+//   실제 앱 가이드라인(정면·고정 각도)으로 촬영된 유저 사진이 쌓여야 추가 튜닝 가능.
 // ============================================================================
 
 // npm 타입 임포트 (런타임은 아래 동적 import 사용)
@@ -25,10 +41,10 @@ const LM = {
   CHIN:         152,   // 턱끝
   LEFT_CHEEK:   234,   // 왼쪽 광대 외곽
   RIGHT_CHEEK:  454,   // 오른쪽 광대 외곽
-  LEFT_JAW:     132,   // 왼쪽 하관 각 (턱 너비)
-  RIGHT_JAW:    361,   // 오른쪽 하관 각
-  LEFT_TEMPLE:   71,   // 왼쪽 관자놀이 (이마 너비)
-  RIGHT_TEMPLE: 301,   // 오른쪽 관자놀이
+  LEFT_JAW:     136,   // 왼쪽 하관 각 (턱 너비) — 오벌 시퀀스상 광대~턱끝 정중앙 (구v4: 132)
+  RIGHT_JAW:    365,   // 오른쪽 하관 각                                        (구v4: 361)
+  LEFT_TEMPLE:   54,   // 왼쪽 관자놀이 (이마 너비) — 오벌 경계선 위의 점        (구v4: 71)
+  RIGHT_TEMPLE: 284,   // 오른쪽 관자놀이                                      (구v4: 301)
 } as const;
 
 // Face Oval 외곽 36점 (MediaPipe 표준 face contour path)
@@ -40,45 +56,47 @@ export const FACE_OVAL_SEQUENCE = [
 
 // ─── THRESHOLDS — 미세 조정 시 이 객체만 수정 ─────────────────────────────────
 //
-// [비율 개요] MediaPipe 정규화 좌표 기준 실측 분포
-//   jawRatio      일반 성인: 0.78~0.94 (LM 132/361 ↔ 234/454)
-//   foreheadRatio 일반 성인: 0.68~0.92 (LM 71/301 ↔ 234/454)
-//   lengthRatio   일반 성인: 1.05~1.45 (LM 10/152 ↔ 234/454)
+// [비율 개요 — v5, 라벨된 24장 실측 기준] LM 136/365, 54/284 사용
+//   jawRatio      실측 분포: 0.62~0.70 (LM 136/365 ↔ 234/454)
+//   foreheadRatio 실측 분포: 0.82~0.92 (LM 54/284 ↔ 234/454)
+//   lengthRatio   실측 분포: 0.64~1.56 (LM 10/152 ↔ 234/454) — 사진 각도·크롭에 매우 민감, 신뢰도 낮음
 //   taperDelta    = foreheadRatio - jawRatio
 //
-// [핵심 설계 변경 — v4]
-//   LM 132/361은 턱 끝이 아닌 "광대 바로 아래 하면부"를 측정하므로
-//   하트형 얼굴도 jawRatio 0.74~0.81 범위에서 나타남 → NARROW_JAW_RATIO 단독
-//   판정으로는 하트형 캐치 불가. taperDelta(이마-하관 비율 차)를 1차 신호로 사용.
+// [v5 임계값 산출 근거]
+//   라벨된 24장(8종×3장)에 대해 가능한 랜드마크 조합(잡idx 9~17 × 이마idx 1~7) 전수 탐색 +
+//   임계값 수천 개 로컬서치로 최고 조합/값을 찾았으나 최종 정확도는 24장 중 7장(29%)에 그침.
+//   개인차가 얼굴형 카테고리 간 차이보다 커서 폭 비율 3개만으로는 8종을 안정적으로 못 가름 —
+//   아래 값은 "최소한 특정 얼굴형으로 쏠리지 않는" 최선의 근사치이며, 절대적 정답은 아님.
+//   실제 유저 사진(앱 촬영 가이드 준수)이 쌓이면 재조정 필요.
 //
-// [8대 얼굴형 판정 구간 — 현실화]
-//   하트형   jawRatio < 0.82 AND taperDelta > 0.08 (V-라인 우선 포획)
-//   다이아몬드 위 조건 + foreheadRatio < 0.82
-//   각진형   jawRatio > 0.90 AND foreheadRatio ≥ 0.82
-//   땅콩형   jawRatio > 0.90 AND foreheadRatio < 0.82  (또는 중간 하관+좁은 이마)
-//   긴형     lengthRatio > 1.30
-//   둥근형   lengthRatio < 1.25  (V-라인 배제 확인 후)
-//   육각형   foreheadRatio > 0.87 AND jawRatio > 0.80
+// [8대 얼굴형 판정 구간 — v5 근사치]
+//   하트형   jawRatio < 0.63 AND taperDelta > 0.20 (V-라인 우선 포획)
+//   다이아몬드 위 조건 + foreheadRatio < 0.87
+//   각진형   jawRatio > 0.66 AND foreheadRatio < 0.90
+//   육각형   jawRatio > 0.66 AND foreheadRatio ≥ 0.90
+//   긴형     lengthRatio > 1.10 (신뢰도 낮음 — 참고용)
+//   둥근형   lengthRatio < 0.85 (신뢰도 낮음 — 참고용)
+//   땅콩형   foreheadRatio < 0.87 (V-라인·각진 배제 후)
 //   계란형   default
 export const FACE_THRESHOLDS = {
-  // 세로/가로 비율 구분점
-  LONG_FACE_RATIO:       1.30,  // lengthRatio > this → 긴형  (1.32 → 1.30)
-  SHORT_FACE_RATIO:      1.25,  // lengthRatio < this → 둥근형 (1.23 → 1.25)
+  // 세로/가로 비율 구분점 — 사진 각도/크롭에 민감, 신뢰도 낮음(주석 참고)
+  LONG_FACE_RATIO:       1.10,  // lengthRatio > this → 긴형
+  SHORT_FACE_RATIO:      0.85,  // lengthRatio < this → 둥근형
 
   // V-라인 감지 (하트/다이아몬드) — 2중 조건
-  VLINE_JAW_MAX:         0.82,  // jawRatio < this (신규) — 하트/다이아 상한
-  HEART_TAPER_MIN:       0.08,  // taperDelta > this → V-라인 확정 (0.10 → 0.08)
-  NARROW_JAW_RATIO:      0.76,  // jawRatio < this → 극단 V-라인 2차 방어선
+  VLINE_JAW_MAX:         0.63,  // jawRatio < this — 하트/다이아 상한
+  HEART_TAPER_MIN:       0.20,  // taperDelta > this → V-라인 확정
+  NARROW_JAW_RATIO:      0.60,  // jawRatio < this → 극단 V-라인 2차 방어선
 
   // 하관/광대 비율 구분점
-  WIDE_JAW_RATIO:        0.90,  // jawRatio > this → 각진형/땅콩형 (0.92 → 0.90)
+  WIDE_JAW_RATIO:        0.66,  // jawRatio > this → 각진형/육각형
 
   // 이마(관자놀이)/광대 비율 구분점 — 연성화
-  NARROW_FOREHEAD_RATIO: 0.82,  // foreheadRatio < this → 다이아몬드/땅콩형 (0.76 → 0.82)
-  WIDE_FOREHEAD_RATIO:   0.87,  // foreheadRatio > this → 육각형 후보
+  NARROW_FOREHEAD_RATIO: 0.87,  // foreheadRatio < this → 다이아몬드/땅콩형
+  WIDE_FOREHEAD_RATIO:   0.90,  // foreheadRatio > this → 육각형 후보
 
   // 육각형 보조 조건
-  HEXAGON_JAW_MIN:       0.80,
+  HEXAGON_JAW_MIN:       0.64,
 } as const;
 
 // ─── 거리 계산 헬퍼 ───────────────────────────────────────────────────────────

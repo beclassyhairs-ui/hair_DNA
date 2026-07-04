@@ -29,6 +29,12 @@ next-env.d.ts
 # logs
 dev.log
 dev.err.log
+dev-test.log
+
+# 얼굴형 판정 캘리브레이션 테스트 산출물 (사진/원본 랜드마크 — 커밋 대상 아님)
+/test-faces/
+test-faces-results.csv
+test-faces-landmarks.json
 
 # claude code
 .claude/

@@ -1,12 +1,12 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 인생뱅 — 사진 업로드 + MediaPipe 얼굴형 분석 + Fake Loading
+// 어뷰티 인생뱅 — 사진 업로드 + GPT-4o Vision 얼굴형 분석 + Fake Loading
 //
-// 판정 우선순위 (2026-07-02 롤백):
-//   1순위 MediaPipe classifyFaceShape (v4) — 무료·즉시, 468 랜드마크 기하학적 측정
-//   2순위 GPT-4o Vision (/api/analyze-face) — MediaPipe가 얼굴 인식에 실패했을 때만 호출
-// 정상적인 정면 사진이면 MediaPipe만 돌고 끝 → OpenAI 요청 자체가 발생하지 않음(비용 0원)
+// 판정 엔진 (2026-07-04 전면 재도입 — 정확도 최우선, 비용 타협 없음):
+//   유일 판정: GPT-4o Vision (/api/analyze-face) — CoT + 전문가 7대 기준 프롬프트
+//   MediaPipe classifyFaceShape는 결과지 랜드마크 시각화(초록 점 오버레이) 전용으로만 병행 실행.
+//   MediaPipe의 shape 판정 결과는 최종 얼굴형 결정에 절대 사용하지 않는다.
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -159,9 +159,9 @@ export default function BangsUploadPage() {
   const streamRef       = useRef<MediaStream | null>(null);
   const fileInputRef    = useRef<HTMLInputElement>(null);
   const imgRef          = useRef<HTMLImageElement | null>(null);
-  const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정 (2순위 폴백)
+  const gptShapeRef     = useRef<FaceShapeKey | null>(null); // GPT 얼굴형 판정 (유일 판정 소스)
   const gptErrorMsgRef  = useRef<string | null>(null);      // GPT 에러 메시지 (async 전달용)
-  const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe 얼굴형 판정 (1순위 메인)
+  const mpResultRef     = useRef<FaceShapeKey | null>(null); // MediaPipe 판정 — 결정에 미사용, 콘솔 비교 로그 전용
   const mpLandmarksRef  = useRef<FaceLandmarkData | null>(null);
   const mpRatiosRef     = useRef<FaceRatios | null>(null);
 
@@ -222,10 +222,9 @@ export default function BangsUploadPage() {
   }
 
   // ─── 이미지 압축 헬퍼 ────────────────────────────────────────────────────────
-  // Vercel 요청 바디 한도: 4.5MB
-  // 모바일 셀카 base64: 4~15MB → 한도 초과 시 API route 자체가 실행 안 됨
-  // → Canvas로 최대 1024px 리사이즈 + JPEG 70% 압축 (Vercel 한도 내로 축소)
-  // detail:auto로 GPT가 해상도에 맞춰 판단 — 턱선·광대 디테일 인식 향상
+  // Vercel 요청 바디 한도: 4.5MB — 모바일 셀카 base64 원본(4~15MB)은 한도 초과라 리사이즈는 필수.
+  // 단, 화질 타협은 하지 않는다: 1024px 유지 + JPEG 92% 고화질 압축(용량은 여전히 한도 내).
+  // detail:high 고정 — 턱선·광대·관자놀이 디테일을 GPT가 최대 해상도로 판단.
   async function compressForGpt(dataUrl: string): Promise<string> {
     return new Promise((resolve) => {
       const img = new window.Image();
@@ -240,15 +239,14 @@ export default function BangsUploadPage() {
         const ctx = canvas.getContext("2d");
         if (!ctx) { resolve(dataUrl); return; }
         ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.70));
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
       };
       img.onerror = () => resolve(dataUrl); // 압축 실패 시 원본 사용
       img.src = dataUrl;
     });
   }
 
-  // ─── GPT-4o Vision 얼굴형 판정 (2순위 폴백 전용) ─────────────────────────────
-  // MediaPipe가 얼굴 인식에 실패했을 때(조명·각도·화질 문제)만 호출된다.
+  // ─── GPT-4o Vision 얼굴형 판정 (유일 메인 판정 엔진) ─────────────────────────
   async function runGptFaceAnalysis(dataUrl: string) {
     gptErrorMsgRef.current = null; // 이전 에러 초기화
     try {
@@ -294,9 +292,9 @@ export default function BangsUploadPage() {
     }
   }
 
-  // ─── MediaPipe 얼굴형 판정 (1순위 메인 로직 — v4 classifyFaceShape) ─────────
-  // 468 랜드마크의 실제 픽셀 비율(턱/광대/이마/길이)로 판정하므로
-  // 헤어스타일·조명 등 GPT Vision이 흔들리는 요인에 영향받지 않는다.
+  // ─── MediaPipe 랜드마크 추출 (시각화 전용 — 판정에 관여하지 않음) ───────────
+  // 결과지의 "AI 스캔" 초록 점 오버레이용 468 랜드마크 좌표만 뽑아온다.
+  // 여기서 나온 shape/ratios는 최종 얼굴형 결정에 절대 사용하지 않는다 (GPT가 유일한 판정자).
   async function runFaceAnalysis(dataUrl: string) {
     setMpStatus("analyzing");
     try {
@@ -337,36 +335,25 @@ export default function BangsUploadPage() {
     // 최소 10초 Fake Loading — 실제 분석 시간과 무관하게 UX 유지
     const loadingTimer = new Promise<void>(resolve => setTimeout(resolve, LOADING_MS));
 
-    // ② 1순위: MediaPipe 기하학적 판정 (무료·즉시, GPT 호출 전에 먼저 시도)
-    await runFaceAnalysis(src);
+    // ② GPT-4o Vision(유일 판정자)과 MediaPipe(랜드마크 시각화 전용)를 병렬 실행
+    await Promise.allSettled([loadingTimer, runFaceAnalysis(src), runGptFaceAnalysis(src)]);
+    setIsLoading(false);
 
-    let finalShape: FaceShapeKey;
+    // 참고용 비교 로그 — MediaPipe 결과는 최종 판정에 전혀 반영되지 않는다
+    console.log(`[비교] GPT=${gptShapeRef.current} vs MediaPipe(참고용, 미사용)=${mpResultRef.current}`);
 
-    if (mpResultRef.current) {
-      // MediaPipe 성공 — GPT 호출 없이 확정 (토큰 비용 0원)
-      console.log("[MediaPipe] ✅ 1순위 판정 성공:", mpResultRef.current);
-      finalShape = mpResultRef.current;
-      await loadingTimer;
-      setIsLoading(false);
-    } else {
-      // ③ 2순위: MediaPipe가 얼굴 인식에 실패했을 때만 GPT 폴백 호출
-      console.warn("[MediaPipe] ⚠️ 판정 실패 — GPT 폴백 호출");
-      await Promise.allSettled([loadingTimer, runGptFaceAnalysis(src)]);
-      setIsLoading(false);
-
-      if (!gptShapeRef.current) {
-        const errMsg = gptErrorMsgRef.current
-          ?? "MediaPipe·GPT 모두 실패 — 얼굴 인식 불가";
-        console.error("[디버그] 에러 박스 표시:", errMsg);
-        // sessionStorage에도 백업 — 혹시 navigate 되어도 확인 가능
-        try { sessionStorage.setItem("bangs:gptError", errMsg); } catch { /**/ }
-        setGptDebugError(errMsg);
-        return; // 결과 페이지로 이동하지 않음
-      }
-      finalShape = gptShapeRef.current;
+    if (!gptShapeRef.current) {
+      const errMsg = gptErrorMsgRef.current ?? "GPT 얼굴형 판정 실패 — 얼굴 인식 불가";
+      console.error("[디버그] 에러 박스 표시:", errMsg);
+      // sessionStorage에도 백업 — 혹시 navigate 되어도 확인 가능
+      try { sessionStorage.setItem("bangs:gptError", errMsg); } catch { /**/ }
+      setGptDebugError(errMsg);
+      return; // 결과 페이지로 이동하지 않음
     }
 
-    // ④ 최종 판정 결과 저장 후 결과 페이지 이동
+    const finalShape = gptShapeRef.current;
+
+    // ③ 최종 판정 결과 저장 후 결과 페이지 이동
     try { sessionStorage.removeItem("bangs:gptError"); } catch { /**/ }
     try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, finalShape); } catch { /**/ }
     if (mpLandmarksRef.current) {
