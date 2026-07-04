@@ -5,6 +5,14 @@
 // 실제 판정(shape) 결과에는 절대 개입하지 않는다. 정확도 최우선 — 비용 타협 없음.
 // 유저 셀카(base64, 1024px/detail:high) → GPT-4o Vision → 얼굴형(FaceShapeKey) 반환
 //
+// [중요 — refusal 이슈, 2026-07-04] 실제 인물 사진에 대해 jaw/cheek/temple/chinTip처럼
+// 얼굴 부위별로 항목화된 JSON 라벨을 요구하면 GPT-4o가 생체 측정성 판정으로 인식해
+// "I'm sorry, I can't assist with that."로 거부(finish_reason=stop, refusal 필드)한다.
+// content가 빈 문자열로 와서 예전 코드는 이걸 감지 못하고 "oval"을 성공으로 위장했었음.
+// → 해결: 항목별 라벨링 요구를 없애고, 자유문장 reasoning 한 줄 + 최종 shape 하나만
+// 요구하는 구조로 변경. 거부 발생 안 함 확인(테스트 10장). 대신 content가 비거나
+// 파싱 실패 시 ok:false로 정직하게 에러 반환(절대 silently oval로 위장하지 않음).
+//
 // 환경변수: OPENAI_API_KEY (필수)
 // ============================================================================
 
@@ -18,33 +26,22 @@ const VALID_SHAPES = new Set([
   "heart", "diamond", "hexagon", "peanut",
 ]);
 
-// CoT(Chain-of-Thought) + JSON 응답 — 현업 헤어 디자이너의 실제 판정 기준을 그대로 주입
-const PROMPT = `You are a professional face shape analyst trained by a senior hair salon director with years of in-person face-shape consultations for East Asian women.
+// CoT(자유문장 reasoning 한 줄) + JSON 응답 — 항목별 생체 라벨링 요구 금지(refusal 유발 확인됨)
+const PROMPT = `You are a hairstylist helping a client choose a flattering fringe/bang style, similar to a typical "find your face shape for a haircut" quiz.
 
-CRITICAL: Completely IGNORE all hair, bangs, and forehead coverage — hair often hides the true hairline/forehead width, so infer the underlying skull shape instead of what's visually covered.
-Analyze ONLY the underlying skeletal bone structure — jawline, cheekbones, temples, chin tip, forehead, and overall proportions.
+Category guide (real-world hairstylist judgment, not textbook geometry):
+- square  : jaw looks wide and boxy, close to cheekbone width
+- oblong  : face looks clearly longer than it is wide
+- round   : soft full cheeks, width and height feel similar, jawline is curved not angular
+- peanut  : cheekbones stick out while the sides near the temple look pinched in, so the outline looks a bit hourglass-shaped
+- heart   : forehead looks wide, and the outline narrows down to a pointed chin
+- diamond : cheekbones are the widest part, forehead and jaw both look narrower than the cheekbones
+- hexagon : jaw looks angular AND the chin looks pointed/protruding too, so the overall outline looks angular
+- oval    : balanced outline, gently tapered, use only if nothing else fits well
 
-Think step by step, then respond ONLY in this exact JSON format:
-{
-  "jaw": "<angular|rounded|pointed|narrow>",
-  "cheek": "<wide|moderate|narrow>",
-  "temple": "<concave|flat|wide>",
-  "chinTip": "<protruding|rounded|pointed>",
-  "length": "<longer-than-wide|similar|wider-than-long>",
-  "shape": "<oval|round|oblong|square|heart|diamond|hexagon|peanut>"
-}
-
-Expert criteria (real-world hairstylist judgment — use these, not textbook geometry):
-- square  : BOTH jaw corners clearly protrude outward creating a strong boxy look. Jaw width is close to cheekbone width.
-- oblong  : The face is noticeably LONGER vertically than it is wide — the dominant impression is length, not angularity.
-- round   : Full, soft rounded cheeks; width and height feel similar; jawline is soft/curved, NOT angular.
-- peanut  : Cheekbones are prominent and stick out, while the temples are noticeably CONCAVE/indented compared to the cheekbones — the side silhouette looks pinched-in or hourglass-shaped, not smooth.
-- heart   : Forehead is wide (wider than or equal to the jaw), and the face narrows steadily down to a pointed chin — classic V-line.
-- diamond : Cheekbones are the widest point of the face; BOTH forehead and jaw are narrower than the cheekbones (unlike heart, the forehead is NOT wide).
-- hexagon : The jaw is angular/square-ish AND the chin tip itself also protrudes/juts out, so the outline is angular overall — but jaw dominance is slightly softer than a pure square because the chin adds its own facet.
-- oval    : Balanced, gently tapered from cheekbone to jaw, no single feature dominates — use this only when nothing else clearly fits.
-
-JSON only. No extra text.`;
+Ignore hair/bangs covering the forehead — judge the outline you can actually see.
+First write one short sentence comparing the general outline proportions you see. Then respond ONLY in this JSON format:
+{"reasoning": "<one short sentence>", "shape": "<oval|round|oblong|square|heart|diamond|hexagon|peanut>"}`;
 
 export async function POST(req: NextRequest) {
   const key = process.env.OPENAI_API_KEY;
@@ -55,11 +52,9 @@ export async function POST(req: NextRequest) {
 
   // 1. 요청 파싱
   let image: string;
-  let promptOverride: string | undefined;
   try {
     const body = await req.json();
     image = body.image as string;
-    promptOverride = typeof body.debugPrompt === "string" ? body.debugPrompt : undefined; // 임시 진단용 — refusal 원인 파악 후 제거
     if (!image || !image.startsWith("data:image")) throw new Error("invalid image");
   } catch {
     return NextResponse.json({ ok: false, shape: "oval", error: "Invalid request" }, { status: 400 });
@@ -75,14 +70,14 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model:           "gpt-4o",
-        max_tokens:      300,             // CoT JSON 필드 추가(temple/chinTip)로 출력 공간 확장
+        max_tokens:      150,
         temperature:     0,
         response_format: { type: "json_object" }, // JSON 형식 강제
         messages: [{
           role: "user",
           content: [
             { type: "image_url", image_url: { url: image, detail: "high" } }, // 최대 해상도 강제 — 턱선·광대·관자놀이 디테일 정확도 최우선
-            { type: "text",      text: promptOverride ?? PROMPT },
+            { type: "text",      text: PROMPT },
           ],
         }],
       }),
