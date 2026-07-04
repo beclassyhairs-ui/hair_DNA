@@ -15,7 +15,9 @@ import {
   type BangsSurveyAnswers,
   type SurveyOption,
 } from "../surveyData";
+import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 
+const LANDING_ID = "bang_test";
 const TOTAL = SURVEY_QUESTIONS.length; // 5
 
 const slideVariants = {
@@ -41,6 +43,12 @@ export default function BangsSurveyPage() {
     const newAnswers = { ...answers, [q.qKey]: opt.id };
     setAnswers(newAnswers);
     setPending(true);
+
+    trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
+      landing_id: LANDING_ID,
+      diagnosis_type: LANDING_ID,
+      answers: { questionKey: q.qKey, optionId: opt.id },
+    });
 
     setTimeout(() => {
       setPending(false);

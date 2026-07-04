@@ -1,9 +1,22 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { EVENT_NAMES, trackEvent, getUtmSource } from "../../lib/eventTracking";
+
+const LANDING_ID = "bang_test";
+
 export default function BangsLandingPage() {
+  useEffect(() => {
+    trackEvent(EVENT_NAMES.LANDING_VIEW, {
+      landing_id: LANDING_ID,
+      source: getUtmSource(),
+      diagnosis_type: LANDING_ID,
+    });
+  }, []);
+
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden bg-[#0E0D0C] px-6 py-10 text-cream">
 
@@ -95,6 +108,7 @@ export default function BangsLandingPage() {
       >
         <Link
           href="/bangs/survey"
+          onClick={() => trackEvent(EVENT_NAMES.DIAGNOSIS_START, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID })}
           className="group relative flex h-16 w-full items-center justify-center overflow-hidden rounded-2xl text-base font-bold text-charcoal shadow-[0_8px_28px_rgba(200,168,107,0.35)] transition-all hover:shadow-[0_10px_36px_rgba(200,168,107,0.5)] active:scale-[0.98]"
           style={{ background: "linear-gradient(105deg, #E4D2A8 0%, #C8A86B 50%, #A8884A 100%)" }}
         >

@@ -16,6 +16,9 @@ import {
 } from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
 import type { FaceLandmarkData, FaceRatios } from "../../../lib/faceAnalysis";
+import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
+
+const LANDING_ID = "bang_test";
 
 declare global {
   interface Window {
@@ -432,6 +435,13 @@ export default function BangsResultPage() {
       if (l) setLandmarkData(JSON.parse(l) as FaceLandmarkData);
       const r = sessionStorage.getItem(BANGS_DEBUG_RATIOS_KEY);
       if (r) setRatios(JSON.parse(r) as FaceRatios);
+
+      // 결과지 뷰 = 진단 완료 트래킹 (페이지 마운트 시 1회, 세션에 저장된 최종 얼굴형 사용)
+      trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+        landing_id: LANDING_ID,
+        diagnosis_type: LANDING_ID,
+        result_type: f && f in FACE_SHAPE_INFO ? f : undefined,
+      });
     } catch { /**/ }
   }, []);
 
@@ -579,6 +589,12 @@ export default function BangsResultPage() {
             <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">전문가 처방 · 제품</p>
             <a
               href={product.link} target="_blank" rel="noopener noreferrer sponsored"
+              onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, {
+                landing_id: LANDING_ID,
+                result_type: faceKey,
+                product_group_clicked: product.productName,
+                cta_clicked: "전문가 처방 제품",
+              })}
               className="group flex w-full items-start justify-between gap-4 overflow-hidden rounded-2xl px-6 py-5 text-left font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
               style={{ background: "linear-gradient(135deg, #FF7C98, #C084FC)" }}
             >

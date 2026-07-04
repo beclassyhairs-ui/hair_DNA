@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+
+import { EVENT_NAMES, trackEvent, getUtmSource } from "../../lib/eventTracking";
+
+const LANDING_ID = "mbti_test";
 
 // ============================================================================
 // 질문 데이터 — 12문항
@@ -288,9 +292,30 @@ export default function MbtiPage() {
   const isLast = index === MBTI_QUESTIONS.length - 1;
   const progressPct = (index / MBTI_QUESTIONS.length) * 100;
 
+  // 랜딩 진입 트래킹 — 페이지 마운트 시 1회
+  useEffect(() => {
+    trackEvent(EVENT_NAMES.LANDING_VIEW, {
+      landing_id: LANDING_ID,
+      source: getUtmSource(),
+      diagnosis_type: LANDING_ID,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleStart() {
+    trackEvent(EVENT_NAMES.DIAGNOSIS_START, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
+    setStarted(true);
+  }
+
   function handleSelect(choice: "A" | "B") {
     if (pending) return;
     setPending(choice);
+
+    trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
+      landing_id: LANDING_ID,
+      diagnosis_type: LANDING_ID,
+      answers: { questionId: q.id, axis: q.axis, choice },
+    });
 
     const next = { ...scores };
     if (choice === "A") next[q.axis] += 1;
@@ -322,7 +347,7 @@ export default function MbtiPage() {
     <main className="min-h-screen bg-charcoal text-cream">
       <AnimatePresence mode="wait">
         {!started && (
-          <IntroScreen key="intro" onStart={() => setStarted(true)} />
+          <IntroScreen key="intro" onStart={handleStart} />
         )}
 
         {started && (

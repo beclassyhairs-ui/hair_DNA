@@ -1,9 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+
+import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
+
+const LANDING_ID = "mbti_test";
 
 // ============================================================================
 // 결과 데이터 타입
@@ -223,6 +227,17 @@ function MbtiResultPage() {
   }
   const data = HAIR_TYPES[id] ?? HAIR_TYPES[9];
 
+  // 결과지 뷰 = 진단 완료 트래킹 (페이지 마운트 시 1회)
+  useEffect(() => {
+    trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+      landing_id: LANDING_ID,
+      diagnosis_type: LANDING_ID,
+      result_type: data.mbti,
+      recommended_product_groups: [data.product.name],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
   function handleShare() {
     const shareUrl = typeof window !== "undefined"
       ? `${window.location.origin}/mbti?utm_source=friend_share`
@@ -329,6 +344,12 @@ function MbtiResultPage() {
               href={data.product.link}
               target="_blank"
               rel="noopener noreferrer sponsored"
+              onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, {
+                landing_id: LANDING_ID,
+                result_type: data.mbti,
+                product_group_clicked: data.product.name,
+                cta_clicked: "맞춤 처방 최저가 확인하기",
+              })}
               className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl px-6 py-5 text-center font-bold text-white shadow-[0_4px_24px_rgba(255,124,152,0.45)] transition-all hover:brightness-110 active:scale-[0.98]"
               style={{ background: "linear-gradient(135deg, #FF7C98, #C084FC)" }}
             >
