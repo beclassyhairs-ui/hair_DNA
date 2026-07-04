@@ -55,9 +55,11 @@ export async function POST(req: NextRequest) {
 
   // 1. 요청 파싱
   let image: string;
+  let promptOverride: string | undefined;
   try {
     const body = await req.json();
     image = body.image as string;
+    promptOverride = typeof body.debugPrompt === "string" ? body.debugPrompt : undefined; // 임시 진단용 — refusal 원인 파악 후 제거
     if (!image || !image.startsWith("data:image")) throw new Error("invalid image");
   } catch {
     return NextResponse.json({ ok: false, shape: "oval", error: "Invalid request" }, { status: 400 });
@@ -80,7 +82,7 @@ export async function POST(req: NextRequest) {
           role: "user",
           content: [
             { type: "image_url", image_url: { url: image, detail: "high" } }, // 최대 해상도 강제 — 턱선·광대·관자놀이 디테일 정확도 최우선
-            { type: "text",      text: PROMPT },
+            { type: "text",      text: promptOverride ?? PROMPT },
           ],
         }],
       }),
