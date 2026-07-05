@@ -16,34 +16,28 @@ import { trackEvent } from "../../lib/trackEvent";
 
 const DIAGNOSIS_HUB_ITEMS = [
   {
-    type: "quick_basic",
-    label: "빠른 헤어 진단",
-    desc: "8문항 · 가장 많이 하는 기본 진단",
-    href: "/diagnosis/quick",
-  },
-  {
     type: "hair_mbti",
-    label: "헤어 MBTI",
+    label: "헤어 성향 MBTI",
     desc: "내 성향으로 알아보는 헤어 타입",
-    href: "/diagnosis/hair-mbti",
+    href: "/mbti",
   },
   {
     type: "bangs",
     label: "인생 앞머리 찾기",
     desc: "얼굴형 기반 앞머리 스타일 진단",
-    href: "/diagnosis/bangs",
+    href: "/bangs",
   },
   {
-    type: "ai_hair",
-    label: "AI 헤어 분석",
-    desc: "사진으로 보는 정밀 모발 분석",
-    href: "/diagnosis/ai-hair",
+    type: "style",
+    label: "인생 헤어스타일 (동안비법)",
+    desc: "얼굴형 기반 인생 헤어스타일 찾기",
+    href: "/style",
   },
   {
-    type: "salon_only",
-    label: "내 머리가 미용실에서만 예쁜 이유",
+    type: "hair_quiz",
+    label: "내 머리가 미용실에서만 예쁜 이유 (청담동 팩트폭격)",
     desc: "3문항 퀵 진단",
-    href: "/diagnosis/salon-only",
+    href: "/hair-quiz",
   },
 ] as const;
 

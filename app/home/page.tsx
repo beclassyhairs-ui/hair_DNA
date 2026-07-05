@@ -175,7 +175,7 @@ function PersonalizedRoutineWidget() {
 function QuickDiagnosisBanner() {
   return (
     <Link
-      href="/diagnosis/salon-only"
+      href="/hair-quiz"
       onClick={() =>
         trackEvent("quick_diagnosis_start", { diagnosisType: "salon_only", source: "home_quick_banner" })
       }
