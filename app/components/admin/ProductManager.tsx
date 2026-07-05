@@ -3,23 +3,14 @@
 // ============================================================================
 // 어뷰티 어드민 — 제품 관리(Product CMS)
 // /api/admin/products(GET/POST), /api/admin/products/[id](PUT/DELETE)를 통해
-// products 테이블을 CRUD한다. 이미지는 파일 업로드(Vercel Blob) 또는 URL 직접
-// 입력 둘 다 지원한다.
+// products 테이블을 CRUD한다. 이미지는 Supabase 용량을 아끼기 위해 파일 업로드
+// 없이 외부 이미지 URL 붙여넣기만 지원한다.
 // ============================================================================
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Product, ProductInput } from "../../../lib/products";
 
 const EMPTY_FORM = { product_name: "", category: "", image_url: "", buy_link: "" };
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error ?? new Error("파일을 읽지 못했습니다."));
-    reader.readAsDataURL(file);
-  });
-}
 
 export default function ProductManager() {
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -30,9 +21,7 @@ export default function ProductManager() {
   const [form, setForm]           = useState(EMPTY_FORM);
   const [tagsInput, setTagsInput] = useState("");
   const [saving, setSaving]       = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = editingId !== null;
 
@@ -57,7 +46,6 @@ export default function ProductManager() {
     setForm(EMPTY_FORM);
     setTagsInput("");
     setFormError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const startEdit = (p: Product) => {
@@ -71,29 +59,6 @@ export default function ProductManager() {
     setTagsInput((p.concern_tags ?? []).join(", "));
     setFormError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    setFormError(null);
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      const res = await fetch("/api/admin/upload-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dataUrl }),
-      });
-      const body = await res.json().catch(() => null);
-      if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
-      setForm((f) => ({ ...f, image_url: body.url }));
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setUploading(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -215,34 +180,30 @@ export default function ProductManager() {
               </label>
 
               <label className="block">
-                <span className="text-xs font-medium text-cream/50">제품 이미지</span>
+                <span className="text-xs font-medium text-cream/50">제품 이미지 URL</span>
                 <div className="mt-1.5 flex items-center gap-3">
-                  {form.image_url && (
+                  {form.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={form.image_url}
                       alt=""
                       className="h-14 w-14 shrink-0 rounded-lg border border-white/10 object-cover"
                     />
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/15 text-[9px] text-cream/25">
+                      미리보기
+                    </div>
                   )}
-                  <div className="flex-1">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      disabled={uploading}
-                      className="block w-full text-xs text-cream/50 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gold-light hover:file:bg-gold/25"
-                    />
-                    {uploading && <p className="mt-1 text-[11px] text-gold-light/70">업로드 중…</p>}
-                  </div>
+                  <input
+                    value={form.image_url}
+                    onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
+                    className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                  />
                 </div>
-                <input
-                  value={form.image_url}
-                  onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
-                  placeholder="또는 이미지 URL 직접 입력"
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
-                />
+                <p className="mt-1.5 text-[11px] text-cream/30">
+                  파일 업로드는 지원하지 않습니다 — 제품 이미지가 올라가 있는 외부 링크(쇼핑몰, CDN 등)를 복사해 붙여넣으세요.
+                </p>
               </label>
 
               <label className="block">
@@ -260,7 +221,7 @@ export default function ProductManager() {
 
             <button
               type="submit"
-              disabled={saving || uploading}
+              disabled={saving}
               className="mt-5 w-full rounded-xl border border-gold/30 bg-gold/15 px-4 py-2.5 text-sm font-semibold text-gold-light transition-colors hover:bg-gold/25 disabled:opacity-50"
             >
               {saving ? "저장 중…" : isEditing ? "수정 저장" : "제품 등록"}
