@@ -408,7 +408,7 @@ export default function UploadPage() {
     resetSrc();
     setSavedPhoto(null);
     try { sessionStorage.removeItem(PHOTO_KEY); } catch { /* ignore */ }
-    router.push("/diagnosis");
+    router.push("/diagnosis/quick");
   }
 
   function handleHardReset() {

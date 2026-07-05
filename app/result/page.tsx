@@ -169,7 +169,7 @@ export default function ResultPage() {
   // ── 네비게이션 ──────────────────────────────────────────────────────────────
   function handleEditPrevious() {
     try { sessionStorage.removeItem(PHOTO_KEY); } catch { /* ignore */ }
-    router.push("/diagnosis");
+    router.push("/diagnosis/quick");
   }
 
   function handleHardReset() {
@@ -1206,7 +1206,7 @@ function EmptyState() {
         결과지를 보려면 먼저 문진을 완료해 주세요.
       </p>
       <Link
-        href="/diagnosis"
+        href="/diagnosis/quick"
         className="mt-9 inline-flex w-full max-w-xs items-center justify-center rounded-2xl bg-gradient-to-r from-gold to-gold-dark px-10 py-5 text-xl font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]"
       >
         진단 시작하기
