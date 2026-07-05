@@ -42,8 +42,8 @@ function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-gray-100 bg-white shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.08)]">
-      <div className="mx-auto flex max-w-[430px] items-stretch justify-between px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-black/5 bg-white/90 shadow-[0_-12px_32px_-14px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[430px] items-stretch justify-between px-2 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2.5">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           return (
@@ -71,10 +71,10 @@ function BottomNav() {
 function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-100 bg-[#F9FAFB]/90 backdrop-blur">
-      <div className="flex items-center justify-between px-5 py-4">
+      <div className="flex items-center justify-between px-6 py-5">
         <div>
-          <p className="text-lg font-bold tracking-tight text-[#2F2F2F]">어뷰티</p>
-          <p className="mt-0.5 text-xs font-medium text-[#6B7280]">오늘의 헤어 케어</p>
+          <p className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">어뷰티</p>
+          <p className="mt-1 text-[11px] font-medium tracking-wide text-[#6B7280]">오늘의 헤어 케어</p>
         </div>
         <button
           aria-label="알림"
@@ -99,17 +99,19 @@ function Header() {
 
 function WeatherConsultingWidget() {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-[#F3E9D2] px-2.5 py-1 text-xs font-semibold text-[#8A6D2F]">
+    <section className="relative overflow-hidden rounded-2xl border border-[#EADFC5] bg-gradient-to-br from-[#FBF6EA] via-[#F8F1E1] to-[#EFD9AE] p-6 shadow-[0_12px_28px_-16px_rgba(200,169,106,0.55)]">
+      <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/40 blur-2xl" />
+
+      <div className="relative flex flex-wrap items-center gap-1.5">
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#8A6D2F] backdrop-blur">
           🌧️ 습도 78%
         </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-600">
+        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-amber-700 backdrop-blur">
           곱슬모 위험도 · 보통
         </span>
       </div>
 
-      <p className="mt-3 text-[15px] leading-relaxed text-[#2F2F2F]">
+      <p className="relative mt-4 text-[15px] leading-relaxed text-[#2F2F2F]">
         <span className="font-bold">지환</span>님, 오늘은 습도가 높아 곱슬모발은 정수리 부스스함이
         올라올 수 있어요 🌧️
         <br />
@@ -118,7 +120,7 @@ function WeatherConsultingWidget() {
 
       <button
         onClick={() => trackEvent("today_hair_check_click", { source: "home_weather_card" })}
-        className="mt-4 w-full rounded-xl bg-[#2F2F2F] py-3 text-sm font-semibold text-white transition-opacity active:opacity-80"
+        className="relative mt-5 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(47,47,47,0.6)] transition-opacity active:opacity-80"
       >
         오늘 헤어 체크하기
       </button>
@@ -148,22 +150,27 @@ function DailyMissionWidget() {
   };
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-[#2F2F2F]">오늘의 홈케어 미션</h2>
+        <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">오늘의 홈케어 미션</h2>
         <span className="text-xs font-semibold text-[#C8A96A]">
           {total}개 중 {completedCount}개 완료
         </span>
       </div>
 
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
-        <div
-          className="h-full rounded-full bg-[#C8A96A] transition-all duration-300"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="mt-4 flex items-center gap-3">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100 shadow-inner">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#C8A96A] to-[#E8D4A0] shadow-[0_1px_6px_rgba(200,169,106,0.5)] transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-[#C8A96A]">
+          {Math.round(progress)}%
+        </span>
       </div>
 
-      <ul className="mt-4 space-y-3">
+      <ul className="mt-5 space-y-3.5">
         {DAILY_MISSIONS.map((mission) => {
           const isChecked = checked[mission.id];
           return (
@@ -203,34 +210,37 @@ function DailyMissionWidget() {
 
 function DiscoveryItemWidget() {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold text-[#2F2F2F]">오늘의 발견템</h2>
+    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">🤫 조용히 알려드릴게요</p>
+      <h2 className="mt-1 text-[17px] font-bold tracking-tight text-[#2F2F2F]">너만 알면 좋은 비밀템</h2>
 
-      <div className="mt-3 flex gap-3">
-        <div className="h-20 w-20 shrink-0 rounded-xl bg-gradient-to-br from-[#F3E9D2] to-[#C8A96A]" />
+      <div className="mt-4 flex gap-3.5">
+        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FBF6EA] to-[#E8D4A0]">
+          <span className="text-2xl">✨</span>
+        </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-[#2F2F2F]">앞머리 픽싱 마스카라</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {["앞머리 갈라짐", "정수리 처짐", "비 오는 날 추천"].map((tag) => (
-              <span key={tag} className="rounded-full bg-[#F3E9D2] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
-                #{tag}
+              <span key={tag} className="rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
+                이럴 때 · {tag}
               </span>
             ))}
           </div>
         </div>
       </div>
 
-      <p className="mt-3 text-[13px] leading-relaxed text-[#6B7280]">
-        오후만 되면 앞머리가 갈라지는 분들에게 가볍게 고정감을 주는 발견템이에요.
+      <p className="mt-4 text-[13px] leading-relaxed text-[#6B7280]">
+        오후만 되면 앞머리가 갈라지는 분들에게 살짝 귀띔해드리는, 가볍게 고정감을 주는 아이템이에요.
       </p>
 
       <button
         onClick={() =>
           trackEvent("product_card_view", { productId: "fixing_mascara_001", source: "home_discovery_item" })
         }
-        className="mt-4 w-full rounded-xl border border-[#C8A96A] py-3 text-sm font-semibold text-[#8A6D2F] transition-colors active:bg-[#F3E9D2]"
+        className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3.5 text-sm font-semibold text-[#8A6D2F] transition-colors active:bg-[#F3E9D2]"
       >
-        이 제품이 필요한 이유 보기
+        왜 필요한지 살짝 보기 →
       </button>
     </section>
   );
@@ -255,17 +265,17 @@ function ConsultSnackWidget() {
   };
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-      <h2 className="text-base font-bold text-[#2F2F2F]">나와 비슷한 고민상담소</h2>
+    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">나와 비슷한 고민상담소</h2>
 
-      <p className="mt-3 rounded-xl bg-[#F9FAFB] px-4 py-3 text-sm leading-relaxed text-[#2F2F2F]">
+      <p className="mt-4 rounded-xl bg-[#F9FAFB] px-4 py-3.5 text-sm leading-relaxed text-[#2F2F2F]">
         “펌 한 지 2주 됐는데 벌써 처지는 느낌이에요. 정상인가요?”
       </p>
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3.5 flex items-center gap-2">
         <button
           onClick={handleLike}
-          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors ${
+          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-colors ${
             liked ? "border-[#C8A96A] bg-[#F3E9D2] text-[#8A6D2F]" : "border-gray-200 text-[#6B7280]"
           }`}
         >
@@ -273,7 +283,7 @@ function ConsultSnackWidget() {
         </button>
         <button
           onClick={handleViewAnswer}
-          className="flex-1 rounded-xl bg-[#2F2F2F] py-2 text-xs font-semibold text-white transition-opacity active:opacity-80"
+          className="flex-1 rounded-xl bg-[#2F2F2F] py-2.5 text-xs font-semibold text-white transition-opacity active:opacity-80"
         >
           전문가 답변 보기
         </button>
@@ -291,13 +301,13 @@ function QuickDiagnosisBanner() {
       onClick={() =>
         trackEvent("quick_diagnosis_start", { diagnosisType: "shampoo_scalp", source: "home_quick_banner" })
       }
-      className="block rounded-2xl border border-gray-100 bg-gradient-to-br from-[#2F2F2F] to-[#4A4A4A] p-5 shadow-sm"
+      className="block rounded-2xl border border-gray-100 bg-gradient-to-br from-[#2F2F2F] to-[#4A4A4A] p-6 shadow-sm"
     >
-      <p className="text-[15px] font-bold leading-snug text-white">
+      <p className="text-[16px] font-bold leading-snug tracking-tight text-white">
         내 샴푸가 두피를 망치고 있진 않을까?
       </p>
-      <p className="mt-1 text-xs text-white/60">3문항 퀵 진단으로 바로 확인해보세요.</p>
-      <span className="mt-4 inline-flex items-center gap-1 rounded-xl bg-[#C8A96A] px-4 py-2.5 text-sm font-semibold text-[#2F2F2F]">
+      <p className="mt-1.5 text-xs text-white/60">3문항 퀵 진단으로 바로 확인해보세요.</p>
+      <span className="mt-5 inline-flex items-center gap-1 rounded-xl bg-[#C8A96A] px-4 py-2.5 text-sm font-semibold text-[#2F2F2F]">
         1분 진단 시작
       </span>
     </Link>
@@ -311,7 +321,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#F9FAFB]">
       <div className="mx-auto min-h-screen max-w-[430px] pb-28">
         <Header />
-        <main className="space-y-4 px-5 py-4">
+        <main className="space-y-5 px-5 py-6">
           <WeatherConsultingWidget />
           <DailyMissionWidget />
           <DiscoveryItemWidget />
