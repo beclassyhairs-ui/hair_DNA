@@ -8,6 +8,7 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
+import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { EVENT_NAMES, type StoredEvent } from "../../lib/eventTracking";
 
 const LANDING_LABELS: Record<string, string> = {
@@ -31,6 +32,8 @@ const FUNNEL_STAGES = [
   { key: EVENT_NAMES.DIAGNOSIS_COMPLETE, label: "완료" },
   { key: EVENT_NAMES.PRODUCT_CLICKED,    label: "제품클릭" },
 ] as const;
+
+const GOLD_RAMP = ["#E4D2A8", "#D9BE86", "#C8A86B", "#A8884A"];
 
 // ─── 집계 헬퍼 ────────────────────────────────────────────────────────────────
 
@@ -59,11 +62,24 @@ function formatEventTime(iso: string): string {
 
 // ─── 작은 프레젠테이션 컴포넌트 ────────────────────────────────────────────────
 
-function StatTile({ label, value, caption }: { label: string; value: string; caption?: string }) {
+function SectionHeading({ title, caption }: { title: string; caption?: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-      <p className="text-xs font-medium text-cream/50">{label}</p>
-      <p className="mt-1.5 font-sans text-3xl font-semibold text-cream">{value}</p>
+    <div className="flex items-baseline gap-2.5">
+      <span className="h-4 w-1 rounded-full bg-gold" />
+      <h2 className="text-sm font-semibold text-cream/85">{title}</h2>
+      {caption && <span className="text-[11px] text-cream/30">{caption}</span>}
+    </div>
+  );
+}
+
+function StatTile({ label, value, caption, accent }: { label: string; value: string; caption?: string; accent?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition-colors hover:border-white/20">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-cream/50">{label}</p>
+        {accent && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: accent }} />}
+      </div>
+      <p className="mt-2 font-sans text-3xl font-semibold tabular-nums text-cream">{value}</p>
       {caption && <p className="mt-1 text-[11px] text-cream/35">{caption}</p>}
     </div>
   );
@@ -75,10 +91,7 @@ function FunnelBar({ percent }: { percent: number }) {
   return (
     <div className="flex items-center gap-2">
       <div className="h-2 w-24 overflow-hidden rounded-full bg-gold/15">
-        <div
-          className="h-full rounded-full bg-gold"
-          style={{ width: `${clamped}%` }}
-        />
+        <div className="h-full rounded-full bg-gold" style={{ width: `${clamped}%` }} />
       </div>
       <span className="w-12 text-right text-xs font-medium tabular-nums text-gold-light">
         {clamped.toFixed(1)}%
@@ -93,6 +106,64 @@ function EventBadge({ eventName }: { eventName: string }) {
       <span className="h-1.5 w-1.5 rounded-full bg-gold" />
       {EVENT_LABELS[eventName] ?? eventName}
     </span>
+  );
+}
+
+/** 전체 퍼널(유입→시작→완료→제품클릭)을 가로 막대 차트로 시각화 */
+function AggregateFunnelChart({ data }: { data: { label: string; count: number }[] }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 48, bottom: 4, left: 4 }}>
+          <XAxis type="number" hide />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={72}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fill: "rgba(253,251,250,0.55)", fontSize: 13 }}
+          />
+          <Tooltip
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
+            contentStyle={{
+              background: "#1C1A18",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 12,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "rgba(253,251,250,0.7)" }}
+            formatter={(value: number) => [`${formatNumber(value)}명`, "고유 유저"]}
+          />
+          <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={30}>
+            {data.map((_, i) => (
+              <Cell key={i} fill={GOLD_RAMP[i % GOLD_RAMP.length]} />
+            ))}
+            <LabelList
+              dataKey="count"
+              position="right"
+              formatter={(v: number) => formatNumber(v)}
+              style={{ fill: "rgba(253,251,250,0.85)", fontSize: 12, fontWeight: 600 }}
+            />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+
+      {/* 단계 전환율 배지 */}
+      <div className="mt-1 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-4">
+        {data.slice(1).map((stage, i) => (
+          <span
+            key={stage.label}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-3 py-1.5 text-xs text-cream/60"
+          >
+            {data[i].label} → {stage.label}
+            <span className="font-semibold tabular-nums text-gold-light">
+              {formatPercent(stage.count, data[i].count)}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -143,7 +214,7 @@ export default function AdminDashboard() {
 
   if (loading && !events) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-charcoal text-cream/40">
+      <div className="flex min-h-[60vh] items-center justify-center text-cream/40">
         Supabase에서 이벤트 불러오는 중…
       </div>
     );
@@ -151,7 +222,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-charcoal px-6">
+      <div className="flex min-h-[60vh] items-center justify-center px-6">
         <div className="max-w-md rounded-2xl border border-red-500/30 bg-red-950/40 px-6 py-5 text-center">
           <p className="text-sm font-semibold text-red-300">이벤트를 불러오지 못했습니다</p>
           <p className="mt-2 text-xs leading-relaxed text-red-300/70">{error}</p>
@@ -178,6 +249,12 @@ export default function AdminDashboard() {
   const totalProductClicks = events.filter((e) => e.event_name === EVENT_NAMES.PRODUCT_CLICKED).length;
   const avgConversion = formatPercent(totalCompleted, totalVisitors);
 
+  // 전체 퍼널(랜딩 무관 합산)
+  const aggregateFunnel = FUNNEL_STAGES.map((stage) => ({
+    label: stage.label,
+    count: uniqueUsers(events, stage.key),
+  }));
+
   // 랜딩페이지별 퍼널
   const funnelRows = landingIds.map((landingId) => {
     const counts = FUNNEL_STAGES.map((stage) => uniqueUsers(events, stage.key, landingId));
@@ -185,11 +262,11 @@ export default function AdminDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-charcoal px-6 py-10 text-cream">
-      <div className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between">
+    <div className="px-5 py-8 md:px-10 md:py-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-cream">어뷰티 어드민 대시보드</h1>
+            <h1 className="font-serif text-2xl font-bold text-cream">대시보드</h1>
             <p className="mt-1 text-sm text-cream/40">
               Supabase 전체 유저 실데이터 · 이벤트 {formatNumber(events.length)}건 기준 집계
               {loading && <span className="ml-2 text-gold-light/70">새로고침 중…</span>}
@@ -213,79 +290,85 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 1. KPI 요약 카드 */}
         {events.length > 0 && (
-        <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile label="총 방문자 수" value={formatNumber(totalVisitors)} caption="landing_view 고유 anonymous_id" />
-          <StatTile label="총 진단 완료 수" value={formatNumber(totalCompleted)} caption="diagnosis_complete 고유 유저" />
-          <StatTile label="평균 전환율" value={avgConversion} caption="완료 / 방문" />
-          <StatTile label="총 제품 클릭 수" value={formatNumber(totalProductClicks)} caption="product_clicked 이벤트 수" />
-        </section>
-        )}
+          <>
+            {/* 1. KPI 요약 카드 */}
+            <section className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <StatTile label="총 방문자 수" value={formatNumber(totalVisitors)} caption="landing_view 고유 anonymous_id" accent="#C8A86B" />
+              <StatTile label="총 진단 완료 수" value={formatNumber(totalCompleted)} caption="diagnosis_complete 고유 유저" accent="#C8A86B" />
+              <StatTile label="평균 전환율" value={avgConversion} caption="완료 / 방문" accent="#C8A86B" />
+              <StatTile label="총 제품 클릭 수" value={formatNumber(totalProductClicks)} caption="product_clicked 이벤트 수" accent="#C8A86B" />
+            </section>
 
-        {/* 2. 랜딩페이지별 퍼널 성과 테이블 */}
-        {events.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-cream/50">랜딩페이지별 퍼널 성과</h2>
-          <div className="mt-3 overflow-hidden rounded-2xl border border-white/10">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-cream/40">
-                  <th className="px-4 py-3 font-medium">Landing ID</th>
-                  {FUNNEL_STAGES.map((stage, i) => (
-                    <th key={stage.key} className="px-4 py-3 font-medium">
-                      {stage.label}
-                      {i > 0 && <span className="ml-1 font-normal normal-case text-cream/25">(단계 전환율)</span>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {funnelRows.map(({ landingId, counts }) => (
-                  <tr key={landingId} className="border-b border-white/5 last:border-0">
-                    <td className="px-4 py-3 font-medium text-cream/90">
-                      {LANDING_LABELS[landingId] ?? landingId}
-                      <div className="text-[11px] font-normal text-cream/35">{landingId}</div>
-                    </td>
-                    {counts.map((count, i) => (
-                      <td key={i} className="px-4 py-3">
-                        <div className="font-semibold tabular-nums text-cream">{formatNumber(count)}</div>
-                        {i > 0 && (
-                          <div className="mt-1">
-                            <FunnelBar percent={counts[i - 1] > 0 ? (count / counts[i - 1]) * 100 : 0} />
-                          </div>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        )}
-
-        {/* 3. 이벤트 로그 실시간 타임라인 */}
-        {events.length > 0 && (
-        <section className="mt-10 pb-10">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-cream/50">최근 이벤트 (최신 10건)</h2>
-          <div className="mt-3 divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10">
-            {recentEvents.map((e, i) => (
-              <div key={i} className="flex items-center justify-between gap-4 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-[92px] shrink-0 text-xs tabular-nums text-cream/35">
-                    {formatEventTime(e.event_time)}
-                  </span>
-                  <span className="w-[110px] shrink-0 truncate text-xs text-cream/50">{e.anonymous_id}</span>
-                  <EventBadge eventName={e.event_name} />
-                </div>
-                <span className="truncate text-xs text-cream/40">
-                  {e.product_group_clicked ?? e.result_type ?? e.landing_id ?? ""}
-                </span>
+            {/* 2. 전체 퍼널 개요 (차트) */}
+            <section className="mt-10">
+              <SectionHeading title="전체 퍼널 개요" caption="유입 → 시작 → 완료 → 제품 클릭 (전체 랜딩 합산)" />
+              <div className="mt-3">
+                <AggregateFunnelChart data={aggregateFunnel} />
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
+
+            {/* 3. 랜딩페이지별 퍼널 성과 테이블 */}
+            <section className="mt-10">
+              <SectionHeading title="랜딩페이지별 퍼널 성과" />
+              <div className="mt-3 overflow-x-auto rounded-2xl border border-white/10">
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-cream/40">
+                      <th className="px-4 py-3 font-medium">Landing ID</th>
+                      {FUNNEL_STAGES.map((stage, i) => (
+                        <th key={stage.key} className="px-4 py-3 font-medium">
+                          {stage.label}
+                          {i > 0 && <span className="ml-1 font-normal normal-case text-cream/25">(단계 전환율)</span>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {funnelRows.map(({ landingId, counts }) => (
+                      <tr key={landingId} className="border-b border-white/5 last:border-0 odd:bg-white/[0.015]">
+                        <td className="px-4 py-3 font-medium text-cream/90">
+                          {LANDING_LABELS[landingId] ?? landingId}
+                          <div className="text-[11px] font-normal text-cream/35">{landingId}</div>
+                        </td>
+                        {counts.map((count, i) => (
+                          <td key={i} className="px-4 py-3">
+                            <div className="font-semibold tabular-nums text-cream">{formatNumber(count)}</div>
+                            {i > 0 && (
+                              <div className="mt-1">
+                                <FunnelBar percent={counts[i - 1] > 0 ? (count / counts[i - 1]) * 100 : 0} />
+                              </div>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* 4. 이벤트 로그 실시간 타임라인 */}
+            <section className="mt-10 pb-10">
+              <SectionHeading title="최근 이벤트" caption="최신 10건" />
+              <div className="mt-3 divide-y divide-white/5 overflow-hidden rounded-2xl border border-white/10">
+                {recentEvents.map((e, i) => (
+                  <div key={i} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="w-[92px] shrink-0 text-xs tabular-nums text-cream/35">
+                        {formatEventTime(e.event_time)}
+                      </span>
+                      <span className="w-[110px] shrink-0 truncate text-xs text-cream/50">{e.anonymous_id}</span>
+                      <EventBadge eventName={e.event_name} />
+                    </div>
+                    <span className="truncate text-xs text-cream/40">
+                      {e.product_group_clicked ?? e.result_type ?? e.landing_id ?? ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
         )}
       </div>
     </div>

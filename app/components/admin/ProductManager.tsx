@@ -1,0 +1,365 @@
+"use client";
+
+// ============================================================================
+// 어뷰티 어드민 — 제품 관리(Product CMS)
+// /api/admin/products(GET/POST), /api/admin/products/[id](PUT/DELETE)를 통해
+// products 테이블을 CRUD한다. 이미지는 파일 업로드(Vercel Blob) 또는 URL 직접
+// 입력 둘 다 지원한다.
+// ============================================================================
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Product, ProductInput } from "../../../lib/products";
+
+const EMPTY_FORM = { product_name: "", category: "", image_url: "", buy_link: "" };
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error("파일을 읽지 못했습니다."));
+    reader.readAsDataURL(file);
+  });
+}
+
+export default function ProductManager() {
+  const [products, setProducts] = useState<Product[] | null>(null);
+  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
+  const [tagsInput, setTagsInput] = useState("");
+  const [saving, setSaving]       = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditing = editingId !== null;
+
+  const loadProducts = () => {
+    setLoading(true);
+    setError(null);
+    fetch("/api/admin/products")
+      .then(async (res) => {
+        const body = await res.json().catch(() => null);
+        if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+        return body.products as Product[];
+      })
+      .then(setProducts)
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(loadProducts, []);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setTagsInput("");
+    setFormError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const startEdit = (p: Product) => {
+    setEditingId(p.id);
+    setForm({
+      product_name: p.product_name,
+      category: p.category ?? "",
+      image_url: p.image_url ?? "",
+      buy_link: p.buy_link ?? "",
+    });
+    setTagsInput((p.concern_tags ?? []).join(", "));
+    setFormError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setFormError(null);
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const res = await fetch("/api/admin/upload-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+      setForm((f) => ({ ...f, image_url: body.url }));
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.product_name.trim()) {
+      setFormError("제품명은 필수입니다.");
+      return;
+    }
+
+    setSaving(true);
+    setFormError(null);
+
+    const payload: ProductInput = {
+      product_name: form.product_name.trim(),
+      category: form.category.trim(),
+      concern_tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
+      image_url: form.image_url.trim(),
+      buy_link: form.buy_link.trim(),
+    };
+
+    try {
+      const url    = isEditing ? `/api/admin/products/${editingId}` : "/api/admin/products";
+      const method = isEditing ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+      resetForm();
+      loadProducts();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (p: Product) => {
+    if (!window.confirm(`"${p.product_name}"을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return;
+
+    const res = await fetch(`/api/admin/products/${p.id}`, { method: "DELETE" });
+    const body = await res.json().catch(() => null);
+    if (!res.ok || !body?.ok) {
+      alert(`삭제 실패: ${body?.error ?? res.status}`);
+      return;
+    }
+    if (editingId === p.id) resetForm();
+    loadProducts();
+  };
+
+  const sortedProducts = useMemo(
+    () => [...(products ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [products],
+  );
+
+  return (
+    <div className="px-5 py-8 md:px-10 md:py-10">
+      <div className="mx-auto max-w-6xl">
+        <div>
+          <h1 className="font-serif text-2xl font-bold text-cream">제품 관리</h1>
+          <p className="mt-1 text-sm text-cream/40">
+            헤어 고민 해결 커머스 제품을 등록·수정·삭제합니다.
+            {products && <span className="ml-2 text-cream/30">총 {products.length}개</span>}
+          </p>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[380px_1fr]">
+          {/* 등록/수정 폼 */}
+          <form
+            onSubmit={handleSubmit}
+            className="h-fit rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-cream/85">
+                {isEditing ? "제품 수정" : "새 제품 등록"}
+              </h2>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-xs text-cream/40 hover:text-cream/70"
+                >
+                  취소
+                </button>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-3.5">
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">제품명 *</span>
+                <input
+                  value={form.product_name}
+                  onChange={(e) => setForm((f) => ({ ...f, product_name: e.target.value }))}
+                  placeholder="예: 모카 스칼프 세럼"
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">카테고리</span>
+                <input
+                  value={form.category}
+                  onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                  placeholder="예: 두피케어, 트리트먼트"
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">고민 태그 (쉼표로 구분)</span>
+                <input
+                  value={tagsInput}
+                  onChange={(e) => setTagsInput(e.target.value)}
+                  placeholder="예: 탈모, 곱슬, 손상모"
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">제품 이미지</span>
+                <div className="mt-1.5 flex items-center gap-3">
+                  {form.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.image_url}
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-lg border border-white/10 object-cover"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      disabled={uploading}
+                      className="block w-full text-xs text-cream/50 file:mr-3 file:rounded-lg file:border-0 file:bg-gold/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-gold-light hover:file:bg-gold/25"
+                    />
+                    {uploading && <p className="mt-1 text-[11px] text-gold-light/70">업로드 중…</p>}
+                  </div>
+                </div>
+                <input
+                  value={form.image_url}
+                  onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
+                  placeholder="또는 이미지 URL 직접 입력"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">구매 링크</span>
+                <input
+                  value={form.buy_link}
+                  onChange={(e) => setForm((f) => ({ ...f, buy_link: e.target.value }))}
+                  placeholder="https://..."
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                />
+              </label>
+            </div>
+
+            {formError && <p className="mt-3 text-xs text-red-300">{formError}</p>}
+
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="mt-5 w-full rounded-xl border border-gold/30 bg-gold/15 px-4 py-2.5 text-sm font-semibold text-gold-light transition-colors hover:bg-gold/25 disabled:opacity-50"
+            >
+              {saving ? "저장 중…" : isEditing ? "수정 저장" : "제품 등록"}
+            </button>
+          </form>
+
+          {/* 제품 리스트 */}
+          <div>
+            {loading && !products && (
+              <div className="flex min-h-[200px] items-center justify-center text-cream/40">
+                제품 목록 불러오는 중…
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            {products && products.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-cream/40">
+                등록된 제품이 없습니다. 왼쪽 폼에서 첫 제품을 등록해보세요.
+              </div>
+            )}
+
+            {sortedProducts.length > 0 && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {sortedProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  >
+                    {p.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.image_url}
+                        alt={p.product_name}
+                        className="h-16 w-16 shrink-0 rounded-xl border border-white/10 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-white/15 text-[10px] text-cream/25">
+                        이미지 없음
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="truncate text-sm font-semibold text-cream">{p.product_name}</p>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            onClick={() => startEdit(p)}
+                            className="rounded-lg px-2 py-1 text-[11px] font-medium text-cream/50 hover:bg-white/[0.06] hover:text-cream/80"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p)}
+                            className="rounded-lg px-2 py-1 text-[11px] font-medium text-red-300/70 hover:bg-red-500/10 hover:text-red-300"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+
+                      {p.category && (
+                        <span className="mt-1 inline-block rounded-full bg-gold/10 px-2 py-0.5 text-[11px] text-gold-light">
+                          {p.category}
+                        </span>
+                      )}
+
+                      {p.concern_tags && p.concern_tags.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {p.concern_tags.map((tag) => (
+                            <span key={tag} className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-cream/50">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {p.buy_link && (
+                        <a
+                          href={p.buy_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1.5 block truncate text-[11px] text-gold-light/80 hover:underline"
+                        >
+                          {p.buy_link}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
