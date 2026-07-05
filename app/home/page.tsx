@@ -2,8 +2,14 @@
 
 // ============================================================================
 // 어뷰티(A-Beauty) — 홈 대시보드 (`/home`)
-// "AI 진단 앱"이 아니라 "헤어계의 해피문데이" — 재방문 유저가 매일 들어와
-// 오늘의 헤어 컨디션·루틴·발견템·고민을 확인하는 습관 형성형 홈 화면.
+// 단순 "오늘케어 앱"이 아니라 "랜딩별 AI 진단 → 카카오 로그인 → 고민 데이터 저장 →
+// 맞춤 발견템 추천 → 커머스 전환" 구조의 데이터 기반 헤어 커머스 플랫폼 홈이다.
+// 홈은 새 설문을 다시 받는 곳이 아니라, 이미 저장된 진단 결과(userProfile)를
+// 바탕으로 개인화된 루틴/발견템을 보여주는 곳이라는 원칙을 지킨다.
+//
+// userProfile / recommendedItem은 실 데이터 연동 전 mock — 실 연동 시 카카오 로그인
+// 세션 기준으로 저장된 최신 진단 결과(hairTags, mainConcern 등)를 조회해 그대로
+// 대체하면 되도록 필드명을 실제 스키마에 맞춰뒀다.
 //
 // trackEvent: 실제 analytics 연동 경로(lib/analytics.ts, lib/eventTracking.ts)가
 // 두 갈래로 나뉘어 있어, 우선 아래 로컬 fallback으로 이벤트를 남긴다. 추후 실 연동
@@ -18,15 +24,43 @@ const trackEvent = (eventName: string, payload?: Record<string, unknown>) => {
   console.log("[trackEvent]", eventName, payload);
 };
 
-// ─── 데일리 미션 데이터 ────────────────────────────────────────────────────────
+// ─── mock 유저 데이터 (실 연동 전 — 카카오 로그인 세션 기준 저장된 진단 결과로 대체 예정) ──
 
-type MissionId = "dry_scalp" | "tip_essence" | "reverse_part_brush";
+const userProfile = {
+  name: "지환",
+  hairTags: ["곱슬모", "정수리 부스스함", "앞머리 갈라짐", "볼륨 처짐"],
+  lastDiagnosis: "AI 헤어 분석",
+  lastDiagnosisDate: "오늘",
+  mainConcern: "습도 높은 날 정수리와 앞머리 라인이 쉽게 무너짐",
+};
 
-const DAILY_MISSIONS: { id: MissionId; label: string }[] = [
-  { id: "dry_scalp", label: "샴푸 후 두피 쪽 따뜻한 바람으로 100% 말리기" },
-  { id: "tip_essence", label: "모발 끝부분에만 수분 에센스 가볍게 바르기" },
-  { id: "reverse_part_brush", label: "정수리 가르마 방향 반대로 10초 빗질 드라이" },
+const recommendedItem = {
+  id: "fixing_mascara_001",
+  name: "앞머리 픽싱 마스카라",
+  matchedTags: ["앞머리 갈라짐", "습도 높은 날", "정수리 처짐"],
+  badges: ["앞머리갈라짐진단", "습도높은날", "정수리처짐", "가벼운고정템"],
+  reason:
+    "최근 진단에서 앞머리 갈라짐과 정수리 처짐 고민이 확인되어, 무겁게 떡지지 않고 앞머리와 잔머리 라인을 가볍게 고정하는 제품을 추천해요.",
+};
+
+// ─── 개인화 데일리 루틴 데이터 (userProfile.hairTags 기반 추천 루틴 — 설문 아님) ──────
+
+type RoutineStepId = "scalp_volume_dry" | "tip_essence_light" | "bangs_line_fixing";
+
+const PERSONALIZED_ROUTINE: { id: RoutineStepId; label: string }[] = [
+  { id: "scalp_volume_dry", label: "두피 쪽은 완전히 말려 정수리 볼륨 살리기" },
+  { id: "tip_essence_light", label: "모발 끝에만 가벼운 에센스 바르기" },
+  { id: "bangs_line_fixing", label: "앞머리 라인은 픽싱 제품으로 얇게 고정하기" },
 ];
+
+// ─── AI 진단 허브 미리보기 데이터 ────────────────────────────────────────────────
+
+const DIAGNOSIS_HUB_ITEMS = [
+  { type: "hair_mbti", label: "헤어 MBTI", href: "/diagnosis/hair-mbti" },
+  { type: "bangs", label: "인생 앞머리 찾기", href: "/diagnosis/bangs" },
+  { type: "ai_hair", label: "AI 헤어 분석", href: "/diagnosis/ai-hair" },
+  { type: "salon_only", label: "내 머리가 미용실에서만 예쁜 이유", href: "/diagnosis/salon-only" },
+] as const;
 
 // ─── 하단 탭바 ────────────────────────────────────────────────────────────────
 
@@ -95,56 +129,62 @@ function Header() {
   );
 }
 
-// ─── 위젯 1: 오늘의 헤어 컨설팅 & 날씨 알림 ────────────────────────────────────
+// ─── 위젯 1: 상단 개인화 헤어 프로필 카드 ───────────────────────────────────────
 
-function WeatherConsultingWidget() {
+function HairProfileWidget() {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-[#EADFC5] bg-gradient-to-br from-[#FBF6EA] via-[#F8F1E1] to-[#EFD9AE] p-6 shadow-[0_12px_28px_-16px_rgba(200,169,106,0.55)]">
       <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/40 blur-2xl" />
 
-      <div className="relative flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#8A6D2F] backdrop-blur">
-          🌧️ 습도 78%
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-amber-700 backdrop-blur">
-          곱슬모 위험도 · 보통
-        </span>
+      <p className="relative text-[11px] font-semibold tracking-wide text-[#8A6D2F]">최근 진단 기준</p>
+      <h2 className="relative mt-1 text-[17px] font-bold tracking-tight text-[#2F2F2F]">
+        {userProfile.name}님의 헤어 프로필
+      </h2>
+
+      <div className="relative mt-3 flex flex-wrap gap-1.5">
+        {userProfile.hairTags.map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#8A6D2F] backdrop-blur"
+          >
+            #{tag}
+          </span>
+        ))}
       </div>
 
       <p className="relative mt-4 text-[15px] leading-relaxed text-[#2F2F2F]">
-        <span className="font-bold">지환</span>님, 오늘은 습도가 높아 곱슬모발은 정수리 부스스함이
-        올라올 수 있어요 🌧️
+        오늘은 습도가 높아 정수리와 앞머리 라인이 쉽게 무너질 수 있어요.
         <br />
-        무거운 오일보다는 가벼운 수분 픽싱 미스트를 추천해요.
+        무거운 오일보다는 가벼운 픽싱 미스트와 뿌리 볼륨 루틴을 추천해요.
       </p>
 
       <button
-        onClick={() => trackEvent("today_hair_check_click", { source: "home_weather_card" })}
+        onClick={() => trackEvent("profile_result_view", { source: "home_profile_card" })}
         className="relative mt-5 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(47,47,47,0.6)] transition-opacity active:opacity-80"
       >
-        오늘 헤어 체크하기
+        내 진단 결과 다시보기
       </button>
     </section>
   );
 }
 
-// ─── 위젯 2: 오늘케어 미션 & 데일리 루틴 ───────────────────────────────────────
+// ─── 위젯 2: 진단 기반 개인화 루틴 ──────────────────────────────────────────────
 
-function DailyMissionWidget() {
-  const [checked, setChecked] = useState<Record<MissionId, boolean>>({
-    dry_scalp: false,
-    tip_essence: false,
-    reverse_part_brush: false,
+function PersonalizedRoutineWidget() {
+  const [checked, setChecked] = useState<Record<RoutineStepId, boolean>>({
+    scalp_volume_dry: false,
+    tip_essence_light: false,
+    bangs_line_fixing: false,
   });
 
   const completedCount = Object.values(checked).filter(Boolean).length;
-  const total = DAILY_MISSIONS.length;
+  const total = PERSONALIZED_ROUTINE.length;
   const progress = (completedCount / total) * 100;
 
-  const toggleMission = (id: MissionId) => {
+  const toggleStep = (id: RoutineStepId) => {
     setChecked((prev) => {
       const nextChecked = !prev[id];
-      trackEvent("diary_checkin", { stepId: id, checked: nextChecked, source: "home_daily_routine" });
+      trackEvent("diary_checkin", { stepId: id, checked: nextChecked, source: "home_personalized_routine" });
       return { ...prev, [id]: nextChecked };
     });
   };
@@ -152,7 +192,9 @@ function DailyMissionWidget() {
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">오늘의 홈케어 미션</h2>
+        <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">
+          오늘 {userProfile.name}님에게 맞는 루틴
+        </h2>
         <span className="text-xs font-semibold text-[#C8A96A]">
           {total}개 중 {completedCount}개 완료
         </span>
@@ -171,12 +213,12 @@ function DailyMissionWidget() {
       </div>
 
       <ul className="mt-5 space-y-3.5">
-        {DAILY_MISSIONS.map((mission) => {
-          const isChecked = checked[mission.id];
+        {PERSONALIZED_ROUTINE.map((step) => {
+          const isChecked = checked[step.id];
           return (
-            <li key={mission.id}>
+            <li key={step.id}>
               <button
-                onClick={() => toggleMission(mission.id)}
+                onClick={() => toggleStep(step.id)}
                 className="flex w-full items-start gap-3 text-left"
               >
                 <span
@@ -195,7 +237,7 @@ function DailyMissionWidget() {
                     isChecked ? "text-gray-400 line-through opacity-60" : "text-[#2F2F2F]"
                   }`}
                 >
-                  {mission.label}
+                  {step.label}
                 </span>
               </button>
             </li>
@@ -206,50 +248,78 @@ function DailyMissionWidget() {
   );
 }
 
-// ─── 위젯 3: 오늘의 발견템 ─────────────────────────────────────────────────────
+// ─── 위젯 3: 진단 기반 발견템 ───────────────────────────────────────────────────
 
-function DiscoveryItemWidget() {
+function PersonalizedDiscoveryWidget() {
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-      <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">🤫 조용히 알려드릴게요</p>
-      <h2 className="mt-1 text-[17px] font-bold tracking-tight text-[#2F2F2F]">너만 알면 좋은 비밀템</h2>
+      <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">{userProfile.lastDiagnosis} 결과 기반</p>
+      <h2 className="mt-1 text-[17px] font-bold tracking-tight text-[#2F2F2F]">
+        {userProfile.name}님 진단 기반 발견템
+      </h2>
 
       <div className="mt-4 flex gap-3.5">
         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FBF6EA] to-[#E8D4A0]">
           <span className="text-2xl">✨</span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#2F2F2F]">앞머리 픽싱 마스카라</p>
+          <p className="text-sm font-bold text-[#2F2F2F]">{recommendedItem.name}</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
-            {["앞머리 갈라짐", "정수리 처짐", "비 오는 날 추천"].map((tag) => (
-              <span key={tag} className="rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
-                이럴 때 · {tag}
+            {recommendedItem.badges.map((badge) => (
+              <span key={badge} className="rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
+                #{badge}
               </span>
             ))}
           </div>
         </div>
       </div>
 
-      <p className="mt-4 text-[13px] leading-relaxed text-[#6B7280]">
-        오후만 되면 앞머리가 갈라지는 분들에게 살짝 귀띔해드리는, 가볍게 고정감을 주는 아이템이에요.
-      </p>
+      <p className="mt-4 text-[13px] leading-relaxed text-[#6B7280]">{recommendedItem.reason}</p>
 
       <button
         onClick={() =>
-          trackEvent("product_card_view", { productId: "fixing_mascara_001", source: "home_discovery_item" })
+          trackEvent("product_card_view", {
+            productId: recommendedItem.id,
+            matchedTags: recommendedItem.matchedTags,
+            source: "home_personalized_item",
+          })
         }
         className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3.5 text-sm font-semibold text-[#8A6D2F] transition-colors active:bg-[#F3E9D2]"
       >
-        왜 필요한지 살짝 보기 →
+        왜 나에게 필요한지 보기 →
       </button>
     </section>
   );
 }
 
-// ─── 위젯 4: 나와 비슷한 고민상담소 ─────────────────────────────────────────────
+// ─── 위젯 4: AI 진단 허브 미리보기 ──────────────────────────────────────────────
+
+function DiagnosisHubWidget() {
+  return (
+    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">다른 진단도 해볼까요?</h2>
+      <p className="mt-1 text-xs text-[#6B7280]">진단이 쌓일수록 발견템 추천이 더 정확해져요.</p>
+
+      <div className="mt-4 grid grid-cols-2 gap-2.5">
+        {DIAGNOSIS_HUB_ITEMS.map((item) => (
+          <Link
+            key={item.type}
+            href={item.href}
+            onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: item.type, source: "home_diagnosis_hub" })}
+            className="flex min-h-[64px] items-center rounded-xl border border-gray-100 bg-[#F9FAFB] px-3.5 py-3 text-[13px] font-semibold leading-snug text-[#2F2F2F] transition-colors active:bg-[#F3E9D2]"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── 위젯 5: 나와 비슷한 고민상담소 ─────────────────────────────────────────────
 
 function ConsultSnackWidget() {
-  const QUESTION_ID = "perm_drop_001";
+  const QUESTION_ID = "bangs_rainy_day_001";
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(128);
 
@@ -267,9 +337,10 @@ function ConsultSnackWidget() {
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">나와 비슷한 고민상담소</h2>
+      <p className="mt-1 text-xs text-[#6B7280]">나처럼 습도 높은 날 앞머리가 갈라지는 분들이 많이 묻는 질문</p>
 
       <p className="mt-4 rounded-xl bg-[#F9FAFB] px-4 py-3.5 text-sm leading-relaxed text-[#2F2F2F]">
-        “펌 한 지 2주 됐는데 벌써 처지는 느낌이에요. 정상인가요?”
+        “비 오는 날만 되면 앞머리가 갈라지고 정수리가 처져요. 제품 문제일까요?”
       </p>
 
       <div className="mt-3.5 flex items-center gap-2">
@@ -292,23 +363,25 @@ function ConsultSnackWidget() {
   );
 }
 
-// ─── 위젯 5: 1분 퀵 진단 배너 ──────────────────────────────────────────────────
+// ─── 위젯 6: 1분 퀵 진단 배너 (보조 CTA, 맨 아래) ───────────────────────────────
 
 function QuickDiagnosisBanner() {
   return (
     <Link
-      href="/diagnosis"
+      href="/diagnosis/salon-only"
       onClick={() =>
-        trackEvent("quick_diagnosis_start", { diagnosisType: "shampoo_scalp", source: "home_quick_banner" })
+        trackEvent("quick_diagnosis_start", { diagnosisType: "salon_only", source: "home_quick_banner" })
       }
-      className="block rounded-2xl border border-gray-100 bg-gradient-to-br from-[#2F2F2F] to-[#4A4A4A] p-6 shadow-sm"
+      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm"
     >
-      <p className="text-[16px] font-bold leading-snug tracking-tight text-white">
-        내 샴푸가 두피를 망치고 있진 않을까?
-      </p>
-      <p className="mt-1.5 text-xs text-white/60">3문항 퀵 진단으로 바로 확인해보세요.</p>
-      <span className="mt-5 inline-flex items-center gap-1 rounded-xl bg-[#C8A96A] px-4 py-2.5 text-sm font-semibold text-[#2F2F2F]">
-        1분 진단 시작
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold text-[#C8A96A]">아직 안 해본 진단이 있어요</p>
+        <p className="mt-0.5 text-[13px] font-semibold leading-snug text-[#2F2F2F]">
+          내 머리가 미용실에서만 예쁜 이유, 3문항으로 확인하기
+        </p>
+      </div>
+      <span className="shrink-0 rounded-lg bg-[#2F2F2F] px-3.5 py-2.5 text-xs font-semibold text-white">
+        퀵 진단 시작
       </span>
     </Link>
   );
@@ -322,9 +395,10 @@ export default function HomePage() {
       <div className="mx-auto min-h-screen max-w-[430px] pb-28">
         <Header />
         <main className="space-y-5 px-5 py-6">
-          <WeatherConsultingWidget />
-          <DailyMissionWidget />
-          <DiscoveryItemWidget />
+          <HairProfileWidget />
+          <PersonalizedRoutineWidget />
+          <PersonalizedDiscoveryWidget />
+          <DiagnosisHubWidget />
           <ConsultSnackWidget />
           <QuickDiagnosisBanner />
         </main>
