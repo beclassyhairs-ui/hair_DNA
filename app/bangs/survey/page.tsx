@@ -9,7 +9,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY } from "../constants";
+import { BANGS_SURVEY_KEY } from "../constants";
 import {
   SURVEY_QUESTIONS,
   type BangsSurveyAnswers,
@@ -54,7 +54,6 @@ export default function BangsSurveyPage() {
       setPending(false);
       if (isLast) {
         try { sessionStorage.setItem(BANGS_SURVEY_KEY, JSON.stringify(newAnswers)); } catch { /**/ }
-        try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, newAnswers.qFaceShape); } catch { /**/ }
         router.push("/bangs/result");
       } else {
         setDir(1);

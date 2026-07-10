@@ -28,7 +28,8 @@ export type Q3MidfaceConcern =
 
 export type Q4JawConcern =
   | "round_jaw"    // 둥글거나 통통한 볼살
-  | "angular_jaw"  // 각지거나 뾰족한 턱선
+  | "angular_jaw"  // 각진 턱선
+  | "pointed_jaw"  // 뾰족한 V라인 · 좁은 턱끝
   | "none";        // 특별한 고민 없음
 
 export type Q5HairTexture =
@@ -71,14 +72,20 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     no: "Q1",
     stepTag: "얼굴형",
     title: "내 얼굴형은 어떠신가요?",
-    hint: "가장 비슷한 얼굴형을 골라주세요",
+    hint: "정확히 몰라도 괜찮아요. 뒤 질문에서 이마·광대·턱선을 함께 보고 보정해드릴게요.",
     options: [
-      { id: "oval",   icon: "◯", label: "계란형",          desc: "이마와 턱선이 부드럽고 갸름한 라인" },
-      { id: "round",  icon: "●", label: "둥근형",          desc: "양 볼에 살이 있어 전체적으로 둥근 느낌" },
-      { id: "square", icon: "◆", label: "각진형",          desc: "턱 각이 살아있고 하관이 발달한 느낌" },
-      { id: "oblong", icon: "▮", label: "긴 얼굴형",       desc: "가로보다 세로 비율이 긴 갸름한 느낌" },
-      { id: "heart",  icon: "▽", label: "역삼각형/하트형", desc: "이마가 넓고 턱끝이 뾰족한 느낌" },
-      { id: "peanut", icon: "◇", label: "땅콩형",          desc: "광대가 부각되고 관자놀이나 볼이 들어가서 울퉁불퉁한 라인" },
+      { id: "oval",   icon: "◯", label: "계란형",
+        desc: "이마 끝, 광대, 턱끝이 부드럽게 이어지는 갸름한 라인. 어디 하나 튀지 않고 전체적으로 매끈해요." },
+      { id: "round",  icon: "●", label: "둥근형",
+        desc: "양 볼과 턱선에 살이 있어 가로 폭이 넓게 느껴져요. 광대보다 볼살이 먼저 눈에 들어와요." },
+      { id: "square", icon: "◆", label: "각진형",
+        desc: "턱 끝보다 턱 '각'이 뚜렷하게 잡혀요. 하관이 넓고 단단한 느낌이에요." },
+      { id: "oblong", icon: "▮", label: "긴 얼굴형",
+        desc: "가로 폭보다 세로 길이가 확실히 길게 느껴져요. 이마부터 턱까지 시원한 느낌이에요." },
+      { id: "heart",  icon: "▽", label: "역삼각형/하트형",
+        desc: "이마·관자놀이 쪽은 넓은데 턱 끝으로 갈수록 좁아져요. 턱끝이 갸름하고 뾰족한 편이에요." },
+      { id: "peanut", icon: "◇", label: "땅콩형",
+        desc: "광대 부분이 도드라지고 관자놀이나 볼 중간이 살짝 들어가 옆에서 보면 굴곡이 느껴져요." },
     ],
   },
   // ── Q2: 현재 스타일 ──────────────────────────────────────────────────────────
@@ -128,9 +135,10 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "턱선 주변의 특징은?",
     hint: "롱 뱅 vs 짧은 뱅 처방 방향이 달라져요",
     options: [
-      { id: "round_jaw",   icon: "⭕", label: "둥글거나 통통한 볼살",  desc: "볼살이 있거나 턱이 둥글어요" },
-      { id: "angular_jaw", icon: "◇",  label: "각지거나 뾰족한 턱선", desc: "하관이 각지거나 턱이 뾰족해요" },
-      { id: "none",        icon: "✓",  label: "특별한 고민 없음",     desc: "턱 쪽은 괜찮아요", isNone: true },
+      { id: "round_jaw",   icon: "⭕", label: "둥근 턱 · 볼살형",         desc: "볼살이 있거나 턱이 둥글어요" },
+      { id: "angular_jaw", icon: "◇",  label: "각진 턱선",               desc: "하관이 각지고 턱 라인이 뚜렷해요" },
+      { id: "pointed_jaw", icon: "▽",  label: "뾰족한 V라인 · 좁은 턱끝", desc: "턱끝이 좁고 갸름하게 모여요" },
+      { id: "none",        icon: "✓",  label: "특별한 고민 없음",         desc: "턱 쪽은 괜찮아요", isNone: true },
     ],
   },
   // ── Q6: 모질 — 커머스 매칭용 ────────────────────────────────────────────────

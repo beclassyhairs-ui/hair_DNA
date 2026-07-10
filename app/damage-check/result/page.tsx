@@ -17,6 +17,7 @@ import { diagnoseDamage, type DamageResult } from "../damageRecommend";
 import type { DamageSurveyAnswers } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
+import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 
 const LANDING_ID = "damage_check";
 
@@ -90,37 +91,23 @@ export default function DamageCheckResultPage() {
 
   function handleSaveAndGoHome() {
     try {
-      localStorage.setItem(
-        "abeauty_user_profile",
-        JSON.stringify({
-          name: "고객",
-          hairTags: result.concernTags,
-          lastDiagnosis: "손상도 자가진단",
-          lastDiagnosisDate: "오늘",
-          mainConcern: result.headline,
-        }),
-      );
-    } catch { /**/ }
-
-    try {
-      const entry = {
+      appendDiaryEntry({
         id: uid(),
-        kind: "damage" as const,
+        kind: "damage",
         savedAt: Date.now(),
         resultCode: result.resultCode,
         levelLabel: result.level.label,
         typeLabel: result.typeInfo.label,
         headline: result.headline,
         concernTags: result.concernTags,
+        hairTags: result.concernTags,
+        diagnosisSummary: result.headline,
         product: result.typeInfo.products[0],
-      };
-      let arr: unknown[] = [];
-      try {
-        const raw = localStorage.getItem("abeauty:diaryEntries");
-        if (raw) arr = JSON.parse(raw);
-      } catch { /**/ }
-      arr.unshift(entry);
-      localStorage.setItem("abeauty:diaryEntries", JSON.stringify(arr));
+      });
+      // diaryEntries 전체를 다시 읽어 우선순위(style>damage>bangs>hairquiz) 기반으로
+      // profile을 재생성 — /style 태그가 있으면 그 앞자리를 유지한 채 damage 태그가
+      // 뒤에 추가된다.
+      refreshBeautyUserProfileFromDiary();
     } catch { /**/ }
 
     setSaved(true);

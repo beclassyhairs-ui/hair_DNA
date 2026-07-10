@@ -70,10 +70,30 @@ interface DamageDiaryEntry {
   product:     { emoji: string; name: string; description: string; link: string };
 }
 
-type AnyEntry = DiaryEntry | DamageDiaryEntry;
+// /bangs 결과지가 저장하는 판별자 붙은 엔트리 — 얼굴형/bangStyle 진단 전용 스키마.
+interface BangsDiaryEntry {
+  id:                 string;
+  kind:               "bangs";
+  savedAt:            number;
+  resultId:           string;
+  finalFaceShape:     string;
+  faceMatchStatus:    "matched" | "partial" | "adjusted";
+  primaryBangLabel:   string;
+  secondaryBangLabel: string;
+  concernTags:        string[];
+  hairTextureTag:     string;
+  diagnosisSummary:   string;
+  resultImages?:      { label: string; url: string }[]; // 사진첩용 — 파일 없으면 카드가 폴백 처리
+}
+
+type AnyEntry = DiaryEntry | DamageDiaryEntry | BangsDiaryEntry;
 
 function isDamageEntry(entry: AnyEntry): entry is DamageDiaryEntry {
   return (entry as DamageDiaryEntry).kind === "damage";
+}
+
+function isBangsEntry(entry: AnyEntry): entry is BangsDiaryEntry {
+  return (entry as BangsDiaryEntry).kind === "bangs";
 }
 
 // ─── 이미지 모달 ─────────────────────────────────────────────────────────────
@@ -308,6 +328,84 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
   );
 }
 
+// ─── 인생앞머리 진단 다이어리 카드 ────────────────────────────────────────────
+
+// 사진첩 썸네일 — 파일이 없을 수 있으므로 로드 실패 시 깨진 이미지 대신 이모지로 폴백
+function DiaryImageThumb({ label, url }: { label: string; url: string }) {
+  const [imgOk, setImgOk] = useState(true);
+  return (
+    <div className="relative aspect-[3/4] flex-1 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(200,168,107,0.15)" }}>
+      {imgOk ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={label} className="h-full w-full object-cover" onError={() => setImgOk(false)} />
+      ) : (
+        <div className="flex h-full flex-col items-center justify-center gap-1" style={{ background: "rgba(200,168,107,0.05)" }}>
+          <span className="text-xl">💇</span>
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 px-1.5 py-1" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
+        <p className="truncate text-[9px] font-semibold text-white/90">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: number }) {
+  const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  const matchLabel = { matched: "얼굴형 신호 일치", partial: "얼굴형 신호 일부 반영", adjusted: "얼굴형 보정 적용" }[entry.faceMatchStatus];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: index * 0.07 }}
+      className="overflow-hidden rounded-2xl"
+      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
+      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+              인생앞머리 · {matchLabel}
+            </p>
+            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+              {entry.primaryBangLabel}
+            </p>
+          </div>
+          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+        </div>
+
+        <p className="px-4 pb-2 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+          {entry.diagnosisSummary}
+        </p>
+        <p className="px-4 pb-3 text-[11px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+          함께 고려한 스타일: {entry.secondaryBangLabel}
+        </p>
+
+        {entry.resultImages && entry.resultImages.length > 0 && (
+          <div className="flex gap-2 px-4 pb-3">
+            {entry.resultImages.map((img) => (
+              <DiaryImageThumb key={img.url} label={img.label} url={img.url} />
+            ))}
+          </div>
+        )}
+
+        {(entry.concernTags.length > 0 || entry.hairTextureTag) && (
+          <div className="flex flex-wrap gap-1.5 px-4 pb-4">
+            {[...entry.concernTags, entry.hairTextureTag].map((tag) => (
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function MyDiaryPage() {
@@ -396,6 +494,8 @@ export default function MyDiaryPage() {
               {entries.map((entry, i) =>
                 isDamageEntry(entry) ? (
                   <DamageDiaryCard key={entry.id} entry={entry} index={i} />
+                ) : isBangsEntry(entry) ? (
+                  <BangsDiaryCard key={entry.id} entry={entry} index={i} />
                 ) : (
                   <DiaryCard
                     key={entry.id}

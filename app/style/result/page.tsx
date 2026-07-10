@@ -25,9 +25,7 @@ import {
 } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { trackEvent } from "../../../lib/trackEvent";
-
-// ─── 진단 결과 → /home 개인화 프로필 매핑 ────────────────────────────────────
-const USER_PROFILE_KEY = "abeauty_user_profile";
+import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
@@ -148,12 +146,14 @@ function KakaoSaveModal({
     try {
       const generatedImageUrl = sessionStorage.getItem(STYLE_GENERATED_KEY) ?? null;
       const id = uid();
+      const hairTags = buildHairTags(answers);
       const entry = {
         id,
         answers,
         styleName,
         savedAt:           Date.now(),
         generatedImageUrl,
+        hairTags, // 통합 프로필(abeauty_user_profile) 재생성용 — /style은 1순위라 이 태그가 가장 앞에 옴
         isSevereDamage:    answers.q10_history_count === "count_7plus",
         isLowDensity:      answers.q8_density === "thin_density",
         isFineHair:        answers.q7_thickness === "fine",
@@ -171,11 +171,10 @@ function KakaoSaveModal({
       localStorage.setItem("abeauty:diaryEntries", JSON.stringify(arr));
       // 최신 진단 단일 키도 유지 (하위 호환)
       localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify(entry));
-      // /home 대시보드가 읽어갈 개인화 프로필
-      localStorage.setItem(
-        USER_PROFILE_KEY,
-        JSON.stringify({ name: "고객", hairTags: buildHairTags(answers) }),
-      );
+      // diaryEntries 전체를 우선순위(style>damage>bangs>hairquiz) 기반으로 다시 합산해
+      // /home 대시보드가 읽는 abeauty_user_profile을 재생성 — /style은 1순위라 항상
+      // 태그 맨 앞자리를 유지한다.
+      refreshBeautyUserProfileFromDiary();
     } catch { /**/ }
     trackEvent("save_result_go_home", { source: "diagnosis_result_page" });
     router.push("/home");
