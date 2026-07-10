@@ -18,7 +18,7 @@ export default function BangsLandingPage() {
   }, []);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-between overflow-hidden bg-[#0E0D0C] px-6 py-10 text-cream">
+    <main className="relative mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-between overflow-hidden bg-[#F9FAFB] px-6 py-10 text-[#2F2F2F]">
 
       {/* 배경 장식: 미세한 그리드 라인 */}
       <div
@@ -84,7 +84,7 @@ export default function BangsLandingPage() {
         </motion.div>
 
         {/* 헤드라인 */}
-        <h1 className="font-serif text-[2.3rem] font-bold leading-[1.15] tracking-tight text-cream">
+        <h1 className="font-serif text-[2.3rem] font-bold leading-[1.15] tracking-tight text-[#2F2F2F]">
           AI가 찾아주는
           <br />
           <span
@@ -94,7 +94,7 @@ export default function BangsLandingPage() {
             내 인생 앞머리
           </span>
         </h1>
-        <p className="mt-5 text-base leading-relaxed text-cream/50">
+        <p className="mt-5 text-base leading-relaxed text-[#6B7280]">
           5초 만에 나의 얼굴 윤곽과 콤플렉스를 분석하여<br />완벽한 앞머리를 처방받으세요.
         </p>
       </motion.div>
@@ -118,7 +118,7 @@ export default function BangsLandingPage() {
             <span className="text-charcoal/60">→</span>
           </span>
         </Link>
-        <p className="mt-3 text-center text-[11px] text-cream/18">
+        <p className="mt-3 text-center text-[11px] text-[#9CA3AF]">
           개인정보 미저장 · 결과는 디바이스에만 보관됩니다
         </p>
       </motion.div>

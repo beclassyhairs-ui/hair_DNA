@@ -218,11 +218,11 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.5 }}
-          className="font-serif text-4xl font-bold leading-tight text-cream"
+          className="font-serif text-4xl font-bold leading-tight text-[#2F2F2F]"
         >
           퍼스널 헤어
           <br />
-          <span className="bg-gradient-to-r from-rose-400 via-fuchsia-400 to-violet-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-gold-light via-gold to-gold-dark bg-clip-text text-transparent">
             MBTI 테스트
           </span>
         </motion.h1>
@@ -231,23 +231,23 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mt-4 text-base leading-relaxed text-cream/60"
+          className="mt-4 text-base leading-relaxed text-[#6B7280]"
         >
           나의 평소 관리 습관과 미용실 성향으로
           <br />
-          <strong className="text-cream/90">알아보는 헤어 MBTI</strong>
+          <strong className="text-[#2F2F2F]">알아보는 헤어 MBTI</strong>
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mt-7 flex items-center gap-4 text-sm text-cream/35"
+          className="mt-7 flex items-center gap-4 text-sm text-[#9CA3AF]"
         >
           <span>⏱ 약 1분 소요</span>
-          <span className="h-3 w-px bg-white/10" />
+          <span className="h-3 w-px bg-gray-200" />
           <span>📊 12문항</span>
-          <span className="h-3 w-px bg-white/10" />
+          <span className="h-3 w-px bg-gray-200" />
           <span>🎯 16가지 결과</span>
         </motion.div>
 
@@ -257,7 +257,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           transition={{ delay: 0.4, duration: 0.45 }}
           onClick={onStart}
           whileTap={{ scale: 0.97 }}
-          className="mt-8 w-full rounded-2xl bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 py-5 text-lg font-bold text-white shadow-[0_8px_32px_rgba(168,85,247,0.35)] transition-all hover:brightness-110 active:scale-[0.98]"
+          className="mt-8 w-full rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark py-5 text-lg font-bold text-charcoal shadow-[0_8px_28px_rgba(200,168,107,0.35)] transition-all hover:brightness-110 active:scale-[0.98]"
         >
           내 헤어 MBTI 찾기 →
         </motion.button>
@@ -268,7 +268,7 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
           transition={{ delay: 0.5 }}
           className="mt-4"
         >
-          <Link href="/" className="text-sm text-cream/30 hover:text-cream/60 transition-colors">
+          <Link href="/" className="text-sm text-[#9CA3AF] hover:text-[#6B7280] transition-colors">
             메인으로 돌아가기
           </Link>
         </motion.div>
@@ -344,7 +344,7 @@ export default function MbtiPage() {
   }
 
   return (
-    <main className="min-h-screen bg-charcoal text-cream">
+    <main className="mx-auto max-w-[430px] min-h-screen bg-[#F9FAFB] text-[#2F2F2F]">
       <AnimatePresence mode="wait">
         {!started && (
           <IntroScreen key="intro" onStart={handleStart} />
@@ -358,15 +358,15 @@ export default function MbtiPage() {
             className="flex min-h-screen flex-col"
           >
             {/* 헤더 + 프로그레스 바 */}
-            <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-charcoal/90 backdrop-blur-md">
-              <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-4">
+            <header className="sticky top-0 z-20 border-b border-gray-100 bg-[#F9FAFB]/90 backdrop-blur-md">
+              <div className="mx-auto w-full max-w-[430px] px-5 pb-3 pt-4">
                 <div className="mb-3 flex items-center justify-between">
                   <button
                     onClick={handleBack}
                     className={`text-sm font-medium transition-all ${
                       index === 0 || pending
                         ? "pointer-events-none opacity-0"
-                        : "text-cream/50 hover:text-cream"
+                        : "text-[#6B7280] hover:text-[#2F2F2F]"
                     }`}
                   >
                     ← 이전
@@ -374,15 +374,15 @@ export default function MbtiPage() {
                   <span className="text-xs font-semibold tracking-[0.22em] uppercase text-gold">
                     헤어 MBTI
                   </span>
-                  <span className="tabular-nums text-sm text-cream/40">
+                  <span className="tabular-nums text-sm text-[#6B7280]">
                     {index + 1}
-                    <span className="text-cream/20"> / </span>
+                    <span className="text-[#9CA3AF]"> / </span>
                     {MBTI_QUESTIONS.length}
                   </span>
                 </div>
-                <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-white/[0.08]">
+                <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-gray-100">
                   <motion.div
-                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-rose-400 via-fuchsia-500 to-violet-500"
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-gold-light via-gold to-gold-dark"
                     animate={{ width: `${Math.max(progressPct, 3)}%` }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                   />
@@ -391,7 +391,7 @@ export default function MbtiPage() {
             </header>
 
             {/* 질문 영역 */}
-            <div className="flex flex-1 flex-col justify-center px-5 py-10 mx-auto w-full max-w-lg">
+            <div className="flex flex-1 flex-col justify-center px-5 py-10 mx-auto w-full max-w-[430px]">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={q.id}
@@ -414,7 +414,7 @@ export default function MbtiPage() {
                     >
                       {q.emoji}
                     </motion.div>
-                    <h2 className="font-serif text-[1.55rem] font-semibold leading-snug text-cream whitespace-pre-line">
+                    <h2 className="font-serif text-[1.55rem] font-semibold leading-snug text-[#2F2F2F] whitespace-pre-line">
                       {q.text}
                     </h2>
                   </div>
@@ -425,7 +425,7 @@ export default function MbtiPage() {
                     <OptionButton choice="B" option={q.b} pending={pending} onSelect={() => handleSelect("B")} />
                   </div>
 
-                  <p className="text-center text-sm text-cream/25">
+                  <p className="text-center text-sm text-[#9CA3AF]">
                     선택하면 자동으로 다음 질문으로 넘어가요
                   </p>
                 </motion.div>
@@ -460,25 +460,25 @@ function OptionButton({
       disabled={pending !== null}
       className={`w-full text-left rounded-2xl border px-5 py-5 transition-all duration-200 ${
         isSelected
-          ? "border-transparent bg-gradient-to-r from-rose-500 via-fuchsia-500 to-violet-500 shadow-[0_0_28px_rgba(168,85,247,0.4)]"
+          ? "border-transparent bg-gradient-to-r from-gold-light via-gold to-gold-dark shadow-[0_0_28px_rgba(200,168,107,0.4)]"
           : isDimmed
-          ? "border-white/[0.05] bg-white/[0.02] opacity-35"
-          : "border-white/[0.11] bg-white/[0.05] hover:border-fuchsia-500/40 hover:bg-white/[0.09]"
+          ? "border-gray-100 bg-white opacity-40"
+          : "border-gray-100 bg-white shadow-sm hover:border-gold/40 hover:bg-[#FBF6EA]"
       }`}
     >
       <div className="flex items-start gap-4">
         <span
           className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-sm font-bold transition-colors ${
-            isSelected ? "bg-white/25 text-white" : "bg-white/[0.09] text-cream/55"
+            isSelected ? "bg-charcoal/10 text-charcoal" : "bg-gray-100 text-[#6B7280]"
           }`}
         >
           {choice}
         </span>
         <div className="min-w-0 flex-1 pt-0.5">
-          <p className={`text-[1.0625rem] font-semibold leading-snug ${isSelected ? "text-white" : "text-cream"}`}>
+          <p className={`text-[1.0625rem] font-semibold leading-snug ${isSelected ? "text-charcoal" : "text-[#2F2F2F]"}`}>
             {option.label}
           </p>
-          <p className={`mt-1.5 text-sm ${isSelected ? "text-white/65" : "text-cream/40"}`}>
+          <p className={`mt-1.5 text-sm ${isSelected ? "text-charcoal/70" : "text-[#6B7280]"}`}>
             {option.hint}
           </p>
         </div>

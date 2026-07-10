@@ -11,20 +11,34 @@
 // 필드명을 실제 스키마에 맞춰뒀다.
 // ============================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
 import { trackEvent } from "../../lib/trackEvent";
 
-// ─── mock 유저 데이터 (실 연동 전 — 카카오 로그인 세션 기준 저장된 진단 결과로 대체 예정) ──
+// ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
 
-const userProfile = {
+const DEFAULT_PROFILE = {
   name: "지환",
   hairTags: ["곱슬모", "정수리 부스스함", "앞머리 갈라짐", "볼륨 처짐"],
   lastDiagnosis: "AI 헤어 분석",
   lastDiagnosisDate: "오늘",
   mainConcern: "습도 높은 날 정수리와 앞머리 라인이 쉽게 무너짐",
 };
+
+// 결과지 페이지가 abeauty_user_profile 키로 저장한 진단 데이터를 읽어와 병합한다.
+function useUserProfile() {
+  const [profile, setProfile] = useState(DEFAULT_PROFILE);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("abeauty_user_profile");
+      if (raw) setProfile((prev) => ({ ...prev, ...JSON.parse(raw) }));
+    } catch { /**/ }
+  }, []);
+
+  return profile;
+}
 
 // ─── 개인화 데일리 루틴 데이터 (userProfile.hairTags 기반 추천 루틴 — 설문 아님) ──────
 
@@ -41,6 +55,7 @@ const PERSONALIZED_ROUTINE: { id: RoutineStepId; label: string }[] = [
 // ─── 위젯 1: 상단 개인화 헤어 프로필 카드 ───────────────────────────────────────
 
 function HairProfileWidget() {
+  const userProfile = useUserProfile();
   return (
     <section className="relative overflow-hidden rounded-2xl border border-[#EADFC5] bg-gradient-to-br from-[#FBF6EA] via-[#F8F1E1] to-[#EFD9AE] p-6 shadow-[0_12px_28px_-16px_rgba(200,169,106,0.55)]">
       <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/40 blur-2xl" />
@@ -56,7 +71,7 @@ function HairProfileWidget() {
             key={tag}
             className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#8A6D2F] backdrop-blur"
           >
-            #{tag}
+            {tag.startsWith("#") ? tag : `#${tag}`}
           </span>
         ))}
       </div>
@@ -80,6 +95,7 @@ function HairProfileWidget() {
 // ─── 위젯 2: 진단 기반 개인화 루틴 (+ 포인트 리워드 UI 뼈대) ───────────────────
 
 function PersonalizedRoutineWidget() {
+  const userProfile = useUserProfile();
   const [checked, setChecked] = useState<Record<RoutineStepId, boolean>>({
     scalp_volume_dry: false,
     tip_essence_light: false,

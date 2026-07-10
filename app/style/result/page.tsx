@@ -27,6 +27,19 @@ import {
 } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import AdBanner from "@/app/components/AdBanner";
+import { trackEvent } from "../../../lib/trackEvent";
+
+// ─── 진단 결과 → /home 개인화 프로필 매핑 ────────────────────────────────────
+const USER_PROFILE_KEY = "abeauty_user_profile";
+
+function buildHairTags(answers: StyleAnswers): string[] {
+  const tags: string[] = [];
+  if (answers.q10_history_count === "count_7plus") tags.push("#손상모");
+  if (answers.q8_density === "thin_density") tags.push("#볼륨처짐");
+  if (answers.q7_thickness === "fine") tags.push("#가는모");
+  if (answers.q3_curl === "curly_hair") tags.push("#곱슬모");
+  return tags.length > 0 ? tags : ["#건강모"];
+}
 
 // ─── 카카오 세션 헬퍼 ─────────────────────────────────────────────────────────
 function isKakaoLoggedIn(): boolean {
@@ -161,8 +174,14 @@ function KakaoSaveModal({
       localStorage.setItem("abeauty:diaryEntries", JSON.stringify(arr));
       // 최신 진단 단일 키도 유지 (하위 호환)
       localStorage.setItem("abeauty:savedDiagnosis", JSON.stringify(entry));
+      // /home 대시보드가 읽어갈 개인화 프로필
+      localStorage.setItem(
+        USER_PROFILE_KEY,
+        JSON.stringify({ name: "고객", hairTags: buildHairTags(answers) }),
+      );
     } catch { /**/ }
-    router.push("/my-diary");
+    trackEvent("save_result_go_home", { source: "diagnosis_result_page" });
+    router.push("/home");
   }
 
   async function handleSaveAndRoute() {
