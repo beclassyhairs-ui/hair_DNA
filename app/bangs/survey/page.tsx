@@ -1,15 +1,15 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 인생뱅 — 5문항 정밀 설문
-// 1문항씩 표시 · 350ms 자동 이동 · 50대 최적화 큰 글씨/버튼
+// 어뷰티 인생뱅 — 6문항 텍스트 전용 설문 (사진 촬영/업로드 단계 없음)
+// 1문항씩 표시 · 350ms 자동 이동 · 컴팩트 사이즈로 스크롤 없이 한 화면에 노출
 // ============================================================================
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { BANGS_SURVEY_KEY } from "../constants";
+import { BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY } from "../constants";
 import {
   SURVEY_QUESTIONS,
   type BangsSurveyAnswers,
@@ -18,7 +18,7 @@ import {
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 
 const LANDING_ID = "bang_test";
-const TOTAL = SURVEY_QUESTIONS.length; // 5
+const TOTAL = SURVEY_QUESTIONS.length; // 6
 
 const slideVariants = {
   enter:  (dir: number) => ({ opacity: 0, x: dir > 0 ? 64 : -64 }),
@@ -32,7 +32,7 @@ export default function BangsSurveyPage() {
   const [dir, setDir]         = useState(1);
   const [pending, setPending] = useState(false);
   const [answers, setAnswers] = useState<BangsSurveyAnswers>({
-    q1: "", q2: "", q3: "", q4: "", q5: "",
+    qFaceShape: "", q1: "", q2: "", q3: "", q4: "", q5: "",
   });
 
   const q = SURVEY_QUESTIONS[qIdx];
@@ -54,7 +54,8 @@ export default function BangsSurveyPage() {
       setPending(false);
       if (isLast) {
         try { sessionStorage.setItem(BANGS_SURVEY_KEY, JSON.stringify(newAnswers)); } catch { /**/ }
-        router.push("/bangs/upload");
+        try { sessionStorage.setItem(BANGS_FACESHAPE_KEY, newAnswers.qFaceShape); } catch { /**/ }
+        router.push("/bangs/result");
       } else {
         setDir(1);
         setQIdx((i) => i + 1);
@@ -69,32 +70,32 @@ export default function BangsSurveyPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-charcoal text-cream">
+    <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden bg-[#F9FAFB] text-[#2F2F2F]">
 
-      {/* ── 헤더: 5칸 진행 바 ── */}
-      <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-charcoal/90 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-[0.22em] text-gold">
+      {/* ── 헤더: 세그먼트 진행 바 ── */}
+      <header className="flex-none border-b border-gray-100 bg-[#F9FAFB]/95 backdrop-blur-md">
+        <div className="px-4 pb-2 pt-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
               인생뱅 · {q.stepTag}
             </span>
-            <span className="tabular-nums text-sm font-semibold text-cream/50">
+            <span className="tabular-nums text-xs font-semibold text-[#6B7280]">
               {qIdx + 1}
-              <span className="mx-1 text-cream/20">/</span>
+              <span className="mx-1 text-[#9CA3AF]">/</span>
               {TOTAL}
             </span>
           </div>
-          {/* 5칸 세그먼트 진행 바 */}
-          <div className="flex gap-1.5">
+          {/* 세그먼트 진행 바 */}
+          <div className="flex gap-1">
             {Array.from({ length: TOTAL }).map((_, i) => (
               <motion.div
                 key={i}
-                className={`h-2.5 flex-1 rounded-full transition-colors duration-300 ${
+                className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
                   i < qIdx
                     ? "bg-gold-dark"
                     : i === qIdx
                     ? "bg-gold"
-                    : "bg-white/10"
+                    : "bg-gray-100"
                 }`}
                 animate={{ scaleY: i === qIdx ? 1.18 : 1 }}
                 transition={{ duration: 0.2 }}
@@ -105,7 +106,7 @@ export default function BangsSurveyPage() {
       </header>
 
       {/* ── 질문 본문 ── */}
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5">
+      <div className="flex flex-1 flex-col overflow-y-auto px-4">
         <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={q.qKey}
@@ -115,23 +116,23 @@ export default function BangsSurveyPage() {
             animate="center"
             exit="exit"
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-1 flex-col py-9"
+            className="flex flex-1 flex-col justify-center py-4"
           >
             {/* 질문 헤더 */}
-            <div className="mb-8">
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.22em] text-gold">
+            <div className="mb-3">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
                 {q.no}
               </p>
-              <h2 className="font-serif text-[1.85rem] font-bold leading-snug text-cream">
+              <h2 className="font-serif text-lg font-bold leading-snug text-[#2F2F2F]">
                 {q.title}
               </h2>
               {q.hint && (
-                <p className="mt-2 text-base leading-relaxed text-cream/55">{q.hint}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">{q.hint}</p>
               )}
             </div>
 
             {/* 선택지 */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {q.options.map((opt) => {
                 const isSel   = answers[q.qKey] === opt.id;
                 const isNone  = Boolean(opt.isNone);
@@ -142,22 +143,22 @@ export default function BangsSurveyPage() {
                     onClick={() => handleSelect(opt)}
                     disabled={pending}
                     whileTap={{ scale: 0.985 }}
-                    className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-3.5 text-left transition-all duration-200 ${
+                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-left transition-all duration-200 ${
                       isSel
-                        ? "border-gold bg-gold/10 shadow-[0_2px_20px_rgba(200,168,107,0.28)]"
+                        ? "border-gold bg-gold/10 shadow-[0_2px_16px_rgba(200,168,107,0.22)]"
                         : isNone
-                        ? "border-white/[0.07] bg-white/[0.03] hover:border-white/15"
-                        : "border-white/[0.1] bg-white/[0.05] hover:border-gold/40 hover:bg-white/[0.08]"
+                        ? "border-gray-100 bg-white hover:border-gray-200"
+                        : "border-gray-100 bg-white shadow-sm hover:border-gold/40 hover:bg-[#FBF6EA]"
                     }`}
                   >
                     {/* 아이콘 */}
                     <span
-                      className={`flex h-10 w-10 flex-none items-center justify-center rounded-xl text-xl transition-colors ${
+                      className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-base transition-colors ${
                         isSel
                           ? "bg-gold-dark text-charcoal"
                           : isNone
-                          ? "bg-white/[0.07] text-cream/40"
-                          : "bg-white/10 text-cream/70"
+                          ? "bg-gray-100 text-[#9CA3AF]"
+                          : "bg-gray-100 text-[#6B7280]"
                       }`}
                     >
                       {opt.icon}
@@ -166,15 +167,15 @@ export default function BangsSurveyPage() {
                     {/* 텍스트 */}
                     <span className="flex-1">
                       <span
-                        className={`block font-bold leading-snug text-base ${
-                          isSel ? "text-gold-light" : isNone ? "text-cream/45" : "text-cream"
+                        className={`block font-bold leading-snug text-sm ${
+                          isSel ? "text-gold-dark" : isNone ? "text-[#9CA3AF]" : "text-[#2F2F2F]"
                         }`}
                       >
                         {opt.label}
                       </span>
                       <span
-                        className={`mt-0.5 block text-sm ${
-                          isSel ? "text-cream/70" : "text-cream/40"
+                        className={`mt-0.5 block text-xs text-gray-500 ${
+                          isSel ? "text-gray-600" : ""
                         }`}
                       >
                         {opt.desc}
@@ -183,7 +184,7 @@ export default function BangsSurveyPage() {
 
                     {/* 선택 체크 */}
                     {isSel && (
-                      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 flex-none text-gold">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 flex-none text-gold">
                         <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
@@ -196,25 +197,25 @@ export default function BangsSurveyPage() {
       </div>
 
       {/* ── 하단 네비게이션 ── */}
-      <div className="sticky bottom-0 border-t border-white/[0.07] bg-charcoal/95 px-5 py-4 pb-8 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-lg gap-3">
+      <div className="flex-none border-t border-gray-100 bg-white/95 px-4 py-3 backdrop-blur-md">
+        <div className="flex gap-2.5">
           {qIdx > 0 ? (
             <button
               onClick={goBack}
               disabled={pending}
-              className="flex h-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] px-8 text-lg font-medium text-cream/55 transition-colors hover:text-cream disabled:opacity-40"
+              className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-[#6B7280] transition-colors hover:text-[#2F2F2F] disabled:opacity-40"
             >
               ← 이전
             </button>
           ) : (
             <a
               href="/bangs"
-              className="flex h-16 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] px-8 text-lg font-medium text-cream/55 transition-colors hover:text-cream"
+              className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-[#6B7280] transition-colors hover:text-[#2F2F2F]"
             >
               나가기
             </a>
           )}
-          <div className="flex h-16 flex-1 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.03] text-base text-cream/25">
+          <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 text-xs text-[#9CA3AF]">
             선택하면 자동으로 넘어가요
           </div>
         </div>
