@@ -9,7 +9,6 @@ import { BANGS_PHOTO_KEY, BANGS_FACESHAPE_KEY, BANGS_SURVEY_KEY, BANGS_LANDMARKS
 import {
   FACE_SHAPE_INFO,
   recommendBang,
-  getProductRecommendation,
   type FaceShapeKey,
   type FaceShapeInfo,
   type BangType,
@@ -448,7 +447,6 @@ export default function BangsResultPage() {
   const faceInfo    = FACE_SHAPE_INFO[faceKey];
   const safeAnswers = survey ?? { q1: "", q2: "", q3: "", q4: "", q5: "" } as BangsSurveyAnswers;
   const bangRec     = recommendBang(faceKey, safeAnswers);
-  const product     = getProductRecommendation(safeAnswers.q5);
 
   async function handleKakaoShare() {
     const shareUrl = `${SITE_URL}/bangs?utm_source=kakao_share`;
@@ -494,15 +492,15 @@ export default function BangsResultPage() {
   }
 
   return (
-    <main className="min-h-screen bg-charcoal pb-40 text-cream">
+    <main className="mx-auto min-h-screen max-w-[430px] bg-[#F9FAFB] pb-40 text-[#2F2F2F]">
 
       {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.06] bg-charcoal/92 px-5 py-3.5 backdrop-blur-md">
-        <Link href="/bangs/upload" className="text-sm font-medium text-cream/35 hover:text-cream/70 transition-colors">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-[#F9FAFB]/92 px-5 py-3.5 backdrop-blur-md">
+        <Link href="/bangs/upload" className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
           ← 다시 찍기
         </Link>
         <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">진단 결과지</span>
-        <button onClick={handleKakaoShare} className="text-sm font-medium text-cream/35 hover:text-cream/70 transition-colors">
+        <button onClick={handleKakaoShare} className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
           {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>
@@ -524,7 +522,7 @@ export default function BangsResultPage() {
               bangLabel={bangRec.primaryLabel}
             />
           </div>
-          <p className="mt-1.5 text-center text-[9px] text-cream/25">
+          <p className="mt-1.5 text-center text-[9px] text-[#9CA3AF]">
             왼쪽 카드를 탭하면 정밀 스캔 보기 · 확대 가능
           </p>
           {/* 임시 디버그 — MediaPipe 판정 정확도 튜닝용, 캡처해서 공유해주세요 */}
@@ -572,7 +570,7 @@ export default function BangsResultPage() {
                   {bangRec.primaryLabel}
                 </span>
               </div>
-              <p className="mt-4 text-base leading-[1.85] text-cream/75">
+              <p className="mt-4 text-base leading-[1.85] text-[#374151]">
                 <BoldText text={bangRec.reasonText} />
               </p>
               <div className="mt-4 rounded-xl border border-red-400/15 bg-red-400/[0.06] px-4 py-3">
@@ -584,38 +582,11 @@ export default function BangsResultPage() {
           </motion.div>
 
 
-          {/* BLOCK E: 맞춤 제품 */}
-          <motion.div variants={FADE_UP}>
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">전문가 처방 · 제품</p>
-            <a
-              href={product.link} target="_blank" rel="noopener noreferrer sponsored"
-              onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, {
-                landing_id: LANDING_ID,
-                result_type: faceKey,
-                product_group_clicked: product.productName,
-                cta_clicked: "전문가 처방 제품",
-              })}
-              className="group flex w-full items-start justify-between gap-4 overflow-hidden rounded-2xl px-6 py-5 text-left font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
-              style={{ background: "linear-gradient(135deg, #FF7C98, #C084FC)" }}
-            >
-              <div className="flex-1 leading-snug">
-                <span className="mb-1 block text-2xl">{product.emoji}</span>
-                <span className="block text-xs font-semibold uppercase tracking-wider opacity-80">{product.headline}</span>
-                <span className="mt-1 block text-lg font-black">어뷰티 {product.productName}</span>
-                <span className="mt-1 block text-sm font-normal opacity-75">{product.description}</span>
-              </div>
-              <span className="flex-none pt-1 text-xl opacity-70">→</span>
-            </a>
-            <p className="mt-2 text-center text-[10px] text-cream/18">
-              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받습니다.
-            </p>
-          </motion.div>
-
           {/* BLOCK F: 공유 */}
           <motion.div variants={FADE_UP}
-            className="rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-5">
-            <p className="text-center text-base font-semibold text-cream/80">친구도 인생 앞머리 찾아줄까요?</p>
-            <p className="mt-1 text-center text-sm text-cream/35">결과를 공유하고 서로 비교해 보세요</p>
+            className="rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm">
+            <p className="text-center text-base font-semibold text-[#2F2F2F]">친구도 인생 앞머리 찾아줄까요?</p>
+            <p className="mt-1 text-center text-sm text-[#6B7280]">결과를 공유하고 서로 비교해 보세요</p>
             <button
               onClick={handleKakaoShare}
               className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-xl bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
@@ -625,7 +596,7 @@ export default function BangsResultPage() {
             </button>
             <button
               onClick={handleCopyLink}
-              className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/12 text-sm font-medium text-cream/50 transition-all hover:border-white/25 hover:text-cream active:scale-[0.98]"
+              className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 text-sm font-medium text-[#6B7280] transition-all hover:border-gray-300 hover:text-[#2F2F2F] active:scale-[0.98]"
             >
               {copied ? "✓ 복사됨" : "🔗 링크 복사"}
             </button>
@@ -635,7 +606,7 @@ export default function BangsResultPage() {
       </div>
 
       {/* ── 하단 고정 CTA ── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-white/[0.06] bg-charcoal/95 px-5 py-4 backdrop-blur-md">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur-md">
         <div className="mx-auto w-full max-w-lg space-y-2">
           <button
             onClick={() => router.push("/style")}
@@ -650,7 +621,7 @@ export default function BangsResultPage() {
             <span className="relative">✨ AI 헤어 분석으로 내 스타일 찾기!</span>
           </button>
           <Link href="/bangs"
-            className="flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium text-cream/30 transition-colors hover:text-cream/60">
+            className="flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium text-[#9CA3AF] transition-colors hover:text-[#2F2F2F]">
             ← 처음부터 다시 하기
           </Link>
         </div>
