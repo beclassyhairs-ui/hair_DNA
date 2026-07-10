@@ -56,6 +56,26 @@ interface DiaryEntry {
   isCurly:           boolean;
 }
 
+// /damage-check 결과지가 저장하는 판별자 붙은 엔트리 — DiaryEntry와는 완전히
+// 다른 스키마(생성 이미지·설문 답변 키가 없음)라 별도 타입 + 별도 카드로 렌더링한다.
+interface DamageDiaryEntry {
+  id:          string;
+  kind:        "damage";
+  savedAt:     number;
+  resultCode:  string;
+  levelLabel:  string;
+  typeLabel:   string;
+  headline:    string;
+  concernTags: string[];
+  product:     { emoji: string; name: string; description: string; link: string };
+}
+
+type AnyEntry = DiaryEntry | DamageDiaryEntry;
+
+function isDamageEntry(entry: AnyEntry): entry is DamageDiaryEntry {
+  return (entry as DamageDiaryEntry).kind === "damage";
+}
+
 // ─── 이미지 모달 ─────────────────────────────────────────────────────────────
 
 function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
@@ -223,10 +243,75 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
   );
 }
 
+// ─── 손상도 진단 다이어리 카드 ────────────────────────────────────────────────
+
+function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: number }) {
+  const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: index * 0.07 }}
+      className="overflow-hidden rounded-2xl"
+      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
+      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+              손상도 진단 · {entry.resultCode}
+            </p>
+            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+              {entry.levelLabel} · {entry.typeLabel}
+            </p>
+          </div>
+          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+        </div>
+
+        <p className="px-4 pb-3 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+          {entry.headline}
+        </p>
+
+        {entry.concernTags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-4 pb-3">
+            {entry.concernTags.map((tag) => (
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-3 px-3 py-3">
+            <span className="text-2xl">{entry.product.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
+                {entry.product.name}
+              </p>
+              <p className="truncate text-[10px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+                {entry.product.description}
+              </p>
+            </div>
+          </div>
+          <a href={entry.product.link} target="_blank" rel="noopener noreferrer sponsored"
+            className="flex h-9 w-full items-center justify-center text-xs font-bold transition-all"
+            style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
+            제품 보러가기 →
+          </a>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function MyDiaryPage() {
-  const [entries,    setEntries]    = useState<DiaryEntry[]>([]);
+  const [entries,    setEntries]    = useState<AnyEntry[]>([]);
   const [ready,      setReady]      = useState(false);
   const [modalUrl,   setModalUrl]   = useState<string | null>(null);
 
@@ -235,7 +320,7 @@ export default function MyDiaryPage() {
       // 배열 저장에서 로드
       const raw = localStorage.getItem("abeauty:diaryEntries");
       if (raw) {
-        setEntries(JSON.parse(raw) as DiaryEntry[]);
+        setEntries(JSON.parse(raw) as AnyEntry[]);
       } else {
         // 하위 호환: 단일 저장 키에서 마이그레이션
         const single = localStorage.getItem("abeauty:savedDiagnosis");
@@ -308,14 +393,18 @@ export default function MyDiaryPage() {
 
             {/* 진단 카드 리스트 */}
             <div className="space-y-4">
-              {entries.map((entry, i) => (
-                <DiaryCard
-                  key={entry.id}
-                  entry={entry}
-                  index={i}
-                  onOpenModal={setModalUrl}
-                />
-              ))}
+              {entries.map((entry, i) =>
+                isDamageEntry(entry) ? (
+                  <DamageDiaryCard key={entry.id} entry={entry} index={i} />
+                ) : (
+                  <DiaryCard
+                    key={entry.id}
+                    entry={entry}
+                    index={i}
+                    onOpenModal={setModalUrl}
+                  />
+                ),
+              )}
             </div>
 
             <p className="mt-6 text-center text-[10px]" style={{ color: "rgba(253,251,250,0.2)" }}>
