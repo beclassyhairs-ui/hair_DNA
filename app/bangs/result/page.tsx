@@ -13,15 +13,18 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { BANGS_SURVEY_KEY } from "../constants";
-import { diagnoseBangs, FACE_SHAPE_SHORT_LABEL, type BangType, type BangsDiagnosisResult } from "../bangRecommend";
+import {
+  diagnoseBangs, FACE_SHAPE_SHORT_LABEL, BANG_SHORT_LABEL, BANG_SUB_LABEL,
+  type BangType, type BangsDiagnosisResult,
+} from "../bangRecommend";
 import type { BangsSurveyAnswers } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 
-// 테스트 기간 전용 — "왜 이 앞머리가 추천됐나요?" 디버그 박스를 기본으로 노출한다.
-// 테스트 끝나면 이 값을 false로 바꾸면 결과지에서 즉시 사라진다.
-const SHOW_BANG_DEBUG = true;
+// 일반 결과 화면에서는 항상 숨김. 테스트할 때만 true로 바꾸거나,
+// URL에 ?debug=1을 붙이면 이 상수와 무관하게 그 세션에서만 보인다.
+const SHOW_BANG_DEBUG = false;
 
 const LANDING_ID = "bang_test";
 
@@ -240,23 +243,26 @@ const DEFAULT_ANSWERS: BangsSurveyAnswers = {
 
 export default function BangsResultPage() {
   const router = useRouter();
-  const showDebug = SHOW_BANG_DEBUG;
   const [answers, setAnswers] = useState<BangsSurveyAnswers>(DEFAULT_ANSWERS);
   const [ready,   setReady]   = useState(false);
+  const [debugParam, setDebugParam] = useState(false);
   const [saved,     setSaved]     = useState(false);
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
   const [lightbox,  setLightbox]  = useState<{ type: BangType; label: string } | null>(null);
+  const showDebug = SHOW_BANG_DEBUG || debugParam;
 
   useEffect(() => {
     try {
       const s = sessionStorage.getItem(BANGS_SURVEY_KEY);
       if (s) setAnswers(JSON.parse(s) as BangsSurveyAnswers);
+      setDebugParam(new URLSearchParams(window.location.search).get("debug") === "1");
     } catch { /**/ }
     setReady(true);
   }, []);
 
   const result: BangsDiagnosisResult = diagnoseBangs(answers);
+  const sameFaceBang = result.selectedFaceBang === result.signalBasedBang;
 
   // primaryBang/secondaryBang은 항상 selectedFaceBang 또는 signalBasedBang 중 하나거나
   // (둘이 같을 때) 신호 점수표의 다음 후보다 — 어느 쪽 이유 문구를 보여줄지 매칭한다.
@@ -390,11 +396,11 @@ export default function BangsResultPage() {
 
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-[#F9FAFB]/92 px-5 py-3.5 backdrop-blur-md">
-        <Link href="/bangs/survey" className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
+        <Link href="/bangs/survey" className="shrink-0 whitespace-nowrap text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
           ← 다시 하기
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">진단 결과지</span>
-        <button onClick={handleKakaoShare} className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
+        <span className="shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.28em] text-gold">진단 결과지</span>
+        <button onClick={handleKakaoShare} className="shrink-0 whitespace-nowrap text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
           {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>
@@ -416,7 +422,7 @@ export default function BangsResultPage() {
           {/* 1. 최종 타이틀 */}
           <motion.div variants={FADE_UP} className="text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI DIAGNOSIS</p>
-            <h1 className="mt-1.5 font-serif text-[1.7rem] font-bold text-[#2F2F2F]">
+            <h1 className="mt-1.5 break-keep font-serif text-[1.7rem] font-bold leading-snug text-[#2F2F2F]">
               당신에게 가장 잘 맞는 앞머리
             </h1>
           </motion.div>
@@ -446,10 +452,13 @@ export default function BangsResultPage() {
             <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
             <div className="px-6 py-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✦ 최종 1순위 추천</p>
-              <div className="mt-4 flex justify-center">
+              <div className="mt-4 flex flex-col items-center gap-1">
                 <span className="rounded-xl bg-gold px-8 py-2.5 font-serif text-2xl font-black text-charcoal shadow-gold">
-                  {result.primaryBangLabel}
+                  {BANG_SHORT_LABEL[result.primaryBang]}
                 </span>
+                {BANG_SUB_LABEL[result.primaryBang] && (
+                  <span className="text-xs font-medium text-[#9CA3AF]">{BANG_SUB_LABEL[result.primaryBang]}</span>
+                )}
               </div>
               <p className="mt-4 text-base leading-[1.85] text-[#374151]">
                 <BoldText text={reasonFor(result.primaryBang, result.primaryBangLabel)} />
@@ -467,19 +476,29 @@ export default function BangsResultPage() {
             </p>
           </motion.div>
 
-          {/* 3. 선택 얼굴형 기준 추천 설명 / 4. 답변 신호 기반 보정 추천 설명 — 작은 카드 2개 */}
-          <motion.div variants={FADE_UP} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">선택 얼굴형 기준</p>
-              <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.selectedFaceBangLabel}</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.selectedFaceReason}</p>
-            </div>
-            <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold">답변 신호 기반 보정</p>
-              <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.signalBasedBangLabel}</p>
-              <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.signalBasedReason}</p>
-            </div>
-          </motion.div>
+          {/* 3. 추천 이유 요약 — 두 기준이 같으면 카드 1개로 합치고, 다르면 나란히 비교한다 */}
+          {sameFaceBang ? (
+            <motion.div variants={FADE_UP} className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold">✦ 추천 이유</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#374151]">
+                선택하신 얼굴형과 추가 답변이 같은 방향을 가리켰어요.<br />
+                두 기준 모두 <strong className="font-bold text-gold-light">{result.selectedFaceBangLabel}</strong>이 잘 맞는 것으로 나타나 최종 1순위로 추천드려요.
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div variants={FADE_UP} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">내가 고른 얼굴형 기준</p>
+                <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.selectedFaceBangLabel}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.selectedFaceReason}</p>
+              </div>
+              <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold">추가 답변까지 반영한 추천</p>
+                <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.signalBasedBangLabel}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.signalBasedReason}</p>
+              </div>
+            </motion.div>
+          )}
 
           {/* 현재 스타일 체크 */}
           <motion.div variants={FADE_UP} className="rounded-2xl border border-gray-100 bg-gray-50 p-5">

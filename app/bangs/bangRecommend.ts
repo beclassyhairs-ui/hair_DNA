@@ -63,6 +63,29 @@ export const BANG_LABELS: Record<BangType, string> = {
   side_bang:   "사이드뱅",
 };
 
+// 결과지 큰 제목 박스용 — "A / B" 복합 명칭은 줄바꿈이 어색해지므로
+// label(짧은 이름) + subLabel(부제, 있을 때만)로 분리해서 쓴다.
+export const BANG_SHORT_LABEL: Record<BangType, string> = {
+  see_through: "시스루뱅",
+  curtain:     "커튼뱅",
+  side_swept:  "사이드 스웹 뱅",
+  long_side:   "롱 사이드뱅",
+  wisp:        "가닥뱅",
+  soft_full:   "소프트 풀뱅",
+  inner:       "이너뱅",
+  hippy:       "히피뱅",
+  block:       "블록뱅",
+  face_line:   "애교머리",
+  round_bang:  "라운드뱅",
+  volume_bang: "볼륨뱅",
+  side_bang:   "사이드뱅",
+};
+
+export const BANG_SUB_LABEL: Partial<Record<BangType, string>> = {
+  face_line:   "페이스라인뱅",
+  volume_bang: "롤뱅",
+};
+
 // ─── Q1 설문에 실제로 있는 얼굴형만 자가선택 후보로 사용 ───────────────────────
 
 export const SELECTABLE_FACE_SHAPES: FaceShapeKey[] = [
