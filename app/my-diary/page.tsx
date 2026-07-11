@@ -73,20 +73,29 @@ interface DamageDiaryEntry {
   product:     { emoji: string; name: string; description: string; link: string };
 }
 
-// /bangs 결과지가 저장하는 판별자 붙은 엔트리 — 얼굴형/bangStyle 진단 전용 스키마.
+// /bangs 결과지가 저장하는 판별자 붙은 엔트리 — 얼굴형/bangStyle 진단 전용 스키마(v3).
+// 선택 얼굴형 기준 축과 답변 신호 기반 축을 분리해서 그대로 저장한다.
 interface BangsDiaryEntry {
-  id:                 string;
-  kind:               "bangs";
-  savedAt:            number;
-  resultId:           string;
-  finalFaceShape:     string;
-  faceMatchStatus:    "matched" | "partial" | "adjusted";
-  primaryBangLabel:   string;
-  secondaryBangLabel: string;
-  concernTags:        string[];
-  hairTextureTag:     string;
-  diagnosisSummary:   string;
-  resultImages?:      { label: string; url: string }[]; // 사진첩용 — 파일 없으면 카드가 폴백 처리
+  id:                    string;
+  kind:                  "bangs";
+  savedAt:               number;
+  resultId:              string;
+
+  selectedFaceShape:     string;
+  selectedFaceBangLabel: string;
+
+  signalBasedFaceShape:  string;
+  signalBasedBangLabel:  string;
+
+  primaryBangLabel:      string;
+  secondaryBangLabel:    string;
+
+  debugReasonSummary:    string;
+
+  concernTags:           string[];
+  hairTextureTag:        string;
+  diagnosisSummary:      string;
+  resultImages?:         { label: string; url: string }[]; // 사진첩용 — 파일 없으면 카드가 폴백 처리
 }
 
 type AnyEntry = DiaryEntry | DamageDiaryEntry | BangsDiaryEntry;
@@ -355,7 +364,7 @@ function DiaryImageThumb({ label, url }: { label: string; url: string }) {
 
 function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: number }) {
   const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
-  const matchLabel = { matched: "얼굴형 신호 일치", partial: "얼굴형 신호 일부 반영", adjusted: "얼굴형 보정 적용" }[entry.faceMatchStatus];
+  const shapesAgree = entry.selectedFaceShape === entry.signalBasedFaceShape;
 
   return (
     <motion.div
@@ -370,7 +379,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
-              인생앞머리 · {matchLabel}
+              인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
             <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
               {entry.primaryBangLabel}
@@ -381,6 +390,9 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
 
         <p className="px-4 pb-2 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
           {entry.diagnosisSummary}
+        </p>
+        <p className="px-4 pb-1 text-[11px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+          선택 얼굴형 기준: {entry.selectedFaceBangLabel} · 답변 신호 기준: {entry.signalBasedBangLabel}
         </p>
         <p className="px-4 pb-3 text-[11px]" style={{ color: "rgba(253,251,250,0.4)" }}>
           함께 고려한 스타일: {entry.secondaryBangLabel}

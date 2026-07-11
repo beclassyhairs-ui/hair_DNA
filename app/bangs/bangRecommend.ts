@@ -1,15 +1,18 @@
 // ============================================================================
-// 어뷰티 인생뱅 — 점수 기반 추천 엔진 (v2)
+// 어뷰티 인생뱅 — 점수 기반 추천 엔진 (v3, 2축 분리 구조)
 //
-// v1(하드게이트+override 캐스케이드, 단일 결과)의 문제를 해결하기 위해 재설계:
-//  1) 얼굴형(FaceShape)과 앞머리(BangStyle)를 각각 독립적인 "점수" 축으로 계산한다.
-//  2) Q1(자가선택 얼굴형)에 기본 가산점을 주고, Q3~Q5의 답변을 보정 신호(가중치
-//     델타)로 더해서 최종 얼굴형을 정한다 — 신호가 강할 때만 자가선택을 뒤집는다.
-//  3) bangStyle도 "얼굴형별 기본 적합도 + 답변 보정 델타" 합산 점수로 계산해
-//     1위(primary)·2위(secondary)를 함께 제시한다. 점수 차가 크면 어색한 2위 대신
-//     미리 정의한 "자연스러운 짝"으로 secondary를 보정한다.
-//  4) Q2(현재 스타일)는 점수에 관여하지 않고 결과지 설명력(현재 스타일 체크)에만 쓴다.
-//  5) Q6(모질)도 점수에 관여하지 않고 /home 연동용 태그로만 저장한다.
+// v2(얼굴형 1개로 밀어붙이는 단일 축)의 문제를 해결하기 위해 재설계:
+//  1) "선택 얼굴형 기준 추천"과 "답변 신호 기반 보정 추천"을 완전히 분리된
+//     두 개의 결과로 각각 계산한다 — 하나로 합쳐서 밀어붙이지 않는다.
+//  2) signalBasedFaceShape 추론 후보에는 diamond(다이아몬드형)를 부활시킨다
+//     (Q1 선택지에는 없지만, 답변 신호만으로는 나올 수 있다).
+//  3) selectedFaceBang은 선택 얼굴형의 기본 적합도 + "위험 신호(감점)만" 반영한다
+//     — 답변 신호가 다른 얼굴형을 가리키더라도 그 얼굴형의 장점 쪽으로는 안 끌리고,
+//     "이 선택 기준으로 봤을 때 안 맞는 스타일만 피하는" 순수한 축을 유지한다.
+//  4) signalBasedBang은 신호로 추론된 얼굴형의 기본 적합도 + 답변 신호 전체(가점+감점)
+//     를 반영한다 — 답변이 실제로 가리키는 방향을 가장 강하게 반영하는 축이다.
+//  5) primaryBang은 두 축이 같으면 그대로, 다르면 신호가 충분히 강할 때만
+//     signalBasedBang을 1순위로 올린다(SIGNAL_PROMOTE_THRESHOLD).
 // ============================================================================
 
 import type {
@@ -35,8 +38,12 @@ export type BangType =
   | "wisp"         // 가닥뱅
   | "soft_full"    // 소프트 풀뱅
   | "inner"        // 이너뱅
-  | "hippy"        // 히피뱅
-  | "block";       // 블록뱅
+  | "hippy"        // 히피뱅 — 아직 취향 질문 없어 비활성(서술용만)
+  | "block"        // 블록뱅 — 추천 후보 아님, NG 전용
+  | "face_line"    // 애교머리 / 페이스라인뱅
+  | "round_bang"   // 라운드뱅
+  | "volume_bang"  // 볼륨뱅 / 롤뱅 (구 bardot)
+  | "side_bang";   // 사이드뱅 — long_side(여신 앞머리)와 역할 분리된 실용적 사이드 앞머리
 
 export type FaceMatchStatus = "matched" | "partial" | "adjusted";
 
@@ -50,20 +57,34 @@ export const BANG_LABELS: Record<BangType, string> = {
   inner:       "이너뱅",
   hippy:       "히피뱅",
   block:       "블록뱅",
+  face_line:   "애교머리 / 페이스라인뱅",
+  round_bang:  "라운드뱅",
+  volume_bang: "볼륨뱅 / 롤뱅",
+  side_bang:   "사이드뱅",
 };
 
-// ─── Q1 설문에 실제로 있는 얼굴형만 후보로 사용 ────────────────────────────────
-// (다이아몬드·육각형은 설문 선택지에 없어 자가선택으로도, 보정으로도 절대 나오지
-// 않는다 — 이전엔 타입에만 존재하고 입력경로가 없는 "도달 불가 얼굴형"이었음)
+// ─── Q1 설문에 실제로 있는 얼굴형만 자가선택 후보로 사용 ───────────────────────
 
 export const SELECTABLE_FACE_SHAPES: FaceShapeKey[] = [
   "oval", "round", "square", "oblong", "heart", "peanut",
 ];
 
-// bangRecommend v1에서 실제로 도달 가능했던 5종만 점수 후보로 사용
-export type SelectableBangType = "see_through" | "curtain" | "side_swept" | "long_side" | "soft_full";
-export const SELECTABLE_BANG_TYPES: SelectableBangType[] = [
-  "see_through", "curtain", "side_swept", "long_side", "soft_full",
+// 답변 신호만으로 추론할 때는 diamond까지 후보에 포함(자가선택엔 없지만 신호로는 나올 수 있음).
+// hexagon은 아직 사용하지 않는다.
+const SIGNAL_FACE_SHAPES: FaceShapeKey[] = [
+  "oval", "round", "square", "oblong", "heart", "peanut", "diamond",
+];
+
+// 활성 추천 후보 11종 — 순서 그대로 유지(동점 시 앞쪽이 우선순위를 가짐).
+// hippy: 아직 대응하는 취향 질문이 없어 후보 제외(서술 텍스트에만 등장).
+// block: 추천 결과로 내보내지 않음 — NG 스타일 전용.
+export type ActiveBangType =
+  | "see_through" | "curtain" | "long_side" | "side_swept" | "soft_full"
+  | "wisp" | "inner" | "face_line" | "round_bang" | "volume_bang" | "side_bang";
+
+export const ACTIVE_BANG_TYPES: ActiveBangType[] = [
+  "see_through", "curtain", "long_side", "side_swept", "soft_full",
+  "wisp", "inner", "face_line", "round_bang", "volume_bang", "side_bang",
 ];
 
 // ─── 8대 얼굴형 기본 정보 ─────────────────────────────────────────────────────
@@ -126,6 +147,10 @@ const NG_STYLES: Record<BangType, string> = {
   inner:       "이마 전체를 덮는 무거운 일자 뱅",
   hippy:       "빽빽하고 무거운 일자 뱅·블록뱅",
   block:       "가볍고 얇은 시스루뱅·가닥뱅",
+  face_line:   "얼굴선을 다 가리는 무겁고 빽빽한 일자 뱅",
+  round_bang:  "각지고 뻣뻣하게 딱 떨어지는 일자 뱅",
+  volume_bang: "볼륨감 없이 납작 붙는 가벼운 시스루뱅",
+  side_bang:   "이마를 완전히 가리는 무겁고 각진 일자 뱅",
 };
 
 // 각 bang의 핵심 효과 한 줄 — 얼굴형과 조합해 이유 문구를 만드는 재료
@@ -139,35 +164,106 @@ const BANG_CORE_REASON: Record<BangType, string> = {
   inner:       "안쪽으로 자연스럽게 말리며 볼륨을 살려줘요",
   hippy:       "자유분방하게 흐르는 결이 개성 있는 무드를 더해줘요",
   block:       "일자로 딱 떨어지는 라인이 또렷한 인상을 만들어줘요",
+  face_line:   "얼굴 옆선과 애교살 부분만 가볍게 감싸줘서 묶었을 때도 여백을 보완해줘요",
+  round_bang:  "끝을 둥글게 굴린 라인이 부드럽고 어려 보이는 인상을 만들어줘요",
+  volume_bang: "풀뱅보다 가볍고 커튼뱅보다 볼륨감 있는 롤리한 볼륨 앞머리예요",
+  side_bang:   "옆으로 가볍게 흐르는 라인이 얼굴 옆선을 자연스럽고 실용적으로 보완해줘요",
 };
 
-// secondary가 primary와 점수 차가 클 때 대신 꺼내오는 "자연스러운 짝"
-const COMPLEMENTARY_BANG: Record<SelectableBangType, SelectableBangType> = {
-  see_through: "curtain",
-  curtain:     "see_through",
-  side_swept:  "long_side",
-  long_side:   "side_swept",
-  soft_full:   "curtain",
+// ─── 얼굴형별 앞머리 기본 적합도 (7형 × 11종) ─────────────────────────────────
+// long_side(여신 앞머리)와 side_bang(실용적 사이드뱅)은 역할을 분리한다 —
+// long_side는 광대·턱선을 길게 감싸는 강한 보정(diamond/square/peanut/cheekbone
+// 신호에 반응), side_bang은 옆가르마 사용자를 위한 가벼운 기본 옵션으로
+// narrow_brow/cheekbone 같은 강한 보정 신호에는 반응하지 않는다.
+
+type BangSignalMap = Partial<Record<BangType, number>>;
+
+const FACE_BANG_AFFINITY: Record<FaceShapeKey, BangSignalMap> = {
+  oval:    { wisp: 3, see_through: 2, curtain: 2, side_swept: 1, face_line: 1, side_bang: 2 },
+  round:   { see_through: 3, inner: 3, side_swept: 2, face_line: 2, curtain: 1, side_bang: 1, soft_full: -2, round_bang: -2 },
+  square:  { curtain: 3, long_side: 3, face_line: 2, see_through: 1, soft_full: -2, round_bang: -1 },
+  oblong:  { soft_full: 3, volume_bang: 3, round_bang: 2, see_through: 2, wisp: 1, long_side: 1 },
+  heart:   { curtain: 3, volume_bang: 2, see_through: 2, side_swept: 2, side_bang: 1, long_side: 1, soft_full: 0 },
+  peanut:  { side_swept: 3, long_side: 3, face_line: 2, curtain: 1, wisp: 1, side_bang: 2 },
+  diamond: { long_side: 4, face_line: 3, side_swept: 2, curtain: 2, wisp: 1, soft_full: -3, round_bang: -2 },
+  hexagon: {},
 };
 
-// ─── 얼굴형 점수 ──────────────────────────────────────────────────────────────
+// ─── 답변 보정 신호 (bang 점수용) — Q1(현재 스타일)·Q2~Q4(고민)·Q5(모질) ──────
 
-const Q1_SELF_BONUS = 4; // 자가선택 얼굴형 기본 가산점 — 단일 보정 신호(최대 3점)로는 못 뒤집도록
+const CURRENT_STYLE_BANG_SIGNAL: Partial<Record<Q1CurrentStyle | "", BangSignalMap>> = {
+  side_part:   { side_bang: 2 }, // 이미 옆가르마 습관 → 실용적 사이드뱅과 자연스럽게 연결
+  center_part: { curtain: 1, side_swept: 1, face_line: 1 },
+  allback:     { wisp: 2, face_line: 2, side_swept: 1 },
+  // has_bangs: 기존 앞머리 업그레이드 느낌 유지 원칙(점수 관여 없음) — 별도 델타 없음
+};
+const FOREHEAD_BANG_SIGNAL: Partial<Record<Q2ForeheadConcern | "", BangSignalMap>> = {
+  narrow_brow:   { side_swept: 3, wisp: 2, long_side: 2, face_line: 2, soft_full: -4, volume_bang: -2, round_bang: -2 },
+  wide_forehead: { curtain: 3, volume_bang: 3, soft_full: 2, see_through: 2, round_bang: 1 },
+};
+const MIDFACE_BANG_SIGNAL: Partial<Record<Q3MidfaceConcern | "", BangSignalMap>> = {
+  cheekbone: { long_side: 4, face_line: 3, side_swept: 2, curtain: 1, soft_full: -2, round_bang: -1 },
+  long_mid:  { see_through: 3, soft_full: 2, round_bang: 2, volume_bang: 1 },
+};
+const JAW_BANG_SIGNAL: Partial<Record<Q4JawConcern | "", BangSignalMap>> = {
+  round_jaw:   { inner: 3, see_through: 2, face_line: 2, side_swept: 1, soft_full: -2, round_bang: -2 },
+  angular_jaw: { curtain: 3, long_side: 3, face_line: 2, see_through: 1 },
+  pointed_jaw: { long_side: 2, curtain: 2, volume_bang: 1, face_line: 1 },
+};
+const TEXTURE_BANG_SIGNAL: Partial<Record<Q5HairTexture | "", BangSignalMap>> = {
+  flat_oily: { see_through: -1, soft_full: -1, wisp: 1, side_swept: 1 },
+  flyaway:   { inner: 2, face_line: 2, curtain: 1 },
+  // healthy: 별도 보정 없음
+};
+
+// ─── 얼굴형 신호(답변 → signalBasedFaceShape) ─────────────────────────────────
 
 type FaceSignalMap = Partial<Record<FaceShapeKey, number>>;
 
 const FOREHEAD_FACE_SIGNAL: Partial<Record<Q2ForeheadConcern | "", FaceSignalMap>> = {
-  wide_forehead: { heart: 2, square: 2 }, // 넓은 이마 → 하트형/역삼각형, 각진형 신호
+  narrow_brow:   { diamond: 2, peanut: 1 },
+  wide_forehead: { heart: 3, oblong: 1 },
 };
 const MIDFACE_FACE_SIGNAL: Partial<Record<Q3MidfaceConcern | "", FaceSignalMap>> = {
-  cheekbone: { peanut: 3 }, // 옆광대 도드라짐 → 땅콩형 신호
-  long_mid:  { oblong: 3 }, // 긴 중안부 → 긴형 신호
+  cheekbone: { diamond: 3, peanut: 2 },
+  long_mid:  { oblong: 3 },
 };
 const JAW_FACE_SIGNAL: Partial<Record<Q4JawConcern | "", FaceSignalMap>> = {
   round_jaw:   { round: 3 },
   angular_jaw: { square: 3 },
-  pointed_jaw: { heart: 3 }, // V라인/좁은 턱끝 → 하트형 신호
+  pointed_jaw: { diamond: 2, heart: 2 },
 };
+
+// ─── 디버그용 신호 설명 문구 ───────────────────────────────────────────────────
+
+const SIGNAL_NOTE_SHORT: Record<string, string> = {
+  narrow_brow: "좁은 이마", wide_forehead: "넓은 이마",
+  cheekbone: "옆광대", long_mid: "긴 중안부",
+  round_jaw: "둥근 턱", angular_jaw: "각진 턱선", pointed_jaw: "뾰족한 V라인",
+};
+const SIGNAL_NOTE_DEBUG: Record<string, string> = {
+  narrow_brow:   "좁은 이마 → 다이아몬드형 +2·땅콩형 +1 신호, 사이드 스웹뱅 계열 강화",
+  wide_forehead: "넓은 이마 → 하트형 +3·긴형 +1 신호, 커튼뱅·바르도뱅 계열 강화",
+  cheekbone:     "옆광대 도드라짐 → 다이아몬드형 +3·땅콩형 +2 신호, 롱 사이드뱅 계열 강화",
+  long_mid:      "긴 중안부 → 긴형 +3 신호, 시스루뱅 계열 강화",
+  round_jaw:     "둥근 턱 → 둥근형 +3 신호, 이너뱅·시스루뱅 계열 강화",
+  angular_jaw:   "각진 턱선 → 각진형 +3 신호, 커튼뱅·롱 사이드뱅 계열 강화",
+  pointed_jaw:   "뾰족한 V라인 → 다이아몬드형 +2·하트형 +2 신호, 롱 사이드뱅·커튼뱅 계열 강화",
+};
+
+function collectSignalAnswerIds(answers: BangsSurveyAnswers): string[] {
+  return [answers.q2, answers.q3, answers.q4].filter((v) => Boolean(v) && v !== "none") as string[];
+}
+
+function collectShortSignalLabels(answers: BangsSurveyAnswers): string[] {
+  return collectSignalAnswerIds(answers).map((id) => SIGNAL_NOTE_SHORT[id]).filter(Boolean);
+}
+
+function collectDebugSignalNotes(answers: BangsSurveyAnswers): string[] {
+  return collectSignalAnswerIds(answers).map((id) => SIGNAL_NOTE_DEBUG[id]).filter(Boolean);
+}
+
+// ─── 얼굴형 신호 추론 ─────────────────────────────────────────────────────────
 
 function zeroFaceScores(): Record<FaceShapeKey, number> {
   return { oval: 0, round: 0, square: 0, oblong: 0, heart: 0, peanut: 0, diamond: 0, hexagon: 0 };
@@ -188,81 +284,26 @@ function collectFaceSignals(answers: BangsSurveyAnswers): Record<FaceShapeKey, n
   return scores;
 }
 
-function argMaxFaceShape(scores: Record<FaceShapeKey, number>, preferred?: FaceShapeKey): FaceShapeKey {
-  let best = SELECTABLE_FACE_SHAPES[0];
-  let bestScore = -Infinity;
-  for (const key of SELECTABLE_FACE_SHAPES) {
-    const s = scores[key];
-    if (s > bestScore || (s === bestScore && key === preferred)) {
-      best = key;
-      bestScore = s;
-    }
+/** 신호만으로 추론한 얼굴형 — 신호가 하나도 없으면 선택 얼굴형을 그대로 반영(score 0)한다. */
+function inferSignalBasedFaceShape(
+  answers: BangsSurveyAnswers, selectedShape: FaceShapeKey,
+): { shape: FaceShapeKey; score: number } {
+  const scores = collectFaceSignals(answers);
+  let best = selectedShape;
+  let bestScore = 0;
+  for (const key of SIGNAL_FACE_SHAPES) {
+    if (scores[key] > bestScore) { best = key; bestScore = scores[key]; }
   }
-  return best;
+  return { shape: best, score: bestScore };
 }
 
-interface FaceInference {
-  selectedFaceShape: FaceShapeKey;
-  inferredFaceShape: FaceShapeKey; // 답변 신호만으로 봤을 때의 얼굴형 (신호 없으면 자가선택과 동일)
-  finalFaceShape: FaceShapeKey;    // 자가선택 가산점까지 포함한 최종 확정 얼굴형
-  faceMatchStatus: FaceMatchStatus;
-}
-
-function inferFaceShape(answers: BangsSurveyAnswers): FaceInference {
-  const selected = (answers.qFaceShape && SELECTABLE_FACE_SHAPES.includes(answers.qFaceShape))
-    ? answers.qFaceShape
-    : "oval";
-
-  const signalScores = collectFaceSignals(answers);
-  const hasSignal = SELECTABLE_FACE_SHAPES.some((k) => signalScores[k] > 0);
-  const inferredFaceShape = hasSignal ? argMaxFaceShape(signalScores, selected) : selected;
-
-  const fullScores = { ...signalScores };
-  fullScores[selected] += Q1_SELF_BONUS;
-  const finalFaceShape = argMaxFaceShape(fullScores, selected);
-
-  let faceMatchStatus: FaceMatchStatus;
-  if (inferredFaceShape === selected) faceMatchStatus = "matched";
-  else if (finalFaceShape === selected) faceMatchStatus = "partial";
-  else faceMatchStatus = "adjusted";
-
-  return { selectedFaceShape: selected, inferredFaceShape, finalFaceShape, faceMatchStatus };
-}
-
-// ─── bangStyle 점수 ───────────────────────────────────────────────────────────
-
-type BangSignalMap = Partial<Record<BangType, number>>;
-
-// 얼굴형별 기본 적합도 — 예전 v1의 "얼굴형→bang 1개 확정" 맵을 점수 테이블로 확장
-const FACE_BANG_AFFINITY: Record<FaceShapeKey, BangSignalMap> = {
-  oval:    { see_through: 3, curtain: 2, side_swept: 2, long_side: 1, soft_full: 1 },
-  round:   { see_through: 3, side_swept: 2, curtain: 1, long_side: 1, soft_full: 0 },
-  square:  { curtain: 3, long_side: 2, see_through: 2, side_swept: 1, soft_full: 0 },
-  oblong:  { soft_full: 3, curtain: 2, see_through: 2, side_swept: 1, long_side: 1 },
-  heart:   { curtain: 3, side_swept: 2, see_through: 2, long_side: 1, soft_full: 0 },
-  peanut:  { side_swept: 3, long_side: 2, curtain: 1, see_through: 1, soft_full: 0 },
-  diamond: {},
-  hexagon: {},
-};
-
-const FOREHEAD_BANG_SIGNAL: Partial<Record<Q2ForeheadConcern | "", BangSignalMap>> = {
-  narrow_brow:   { side_swept: 3 },                              // 좁은 이마 → 사이드 계열 적합도 강화
-  wide_forehead: { see_through: 2, curtain: 2, soft_full: 1 },    // 넓은 이마 → 이마를 채워주는 계열
-};
-const MIDFACE_BANG_SIGNAL: Partial<Record<Q3MidfaceConcern | "", BangSignalMap>> = {
-  cheekbone: { long_side: 3, side_swept: 2 },  // 옆광대 커버
-  long_mid:  { see_through: 2, curtain: 2 },   // 세로 시선 차단
-};
-const JAW_BANG_SIGNAL: Partial<Record<Q4JawConcern | "", BangSignalMap>> = {
-  round_jaw:   { see_through: 2, side_swept: 1, soft_full: -2, curtain: -1 }, // 세로 효과 유지, 가로폭 강조 스타일 감점
-  angular_jaw: { curtain: 2, long_side: 2, see_through: 1 },                  // 각진 턱선 완화
-  pointed_jaw: { curtain: 2, long_side: 1 },                                  // 좁은 턱끝을 부드럽게 감싸는 계열
-};
+// ─── bang 점수 계산 ───────────────────────────────────────────────────────────
 
 function zeroBangScores(): Record<BangType, number> {
   return {
     see_through: 0, curtain: 0, side_swept: 0, long_side: 0, soft_full: 0,
-    wisp: 0, inner: 0, hippy: 0, block: 0,
+    wisp: 0, inner: 0, hippy: 0, block: 0, face_line: 0, round_bang: 0,
+    volume_bang: 0, side_bang: 0,
   };
 }
 
@@ -273,60 +314,81 @@ function addBangSignal(scores: Record<BangType, number>, signal: BangSignalMap |
   }
 }
 
-function calcBangScores(finalFace: FaceShapeKey, answers: BangsSurveyAnswers): Record<BangType, number> {
+function filterNegative(signal: BangSignalMap | undefined): BangSignalMap | undefined {
+  if (!signal) return undefined;
+  const out: BangSignalMap = {};
+  for (const [key, value] of Object.entries(signal)) {
+    if ((value ?? 0) < 0) out[key as BangType] = value;
+  }
+  return out;
+}
+
+/**
+ * mode="full": 얼굴형 기본 적합도 + 답변 보정(가점+감점) 전체 반영 — signalBasedBang용.
+ * mode="negativeOnly": 얼굴형 기본 적합도는 그대로 두고, 답변 보정 중 "위험 신호(감점)"만
+ * 반영 — selectedFaceBang용. 선택 얼굴형의 장점은 유지하면서 안 맞는 스타일만 피한다.
+ */
+function calcBangScores(
+  shape: FaceShapeKey, answers: BangsSurveyAnswers, mode: "full" | "negativeOnly",
+): Record<BangType, number> {
   const scores = zeroBangScores();
-  addBangSignal(scores, FACE_BANG_AFFINITY[finalFace]);
-  addBangSignal(scores, FOREHEAD_BANG_SIGNAL[answers.q2]);
-  addBangSignal(scores, MIDFACE_BANG_SIGNAL[answers.q3]);
-  addBangSignal(scores, JAW_BANG_SIGNAL[answers.q4]);
+  addBangSignal(scores, FACE_BANG_AFFINITY[shape]);
+
+  const corrections = [
+    CURRENT_STYLE_BANG_SIGNAL[answers.q1],
+    FOREHEAD_BANG_SIGNAL[answers.q2],
+    MIDFACE_BANG_SIGNAL[answers.q3],
+    JAW_BANG_SIGNAL[answers.q4],
+    TEXTURE_BANG_SIGNAL[answers.q5],
+  ];
+  for (const c of corrections) {
+    addBangSignal(scores, mode === "full" ? c : filterNegative(c));
+  }
   return scores;
 }
 
-interface BangPick {
-  primary: BangType;
-  secondary: BangType;
+function rankBangs(scores: Record<BangType, number>): { bang: BangType; score: number }[] {
+  return [...ACTIVE_BANG_TYPES]
+    .sort((a, b) => scores[b] - scores[a])
+    .map((bang) => ({ bang, score: scores[bang] }));
 }
 
-const SECONDARY_GAP_THRESHOLD = 3; // 1위-2위 점수차가 이보다 크면 자연스러운 짝으로 대체
-
-function pickPrimarySecondary(scores: Record<BangType, number>): BangPick {
-  const ranked = [...SELECTABLE_BANG_TYPES].sort((a, b) => scores[b] - scores[a]);
-  const primary = ranked[0];
-  const naturalSecond = ranked[1];
-  const gap = scores[primary] - scores[naturalSecond];
-
-  const secondary = gap <= SECONDARY_GAP_THRESHOLD
-    ? naturalSecond
-    : COMPLEMENTARY_BANG[primary];
-
-  return { primary, secondary };
-}
+// 답변 신호가 얼굴형 자체를 뒤집을 만큼 강할 때만 signalBasedBang을 1순위로 승격
+const SIGNAL_PROMOTE_THRESHOLD = 4;
 
 // ─── 결과 문구 ────────────────────────────────────────────────────────────────
 
-function buildFaceAnalysisText(
-  selected: FaceShapeKey, final: FaceShapeKey, status: FaceMatchStatus,
+function buildSelectedFaceReason(selectedShape: FaceShapeKey, selectedBang: BangType): string {
+  const title = FACE_SHAPE_INFO[selectedShape].title;
+  return `선택하신 "${title}" 기준으로는 ${BANG_LABELS[selectedBang]}이 잘 맞아요. ${BANG_CORE_REASON[selectedBang]}.`;
+}
+
+function buildSignalBasedReason(
+  selectedShape: FaceShapeKey, signalShape: FaceShapeKey, signalBang: BangType, shortNotes: string[],
 ): string {
-  const selectedTitle = FACE_SHAPE_INFO[selected].title;
-  const finalTitle    = FACE_SHAPE_INFO[final].title;
-
-  if (status === "matched")
-    return `지금 선택하신 "${selectedTitle}"과 답변 신호가 잘 맞아요.`;
-  if (status === "partial")
-    return `"${selectedTitle}"을 기준으로 분석했어요. 답변에서 다른 신호도 조금 보였지만 크게 벗어나지 않아 그대로 반영했어요.`;
-  return `"${selectedTitle}"을 선택하셨지만, 답변에서 ${finalTitle} 특징이 더 강하게 나타나서 이를 반영해 보정했어요.`;
+  if (selectedShape === signalShape) {
+    return `추가 답변에서도 비슷한 특징이 확인돼서 ${BANG_LABELS[signalBang]}도 함께 추천드려요. ${BANG_CORE_REASON[signalBang]}.`;
+  }
+  const noteText = shortNotes.length > 0 ? shortNotes.join("·") : "몇 가지 답변";
+  const signalTitle = FACE_SHAPE_INFO[signalShape].title;
+  return `다만 추가 답변에서는 ${noteText} 신호가 함께 보여, ${signalTitle} 특징을 반영한 보정 추천도 함께 드릴게요. ${BANG_LABELS[signalBang]}이 이 신호에 가장 잘 맞아요.`;
 }
 
-function buildPrimaryReason(finalFace: FaceShapeKey, primary: BangType): string {
-  const faceTitle = FACE_SHAPE_INFO[finalFace].title;
-  return `${faceTitle}에는 ${BANG_LABELS[primary]}이 가장 잘 맞아요. ${BANG_CORE_REASON[primary]}.`;
+function buildDebugReasonSummary(
+  selectedShape: FaceShapeKey, signalShape: FaceShapeKey, primaryBang: BangType, promoted: boolean,
+): string {
+  const selTitle = FACE_SHAPE_INFO[selectedShape].title;
+  const sigTitle = FACE_SHAPE_INFO[signalShape].title;
+  if (selectedShape === signalShape) {
+    return `선택하신 "${selTitle}"과 답변 신호가 일치해요. 두 기준을 함께 봤을 때 최종적으로는 ${BANG_LABELS[primaryBang]}이 가장 자연스러워요.`;
+  }
+  if (promoted) {
+    return `선택값은 "${selTitle}"이지만, 답변 신호는 "${sigTitle}" 쪽이 더 강하게 나타났어요. 두 기준을 함께 봤을 때 최종적으로는 ${BANG_LABELS[primaryBang]}이 가장 자연스러워요.`;
+  }
+  return `선택값은 "${selTitle}"이고, 답변에서 "${sigTitle}" 신호도 일부 보였지만 크게 두드러지진 않아 선택 얼굴형 기준을 우선했어요. 최종적으로는 ${BANG_LABELS[primaryBang]}을 추천드려요.`;
 }
 
-function buildSecondaryReason(primary: BangType, secondary: BangType): string {
-  return `${BANG_LABELS[secondary]}도 함께 고려해보세요. ${BANG_CORE_REASON[secondary]}. ${BANG_LABELS[primary]}과 분위기를 바꿔보고 싶을 때 시도하기 좋아요.`;
-}
-
-// ─── 블록: Q2 현재 스타일 팩트체크 (결과지 "현재 스타일 체크" 섹션용) ─────────
+// ─── 블록: Q(현재 스타일) 팩트체크 (결과지 "현재 스타일 체크" 섹션용) ───────────
 
 const Q1_LABELS: Record<Q1CurrentStyle, string> = {
   side_part:   "옆가르마",
@@ -377,7 +439,7 @@ const HAS_BANGS_TEXT: Record<FaceShapeKey, string> = {
 };
 
 function buildCurrentStyleCheck(
-  q1: Q1CurrentStyle | "", finalFace: FaceShapeKey,
+  q1: Q1CurrentStyle | "", shape: FaceShapeKey,
 ): { label: string; text: string } {
   const label = Q1_LABELS[q1 as Q1CurrentStyle] ?? "현재 스타일";
   const textMap: Partial<Record<Q1CurrentStyle, Record<FaceShapeKey, string>>> = {
@@ -386,7 +448,7 @@ function buildCurrentStyleCheck(
     side_part:   SIDE_PART_TEXT,
     has_bangs:   HAS_BANGS_TEXT,
   };
-  const text = textMap[q1 as Q1CurrentStyle]?.[finalFace]
+  const text = textMap[q1 as Q1CurrentStyle]?.[shape]
     ?? `현재 [${label}] 스타일이시네요. 답변을 바탕으로 최적의 앞머리를 처방해드릴게요.`;
   return { label, text };
 }
@@ -420,49 +482,93 @@ function uid(): string {
 
 export interface BangsDiagnosisResult {
   resultId: string;
+
   selectedFaceShape: FaceShapeKey;
-  inferredFaceShape: FaceShapeKey;
-  finalFaceShape: FaceShapeKey;
-  faceMatchStatus: FaceMatchStatus;
-  faceAnalysisText: string;
+  selectedFaceBang: BangType;
+  selectedFaceBangLabel: string;
+  selectedFaceReason: string;
+
+  signalBasedFaceShape: FaceShapeKey;
+  signalBasedBang: BangType;
+  signalBasedBangLabel: string;
+  signalBasedReason: string;
+
   primaryBang: BangType;
   primaryBangLabel: string;
-  primaryReason: string;
   secondaryBang: BangType;
   secondaryBangLabel: string;
-  secondaryReason: string;
+
   ngStyle: string;
   currentStyleCheck: { label: string; text: string };
   concernTags: string[];
   hairTextureTag: string;
   diagnosisSummary: string;
+
+  debugReasonSummary: string;
+  debugSignalNotes: string[];
+  topBangScores: { bang: BangType; label: string; score: number }[];
 }
 
 export function diagnoseBangs(answers: BangsSurveyAnswers): BangsDiagnosisResult {
-  const { selectedFaceShape, inferredFaceShape, finalFaceShape, faceMatchStatus } = inferFaceShape(answers);
+  const selectedFaceShape: FaceShapeKey =
+    answers.qFaceShape && SELECTABLE_FACE_SHAPES.includes(answers.qFaceShape)
+      ? answers.qFaceShape
+      : "oval";
 
-  const bangScores = calcBangScores(finalFaceShape, answers);
-  const { primary, secondary } = pickPrimarySecondary(bangScores);
+  const { shape: signalBasedFaceShape, score: signalScore } =
+    inferSignalBasedFaceShape(answers, selectedFaceShape);
 
-  const finalFaceTitle = FACE_SHAPE_INFO[finalFaceShape].title;
+  const selectedRanked = rankBangs(calcBangScores(selectedFaceShape, answers, "negativeOnly"));
+  const signalRanked   = rankBangs(calcBangScores(signalBasedFaceShape, answers, "full"));
+
+  const selectedFaceBang = selectedRanked[0].bang;
+  const signalBasedBang  = signalRanked[0].bang;
+
+  const shapesAgree = selectedFaceShape === signalBasedFaceShape;
+  const bangsAgree  = selectedFaceBang === signalBasedBang;
+  const promoted    = !shapesAgree && signalScore >= SIGNAL_PROMOTE_THRESHOLD;
+
+  let primaryBang: BangType;
+  let secondaryBang: BangType;
+  if (bangsAgree) {
+    primaryBang = selectedFaceBang;
+    secondaryBang = (signalRanked.find((r) => r.bang !== primaryBang) ?? selectedRanked[1]).bang;
+  } else if (promoted) {
+    primaryBang = signalBasedBang;
+    secondaryBang = selectedFaceBang;
+  } else {
+    primaryBang = selectedFaceBang;
+    secondaryBang = signalBasedBang;
+  }
+
+  const shortNotes = collectShortSignalLabels(answers);
 
   return {
     resultId: uid(),
+
     selectedFaceShape,
-    inferredFaceShape,
-    finalFaceShape,
-    faceMatchStatus,
-    faceAnalysisText: buildFaceAnalysisText(selectedFaceShape, finalFaceShape, faceMatchStatus),
-    primaryBang: primary,
-    primaryBangLabel: BANG_LABELS[primary],
-    primaryReason: buildPrimaryReason(finalFaceShape, primary),
-    secondaryBang: secondary,
-    secondaryBangLabel: BANG_LABELS[secondary],
-    secondaryReason: buildSecondaryReason(primary, secondary),
-    ngStyle: NG_STYLES[primary],
-    currentStyleCheck: buildCurrentStyleCheck(answers.q1, finalFaceShape),
+    selectedFaceBang,
+    selectedFaceBangLabel: BANG_LABELS[selectedFaceBang],
+    selectedFaceReason: buildSelectedFaceReason(selectedFaceShape, selectedFaceBang),
+
+    signalBasedFaceShape,
+    signalBasedBang,
+    signalBasedBangLabel: BANG_LABELS[signalBasedBang],
+    signalBasedReason: buildSignalBasedReason(selectedFaceShape, signalBasedFaceShape, signalBasedBang, shortNotes),
+
+    primaryBang,
+    primaryBangLabel: BANG_LABELS[primaryBang],
+    secondaryBang,
+    secondaryBangLabel: BANG_LABELS[secondaryBang],
+
+    ngStyle: NG_STYLES[primaryBang],
+    currentStyleCheck: buildCurrentStyleCheck(answers.q1, selectedFaceShape),
     concernTags: buildConcernTags(answers),
     hairTextureTag: buildHairTextureTag(answers.q5),
-    diagnosisSummary: `${finalFaceTitle} · 추천 앞머리 ${BANG_LABELS[primary]}`,
+    diagnosisSummary: `${FACE_SHAPE_INFO[selectedFaceShape].title} 기준 + 신호 보정 → 추천 앞머리 ${BANG_LABELS[primaryBang]}`,
+
+    debugReasonSummary: buildDebugReasonSummary(selectedFaceShape, signalBasedFaceShape, primaryBang, promoted),
+    debugSignalNotes: collectDebugSignalNotes(answers),
+    topBangScores: signalRanked.slice(0, 5).map((r) => ({ bang: r.bang, label: BANG_LABELS[r.bang], score: r.score })),
   };
 }
