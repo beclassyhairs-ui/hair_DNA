@@ -51,7 +51,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
   const [agreed, setAgreed] = useState(false);
 
   return (
-    <main className="flex h-[100dvh] flex-col bg-[#0C0B0A] text-cream">
+    <main className="flex h-[100dvh] flex-col bg-[#F9FAFB] text-[#2F2F2F]">
 
       {/* 가이드 이미지 — 중앙 정렬 */}
       <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
@@ -60,11 +60,11 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={guideImg.src} alt="촬영 가이드" className="h-auto w-full" />
           </div>
-          <p className="mt-3 px-2 text-center text-sm text-cream/40">
+          <p className="mt-3 px-2 text-center text-sm text-[#6B7280]">
             정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
           </p>
-          <div className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-3">
-            <p className="text-center text-xs leading-relaxed text-amber-400/80">
+          <div className="mt-3 rounded-xl border border-amber-400/40 bg-amber-50 px-4 py-3">
+            <p className="text-center text-xs leading-relaxed text-amber-700/90">
               ⚠️ <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
               손가락이 머리카락과 겹치면 AI가 손 모양을 변형할 수 있어요.<br />
               손은 아래로 자연스럽게 내린 자세로 촬영해 주세요.
@@ -75,7 +75,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
 
       {/* ── Sticky Bottom: 체크박스 + 버튼 ── */}
       <div
-        className="flex-none border-t border-white/[0.07] bg-[#0C0B0A]/95 px-5 pt-5 backdrop-blur-md"
+        className="flex-none border-t border-gray-100 bg-white/95 px-5 pt-5 backdrop-blur-md"
         style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
       >
         {/* 동의 체크박스 */}
@@ -86,21 +86,21 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
         >
           {/* 커스텀 체크박스 */}
           <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded border-2 transition-all duration-200 ${
-            agreed ? "border-gold bg-gold" : "border-white/35 bg-transparent"
+            agreed ? "border-gold bg-gold" : "border-gray-300 bg-transparent"
           }`}>
             {agreed && (
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                <path d="M5 12.5l4.5 4.5L19 7" stroke="#0C0B0A" strokeWidth="3"
+                <path d="M5 12.5l4.5 4.5L19 7" stroke="#2F2F2F" strokeWidth="3"
                   strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
           </span>
           <span>
-            <span className="block text-sm font-medium leading-snug text-cream/80">
+            <span className="block text-sm font-medium leading-snug text-[#374151]">
               AI 헤어 분석을 위한 사진 촬영 및 임시 처리에 동의합니다.{" "}
-              <span className="text-gold">(필수)</span>
+              <span className="text-gold-dark">(필수)</span>
             </span>
-            <span className="mt-1 block text-xs text-cream/35">
+            <span className="mt-1 block text-xs text-[#9CA3AF]">
               *업로드된 사진은 AI 분석 즉시 안전하게 파기됩니다.
             </span>
           </span>
@@ -110,12 +110,12 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
         <button
           onClick={onConfirm}
           disabled={!agreed}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-35"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
           style={{
             background: agreed
               ? "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)"
-              : "rgba(255,255,255,0.07)",
-            color: agreed ? "#0C0B0A" : "rgba(255,255,255,0.4)",
+              : "#F3F4F6",
+            color: agreed ? "#2F2F2F" : "#9CA3AF",
           }}
         >
           {agreed
@@ -386,7 +386,7 @@ export default function StyleUploadPage() {
 
   return (
     // [요구사항 3] h-[100dvh] flex-col — 모바일 브라우저 하단 바 포함 전체 높이
-    <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#0C0B0A] text-cream">
+    <main className="flex h-[100dvh] w-full flex-col overflow-hidden bg-[#F9FAFB] text-[#2F2F2F]">
 
       {/* [요구사항 2] 셔터 플래시 — 흰 화면 번쩍임 (0.15초) */}
       <AnimatePresence>
@@ -403,9 +403,9 @@ export default function StyleUploadPage() {
       </AnimatePresence>
 
       {/* ── 헤더 (flex-none) ── */}
-      <header className="flex flex-none items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-3.5 backdrop-blur-md">
+      <header className="flex flex-none items-center justify-between border-b border-gray-100 bg-[#F9FAFB]/92 px-5 py-3.5 backdrop-blur-md">
         <button onClick={() => router.push("/style/survey")}
-          className="text-sm font-medium text-cream/40 transition-colors hover:text-cream">
+          className="text-sm font-medium text-[#9CA3AF] transition-colors hover:text-[#2F2F2F]">
           ← 질문으로
         </button>
         <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">사진 등록</span>
@@ -535,14 +535,14 @@ export default function StyleUploadPage() {
       {/* ── [요구사항 3] 액션 버튼 영역 (shrink-0 — 카메라 뷰와 물리적 분리) ──
            bg-black/90으로 반투명 처리, safe-area padding 적용                  */}
       <div
-        className="shrink-0 z-50 bg-black/90 px-6 pt-5 backdrop-blur-md"
+        className="shrink-0 z-50 border-t border-gray-100 bg-white/95 px-6 pt-5 backdrop-blur-md"
         style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
       >
         {camera ? (
           /* 카메라 촬영 모드 */
           <div className="flex gap-3">
             <button onClick={stopCamera}
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              className="flex h-14 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-base font-medium text-[#6B7280] hover:text-[#2F2F2F] active:scale-[0.98]">
               닫기
             </button>
             <button onClick={capturePhoto}
@@ -559,7 +559,7 @@ export default function StyleUploadPage() {
                 setSavedPhoto(null);
                 try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
               }}
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              className="flex h-14 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-base font-medium text-[#6B7280] hover:text-[#2F2F2F] active:scale-[0.98]">
               다시 등록
             </button>
             <button
@@ -573,7 +573,7 @@ export default function StyleUploadPage() {
           /* 이미지 크롭/확인 모드 */
           <div className="flex gap-3">
             <button onClick={resetSrc}
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] px-6 text-base font-medium text-cream/70 hover:text-cream active:scale-[0.98]">
+              className="flex h-14 items-center justify-center rounded-2xl border border-gray-200 bg-white px-6 text-base font-medium text-[#6B7280] hover:text-[#2F2F2F] active:scale-[0.98]">
               다시 선택
             </button>
             <motion.button
@@ -599,7 +599,7 @@ export default function StyleUploadPage() {
         ) : (
           /* 초기 선택 화면 — 뒤로가기 */
           <button onClick={() => router.push("/style/survey")}
-            className="flex h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/[0.06] text-base font-medium text-cream/60 hover:text-cream">
+            className="flex h-14 w-full items-center justify-center rounded-2xl border border-gray-200 bg-white text-base font-medium text-[#6B7280] hover:text-[#2F2F2F]">
             ← 설문으로 돌아가기
           </button>
         )}

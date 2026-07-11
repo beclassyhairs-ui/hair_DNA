@@ -123,13 +123,13 @@ export default function StyleLoadingPage() {
   }, [router]);
 
   return (
-    <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#0C0B0A] text-cream">
+    <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#F9FAFB] text-[#2F2F2F]">
 
       {/* ── 상단 40% — 브랜드 배지 + 스피너 + 텍스트 ── */}
       <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
         style={{ flex: "0 0 40%" }}>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-4 py-1.5 text-xs font-bold tracking-wide text-gold">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.08] px-4 py-1.5 text-xs font-bold tracking-wide text-gold-dark">
           ✦ AI 스타일 합성 중
         </span>
 
@@ -153,7 +153,7 @@ export default function StyleLoadingPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.4 }}
-            className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-cream/75"
+            className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-[#374151]"
           >
             {STEPS[stepIdx]}
           </motion.p>
@@ -165,12 +165,12 @@ export default function StyleLoadingPage() {
 
         {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
         <div className="flex-none">
-          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-gold/60">
+          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-gold">
             기다리는 동안 읽는 헤어 꿀팁
           </p>
 
           {/* 단일 팁 카드 — fade 롤링 */}
-          <div className="relative min-h-[72px] rounded-2xl border border-white/[0.07] bg-white/[0.03] px-5 py-4 flex items-center">
+          <div className="relative min-h-[72px] rounded-2xl border border-gray-100 bg-white px-5 py-4 flex items-center shadow-sm">
             <AnimatePresence mode="wait">
               <motion.div
                 key={tipIdx}
@@ -181,7 +181,7 @@ export default function StyleLoadingPage() {
                 className="flex items-start gap-3"
               >
                 <span className="mt-0.5 flex-none text-[11px] text-gold">✦</span>
-                <p className="text-[12px] leading-relaxed text-cream/70">{HAIR_TIPS[tipIdx]}</p>
+                <p className="text-[12px] leading-relaxed text-[#374151]">{HAIR_TIPS[tipIdx]}</p>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -190,7 +190,7 @@ export default function StyleLoadingPage() {
           <div className="mt-2.5 flex justify-center gap-1.5">
             {HAIR_TIPS.map((_, i) => (
               <span key={i}
-                className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-gold/70" : "w-1 bg-white/20"}`}
+                className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-gold/70" : "w-1 bg-gray-200"}`}
               />
             ))}
           </div>

@@ -78,16 +78,16 @@ export default function StyleSurveyPage() {
   if (!q) return null;
 
   return (
-    <main className="flex min-h-screen flex-col bg-charcoal text-cream">
+    <main className="flex min-h-screen flex-col bg-[#F9FAFB] text-[#2F2F2F]">
 
       {/* 헤더 + 8칸 진행 바 */}
-      <header className="sticky top-0 z-20 border-b border-white/[0.07] bg-charcoal/92 backdrop-blur-md">
+      <header className="sticky top-0 z-20 border-b border-gray-100 bg-[#F9FAFB]/92 backdrop-blur-md">
         <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
               {getStepLabel(qIdx)}
             </span>
-            <span className="font-mono tabular-nums text-sm text-cream/35">
+            <span className="font-mono tabular-nums text-sm text-[#9CA3AF]">
               {qIdx + 1} / {STYLE_TOTAL}
             </span>
           </div>
@@ -96,7 +96,7 @@ export default function StyleSurveyPage() {
               <motion.div
                 key={i}
                 className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
-                  i < qIdx ? "bg-gold-dark" : i === qIdx ? "bg-gold" : "bg-white/10"
+                  i < qIdx ? "bg-gold-dark" : i === qIdx ? "bg-gold" : "bg-gray-100"
                 }`}
                 animate={{ scaleY: i === qIdx ? 1.22 : 1 }}
                 transition={{ duration: 0.2 }}
@@ -124,11 +124,11 @@ export default function StyleSurveyPage() {
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-gold">
                 Q{q.no}
               </p>
-              <h2 className="font-serif text-xl font-bold leading-snug text-cream sm:text-2xl">
+              <h2 className="font-serif text-xl font-bold leading-snug text-[#2F2F2F] sm:text-2xl">
                 {q.title}
               </h2>
               {q.hint && (
-                <p className="mt-2 text-sm leading-relaxed text-cream/45">{q.hint}</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#6B7280]">{q.hint}</p>
               )}
             </div>
 
@@ -139,20 +139,20 @@ export default function StyleSurveyPage() {
       </div>
 
       {/* 하단 네비게이션 */}
-      <div className="sticky bottom-0 z-10 border-t border-white/[0.07] bg-charcoal/95 backdrop-blur-md">
+      <div className="sticky bottom-0 z-10 border-t border-gray-100 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-lg gap-3 px-5 py-4 pb-8">
           {qIdx > 0 ? (
             <button onClick={goBack} disabled={pending}
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-7 text-base font-medium text-cream/55 transition-colors hover:border-white/25 hover:text-cream disabled:opacity-40">
+              className="flex h-14 items-center justify-center rounded-2xl border border-gray-200 bg-white px-7 text-base font-medium text-[#6B7280] transition-colors hover:border-gray-300 hover:text-[#2F2F2F] disabled:opacity-40">
               ← 이전
             </button>
           ) : (
             <Link href="/style"
-              className="flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/[0.04] px-7 text-base font-medium text-cream/55 transition-colors hover:border-white/25 hover:text-cream">
+              className="flex h-14 items-center justify-center rounded-2xl border border-gray-200 bg-white px-7 text-base font-medium text-[#6B7280] transition-colors hover:border-gray-300 hover:text-[#2F2F2F]">
               나가기
             </Link>
           )}
-          <div className="flex h-14 flex-1 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.02] text-sm text-cream/20">
+          <div className="flex h-14 flex-1 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-sm text-[#9CA3AF]">
             선택하면 자동으로 넘어가요
           </div>
         </div>
@@ -188,14 +188,14 @@ function OptionList({
                 : "h-14 gap-4 rounded-xl border-2 px-5"
             } ${
               isSel
-                ? "border-gold bg-gold/[0.1] shadow-[0_2px_18px_rgba(200,168,107,0.2)]"
-                : "border-white/[0.1] bg-white/[0.03] hover:border-gold/40 hover:bg-white/[0.06]"
+                ? "border-gold bg-gold/10 shadow-[0_2px_18px_rgba(200,168,107,0.2)]"
+                : "border-gray-100 bg-white shadow-sm hover:border-gold/40 hover:bg-[#FBF6EA]"
             }`}
           >
             {/* 라디오 */}
             <span className={`flex flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
               compact ? "h-5 w-5" : "h-6 w-6"
-            } ${isSel ? "border-gold bg-gold" : "border-white/25"}`}>
+            } ${isSel ? "border-gold bg-gold" : "border-gray-300"}`}>
               {isSel && (
                 <svg viewBox="0 0 24 24" fill="none" className={compact ? "h-3 w-3 text-charcoal" : "h-3.5 w-3.5 text-charcoal"}>
                   <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3"
@@ -206,20 +206,20 @@ function OptionList({
             {/* 텍스트 — compact(Q1)은 한 줄, 나머지는 flex-col 상하 배치 */}
             {compact ? (
               <span className="flex flex-1 items-baseline gap-2">
-                <span className={`text-sm font-semibold leading-tight ${isSel ? "text-gold-light" : "text-cream/85"}`}>
+                <span className={`text-sm font-semibold leading-tight ${isSel ? "text-gold-dark" : "text-[#2F2F2F]"}`}>
                   {opt.label}
                 </span>
                 {opt.desc && (
-                  <span className={`text-xs ${isSel ? "text-cream/60" : "text-cream/35"}`}>{opt.desc}</span>
+                  <span className={`text-xs ${isSel ? "text-gray-600" : "text-gray-500"}`}>{opt.desc}</span>
                 )}
               </span>
             ) : (
               <span className="flex flex-1 flex-col gap-0.5">
-                <span className={`text-base font-semibold leading-tight ${isSel ? "text-gold-light" : "text-cream/85"}`}>
+                <span className={`text-base font-semibold leading-tight ${isSel ? "text-gold-dark" : "text-[#2F2F2F]"}`}>
                   {opt.label}
                 </span>
                 {opt.desc && (
-                  <span className={`text-xs ${isSel ? "text-cream/60" : "text-cream/35"}`}>{opt.desc}</span>
+                  <span className={`text-xs ${isSel ? "text-gray-600" : "text-gray-500"}`}>{opt.desc}</span>
                 )}
               </span>
             )}
