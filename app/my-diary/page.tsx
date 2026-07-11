@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { LENGTH_LABEL_MAP } from "../style/surveyData";
 
 // ─── 레이블 매핑 ─────────────────────────────────────────────────────────────
 
@@ -16,9 +17,11 @@ const Q_LABELS: Record<string, string> = {
   q8_density:        "모발 숱",    q7_thickness:      "모발 굵기",
   q3_curl:           "곱슬 유무",  q10_history_count: "연간 시술",
 };
+// q11_length는 app/style/surveyData.ts의 LENGTH_LABEL_MAP(SSOT)을 그대로 사용 —
+// 예전엔 여기 따로 하드코딩돼 있어서 실제 규격과 어긋나 있었다(bob→"숏단발" 등 오표기).
 const A_LABELS: Record<string, Record<string, string>> = {
   q1_age:            { age_20: "20대", age_30: "30대", age_40: "40대", age_50: "50대", age_60plus: "60대 이상" },
-  q11_length:        { short: "숏", bob: "숏단발", shoulder: "단발", collarbone: "중단발", chest: "긴머리" },
+  q11_length:        LENGTH_LABEL_MAP,
   q14_layer:         { heavy: "무거움", medium: "소프트", light: "허쉬" },
   q13_design:        { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" },
   q8_density:        { thick_density: "많음", medium_density: "보통", thin_density: "적음" },

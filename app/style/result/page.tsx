@@ -23,7 +23,7 @@ import {
   getPrimaryConcern,
   type AhaBlock,
 } from "../recommend";
-import type { StyleAnswers } from "../surveyData";
+import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 import { trackEvent } from "../../../lib/trackEvent";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 
@@ -342,7 +342,7 @@ function AhaCard({ aha }: { aha: AhaBlock }) {
 
 const Q_DEBUG_LABELS: Record<string, [string, Record<string, string>]> = {
   q1_age:            ["연령대",    { age_20: "20대", age_30: "30대", age_40: "40대", age_50: "50대", age_60plus: "60대+" }],
-  q11_length:        ["기장",      { short: "숏", short_bob: "턱선 위", bob: "단발", collarbone: "쇄골", chest: "가슴선", long: "롱" }],
+  q11_length:        ["기장",      LENGTH_LABEL_MAP],
   q14_layer:         ["레이어",    { heavy: "층 없음", medium: "층 중간", light: "층 많음" }],
   q13_design:        ["웨이브",    { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" }],
   q8_density:        ["숱",        { thick_density: "많음", medium_density: "보통", thin_density: "적음" }],
@@ -511,7 +511,6 @@ export default function StyleResultPage() {
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
-  const LENGTH_LABEL: Record<string, string> = { short: "숏", short_bob: "턱선 위", bob: "단발", collarbone: "쇄골선", chest: "가슴선", long: "롱" };
 
   return (
     <main className="min-h-screen bg-[#F9FAFB] text-[#2F2F2F] mx-auto max-w-[430px]" style={{ touchAction: "pan-y" }}>
@@ -560,7 +559,7 @@ export default function StyleResultPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">추천 스타일</p>
               <h2 className="mt-1.5 font-serif text-2xl font-extrabold text-gold-light">{entry.name}</h2>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {[LENGTH_LABEL[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
+                {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
                   .filter(Boolean).map(tag => (
                     <span key={tag} className="rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-0.5 text-xs font-semibold text-gold-light">{tag}</span>
                   ))}

@@ -47,12 +47,12 @@ export const STYLE_SURVEY: StyleStep[] = [
         no:    "Q2",
         title: "원하는 머리 기장을 골라주세요",
         options: [
-          { id: "short",      label: "숏",     desc: "귀 위로 올라오는 길이" },
-          { id: "short_bob",  label: "턱선 위", desc: "귀 아래~턱 선" },
-          { id: "bob",        label: "단발",    desc: "턱~어깨 선" },
-          { id: "collarbone", label: "쇄골선",  desc: "쇄골 라인" },
-          { id: "chest",      label: "가슴선",  desc: "쇄골 아래" },
-          { id: "long",       label: "롱",      desc: "가슴선 아래" },
+          { id: "short",      label: "숏",         desc: "귀 위로 올라오는 길이" },
+          { id: "short_bob",  label: "숏단발",     desc: "귀 아래~턱 선" },
+          { id: "bob",        label: "단발 (턱선)", desc: "턱선 길이" },
+          { id: "shoulder",   label: "어깨선 길이", desc: "어깨에 닿는 길이" },
+          { id: "collarbone", label: "쇄골선 길이", desc: "쇄골 라인" },
+          { id: "chest",      label: "가슴 길이",   desc: "가슴에 닿는 길이" },
         ],
       },
       {
@@ -132,3 +132,12 @@ export const ALL_STYLE_QUESTIONS: StyleQuestion[] = STYLE_SURVEY.flatMap(
   (s) => s.questions,
 );
 export const STYLE_TOTAL = ALL_STYLE_QUESTIONS.length; // 8
+
+// ─── 기장(Q2) id → 한글 라벨, 단일 진실 공급원(SSOT) ─────────────────────────
+// styleReference.ts(폴더 매칭)·recommend.ts(스타일명)·result/page.tsx·my-diary가
+// 전부 이 맵을 가져다 쓴다. 위 options 배열 하나만 고치면 전체가 자동으로 동기화된다
+// — id/label이 여러 파일에 따로 하드코딩되어 서로 어긋나는 문제를 원천 차단.
+const LENGTH_QUESTION = ALL_STYLE_QUESTIONS.find((q) => q.id === "q11_length");
+export const LENGTH_LABEL_MAP: Record<string, string> = Object.fromEntries(
+  (LENGTH_QUESTION?.options ?? []).map((o) => [o.id, o.label]),
+);

@@ -21,22 +21,21 @@ const AGE_DIR: Record<string, string> = {
   age_60plus: "group_5060",
 };
 
-// ─── [기장] 6그룹 ─────────────────────────────────────────────────────────────
-// 설문값(q11_length) ↔ /references/ 폴더명 — 1:1 직접 매핑
-// short      (숏)    → short
-// short_bob  (숏단발) → short_bob
-// bob        (단발)   → bob
-// shoulder   (어깨선) → shoulder
-// collarbone (쇄골선) → collarbone
-// chest      (가슴선) → chest
+// ─── [기장] 6그룹 — 확정 규격(2026-07-11), public/references/ 실제 폴더명과 1:1 ──
+// short      (숏)       → short
+// short_bob  (숏단발)    → short_bob
+// bob        (단발/턱선) → bob
+// shoulder   (어깨선)    → shoulder   ※ 기존 long 완전 대체 — long 폴더는 디스크에 없음
+// collarbone (쇄골선)    → collarbone
+// chest      (가슴선)    → chest
 
 const LENGTH_DIR: Record<string, string> = {
   short:      "short",
   short_bob:  "short_bob",
   bob:        "bob",
+  shoulder:   "shoulder",
   collarbone: "collarbone",
   chest:      "chest",
-  long:       "long",
 };
 
 // ─── [웨이브] 4그룹 ───────────────────────────────────────────────────────────
@@ -73,7 +72,7 @@ export const MAX_IMG = 5;
  * @example
  * getStyleDirectoryPath({ q1_age:"age_30", q11_length:"shoulder",
  *                         q13_design:"c_curl", q14_layer:"medium" })
- * // → "/references/group_2040/bob/c_curl/soft/"
+ * // → "/references/group_2040/shoulder/c_curl/soft/"
  */
 export function getStyleDirectoryPath(answers: StyleAnswers): string {
   const age    = AGE_DIR[answers.q1_age      ?? ""] ?? "group_2040";
@@ -102,7 +101,7 @@ export function buildHairStylePrompt(answers: StyleAnswers): string {
     short:      "very short pixie cut, above the ears",
     short_bob:  "short bob, ear to chin length",
     bob:        "classic bob, jaw to chin length",
-    long:       "long hair past the chest",
+    shoulder:   "shoulder-length hair, lob-style cut",
     collarbone: "collarbone-length hair",
     chest:      "long hair reaching the chest",
   };

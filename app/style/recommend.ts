@@ -34,9 +34,9 @@ const BASE_STYLE: Record<string, Record<string, string>> = {
   short:      { straight: "숏컷",           c_curl: "숏컷 C컬",       s_curl: "숏컷 S컬",       wave: "숏컷 웨이브" },
   short_bob:  { straight: "귀밑 단발",       c_curl: "귀밑 단발 C컬",  s_curl: "귀밑 단발 S컬",  wave: "귀밑 단발 웨이브" },
   bob:        { straight: "단발컷",          c_curl: "단발 C컬",       s_curl: "단발 S컬",       wave: "단발 웨이브" },
+  shoulder:   { straight: "어깨선 단발컷",   c_curl: "어깨선 C컬",     s_curl: "어깨선 S컬",     wave: "어깨선 웨이브" },
   collarbone: { straight: "쇄골 레이어드컷", c_curl: "쇄골 C컬",       s_curl: "쇄골 S컬",       wave: "쇄골 웨이브" },
   chest:      { straight: "가슴선 롱컷",     c_curl: "가슴선 롱 C컬",  s_curl: "가슴선 롱 S컬",  wave: "가슴선 롱 웨이브" },
-  long:       { straight: "롱헤어",          c_curl: "롱 C컬",         s_curl: "롱 S컬",         wave: "롱 웨이브" },
 };
 
 // [무드 문구] Wave 4 × Layer 3 = 12칸
