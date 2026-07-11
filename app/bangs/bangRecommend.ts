@@ -75,16 +75,18 @@ const SIGNAL_FACE_SHAPES: FaceShapeKey[] = [
   "oval", "round", "square", "oblong", "heart", "peanut", "diamond",
 ];
 
-// 활성 추천 후보 11종 — 순서 그대로 유지(동점 시 앞쪽이 우선순위를 가짐).
+// 활성 추천 후보 10종 — public/images/bangs/에 실제 이미지가 있는 타입만 포함.
+// 순서 그대로 유지(동점 시 앞쪽이 우선순위를 가짐).
+// inner: 대응 이미지 파일이 없어 후보 제외(관련 점수는 face_line/side_bang으로 흡수).
 // hippy: 아직 대응하는 취향 질문이 없어 후보 제외(서술 텍스트에만 등장).
 // block: 추천 결과로 내보내지 않음 — NG 스타일 전용.
 export type ActiveBangType =
   | "see_through" | "curtain" | "long_side" | "side_swept" | "soft_full"
-  | "wisp" | "inner" | "face_line" | "round_bang" | "volume_bang" | "side_bang";
+  | "wisp" | "face_line" | "round_bang" | "volume_bang" | "side_bang";
 
 export const ACTIVE_BANG_TYPES: ActiveBangType[] = [
   "see_through", "curtain", "long_side", "side_swept", "soft_full",
-  "wisp", "inner", "face_line", "round_bang", "volume_bang", "side_bang",
+  "wisp", "face_line", "round_bang", "volume_bang", "side_bang",
 ];
 
 // ─── 8대 얼굴형 기본 정보 ─────────────────────────────────────────────────────
@@ -170,7 +172,7 @@ const BANG_CORE_REASON: Record<BangType, string> = {
   side_bang:   "옆으로 가볍게 흐르는 라인이 얼굴 옆선을 자연스럽고 실용적으로 보완해줘요",
 };
 
-// ─── 얼굴형별 앞머리 기본 적합도 (7형 × 11종) ─────────────────────────────────
+// ─── 얼굴형별 앞머리 기본 적합도 (7형 × 활성 10종, inner 등 비활성 타입도 점수 맵에는 남을 수 있음) ─────
 // long_side(여신 앞머리)와 side_bang(실용적 사이드뱅)은 역할을 분리한다 —
 // long_side는 광대·턱선을 길게 감싸는 강한 보정(diamond/square/peanut/cheekbone
 // 신호에 반응), side_bang은 옆가르마 사용자를 위한 가벼운 기본 옵션으로
@@ -180,7 +182,7 @@ type BangSignalMap = Partial<Record<BangType, number>>;
 
 const FACE_BANG_AFFINITY: Record<FaceShapeKey, BangSignalMap> = {
   oval:    { wisp: 3, see_through: 2, curtain: 2, side_swept: 1, face_line: 1, side_bang: 2 },
-  round:   { see_through: 3, inner: 3, side_swept: 2, face_line: 2, curtain: 1, side_bang: 1, soft_full: -2, round_bang: -2 },
+  round:   { see_through: 3, side_swept: 2, face_line: 5, curtain: 1, side_bang: 1, soft_full: -2, round_bang: -2 },
   square:  { curtain: 3, long_side: 3, face_line: 2, see_through: 1, soft_full: -2, round_bang: -1 },
   oblong:  { soft_full: 3, volume_bang: 3, round_bang: 2, see_through: 2, wisp: 1, long_side: 1 },
   heart:   { curtain: 3, volume_bang: 2, see_through: 2, side_swept: 2, side_bang: 1, long_side: 1, soft_full: 0 },
@@ -206,13 +208,13 @@ const MIDFACE_BANG_SIGNAL: Partial<Record<Q3MidfaceConcern | "", BangSignalMap>>
   long_mid:  { see_through: 3, soft_full: 2, round_bang: 2, volume_bang: 1 },
 };
 const JAW_BANG_SIGNAL: Partial<Record<Q4JawConcern | "", BangSignalMap>> = {
-  round_jaw:   { inner: 3, see_through: 2, face_line: 2, side_swept: 1, soft_full: -2, round_bang: -2 },
+  round_jaw:   { see_through: 2, face_line: 5, side_swept: 1, soft_full: -2, round_bang: -2 },
   angular_jaw: { curtain: 3, long_side: 3, face_line: 2, see_through: 1 },
   pointed_jaw: { long_side: 2, curtain: 2, volume_bang: 1, face_line: 1 },
 };
 const TEXTURE_BANG_SIGNAL: Partial<Record<Q5HairTexture | "", BangSignalMap>> = {
   flat_oily: { see_through: -1, soft_full: -1, wisp: 1, side_swept: 1 },
-  flyaway:   { inner: 2, face_line: 2, curtain: 1 },
+  flyaway:   { face_line: 2, curtain: 1, side_bang: 2 },
   // healthy: 별도 보정 없음
 };
 
