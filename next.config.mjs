@@ -19,6 +19,7 @@ const nextConfig = {
 
   async redirects() {
     return [
+      { source: "/",           destination: "/style", permanent: false },
       { source: "/upload",     destination: "/mbti", permanent: false },
       { source: "/result",     destination: "/mbti", permanent: false },
       { source: "/ai-loading", destination: "/mbti", permanent: false },
