@@ -39,12 +39,15 @@ export default function DamageCheckLandingPage() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-md flex-col items-center text-center"
         >
-          <GlassCard className="mb-9 flex h-24 w-24 items-center justify-center text-4xl" accent>
-            🔍
+          <GlassCard className="mb-9 flex h-24 w-24 items-center justify-center" accent>
+            <svg viewBox="0 0 48 48" className="h-10 w-10" fill="none">
+              <circle cx="24" cy="24" r="19" stroke="rgba(47,42,34,0.35)" strokeWidth="1.2" />
+              <path d="M15 24l6 6 12-14" stroke="#C8A86B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </GlassCard>
 
           <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
-            ✦ 미용실 가기 전 1분 팩트체크
+            미용실 가기 전 1분 팩트체크
           </span>
 
           <h1 className="font-serif text-[2.1rem] font-bold leading-[1.25] tracking-tight text-[#2F2A22]">

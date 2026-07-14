@@ -141,7 +141,7 @@ function PersonalizedRoutineWidget() {
       {/* 포인트 리워드 UI 뼈대 — 실 백엔드 포인트 연동 전, 체크 개수 기반으로 미리 계산해 보여줌 */}
       <div className="mt-2 flex justify-end">
         <span className="inline-flex items-center gap-1 rounded-full bg-[#FBF0DA] px-2.5 py-1 text-[11px] font-bold text-[#8A6D2F]">
-          ✨ 오늘 획득 {earnedPoints}P
+          오늘 획득 {earnedPoints}P
         </span>
       </div>
 

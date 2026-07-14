@@ -41,7 +41,7 @@ export default function RoundedOptionButton({
     >
       {icon && (
         <span
-          className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-base transition-colors ${
+          className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-sm font-semibold tabular-nums transition-colors ${
             selected ? "bg-[#2F2A22] text-white" : "bg-[#F3EEE3] text-[#9C9482]"
           }`}
         >

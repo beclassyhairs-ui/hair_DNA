@@ -240,7 +240,7 @@ function IntroView({ onStart }: { onStart: () => void }) {
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
     >
       <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
-        ✦ 청담동 헤어 클리닉 전문가 진단
+청담동 헤어 클리닉 전문가 진단
       </span>
 
       <h1 className="font-serif text-[2rem] font-extrabold leading-tight text-[#2F2A22]">
@@ -367,7 +367,7 @@ function ResultView({ result, onCta, onRetry }: { result: ResultData; onCta: () 
       <div className="mx-auto max-w-[430px] px-4 pt-8 pb-6 sm:px-6 space-y-4">
 
         <ResultHeroCard
-          eyebrow="✦ 청담동 헤어 클리닉 진단 완료"
+          eyebrow="청담동 헤어 클리닉 진단 완료"
           badge={result.badge}
           title={result.title}
           description={result.summary}
@@ -409,7 +409,7 @@ function ResultView({ result, onCta, onRetry }: { result: ResultData; onCta: () 
             Feat. 미용실 소통 팁
           </p>
           <p className="mb-3 text-[11px] text-[#9C9482]">
-            다음 미용실 갈 때 이 대본을 그대로 읽으세요 👇
+            다음 미용실 갈 때 이 대본을 그대로 읽으세요
           </p>
           <div className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
             <p className="text-sm italic leading-relaxed text-[#6B6355]">{result.salonScript}</p>

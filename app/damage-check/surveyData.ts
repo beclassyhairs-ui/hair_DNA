@@ -65,9 +65,9 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "샤워 후 젖은 머리카락 한 올을\n살짝 당겨보면?",
     hint: "미용사들이 손상도를 볼 때 가장 먼저 하는 테스트예요",
     options: [
-      { id: "snap",    icon: "💥", label: "힘없이 툭 끊어진다",       desc: "당기자마자 바로 끊어지는 느낌" },
-      { id: "stretch", icon: "🔗", label: "고무줄처럼 늘어나다 끊어진다", desc: "늘어나긴 하는데 결국 끊어짐" },
-      { id: "elastic", icon: "✨", label: "탄력 있게 늘어났다 돌아온다", desc: "당겨도 원래 길이로 복원됨" },
+      { id: "snap",    icon: "01", label: "힘없이 툭 끊어진다",       desc: "당기자마자 바로 끊어지는 느낌" },
+      { id: "stretch", icon: "02", label: "고무줄처럼 늘어나다 끊어진다", desc: "늘어나긴 하는데 결국 끊어짐" },
+      { id: "elastic", icon: "03", label: "탄력 있게 늘어났다 돌아온다", desc: "당겨도 원래 길이로 복원됨" },
     ],
   },
   // ── Q2: 마찰 테스트 — 샴푸만 하고 빗질 ───────────────────────────────────────
@@ -79,9 +79,9 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "트리트먼트 없이 샴푸만 하고\n빗질해보면?",
     hint: "큐티클이 얼마나 살아있는지 알 수 있어요",
     options: [
-      { id: "tangled", icon: "🪢", label: "엉켜서 잘 안 풀리고 뜯긴다", desc: "빗질할 때 뭉텅이로 뽑히는 느낌" },
-      { id: "loosens", icon: "〜", label: "좀 엉키지만 몇 번 빗으면 풀린다", desc: "처음엔 걸리는데 곧 부드러워짐" },
-      { id: "smooth",  icon: "🌊", label: "뽀득거리고 잘 빗긴다",     desc: "빗질이 걸림 없이 매끄러움" },
+      { id: "tangled", icon: "01", label: "엉켜서 잘 안 풀리고 뜯긴다", desc: "빗질할 때 뭉텅이로 뽑히는 느낌" },
+      { id: "loosens", icon: "02", label: "좀 엉키지만 몇 번 빗으면 풀린다", desc: "처음엔 걸리는데 곧 부드러워짐" },
+      { id: "smooth",  icon: "03", label: "뽀득거리고 잘 빗긴다",     desc: "빗질이 걸림 없이 매끄러움" },
     ],
   },
   // ── Q3: 관찰 테스트 — 드라이 시간 ────────────────────────────────────────────
@@ -93,9 +93,9 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "드라이기로 머리를 말릴 때\n보통 어떤가요?",
     hint: "마르는 속도로 모발 상태의 다른 면을 볼 수 있어요",
     options: [
-      { id: "fast",   icon: "⚡", label: "순식간에 마른다",         desc: "수분이 금방 날아가는 느낌" },
-      { id: "slow",   icon: "🐌", label: "유독 오래 걸린다",         desc: "속까지 마르는 데 시간이 많이 걸림" },
-      { id: "normal", icon: "🙂", label: "적당히 보통으로 마른다",   desc: "특별히 빠르거나 느리지 않음" },
+      { id: "fast",   icon: "01", label: "순식간에 마른다",         desc: "수분이 금방 날아가는 느낌" },
+      { id: "slow",   icon: "02", label: "유독 오래 걸린다",         desc: "속까지 마르는 데 시간이 많이 걸림" },
+      { id: "normal", icon: "03", label: "적당히 보통으로 마른다",   desc: "특별히 빠르거나 느리지 않음" },
     ],
   },
   // ── Q4: 원인 파악 — 시술·스타일링 습관 (다중선택) ────────────────────────────
@@ -108,12 +108,12 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     hint: "해당하는 걸 전부 선택해 주세요 (복수 선택 가능)",
     noneOptionId: "none",
     options: [
-      { id: "heat_daily",     icon: "🔥", label: "고데기·매직기를 자주 쓴다",     desc: "주 3회 이상 고열 스타일링" },
-      { id: "heat_noprotect", icon: "🌡️", label: "열 보호제 없이 스타일링한다",   desc: "열 기구 사용 전 보호 제품 안 바름" },
-      { id: "chem_repeat",    icon: "🎨", label: "염색·새치커버를 자주 한다",     desc: "2~3개월 주기로 반복" },
-      { id: "chem_bleach",    icon: "🧪", label: "탈색(블리치)을 받아본 적 있다", desc: "톤업·탈색 시술 경험" },
-      { id: "perm_repeat",    icon: "🌀", label: "펌·매직을 자주 한다",          desc: "디지털펌 포함, 6개월 내 반복" },
-      { id: "multi_combo",    icon: "🧷", label: "여러 시술을 한꺼번에 받았다",   desc: "예: 탈색 + 펌을 연달아 진행" },
+      { id: "heat_daily",     icon: "01", label: "고데기·매직기를 자주 쓴다",     desc: "주 3회 이상 고열 스타일링" },
+      { id: "heat_noprotect", icon: "02", label: "열 보호제 없이 스타일링한다",   desc: "열 기구 사용 전 보호 제품 안 바름" },
+      { id: "chem_repeat",    icon: "03", label: "염색·새치커버를 자주 한다",     desc: "2~3개월 주기로 반복" },
+      { id: "chem_bleach",    icon: "04", label: "탈색(블리치)을 받아본 적 있다", desc: "톤업·탈색 시술 경험" },
+      { id: "perm_repeat",    icon: "05", label: "펌·매직을 자주 한다",          desc: "디지털펌 포함, 6개월 내 반복" },
+      { id: "multi_combo",    icon: "06", label: "여러 시술을 한꺼번에 받았다",   desc: "예: 탈색 + 펌을 연달아 진행" },
       { id: "none",           icon: "✓",  label: "해당 없음",                    desc: "최근 특별한 시술·스타일링 안 함" },
     ],
   },

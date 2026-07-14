@@ -95,10 +95,10 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     stepTag: "현재 스타일",
     title: "현재 헤어스타일은 어떤가요?",
     options: [
-      { id: "side_part",   icon: "↗",  label: "옆가르마",          desc: "왼쪽 또는 오른쪽으로 가르마를 타요" },
-      { id: "center_part", icon: "↑",  label: "가운데 가르마 (5:5)", desc: "정중앙으로 이마를 드러내요" },
-      { id: "allback",     icon: "↰",  label: "앞머리 없음 · 올백",  desc: "이마를 완전히 드러내고 넘겨요" },
-      { id: "has_bangs",   icon: "💇", label: "앞머리 있음",         desc: "현재 앞머리가 있어요" },
+      { id: "side_part",   icon: "01",  label: "옆가르마",          desc: "왼쪽 또는 오른쪽으로 가르마를 타요" },
+      { id: "center_part", icon: "02",  label: "가운데 가르마 (5:5)", desc: "정중앙으로 이마를 드러내요" },
+      { id: "allback",     icon: "03",  label: "앞머리 없음 · 올백",  desc: "이마를 완전히 드러내고 넘겨요" },
+      { id: "has_bangs",   icon: "04",  label: "앞머리 있음",         desc: "현재 앞머리가 있어요" },
     ],
   },
   // ── Q3: 상안부 — 이마 고민 ───────────────────────────────────────────────────
@@ -109,8 +109,8 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "이마 / 헤어라인의 가장 큰 고민은?",
     hint: "앞머리 처방 방향이 달라져요",
     options: [
-      { id: "narrow_brow",   icon: "🔼", label: "좁은 이마 · 튀어나온 눈썹뼈", desc: "이마가 좁거나 눈썹뼈가 도드라져요" },
-      { id: "wide_forehead", icon: "↔️", label: "넓은 이마 · M자 헤어라인",     desc: "이마 여백이 넓거나 헤어라인이 올라가요" },
+      { id: "narrow_brow",   icon: "01", label: "좁은 이마 · 튀어나온 눈썹뼈", desc: "이마가 좁거나 눈썹뼈가 도드라져요" },
+      { id: "wide_forehead", icon: "02", label: "넓은 이마 · M자 헤어라인",     desc: "이마 여백이 넓거나 헤어라인이 올라가요" },
       { id: "none",          icon: "✓",  label: "특별한 고민 없음",              desc: "이마 쪽은 괜찮아요", isNone: true },
     ],
   },
@@ -122,8 +122,8 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "얼굴 중앙에서 가리고 싶은 부분은?",
     hint: "사이드뱅 / 커튼뱅 처방 방향이 달라져요",
     options: [
-      { id: "cheekbone", icon: "◉",  label: "도드라진 옆광대",     desc: "광대가 옆으로 도드라져 보여요" },
-      { id: "long_mid",  icon: "↕️", label: "긴 중안부 / 긴 코",   desc: "코 아래~입술 구간이 길어 보여요" },
+      { id: "cheekbone", icon: "01", label: "도드라진 옆광대",     desc: "광대가 옆으로 도드라져 보여요" },
+      { id: "long_mid",  icon: "02", label: "긴 중안부 / 긴 코",   desc: "코 아래~입술 구간이 길어 보여요" },
       { id: "none",      icon: "✓",  label: "특별한 고민 없음",    desc: "이 부분은 괜찮아요", isNone: true },
     ],
   },
@@ -135,9 +135,9 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "턱선 주변의 특징은?",
     hint: "롱 뱅 vs 짧은 뱅 처방 방향이 달라져요",
     options: [
-      { id: "round_jaw",   icon: "⭕", label: "둥근 턱 · 볼살형",         desc: "볼살이 있거나 턱이 둥글어요" },
-      { id: "angular_jaw", icon: "◇",  label: "각진 턱선",               desc: "하관이 각지고 턱 라인이 뚜렷해요" },
-      { id: "pointed_jaw", icon: "▽",  label: "뾰족한 V라인 · 좁은 턱끝", desc: "턱끝이 좁고 갸름하게 모여요" },
+      { id: "round_jaw",   icon: "01", label: "둥근 턱 · 볼살형",         desc: "볼살이 있거나 턱이 둥글어요" },
+      { id: "angular_jaw", icon: "02", label: "각진 턱선",               desc: "하관이 각지고 턱 라인이 뚜렷해요" },
+      { id: "pointed_jaw", icon: "03", label: "뾰족한 V라인 · 좁은 턱끝", desc: "턱끝이 좁고 갸름하게 모여요" },
       { id: "none",        icon: "✓",  label: "특별한 고민 없음",         desc: "턱 쪽은 괜찮아요", isNone: true },
     ],
   },
@@ -149,9 +149,9 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "앞머리 쪽 머릿결의 특징은?",
     hint: "맞춤 헤어 제품을 추천해드릴게요",
     options: [
-      { id: "flat_oily", icon: "💧", label: "푹 가라앉고 금방 기름짐", desc: "오후만 되면 떡지거나 납작해져요" },
-      { id: "flyaway",   icon: "🌬️", label: "위로 솟구치거나 잔머리 많음", desc: "잔머리가 많거나 위로 뻗쳐나와요" },
-      { id: "healthy",   icon: "✨", label: "건강하고 손질하기 편함",    desc: "큰 불편 없이 손질해요", isNone: true },
+      { id: "flat_oily", icon: "01", label: "푹 가라앉고 금방 기름짐", desc: "오후만 되면 떡지거나 납작해져요" },
+      { id: "flyaway",   icon: "02", label: "위로 솟구치거나 잔머리 많음", desc: "잔머리가 많거나 위로 뻗쳐나와요" },
+      { id: "healthy",   icon: "✓",  label: "건강하고 손질하기 편함",    desc: "큰 불편 없이 손질해요", isNone: true },
     ],
   },
 ];

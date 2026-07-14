@@ -56,7 +56,6 @@ export default function StyleLandingPage() {
                 className="w-full max-w-sm rounded-3xl border border-white/60 bg-white/90 p-7 text-center shadow-xl backdrop-blur-xl"
                 onClick={e => e.stopPropagation()}
               >
-                <p className="mb-4 text-4xl">🌙</p>
                 <h2 className="font-serif text-lg font-bold text-[#2F2A22]">오늘의 무료 진단이 끝났어요</h2>
                 <p className="mt-3 text-sm leading-relaxed text-[#6B6355]">
                   하루 무료 진단 횟수({DAILY_MAX}회)를 모두 사용하셨습니다.<br />
@@ -112,7 +111,7 @@ export default function StyleLandingPage() {
               }`}>
                 {remaining === 0
                   ? "오늘 무료 진단 횟수를 모두 사용했어요"
-                  : `✦ 오늘 남은 무료 진단 횟수: ${remaining}회`}
+                  : `오늘 남은 무료 진단 횟수: ${remaining}회`}
               </span>
             </div>
 

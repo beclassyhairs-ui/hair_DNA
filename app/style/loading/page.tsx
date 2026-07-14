@@ -133,7 +133,7 @@ export default function StyleLoadingPage() {
           style={{ flex: "0 0 40%" }}>
 
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
-            ✦ AI 스타일 합성 중
+            AI 스타일 합성 중
           </span>
 
           {/* 소형 골드 링 스피너 */}
@@ -183,7 +183,7 @@ export default function StyleLoadingPage() {
                   transition={{ duration: 0.4 }}
                   className="flex items-start gap-3"
                 >
-                  <span className="mt-0.5 flex-none text-[11px] text-[#A8884A]">✦</span>
+                  <span className="mt-1 flex-none h-1 w-1 rounded-full bg-[#A8884A]" />
                   <p className="text-[12px] leading-relaxed text-[#4A453B]">{HAIR_TIPS[tipIdx]}</p>
                 </motion.div>
               </AnimatePresence>

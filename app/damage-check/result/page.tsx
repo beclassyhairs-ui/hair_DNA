@@ -233,7 +233,6 @@ export default function DamageCheckResultPage() {
                 onClick={handleKakaoShare}
                 className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
               >
-                <span className="text-lg">💬</span>
                 {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
               </button>
               {copied && <p className="mt-2 text-center text-xs text-[#9C9482]">✓ 링크가 복사됐어요</p>}

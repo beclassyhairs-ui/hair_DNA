@@ -114,7 +114,6 @@ function BangImageCard({
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#F3EEE3]">
-          <span className="text-2xl">💇</span>
           <p className="px-2 text-center text-[10px] font-bold text-[#A8884A]">{bangLabel}</p>
         </div>
       )}
@@ -203,7 +202,6 @@ function ImageLightbox({
             />
           ) : (
             <div className="flex aspect-[3/4] flex-col items-center justify-center gap-3">
-              <span className="text-5xl">💇</span>
               <p className="font-serif text-lg font-bold text-white">{bangLabel}</p>
             </div>
           )}
@@ -463,7 +461,7 @@ export default function BangsResultPage() {
             {/* 2. 서브 추천 */}
             <motion.div variants={FADE_UP}>
               <GlassCard className="p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">✦ 함께 고려해볼 스타일</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">함께 고려해볼 스타일</p>
                 <p className="mt-2 font-serif text-lg font-bold text-[#2F2A22]">{result.secondaryBangLabel}</p>
                 <p className="mt-2 text-sm leading-relaxed text-[#4A453B]">
                   {reasonFor(result.secondaryBang, result.secondaryBangLabel)}
@@ -475,7 +473,7 @@ export default function BangsResultPage() {
             {sameFaceBang ? (
               <motion.div variants={FADE_UP}>
                 <GlassCard accent className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">✦ 추천 이유</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추천 이유</p>
                   <p className="mt-1.5 text-sm leading-relaxed text-[#4A453B]">
                     선택하신 얼굴형과 추가 답변이 같은 방향을 가리켰어요.<br />
                     두 기준 모두 <strong className="font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</strong>이 잘 맞는 것으로 나타나 최종 1순위로 추천드려요.
@@ -516,7 +514,7 @@ export default function BangsResultPage() {
             {showDebug && (
               <motion.div variants={FADE_UP} className="rounded-2xl border border-dashed border-yellow-400/50 bg-yellow-50 p-5 font-mono">
                 <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-700">
-                  🔍 왜 이 앞머리가 추천됐나요? (테스트용)
+                  왜 이 앞머리가 추천됐나요? (테스트용)
                 </p>
 
                 <div className="mt-3 space-y-1 text-[11px] text-yellow-900">
@@ -578,14 +576,13 @@ export default function BangsResultPage() {
                   onClick={handleKakaoShare}
                   className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
                 >
-                  <span className="text-lg">💬</span>
                   {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
                 </button>
                 <button
                   onClick={handleCopyLink}
                   className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] text-sm font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22] active:scale-[0.98]"
                 >
-                  {copied ? "✓ 복사됨" : "🔗 링크 복사"}
+                  {copied ? "✓ 복사됨" : "링크 복사"}
                 </button>
               </GlassCard>
             </motion.div>

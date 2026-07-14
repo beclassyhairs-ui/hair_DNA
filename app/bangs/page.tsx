@@ -51,7 +51,7 @@ export default function BangsLandingPage() {
           </GlassCard>
 
           <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
-            ✦ 5초 얼굴형 분석
+5초 얼굴형 분석
           </span>
 
           <h1 className="font-serif text-[2.1rem] font-bold leading-[1.25] tracking-tight text-[#2F2A22]">

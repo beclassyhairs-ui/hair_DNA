@@ -73,7 +73,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             </p>
             <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-50/80 px-4 py-3">
               <p className="text-center text-xs leading-relaxed text-amber-700/90">
-                ⚠️ <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
+                <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
                 손가락이 머리카락과 겹치면 AI가 손 모양을 변형할 수 있어요.<br />
                 손은 아래로 자연스럽게 내린 자세로 촬영해 주세요.
               </p>
@@ -464,7 +464,7 @@ export default function StyleUploadPage() {
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
                 {/* 카메라 권한 안내 문구 */}
                 <p className="mb-1 max-w-xs text-center text-xs leading-relaxed text-white/50">
-                  💡 정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
+                  정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
                   className="flex w-56 items-center justify-center gap-2 rounded-full bg-white py-3.5 text-base font-bold text-[#1C1A17] shadow-lg transition-all hover:brightness-95 active:scale-[0.98]">

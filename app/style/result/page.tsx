@@ -124,12 +124,15 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">A-Beauty</p>
           <h2 className="mt-3 font-serif text-2xl font-bold text-[#2F2A22]">결과지가 완성됐어요!</h2>
           <p className="mt-2 text-sm text-[#6B6355]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
-          <div className="mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F3EEE3] text-2xl">🔓</div>
           <button onClick={handleLogin} disabled={loading}
-            className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
+            className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
             {loading
-              ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
-              : <><span className="text-xl">💬</span> 카카오 1초 로그인하고 결과 확인하기</>}
+              ? <motion.span
+                  className="inline-block h-4 w-4 rounded-full"
+                  style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(25,22,0,0.25)" }}
+                  animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                />
+              : "카카오 1초 로그인하고 결과 확인하기"}
           </button>
           <p className="mt-2.5 text-[11px] text-[#9C9482]">별도 가입 없이 카카오 계정으로 바로 확인</p>
         </div>
@@ -208,15 +211,19 @@ function KakaoSaveModal({
         <div className="mt-4 space-y-2">
           {["맞춤 홈케어 제품 상단 노출 (시술 이력 기반)", "내 헤어 스타일 히스토리 보관", "전문가 케어 처방전 저장"].map(b => (
             <div key={b} className="flex items-center gap-2.5 text-sm text-[#6B6355]">
-              <span className="text-[#A8884A] text-xs">✦</span>{b}
+              <span className="h-1 w-1 flex-none rounded-full bg-[#A8884A]" />{b}
             </div>
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
           className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
           {loading
-            ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
-            : <><span className="text-xl">💬</span> 카카오 1초 로그인/가입으로 저장하기</>}
+            ? <motion.span
+                className="inline-block h-4 w-4 rounded-full"
+                style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(25,22,0,0.25)" }}
+                animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+              />
+            : "카카오 1초 로그인/가입으로 저장하기"}
         </button>
         <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-sm text-[#9C9482] hover:text-[#2F2A22]">
           나중에 저장하기
@@ -295,7 +302,7 @@ function BeforeAfterSection({
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After ✦</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After</span>
         </div>
         {!locked && generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
@@ -328,7 +335,7 @@ function AhaCard({ aha }: { aha: AhaBlock }) {
 
       {/* Block B: 아하! 공감 */}
       <div className="flex items-start gap-3 rounded-xl border border-[#EDE7DA] bg-white/60 px-3.5 py-3">
-        <span className="flex-none text-base leading-none mt-0.5">😮</span>
+        <span className="mt-0.5 flex-none rounded-full bg-[#F3EEE3] px-2 py-0.5 text-[9px] font-bold text-[#A8884A] whitespace-nowrap">공감</span>
         <p className="text-sm font-medium leading-relaxed text-[#2F2A22]">{aha.sympathy}</p>
       </div>
 
@@ -365,7 +372,7 @@ function DiagnosisDebugPanel({
         onClick={() => setOpen(true)}
         className="fixed bottom-24 right-3 z-40 flex items-center gap-1 rounded-full border border-gray-200 bg-white/90 px-2.5 py-1.5 text-[9px] font-mono font-bold text-[#6B7280] shadow-sm backdrop-blur-sm hover:text-[#2F2F2F]"
       >
-        🔍 진단 로직
+        진단 로직
       </button>
       <AnimatePresence>
         {open && (
@@ -382,7 +389,7 @@ function DiagnosisDebugPanel({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200" />
-              <p className="mb-3 font-bold uppercase tracking-widest text-yellow-600">🔍 진단 로직 디버그</p>
+              <p className="mb-3 font-bold uppercase tracking-widest text-yellow-600">진단 로직 디버그</p>
 
               {/* 유저 답변 */}
               <div className="mb-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
@@ -453,8 +460,12 @@ function NotifyButton() {
     <button onClick={handleNotify} disabled={state === "loading"}
       className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98] disabled:opacity-60">
       {state === "loading"
-        ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block">⏳</motion.span>
-        : "🔔 새로운 AI 분석 서비스 오픈 알림 받기"}
+        ? <motion.span
+            className="inline-block h-4 w-4 rounded-full"
+            style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(255,255,255,0.25)" }}
+            animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          />
+        : "새로운 AI 분석 서비스 오픈 알림 받기"}
     </button>
   );
 }
@@ -563,7 +574,7 @@ export default function StyleResultPage() {
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
                 className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-[#EDE7DA] bg-white text-base font-bold text-[#2F2A22] transition-all hover:bg-[#FBF6EA] active:scale-[0.98]">
-                📥 사진 다운받기 (다이어리 저장 후 가능)
+                사진 다운받기 (다이어리 저장 후 가능)
               </button>
               <p className="text-center text-xs text-[#9C9482] -mt-1">
                 다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
@@ -580,7 +591,7 @@ export default function StyleResultPage() {
                     else navigator.clipboard?.writeText(url).then(() => alert("링크가 복사됐어요!"));
                   }}
                   className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-sm font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
-                  🔗 공유하기
+                  공유하기
                 </button>
               </div>
             </GlassCard>
@@ -600,7 +611,7 @@ export default function StyleResultPage() {
             <button
               className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] hover:brightness-95 active:scale-[0.98]"
               onClick={() => {/* 모달 자동 표시 */}}>
-              <span className="text-lg">💬</span> 카카오 로그인하고 결과 보기
+              카카오 로그인하고 결과 보기
             </button>
           ) : (
             <NotifyButton />
