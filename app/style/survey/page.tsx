@@ -5,14 +5,14 @@
 // STEP 1(1~4) 스타일 결정 → STEP 2(5~8) 모질 파악 → /style/upload
 // ============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ALL_STYLE_QUESTIONS,
-  STYLE_TOTAL,
   STYLE_SURVEY,
+  isShortLength,
   type StyleAnswers,
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
@@ -21,15 +21,10 @@ import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
 
-function getStepLabel(idx: number) {
-  let count = 0;
-  for (const step of STYLE_SURVEY) {
-    const next = count + step.questions.length;
-    if (idx < next) return step.label;
-    count = next;
-  }
-  return "";
-}
+// 질문 id → STEP 라벨 (visibleQuestions로 필터링돼도 인덱스와 무관하게 항상 정확함)
+const STEP_LABEL_BY_QID: Record<string, string> = Object.fromEntries(
+  STYLE_SURVEY.flatMap((step) => step.questions.map((sq) => [sq.id, step.label])),
+);
 
 const slideVariants = {
   enter:  (dir: number) => ({ opacity: 0, x: dir > 0 ? 56 : -56 }),
@@ -51,8 +46,23 @@ export default function StyleSurveyPage() {
     setAnswers({});
   }, []);
 
-  const q      = ALL_STYLE_QUESTIONS[qIdx];
-  const isLast = qIdx === STYLE_TOTAL - 1;
+  // short/short_bob이면 q14_layer 질문 자체를 화면에서 숨긴다(값은 handleSelect에서 자동 저장)
+  const visibleQuestions = useMemo(
+    () => ALL_STYLE_QUESTIONS.filter(
+      (item) => item.id !== "q14_layer" || !isShortLength(answers.q11_length),
+    ),
+    [answers.q11_length],
+  );
+  const visibleTotal = visibleQuestions.length;
+
+  const q      = visibleQuestions[qIdx];
+  const isLast = qIdx === visibleTotal - 1;
+
+  // q13_design은 질문 자체는 유지하고 short/short_bob일 때 s_curl 옵션만 숨긴다
+  const visibleOptions =
+    q?.id === "q13_design" && isShortLength(answers.q11_length)
+      ? q.options.filter((opt) => opt.id !== "s_curl")
+      : q?.options ?? [];
 
   function advance(next: StyleAnswers) {
     try { sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(next)); } catch { /**/ }
@@ -66,7 +76,20 @@ export default function StyleSurveyPage() {
 
   function handleSelect(optId: string) {
     if (pending) return;
-    const next = { ...answers, [q.id]: optId };
+    const next: StyleAnswers = { ...answers, [q.id]: optId };
+
+    if (q.id === "q11_length") {
+      if (isShortLength(optId)) {
+        // 레이어드 질문이 숨겨지므로 내부적으로 "가벼움"을 자동 저장
+        next.q14_layer = "light";
+        // 새 정책상 short/short_bob + s_curl 조합은 없으므로 남아있던 값 정리
+        if (next.q13_design === "s_curl") delete next.q13_design;
+      } else if (isShortLength(answers.q11_length)) {
+        // short/short_bob → 단발 이상으로 전환: 자동 저장값을 지워 재선택을 유도
+        delete next.q14_layer;
+      }
+    }
+
     setAnswers(next);
     setPending(true);
     setTimeout(() => { setPending(false); advance(next); }, 350);
@@ -84,8 +107,8 @@ export default function StyleSurveyPage() {
     <SilkBackground>
       <main className="mx-auto flex min-h-screen max-w-lg flex-col text-[#2F2A22]">
 
-        <TestHeader stepLabel={getStepLabel(qIdx)} current={qIdx + 1} total={STYLE_TOTAL}>
-          <ProgressBar value={((qIdx + 1) / STYLE_TOTAL) * 100} />
+        <TestHeader stepLabel={STEP_LABEL_BY_QID[q.id] ?? ""} current={qIdx + 1} total={visibleTotal}>
+          <ProgressBar value={((qIdx + 1) / visibleTotal) * 100} />
         </TestHeader>
 
         {/* 질문 본문 */}
@@ -114,7 +137,7 @@ export default function StyleSurveyPage() {
               </div>
 
               <div className="space-y-2.5">
-                {q.options.map((opt) => (
+                {visibleOptions.map((opt) => (
                   <RoundedOptionButton
                     key={opt.id}
                     label={opt.label}

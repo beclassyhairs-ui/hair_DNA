@@ -47,12 +47,11 @@ export const STYLE_SURVEY: StyleStep[] = [
         no:    "Q2",
         title: "원하는 머리 기장을 골라주세요",
         options: [
-          { id: "short",      label: "숏",         desc: "귀 위로 올라오는 길이" },
-          { id: "short_bob",  label: "숏단발",     desc: "귀 아래~턱 선" },
-          { id: "bob",        label: "단발 (턱선)", desc: "턱선 길이" },
-          { id: "shoulder",   label: "어깨선 길이", desc: "어깨에 닿는 길이" },
-          { id: "collarbone", label: "쇄골선 길이", desc: "쇄골 라인" },
-          { id: "chest",      label: "가슴 길이",   desc: "가슴에 닿는 길이" },
+          { id: "short",      label: "숏",   desc: "귀 위로 올라오는 길이" },
+          { id: "short_bob",  label: "숏보브", desc: "귀 아래~턱 선" },
+          { id: "bob",        label: "단발", desc: "턱선 길이" },
+          { id: "collarbone", label: "쇄골", desc: "쇄골 라인" },
+          { id: "chest",      label: "롱",   desc: "가슴에 닿는 길이" },
         ],
       },
       {
@@ -141,3 +140,12 @@ const LENGTH_QUESTION = ALL_STYLE_QUESTIONS.find((q) => q.id === "q11_length");
 export const LENGTH_LABEL_MAP: Record<string, string> = Object.fromEntries(
   (LENGTH_QUESTION?.options ?? []).map((o) => [o.id, o.label]),
 );
+// shoulder(2026-07 새 설문 화면에서 제거된 구 옵션) — 과거 저장된 다이어리/세션 값을
+// 위해 collarbone과 동일 라벨로 별칭만 유지한다. 새 설문에는 절대 노출되지 않는다.
+LENGTH_LABEL_MAP.shoulder = LENGTH_LABEL_MAP.collarbone ?? "쇄골";
+
+// ─── 기장 id → "짧은 기장(레이어드 질문 숨김 + s_curl 제외)" 판별 ─────────────
+// survey/page.tsx(화면 필터)와 recommend.ts(정규화)가 함께 참조하는 단일 기준.
+export function isShortLength(id?: string): boolean {
+  return id === "short" || id === "short_bob";
+}

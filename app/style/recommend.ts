@@ -66,8 +66,14 @@ const STYLE_MOOD: Record<string, Record<string, string>> = {
 export function getStyleEntry(answers: StyleAnswers): StyleEntry {
   const ageGroup = getAgeGroup(answers.q1_age ?? "age_30");
   const layer    = answers.q14_layer  ?? "medium";
-  const length   = answers.q11_length ?? "bob";
-  const design   = answers.q13_design ?? "straight";
+
+  // 레거시/정책 예외 정규화 — shoulder(구 옵션, 2026-07 제거)는 collarbone으로,
+  // short·short_bob + s_curl(신정책상 존재하지 않는 조합)은 wave로 취급한다.
+  const rawLength = answers.q11_length ?? "bob";
+  const length    = rawLength === "shoulder" ? "collarbone" : rawLength;
+  const isShort   = length === "short" || length === "short_bob";
+  const rawDesign = answers.q13_design ?? "straight";
+  const design    = isShort && rawDesign === "s_curl" ? "wave" : rawDesign;
 
   const prefix = EFFECT_PREFIX[ageGroup][layer] ?? "손질이 편한";
   const base   = BASE_STYLE[length]?.[design]  ?? "단발컷";
