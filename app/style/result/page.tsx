@@ -26,6 +26,11 @@ import {
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 import { trackEvent } from "../../../lib/trackEvent";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import GlassCard from "@/components/beauty-ui/GlassCard";
+import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
+import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
@@ -114,20 +119,19 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
       <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 280, damping: 24 }}
-        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-xl">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
+        className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-xl backdrop-blur-xl">
         <div className="px-7 py-8 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">A-Beauty</p>
-          <h2 className="mt-3 font-serif text-2xl font-bold text-[#2F2F2F]">결과지가 완성됐어요!</h2>
-          <p className="mt-2 text-sm text-[#6B7280]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
-          <div className="mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-full border border-gold/25 bg-gold/10 text-2xl">🔓</div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">A-Beauty</p>
+          <h2 className="mt-3 font-serif text-2xl font-bold text-[#2F2A22]">결과지가 완성됐어요!</h2>
+          <p className="mt-2 text-sm text-[#6B6355]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
+          <div className="mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#F3EEE3] text-2xl">🔓</div>
           <button onClick={handleLogin} disabled={loading}
-            className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
+            className="mt-5 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
             {loading
               ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
               : <><span className="text-xl">💬</span> 카카오 1초 로그인하고 결과 확인하기</>}
           </button>
-          <p className="mt-2.5 text-[11px] text-[#9CA3AF]">별도 가입 없이 카카오 계정으로 바로 확인</p>
+          <p className="mt-2.5 text-[11px] text-[#9C9482]">별도 가입 없이 카카오 계정으로 바로 확인</p>
         </div>
       </motion.div>
     </motion.div>
@@ -193,28 +197,28 @@ function KakaoSaveModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 260 }}
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl border-t border-gold/20 bg-white shadow-xl px-6 pb-10 pt-5"
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[28px] border-t border-white/60 bg-white/95 shadow-xl px-6 pb-10 pt-5 backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}>
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-gray-200" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">A-Beauty Diary</p>
-        <h3 className="mt-2 font-serif text-xl font-bold text-[#2F2F2F]">내 다이어리에 저장하고 평생 소장하기</h3>
-        <p className="mt-2 text-sm text-[#6B7280] leading-relaxed">
+        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#EDE7DA]" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">A-Beauty Diary</p>
+        <h3 className="mt-2 font-serif text-xl font-bold text-[#2F2A22]">내 다이어리에 저장하고 평생 소장하기</h3>
+        <p className="mt-2 text-sm text-[#6B6355] leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
         </p>
         <div className="mt-4 space-y-2">
           {["맞춤 홈케어 제품 상단 노출 (시술 이력 기반)", "내 헤어 스타일 히스토리 보관", "전문가 케어 처방전 저장"].map(b => (
-            <div key={b} className="flex items-center gap-2.5 text-sm text-[#6B7280]">
-              <span className="text-gold text-xs">✦</span>{b}
+            <div key={b} className="flex items-center gap-2.5 text-sm text-[#6B6355]">
+              <span className="text-[#A8884A] text-xs">✦</span>{b}
             </div>
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
-          className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
+          className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
           {loading
             ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block text-lg">⏳</motion.span>
             : <><span className="text-xl">💬</span> 카카오 1초 로그인/가입으로 저장하기</>}
         </button>
-        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-xl text-sm text-[#9CA3AF] hover:text-[#2F2F2F]">
+        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-sm text-[#9C9482] hover:text-[#2F2A22]">
           나중에 저장하기
         </button>
       </motion.div>
@@ -223,7 +227,9 @@ function KakaoSaveModal({
 }
 
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
-// ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시
+// ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시.
+// 잠금 오버레이(black/55)는 임의의 사용자 사진 위에서도 대비를 보장해야 하는
+// 기능적 요소라 리디자인 대상에서 제외하고 그대로 둔다.
 
 function BeforeAfterSection({
   photo, locked, generatedUrl, debugError, onRetry,
@@ -311,34 +317,32 @@ function BeforeAfterSection({
 
 function AhaCard({ aha }: { aha: AhaBlock }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-      <div className="px-5 py-4 space-y-4">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI 모발 진단</p>
+    <GlassCard accent className="space-y-4 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">AI 모발 진단</p>
 
-        {/* Block A: 원인 */}
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex-none rounded-full bg-gold/15 px-2 py-0.5 text-[9px] font-bold text-gold whitespace-nowrap">원인</span>
-          <p className="text-sm leading-relaxed text-[#374151]">{aha.cause}</p>
-        </div>
-
-        {/* Block B: 아하! 공감 */}
-        <div className="flex items-start gap-3 rounded-xl border border-gold/15 bg-gold/[0.05] px-3.5 py-3">
-          <span className="flex-none text-base leading-none mt-0.5">😮</span>
-          <p className="text-sm font-medium leading-relaxed text-[#2F2F2F]">{aha.sympathy}</p>
-        </div>
-
-        {/* Block C: 솔루션 */}
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex-none rounded-full bg-teal-400/15 px-2 py-0.5 text-[9px] font-bold text-teal-400 whitespace-nowrap">처방</span>
-          <p className="text-sm leading-relaxed text-[#374151]">{aha.solution}</p>
-        </div>
+      {/* Block A: 원인 */}
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex-none rounded-full bg-[#F3EEE3] px-2 py-0.5 text-[9px] font-bold text-[#A8884A] whitespace-nowrap">원인</span>
+        <p className="text-sm leading-relaxed text-[#4A453B]">{aha.cause}</p>
       </div>
-    </div>
+
+      {/* Block B: 아하! 공감 */}
+      <div className="flex items-start gap-3 rounded-xl border border-[#EDE7DA] bg-white/60 px-3.5 py-3">
+        <span className="flex-none text-base leading-none mt-0.5">😮</span>
+        <p className="text-sm font-medium leading-relaxed text-[#2F2A22]">{aha.sympathy}</p>
+      </div>
+
+      {/* Block C: 솔루션 */}
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex-none rounded-full bg-[#EFEAE0] px-2 py-0.5 text-[9px] font-bold text-[#6B6355] whitespace-nowrap">처방</span>
+        <p className="text-sm leading-relaxed text-[#4A453B]">{aha.solution}</p>
+      </div>
+    </GlassCard>
   );
 }
 
 // ─── 기획자용 진단 로직 디버그 패널 ──────────────────────────────────────────
+// (테스트/기획 검증용 — 의도적으로 눈에 띄는 디버그 톤을 유지, 리디자인 대상 아님)
 
 const Q_DEBUG_LABELS: Record<string, [string, Record<string, string>]> = {
   q1_age:            ["연령대",    { age_20: "20대", age_30: "30대", age_40: "40대", age_50: "50대", age_60plus: "60대+" }],
@@ -440,14 +444,14 @@ function NotifyButton() {
 
   if (state === "done") {
     return (
-      <div className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-gold/30 bg-gold/[0.1] text-base font-semibold text-gold-light">
+      <div className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] bg-[#F3EEE3] text-base font-semibold text-[#A8884A]">
         ✓ 알림 신청이 완료되었습니다!
       </div>
     );
   }
   return (
     <button onClick={handleNotify} disabled={state === "loading"}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-60">
+      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98] disabled:opacity-60">
       {state === "loading"
         ? <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }} className="inline-block">⏳</motion.span>
         : "🔔 새로운 AI 분석 서비스 오픈 알림 받기"}
@@ -503,7 +507,7 @@ export default function StyleResultPage() {
     router.push("/style/upload");
   }
 
-  if (!ready) return <main className="min-h-screen bg-[#F9FAFB]" />;
+  if (!ready) return <main className="min-h-screen bg-[#FBF9F4]" />;
 
   const entry   = getStyleEntry(answers);
   const aha      = buildAhaText(answers);
@@ -513,113 +517,97 @@ export default function StyleResultPage() {
   const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
 
   return (
-    <main className="min-h-screen bg-[#F9FAFB] text-[#2F2F2F] mx-auto max-w-[430px]" style={{ touchAction: "pan-y" }}>
+    <SilkBackground>
+      <main className="mx-auto min-h-screen max-w-[430px] text-[#2F2A22]" style={{ touchAction: "pan-y" }}>
 
-      <AnimatePresence>{locked && <KakaoLockModal onUnlock={handleUnlock} />}</AnimatePresence>
-      <AnimatePresence>
-        {showSave && <KakaoSaveModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
-      </AnimatePresence>
+        <AnimatePresence>{locked && <KakaoLockModal onUnlock={handleUnlock} />}</AnimatePresence>
+        <AnimatePresence>
+          {showSave && <KakaoSaveModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
+        </AnimatePresence>
 
-      <div className="mx-auto max-w-lg px-4 py-6 pb-32 sm:px-6">
+        <div className="mx-auto max-w-lg px-4 py-6 pb-32 sm:px-6">
 
-        {/* 헤더 */}
-        <div className="flex items-center justify-between pb-4">
-          <Link href="/style/upload" className="flex items-center gap-1 text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-            다시 찍기
-          </Link>
-          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">스타일 결과지</span>
-          <Link href="/style" className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">처음부터</Link>
-        </div>
-
-        {/* Before / After — 세션 즉시 렌더 */}
-        <BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />
-
-        {/* 스크롤 유도 — 강조 텍스트 */}
-        <div className="mt-4 flex flex-col items-center gap-2 text-center">
-          <motion.div animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}>
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-gold/60" stroke="currentColor" strokeWidth={2}>
-              <path d="M19 9l-7 7-7-7" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </motion.div>
-          <p className="text-base font-medium text-[#6B7280]">
-            아래로 내려서 AI 맞춤 처방을 확인하세요 ⬇️
-          </p>
-        </div>
-
-        {/* 잠금 시 블러 */}
-        <div className={`mt-5 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
-
-          {/* 추천 스타일 */}
-          <div className="overflow-hidden rounded-2xl border border-gold/25 bg-gradient-to-br from-gold/[0.07] to-transparent">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
-            <div className="px-5 py-4">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">추천 스타일</p>
-              <h2 className="mt-1.5 font-serif text-2xl font-extrabold text-gold-light">{entry.name}</h2>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
-                  .filter(Boolean).map(tag => (
-                    <span key={tag} className="rounded-full border border-gold/25 bg-gold/[0.08] px-3 py-0.5 text-xs font-semibold text-gold-light">{tag}</span>
-                  ))}
-              </div>
-            </div>
+          {/* 헤더 */}
+          <div className="flex items-center justify-between pb-4">
+            <Link href="/style/upload" className="flex items-center gap-1 text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              다시 찍기
+            </Link>
+            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">스타일 결과지</span>
+            <Link href="/style" className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">처음부터</Link>
           </div>
 
-          {/* 아하! 공감형 3-Block 모발 진단 카드 */}
-          <AhaCard aha={aha} />
+          {/* 결과 히어로 — Before/After + 스타일명 + 태그 */}
+          <ResultHeroCard
+            eyebrow="AI STYLE DIAGNOSIS"
+            visual={<BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
+            badge={entry.name}
+          >
+            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+              {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
+                .filter(Boolean).map(tag => (
+                  <span key={tag} className="rounded-full bg-[#F3EEE3] px-3 py-0.5 text-xs font-semibold text-[#A8884A]">{tag}</span>
+                ))}
+            </div>
+          </ResultHeroCard>
 
-          {/* 저장 + 공유 */}
-          <div className="space-y-2.5 pt-2">
-            <button onClick={() => setShowSave(true)}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-gold/30 bg-gold/[0.08] text-base font-bold text-gold-light transition-all hover:bg-gold/15 active:scale-[0.98]">
-              📥 사진 다운받기 (다이어리 저장 후 가능)
-            </button>
-            <p className="text-center text-xs text-[#9CA3AF] -mt-1">
-              다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
-            </p>
-            <div className="flex gap-2.5">
-              <Link href="/style/survey"
-                className="flex h-12 flex-1 items-center justify-center rounded-xl border border-gray-200 text-sm font-medium text-[#6B7280] transition-all hover:border-gray-300 hover:text-[#2F2F2F]">
-                다시 진단하기
-              </Link>
-              <button
-                onClick={() => {
-                  const url = typeof window !== "undefined" ? `${window.location.origin}/style` : "/style";
-                  if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
-                  else navigator.clipboard?.writeText(url).then(() => alert("링크가 복사됐어요!"));
-                }}
-                className="flex h-12 flex-1 items-center justify-center rounded-xl border border-gold/20 bg-gold/[0.06] text-sm font-semibold text-gold-light transition-all hover:bg-gold/12">
-                🔗 공유하기
+          {/* 잠금 시 블러 */}
+          <div className={`mt-4 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
+
+            {/* 아하! 공감형 3-Block 모발 진단 카드 */}
+            <AhaCard aha={aha} />
+
+            {/* 저장 + 공유 */}
+            <GlassCard className="space-y-2.5 px-5 py-5">
+              <button onClick={() => setShowSave(true)}
+                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-[#EDE7DA] bg-white text-base font-bold text-[#2F2A22] transition-all hover:bg-[#FBF6EA] active:scale-[0.98]">
+                📥 사진 다운받기 (다이어리 저장 후 가능)
               </button>
-            </div>
+              <p className="text-center text-xs text-[#9C9482] -mt-1">
+                다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
+              </p>
+              <div className="flex gap-2.5">
+                <Link href="/style/survey"
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] text-sm font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22]">
+                  다시 진단하기
+                </Link>
+                <button
+                  onClick={() => {
+                    const url = typeof window !== "undefined" ? `${window.location.origin}/style` : "/style";
+                    if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
+                    else navigator.clipboard?.writeText(url).then(() => alert("링크가 복사됐어요!"));
+                  }}
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-sm font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
+                  🔗 공유하기
+                </button>
+              </div>
+            </GlassCard>
           </div>
         </div>
-      </div>
 
-      {/* 기획자용 진단 로직 디버그 패널 */}
-      <DiagnosisDebugPanel
-        answers={answers}
-        styleName={entry.name}
-        concern={concern}
-      />
+        {/* 기획자용 진단 로직 디버그 패널 */}
+        <DiagnosisDebugPanel
+          answers={answers}
+          styleName={entry.name}
+          concern={concern}
+        />
 
-      {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 px-4 py-4 backdrop-blur-md">
-        <div className="mx-auto max-w-lg">
+        {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}
+        <BottomStickyCTA>
           {locked ? (
             <button
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191600] hover:brightness-95 active:scale-[0.98]"
+              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] hover:brightness-95 active:scale-[0.98]"
               onClick={() => {/* 모달 자동 표시 */}}>
               <span className="text-lg">💬</span> 카카오 로그인하고 결과 보기
             </button>
           ) : (
             <NotifyButton />
           )}
-        </div>
-      </div>
+        </BottomStickyCTA>
 
-    </main>
+      </main>
+    </SilkBackground>
   );
 }

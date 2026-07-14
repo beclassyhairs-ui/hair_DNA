@@ -15,6 +15,8 @@ import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
 import AdBanner from "@/app/components/AdBanner";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import GlassCard from "@/components/beauty-ui/GlassCard";
 
 const STEPS = [
   "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
@@ -123,88 +125,90 @@ export default function StyleLoadingPage() {
   }, [router]);
 
   return (
-    <main className="flex h-[100dvh] flex-col overflow-hidden bg-[#F9FAFB] text-[#2F2F2F]">
+    <SilkBackground>
+      <main className="flex h-[100dvh] flex-col overflow-hidden text-[#2F2A22]">
 
-      {/* ── 상단 40% — 브랜드 배지 + 스피너 + 텍스트 ── */}
-      <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
-        style={{ flex: "0 0 40%" }}>
+        {/* ── 상단 40% — 브랜드 배지 + 스피너 + 텍스트 ── */}
+        <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
+          style={{ flex: "0 0 40%" }}>
 
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/[0.08] px-4 py-1.5 text-xs font-bold tracking-wide text-gold-dark">
-          ✦ AI 스타일 합성 중
-        </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
+            ✦ AI 스타일 합성 중
+          </span>
 
-        {/* 소형 골드 링 스피너 */}
-        <div className="relative flex h-20 w-20 items-center justify-center">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full"
-            style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.2)" }} />
-          <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-4 rounded-full"
-            style={{ border: "1.5px solid transparent", borderTopColor: "rgba(200,168,107,0.5)", borderLeftColor: "rgba(200,168,107,0.15)" }} />
-          <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-            className="h-2 w-2 rounded-full bg-gold" />
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={stepIdx}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.4 }}
-            className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-[#374151]"
-          >
-            {STEPS[stepIdx]}
-          </motion.p>
-        </AnimatePresence>
-      </div>
-
-      {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 + AdSense 광고 ── */}
-      <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
-
-        {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
-        <div className="flex-none">
-          <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-gold">
-            기다리는 동안 읽는 헤어 꿀팁
-          </p>
-
-          {/* 단일 팁 카드 — fade 롤링 */}
-          <div className="relative min-h-[72px] rounded-2xl border border-gray-100 bg-white px-5 py-4 flex items-center shadow-sm">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={tipIdx}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.4 }}
-                className="flex items-start gap-3"
-              >
-                <span className="mt-0.5 flex-none text-[11px] text-gold">✦</span>
-                <p className="text-[12px] leading-relaxed text-[#374151]">{HAIR_TIPS[tipIdx]}</p>
-              </motion.div>
-            </AnimatePresence>
+          {/* 소형 골드 링 스피너 */}
+          <div className="relative flex h-20 w-20 items-center justify-center">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 rounded-full"
+              style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.2)" }} />
+            <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-4 rounded-full"
+              style={{ border: "1.5px solid transparent", borderTopColor: "rgba(200,168,107,0.5)", borderLeftColor: "rgba(200,168,107,0.15)" }} />
+            <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+              className="h-2 w-2 rounded-full bg-[#C8A86B]" />
           </div>
 
-          {/* 진행 도트 */}
-          <div className="mt-2.5 flex justify-center gap-1.5">
-            {HAIR_TIPS.map((_, i) => (
-              <span key={i}
-                className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-gold/70" : "w-1 bg-gray-200"}`}
-              />
-            ))}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={stepIdx}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+              className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-[#4A453B]"
+            >
+              {STEPS[stepIdx]}
+            </motion.p>
+          </AnimatePresence>
         </div>
 
-        {/* 구글 AdSense — 슬롯 ID는 AdSense 대시보드에서 발급 후 입력 */}
-        <div className="flex flex-1 items-center justify-center">
-          <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
-            <AdBanner slot="4013466421" />
+        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 + AdSense 광고 ── */}
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
+
+          {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
+          <div className="flex-none">
+            <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-[#A8884A]">
+              기다리는 동안 읽는 헤어 꿀팁
+            </p>
+
+            {/* 단일 팁 카드 — fade 롤링 */}
+            <GlassCard className="relative flex min-h-[72px] items-center px-5 py-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={tipIdx}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-start gap-3"
+                >
+                  <span className="mt-0.5 flex-none text-[11px] text-[#A8884A]">✦</span>
+                  <p className="text-[12px] leading-relaxed text-[#4A453B]">{HAIR_TIPS[tipIdx]}</p>
+                </motion.div>
+              </AnimatePresence>
+            </GlassCard>
+
+            {/* 진행 도트 */}
+            <div className="mt-2.5 flex justify-center gap-1.5">
+              {HAIR_TIPS.map((_, i) => (
+                <span key={i}
+                  className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-[#C8A86B]/70" : "w-1 bg-[#EDE7DA]"}`}
+                />
+              ))}
+            </div>
           </div>
+
+          {/* 구글 AdSense — 슬롯 ID는 AdSense 대시보드에서 발급 후 입력 */}
+          <div className="flex flex-1 items-center justify-center">
+            <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
+              <AdBanner slot="4013466421" />
+            </div>
+          </div>
+
         </div>
 
-      </div>
-
-    </main>
+      </main>
+    </SilkBackground>
   );
 }

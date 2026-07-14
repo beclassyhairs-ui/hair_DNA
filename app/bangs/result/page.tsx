@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 인생뱅 — 결과지 v2
+// 어뷰티 인생뱅 — 결과지 v3 (beauty-ui 파일럿)
 // 1순위+서브 추천, 이미지 2장 + 라이트박스, 얼굴형 분석 요약, 현재 스타일 체크,
 // /home 저장 연동까지 한 장의 분석 흐름으로 구성한다. 제품/발견템 노출 없음
 // (발견템은 /home 전용 영역 — 서비스 방향 원칙).
@@ -21,6 +21,11 @@ import type { BangsSurveyAnswers } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import GlassCard from "@/components/beauty-ui/GlassCard";
+import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
+import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 // 일반 결과 화면에서는 항상 숨김. 테스트할 때만 true로 바꾸거나,
 // URL에 ?debug=1을 붙이면 이 상수와 무관하게 그 세션에서만 보인다.
@@ -95,7 +100,7 @@ function BangImageCard({
     <button
       type="button"
       onClick={onExpand}
-      className="relative block w-full overflow-hidden rounded-2xl border border-gold/20 text-left active:scale-[0.98] transition-transform"
+      className="relative block w-full overflow-hidden rounded-2xl border border-white/60 text-left active:scale-[0.98] transition-transform"
       style={{ aspectRatio: "3/4" }}
     >
       {imgOk ? (
@@ -108,9 +113,9 @@ function BangImageCard({
           onError={() => setImgOk(false)}
         />
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-gold/[0.08] to-transparent">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#F3EEE3]">
           <span className="text-2xl">💇</span>
-          <p className="px-2 text-center text-[10px] font-bold text-gold-light">{bangLabel}</p>
+          <p className="px-2 text-center text-[10px] font-bold text-[#A8884A]">{bangLabel}</p>
         </div>
       )}
 
@@ -122,8 +127,8 @@ function BangImageCard({
       </div>
 
       {/* 뱃지 */}
-      <div className="absolute left-2 top-2 z-10 rounded-full border border-gold/50 bg-black/65 px-2 py-1 backdrop-blur-sm">
-        <span className="text-[8px] font-bold uppercase tracking-wider text-gold">{badge}</span>
+      <div className="absolute left-2 top-2 z-10 rounded-full bg-black/65 px-2 py-1 backdrop-blur-sm">
+        <span className="text-[8px] font-bold uppercase tracking-wider text-white">{badge}</span>
       </div>
 
       {/* 하단 라벨 */}
@@ -131,7 +136,7 @@ function BangImageCard({
         className="absolute inset-x-0 bottom-0 z-10 px-2.5 pb-2.5 pt-8"
         style={{ background: "linear-gradient(to top, rgba(28,26,24,0.90) 0%, transparent 100%)" }}
       >
-        <p className="mt-0.5 font-serif text-xs font-bold leading-tight text-gold-light">{bangLabel}</p>
+        <p className="mt-0.5 font-serif text-xs font-bold leading-tight text-white">{bangLabel}</p>
       </div>
     </button>
   );
@@ -187,7 +192,7 @@ function ImageLightbox({
           </svg>
         </button>
 
-        <div className="w-full overflow-hidden rounded-2xl border border-gold/25 bg-black/40">
+        <div className="w-full overflow-hidden rounded-2xl border border-white/20 bg-black/40">
           {imgOk ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -199,11 +204,11 @@ function ImageLightbox({
           ) : (
             <div className="flex aspect-[3/4] flex-col items-center justify-center gap-3">
               <span className="text-5xl">💇</span>
-              <p className="font-serif text-lg font-bold text-gold-light">{bangLabel}</p>
+              <p className="font-serif text-lg font-bold text-white">{bangLabel}</p>
             </div>
           )}
         </div>
-        <p className="mt-3 font-serif text-base font-bold text-cream">{bangLabel}</p>
+        <p className="mt-3 font-serif text-base font-bold text-white">{bangLabel}</p>
       </motion.div>
     </motion.div>
   );
@@ -217,7 +222,7 @@ function BoldText({ text }: { text: string }) {
     <>
       {parts.map((p, i) =>
         p.startsWith("**") && p.endsWith("**")
-          ? <strong key={i} className="font-bold text-gold-light">{p.slice(2, -2)}</strong>
+          ? <strong key={i} className="font-bold text-[#2F2A22]">{p.slice(2, -2)}</strong>
           : <span key={i}>{p}</span>
       )}
     </>
@@ -389,232 +394,217 @@ export default function BangsResultPage() {
     });
   }
 
-  if (!ready) return <main className="min-h-screen bg-[#F9FAFB]" />;
+  if (!ready) return <main className="min-h-screen bg-[#FBF9F4]" />;
 
   return (
-    <main className="mx-auto min-h-screen max-w-[430px] bg-[#F9FAFB] pb-40 text-[#2F2F2F]">
+    <SilkBackground>
+      <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-[#2F2A22]">
 
-      {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-[#F9FAFB]/92 px-5 py-3.5 backdrop-blur-md">
-        <Link href="/bangs/survey" className="shrink-0 whitespace-nowrap text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
-          ← 다시 하기
-        </Link>
-        <span className="shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.28em] text-gold">진단 결과지</span>
-        <button onClick={handleKakaoShare} className="shrink-0 whitespace-nowrap text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
-          {kakaoSent ? "전송됨 ✓" : "공유"}
-        </button>
-      </header>
+        {/* ── 헤더 ── */}
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-md">
+          <Link href="/bangs/survey" className="shrink-0 whitespace-nowrap text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+            ← 다시 하기
+          </Link>
+          <span className="shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">진단 결과지</span>
+          <button onClick={handleKakaoShare} className="shrink-0 whitespace-nowrap text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+            {kakaoSent ? "전송됨 ✓" : "공유"}
+          </button>
+        </header>
 
-      {/* ── 확대 라이트박스 ── */}
-      <AnimatePresence>
-        {lightbox && (
-          <ImageLightbox
-            bangType={lightbox.type}
-            bangLabel={lightbox.label}
-            onClose={() => setLightbox(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      <div className="mx-auto w-full max-w-lg px-5">
-        <motion.div variants={STAGGER} initial="hidden" animate="show" className="space-y-4 pt-6">
-
-          {/* 1. 최종 타이틀 */}
-          <motion.div variants={FADE_UP} className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">AI DIAGNOSIS</p>
-            <h1 className="mt-1.5 break-keep font-serif text-[1.7rem] font-bold leading-snug text-[#2F2F2F]">
-              당신에게 가장 잘 맞는 앞머리
-            </h1>
-          </motion.div>
-
-          {/* 2. 1순위 + 서브 추천 이미지 2장 */}
-          <motion.div variants={FADE_UP} className="grid grid-cols-2 gap-3">
-            <BangImageCard
-              bangType={result.primaryBang}
-              bangLabel={result.primaryBangLabel}
-              badge="1순위 추천"
-              onExpand={() => setLightbox({ type: result.primaryBang, label: result.primaryBangLabel })}
+        {/* ── 확대 라이트박스 ── */}
+        <AnimatePresence>
+          {lightbox && (
+            <ImageLightbox
+              bangType={lightbox.type}
+              bangLabel={lightbox.label}
+              onClose={() => setLightbox(null)}
             />
-            <BangImageCard
-              bangType={result.secondaryBang}
-              bangLabel={result.secondaryBangLabel}
-              badge="서브 추천"
-              onExpand={() => setLightbox({ type: result.secondaryBang, label: result.secondaryBangLabel })}
-            />
-          </motion.div>
-          <motion.p variants={FADE_UP} className="-mt-2 text-center text-[10px] text-[#9CA3AF]">
-            이미지를 탭하면 크게 볼 수 있어요
-          </motion.p>
-
-          {/* 1. 최종 1순위 추천 */}
-          <motion.div variants={FADE_UP}
-            className="overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
-            <div className="px-6 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✦ 최종 1순위 추천</p>
-              <div className="mt-4 flex flex-col items-center gap-1">
-                <span className="rounded-xl bg-gold px-8 py-2.5 font-serif text-2xl font-black text-charcoal shadow-gold">
-                  {BANG_SHORT_LABEL[result.primaryBang]}
-                </span>
-                {BANG_SUB_LABEL[result.primaryBang] && (
-                  <span className="text-xs font-medium text-[#9CA3AF]">{BANG_SUB_LABEL[result.primaryBang]}</span>
-                )}
-              </div>
-              <p className="mt-4 text-base leading-[1.85] text-[#374151]">
-                <BoldText text={reasonFor(result.primaryBang, result.primaryBangLabel)} />
-              </p>
-            </div>
-          </motion.div>
-
-          {/* 2. 서브 추천 */}
-          <motion.div variants={FADE_UP}
-            className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">✦ 함께 고려해볼 스타일</p>
-            <p className="mt-2 font-serif text-lg font-bold text-[#2F2F2F]">{result.secondaryBangLabel}</p>
-            <p className="mt-2 text-sm leading-relaxed text-[#374151]">
-              {reasonFor(result.secondaryBang, result.secondaryBangLabel)}
-            </p>
-          </motion.div>
-
-          {/* 3. 추천 이유 요약 — 두 기준이 같으면 카드 1개로 합치고, 다르면 나란히 비교한다 */}
-          {sameFaceBang ? (
-            <motion.div variants={FADE_UP} className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
-              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold">✦ 추천 이유</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-[#374151]">
-                선택하신 얼굴형과 추가 답변이 같은 방향을 가리켰어요.<br />
-                두 기준 모두 <strong className="font-bold text-gold-light">{result.selectedFaceBangLabel}</strong>이 잘 맞는 것으로 나타나 최종 1순위로 추천드려요.
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div variants={FADE_UP} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9CA3AF]">내가 고른 얼굴형 기준</p>
-                <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.selectedFaceBangLabel}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.selectedFaceReason}</p>
-              </div>
-              <div className="rounded-2xl border border-gold/20 bg-gold/[0.04] p-4">
-                <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold">추가 답변까지 반영한 추천</p>
-                <p className="mt-1 text-sm font-bold text-[#2F2F2F]">{result.signalBasedBangLabel}</p>
-                <p className="mt-1.5 text-xs leading-relaxed text-[#6B7280]">{result.signalBasedReason}</p>
-              </div>
-            </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* 현재 스타일 체크 */}
-          <motion.div variants={FADE_UP} className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">현재 스타일 체크</p>
-            <p className="mt-2 text-sm leading-relaxed text-[#374151]">{result.currentStyleCheck.text}</p>
-          </motion.div>
+        <div className="mx-auto w-full max-w-lg px-5">
+          <motion.div variants={STAGGER} initial="hidden" animate="show" className="space-y-4 pt-6">
 
-          {/* 5. 피하면 좋은 스타일 */}
-          <motion.div variants={FADE_UP} className="rounded-xl border border-red-400/15 bg-red-50 px-4 py-3">
-            <p className="text-sm font-medium text-red-500">❌ 피해주세요 — {result.ngStyle}</p>
-          </motion.div>
+            {/* 1. 결과 히어로 — 이미지 2장 + 최종 1순위 + 이유 */}
+            <motion.div variants={FADE_UP}>
+              <ResultHeroCard
+                eyebrow="AI DIAGNOSIS"
+                visual={
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <BangImageCard
+                        bangType={result.primaryBang}
+                        bangLabel={result.primaryBangLabel}
+                        badge="1순위 추천"
+                        onExpand={() => setLightbox({ type: result.primaryBang, label: result.primaryBangLabel })}
+                      />
+                      <BangImageCard
+                        bangType={result.secondaryBang}
+                        bangLabel={result.secondaryBangLabel}
+                        badge="서브 추천"
+                        onExpand={() => setLightbox({ type: result.secondaryBang, label: result.secondaryBangLabel })}
+                      />
+                    </div>
+                    <p className="mt-2 text-[10px] text-[#9C9482]">이미지를 탭하면 크게 볼 수 있어요</p>
+                  </>
+                }
+                badge={
+                  <>
+                    <span>{BANG_SHORT_LABEL[result.primaryBang]}</span>
+                    {BANG_SUB_LABEL[result.primaryBang] && (
+                      <span className="text-[11px] font-normal text-white/65">{BANG_SUB_LABEL[result.primaryBang]}</span>
+                    )}
+                  </>
+                }
+                description={<BoldText text={reasonFor(result.primaryBang, result.primaryBangLabel)} />}
+              />
+            </motion.div>
 
-          {/* 6. 테스트용 디버그 박스 — "왜 이 앞머리가 추천됐나요?" */}
-          {showDebug && (
-            <motion.div variants={FADE_UP} className="rounded-2xl border border-dashed border-yellow-400/50 bg-yellow-50 p-5 font-mono">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-700">
-                🔍 왜 이 앞머리가 추천됐나요? (테스트용)
-              </p>
+            {/* 2. 서브 추천 */}
+            <motion.div variants={FADE_UP}>
+              <GlassCard className="p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">✦ 함께 고려해볼 스타일</p>
+                <p className="mt-2 font-serif text-lg font-bold text-[#2F2A22]">{result.secondaryBangLabel}</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#4A453B]">
+                  {reasonFor(result.secondaryBang, result.secondaryBangLabel)}
+                </p>
+              </GlassCard>
+            </motion.div>
 
-              <div className="mt-3 space-y-1 text-[11px] text-yellow-900">
-                <p>선택 얼굴형: <b>{FACE_SHAPE_SHORT_LABEL[result.selectedFaceShape]}</b></p>
-                <p>답변 신호 기반 얼굴형: <b>{FACE_SHAPE_SHORT_LABEL[result.signalBasedFaceShape]}</b></p>
-              </div>
+            {/* 3. 추천 이유 요약 — 두 기준이 같으면 카드 1개로 합치고, 다르면 나란히 비교한다 */}
+            {sameFaceBang ? (
+              <motion.div variants={FADE_UP}>
+                <GlassCard accent className="p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">✦ 추천 이유</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-[#4A453B]">
+                    선택하신 얼굴형과 추가 답변이 같은 방향을 가리켰어요.<br />
+                    두 기준 모두 <strong className="font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</strong>이 잘 맞는 것으로 나타나 최종 1순위로 추천드려요.
+                  </p>
+                </GlassCard>
+              </motion.div>
+            ) : (
+              <motion.div variants={FADE_UP} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <GlassCard className="p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9C9482]">내가 고른 얼굴형 기준</p>
+                  <p className="mt-1 text-sm font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[#6B6355]">{result.selectedFaceReason}</p>
+                </GlassCard>
+                <GlassCard accent className="p-4">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추가 답변까지 반영한 추천</p>
+                  <p className="mt-1 text-sm font-bold text-[#2F2A22]">{result.signalBasedBangLabel}</p>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[#6B6355]">{result.signalBasedReason}</p>
+                </GlassCard>
+              </motion.div>
+            )}
 
-              {result.debugSignalNotes.length > 0 && (
+            {/* 현재 스타일 체크 */}
+            <motion.div variants={FADE_UP}>
+              <GlassCard className="p-5">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">현재 스타일 체크</p>
+                <p className="mt-2 text-sm leading-relaxed text-[#4A453B]">{result.currentStyleCheck.text}</p>
+              </GlassCard>
+            </motion.div>
+
+            {/* 5. 피하면 좋은 스타일 — 차분한 톤(경고색 제거) */}
+            <motion.div variants={FADE_UP}>
+              <GlassCard className="px-4 py-3">
+                <p className="text-sm font-medium text-[#6B5B3A]">이런 스타일은 피해보세요 — {result.ngStyle}</p>
+              </GlassCard>
+            </motion.div>
+
+            {/* 6. 테스트용 디버그 박스 — "왜 이 앞머리가 추천됐나요?" */}
+            {showDebug && (
+              <motion.div variants={FADE_UP} className="rounded-2xl border border-dashed border-yellow-400/50 bg-yellow-50 p-5 font-mono">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-700">
+                  🔍 왜 이 앞머리가 추천됐나요? (테스트용)
+                </p>
+
+                <div className="mt-3 space-y-1 text-[11px] text-yellow-900">
+                  <p>선택 얼굴형: <b>{FACE_SHAPE_SHORT_LABEL[result.selectedFaceShape]}</b></p>
+                  <p>답변 신호 기반 얼굴형: <b>{FACE_SHAPE_SHORT_LABEL[result.signalBasedFaceShape]}</b></p>
+                </div>
+
+                {result.debugSignalNotes.length > 0 && (
+                  <div className="mt-3 rounded-lg bg-white/60 p-2.5">
+                    <p className="mb-1 text-[10px] font-bold text-yellow-700">답변 신호:</p>
+                    {result.debugSignalNotes.map((note) => (
+                      <p key={note} className="text-[10px] leading-relaxed text-yellow-900">- {note}</p>
+                    ))}
+                  </div>
+                )}
+
                 <div className="mt-3 rounded-lg bg-white/60 p-2.5">
-                  <p className="mb-1 text-[10px] font-bold text-yellow-700">답변 신호:</p>
-                  {result.debugSignalNotes.map((note) => (
-                    <p key={note} className="text-[10px] leading-relaxed text-yellow-900">- {note}</p>
+                  <p className="text-[10px] font-bold text-yellow-700">분석:</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-yellow-900">{result.debugReasonSummary}</p>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-yellow-900">
+                  <p>선택 얼굴형 기준 추천: <b>{result.selectedFaceBangLabel}</b></p>
+                  <p>답변 신호 기준 추천: <b>{result.signalBasedBangLabel}</b></p>
+                  <p>최종 1순위: <b>{result.primaryBangLabel}</b></p>
+                  <p>서브 추천: <b>{result.secondaryBangLabel}</b></p>
+                </div>
+
+                <div className="mt-3 rounded-lg bg-white/60 p-2.5">
+                  <p className="mb-1 text-[10px] font-bold text-yellow-700">앞머리 점수 TOP 5 (답변 신호 기준):</p>
+                  {result.topBangScores.map((row, i) => (
+                    <p key={row.bang} className="text-[10px] leading-relaxed text-yellow-900">
+                      {i + 1}. {row.label} ({row.score}점)
+                    </p>
                   ))}
                 </div>
-              )}
+              </motion.div>
+            )}
 
-              <div className="mt-3 rounded-lg bg-white/60 p-2.5">
-                <p className="text-[10px] font-bold text-yellow-700">분석:</p>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-yellow-900">{result.debugReasonSummary}</p>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] text-yellow-900">
-                <p>선택 얼굴형 기준 추천: <b>{result.selectedFaceBangLabel}</b></p>
-                <p>답변 신호 기준 추천: <b>{result.signalBasedBangLabel}</b></p>
-                <p>최종 1순위: <b>{result.primaryBangLabel}</b></p>
-                <p>서브 추천: <b>{result.secondaryBangLabel}</b></p>
-              </div>
-
-              <div className="mt-3 rounded-lg bg-white/60 p-2.5">
-                <p className="mb-1 text-[10px] font-bold text-yellow-700">앞머리 점수 TOP 5 (답변 신호 기준):</p>
-                {result.topBangScores.map((row, i) => (
-                  <p key={row.bang} className="text-[10px] leading-relaxed text-yellow-900">
-                    {i + 1}. {row.label} ({row.score}점)
-                  </p>
-                ))}
-              </div>
+            {/* 8. 저장 CTA */}
+            <motion.div variants={FADE_UP}>
+              <GlassCard className="px-5 py-5">
+                <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
+                <p className="mt-1 text-center text-sm text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
+                <div className="mt-4">
+                  <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
+                    {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 오늘헤어에서 보기"}
+                  </BlackCTAButton>
+                </div>
+              </GlassCard>
             </motion.div>
-          )}
 
-          {/* 8. 저장 CTA */}
-          <motion.div variants={FADE_UP} className="rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm">
-            <p className="text-center text-base font-semibold text-[#2F2F2F]">이 결과, 계속 보관하고 싶다면?</p>
-            <p className="mt-1 text-center text-sm text-[#6B7280]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
-            <button
-              onClick={handleSaveAndGoHome}
-              disabled={saved}
-              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
-              style={{ background: "linear-gradient(105deg, #E4D2A8 0%, #C8A86B 50%, #A8884A 100%)" }}
-            >
-              {saved ? "저장 완료 ✓ 이동 중..." : "✨ 결과 저장하고 오늘헤어에서 보기"}
-            </button>
+            {/* 공유 */}
+            <motion.div variants={FADE_UP}>
+              <GlassCard className="px-5 py-5">
+                <p className="text-center text-base font-semibold text-[#2F2A22]">친구도 인생 앞머리 찾아줄까요?</p>
+                <p className="mt-1 text-center text-sm text-[#6B6355]">결과를 공유하고 서로 비교해 보세요</p>
+                <button
+                  onClick={handleKakaoShare}
+                  className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
+                >
+                  <span className="text-lg">💬</span>
+                  {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] text-sm font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22] active:scale-[0.98]"
+                >
+                  {copied ? "✓ 복사됨" : "🔗 링크 복사"}
+                </button>
+              </GlassCard>
+            </motion.div>
+
           </motion.div>
+        </div>
 
-          {/* 공유 */}
-          <motion.div variants={FADE_UP}
-            className="rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm">
-            <p className="text-center text-base font-semibold text-[#2F2F2F]">친구도 인생 앞머리 찾아줄까요?</p>
-            <p className="mt-1 text-center text-sm text-[#6B7280]">결과를 공유하고 서로 비교해 보세요</p>
-            <button
-              onClick={handleKakaoShare}
-              className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-xl bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
-            >
-              <span className="text-lg">💬</span>
-              {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 text-sm font-medium text-[#6B7280] transition-all hover:border-gray-300 hover:text-[#2F2F2F] active:scale-[0.98]"
-            >
-              {copied ? "✓ 복사됨" : "🔗 링크 복사"}
-            </button>
-          </motion.div>
-
-        </motion.div>
-      </div>
-
-      {/* ── 하단 고정 CTA ── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-lg space-y-2">
-          <button
-            onClick={handleSaveAndGoHome}
-            disabled={saved}
-            className="relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-70"
-          >
-            <motion.span
-              className="pointer-events-none absolute inset-0"
-              animate={{ opacity: [0, 0.3, 0] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.45) 0%, transparent 70%)" }}
-            />
-            <span className="relative">✨ 내 맞춤 헤어홈으로 이동하기</span>
-          </button>
+        {/* ── 하단 고정 CTA ── */}
+        <BottomStickyCTA>
+          <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
+            내 맞춤 헤어홈으로 이동하기
+          </BlackCTAButton>
           <Link href="/bangs"
-            className="flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium text-[#9CA3AF] transition-colors hover:text-[#2F2F2F]">
+            className="flex h-10 w-full items-center justify-center text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
             ← 처음부터 다시 하기
           </Link>
-        </div>
-      </div>
+        </BottomStickyCTA>
 
-    </main>
+      </main>
+    </SilkBackground>
   );
 }

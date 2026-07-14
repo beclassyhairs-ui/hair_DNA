@@ -18,6 +18,11 @@ import type { DamageSurveyAnswers } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import GlassCard from "@/components/beauty-ui/GlassCard";
+import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
+import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 const LANDING_ID = "damage_check";
 
@@ -149,137 +154,106 @@ export default function DamageCheckResultPage() {
     });
   }
 
-  if (!ready) return <main className="min-h-screen bg-[#F9FAFB]" />;
+  if (!ready) return <main className="min-h-screen bg-[#FBF9F4]" />;
 
   return (
-    <main className="mx-auto min-h-screen max-w-[430px] bg-[#F9FAFB] pb-40 text-[#2F2F2F]">
+    <SilkBackground>
+      <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-[#2F2A22]" style={{ touchAction: "pan-y" }}>
 
-      {/* ── 헤더 ── */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-100 bg-[#F9FAFB]/92 px-5 py-3.5 backdrop-blur-md">
-        <Link href="/damage-check/survey" className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
-          ← 다시 하기
-        </Link>
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">진단 결과지</span>
-        <button onClick={handleKakaoShare} className="text-sm font-medium text-[#6B7280] hover:text-[#2F2F2F] transition-colors">
-          {kakaoSent ? "전송됨 ✓" : "공유"}
-        </button>
-      </header>
-
-      {/* ── Level 배지 + 헤드라인 ── */}
-      <div className="px-5 pt-7 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gold">SELF DIAGNOSIS</p>
-        <div className="mt-3 flex justify-center">
-          <span className="rounded-xl bg-gold px-6 py-2 font-serif text-xl font-black text-charcoal shadow-gold">
-            Level {result.level.level} · {result.level.label}
-          </span>
-        </div>
-        <p className="mt-4 text-base leading-[1.7] text-[#374151]">{result.headline}</p>
-      </div>
-
-      {/* ── 콘텐츠 블록 ── */}
-      <div className="mx-auto w-full max-w-lg px-5">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mt-6 space-y-4">
-
-          {/* 진단 요약 카드 */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">진단 요약</p>
-            <p className="text-sm leading-relaxed text-[#374151]">{result.level.summary}</p>
-            <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5">
-              <p className="text-xs font-semibold text-[#6B7280]">권장 관리 강도: <span className="text-[#2F2F2F]">{result.level.careIntensity}</span></p>
-            </div>
-          </div>
-
-          {/* 원인 분석 카드 */}
-          <div className="overflow-hidden rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
-            <div className="px-5 py-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">✦ 주된 손상 원인 — {result.typeInfo.label}</p>
-              <p className="mt-3 text-sm leading-relaxed text-[#374151]">{result.typeInfo.causeExplain} 상태예요.</p>
-              <div className="mt-3 rounded-xl border border-red-400/15 bg-red-50 px-4 py-3">
-                <p className="text-sm font-medium text-red-500">❌ 피해주세요 — {result.typeInfo.avoid}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 추천 제품 (커머스 전환) */}
-          <div>
-            <p className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">맞춤 추천 제품</p>
-            <div className="space-y-2.5">
-              {result.typeInfo.products.map((p, i) => (
-                <div key={i} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <span className="text-2xl">{p.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-[#2F2F2F]">{p.name}</p>
-                      <p className="mt-0.5 text-xs text-[#6B7280]">{p.description}</p>
-                    </div>
-                  </div>
-                  <a href={p.link} target="_blank" rel="noopener noreferrer sponsored"
-                    className="flex h-10 w-full items-center justify-center gap-1.5 text-xs font-bold text-charcoal transition-all hover:brightness-105 active:scale-[0.98]"
-                    style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)" }}>
-                    제품 보러가기 →
-                  </a>
-                </div>
-              ))}
-            </div>
-            <p className="mt-1.5 text-center text-[10px] text-[#9CA3AF]">
-              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받을 수 있습니다.
-            </p>
-          </div>
-
-          {/* 저장 + 홈 이동 */}
-          <div className="rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm">
-            <p className="text-center text-base font-semibold text-[#2F2F2F]">이 결과, 계속 보관하고 싶다면?</p>
-            <p className="mt-1 text-center text-sm text-[#6B7280]">내 홈 화면과 다이어리에 저장해서 관리를 이어가 보세요</p>
-            <button
-              onClick={handleSaveAndGoHome}
-              disabled={saved}
-              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98] disabled:opacity-70"
-              style={{ background: "linear-gradient(105deg, #E4D2A8 0%, #C8A86B 50%, #A8884A 100%)" }}
-            >
-              {saved ? "저장 완료 ✓ 이동 중..." : "✨ 내 홈에 저장하고 관리 시작하기"}
-            </button>
-          </div>
-
-          {/* 공유 */}
-          <div className="rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm">
-            <p className="text-center text-base font-semibold text-[#2F2F2F]">친구도 손상도 확인해볼까요?</p>
-            <p className="mt-1 text-center text-sm text-[#6B7280]">결과를 공유하고 서로 비교해 보세요</p>
-            <button
-              onClick={handleKakaoShare}
-              className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-xl bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
-            >
-              <span className="text-lg">💬</span>
-              {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
-            </button>
-            {copied && <p className="mt-2 text-center text-xs text-[#9CA3AF]">✓ 링크가 복사됐어요</p>}
-          </div>
-
-        </motion.div>
-      </div>
-
-      {/* ── 하단 고정 CTA ── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 px-5 py-4 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-lg space-y-2">
-          <button
-            onClick={() => router.push("/style")}
-            className="relative flex h-14 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-110 active:scale-[0.98]"
-          >
-            <motion.span
-              className="pointer-events-none absolute inset-0"
-              animate={{ opacity: [0, 0.3, 0] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-              style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.45) 0%, transparent 70%)" }}
-            />
-            <span className="relative">✨ AI 헤어 분석으로 내 스타일도 찾기!</span>
+        {/* ── 헤더 ── */}
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-md">
+          <Link href="/damage-check/survey" className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+            ← 다시 하기
+          </Link>
+          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">진단 결과지</span>
+          <button onClick={handleKakaoShare} className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+            {kakaoSent ? "전송됨 ✓" : "공유"}
           </button>
+        </header>
+
+        <div className="mx-auto w-full max-w-lg px-5 pt-6">
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-4">
+
+            {/* ── 결과 히어로 — 큰 타이틀 + 짧은 설명 (이미지 없는 버전) ── */}
+            <ResultHeroCard
+              eyebrow="SELF DIAGNOSIS"
+              badge={`Level ${result.level.level} · ${result.level.label}`}
+              title={result.headline}
+            />
+
+            {/* 진단 요약 */}
+            <GlassCard className="px-5 py-5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">진단 요약</p>
+              <p className="text-sm leading-relaxed text-[#4A453B]">{result.level.summary}</p>
+              <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-white/60 px-4 py-2.5">
+                <p className="text-xs font-semibold text-[#6B6355]">
+                  권장 관리 강도: <span className="text-[#2F2A22]">{result.level.careIntensity}</span>
+                </p>
+              </div>
+            </GlassCard>
+
+            {/* 원인 분석 — 차분한 톤(경고색 제거) */}
+            <GlassCard accent className="px-5 py-5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">
+                주된 원인 — {result.typeInfo.label}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-[#4A453B]">{result.typeInfo.causeExplain} 상태예요.</p>
+              <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
+                <p className="text-sm font-medium text-[#6B5B3A]">이런 습관은 피해보세요 — {result.typeInfo.avoid}</p>
+              </div>
+            </GlassCard>
+
+            {/* 홈케어 제품은 결과지에 직접 노출하지 않고 발견템으로 안내만 */}
+            <GlassCard className="px-5 py-4">
+              <Link
+                href="/items"
+                className="flex items-center justify-between gap-3 text-sm font-medium text-[#4A453B] hover:text-[#2F2A22]"
+              >
+                발견템에서 손상도 단계에 맞는 홈케어 제품을 볼 수 있어요
+                <span className="flex-none text-[#A8884A]">→</span>
+              </Link>
+            </GlassCard>
+
+            {/* 저장 + 홈 이동 */}
+            <GlassCard className="px-5 py-5">
+              <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
+              <p className="mt-1 text-center text-sm text-[#6B6355]">내 홈 화면과 다이어리에 저장해서 관리를 이어가 보세요</p>
+              <div className="mt-4">
+                <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
+                  {saved ? "저장 완료 ✓ 이동 중..." : "내 홈에 저장하고 관리 시작하기"}
+                </BlackCTAButton>
+              </div>
+            </GlassCard>
+
+            {/* 공유 */}
+            <GlassCard className="px-5 py-5">
+              <p className="text-center text-base font-semibold text-[#2F2A22]">친구도 손상도 확인해볼까요?</p>
+              <p className="mt-1 text-center text-sm text-[#6B6355]">결과를 공유하고 서로 비교해 보세요</p>
+              <button
+                onClick={handleKakaoShare}
+                className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
+              >
+                <span className="text-lg">💬</span>
+                {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
+              </button>
+              {copied && <p className="mt-2 text-center text-xs text-[#9C9482]">✓ 링크가 복사됐어요</p>}
+            </GlassCard>
+
+          </motion.div>
+        </div>
+
+        {/* ── 하단 고정 CTA ── */}
+        <BottomStickyCTA>
+          <BlackCTAButton href="/style">
+            AI 헤어 분석으로 내 스타일도 찾기
+          </BlackCTAButton>
           <Link href="/damage-check"
-            className="flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium text-[#9CA3AF] transition-colors hover:text-[#2F2F2F]">
+            className="flex h-10 w-full items-center justify-center text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
             ← 처음부터 다시 하기
           </Link>
-        </div>
-      </div>
+        </BottomStickyCTA>
 
-    </main>
+      </main>
+    </SilkBackground>
   );
 }

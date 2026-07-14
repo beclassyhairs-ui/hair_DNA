@@ -11,6 +11,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { DAMAGE_SURVEY_KEY } from "../constants";
 import { SURVEY_QUESTIONS, type DamageSurveyAnswers, type HabitFlag } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import TestHeader from "@/components/beauty-ui/TestHeader";
+import ProgressBar from "@/components/beauty-ui/ProgressBar";
+import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
+import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
 
 const LANDING_ID = "damage_check";
 const TOTAL = SURVEY_QUESTIONS.length; // 4
@@ -98,160 +103,92 @@ export default function DamageCheckSurveyPage() {
   const canConfirmMulti = isMultiQuestion && answers.q4_habits.length > 0;
 
   return (
-    <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden bg-[#F9FAFB] text-[#2F2F2F]">
+    <SilkBackground>
+      <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-[#2F2A22]">
 
-      {/* ── 헤더: 세그먼트 진행 바 ── */}
-      <header className="flex-none border-b border-gray-100 bg-[#F9FAFB]/95 backdrop-blur-md">
-        <div className="px-4 pb-2 pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
-              손상도 진단 · {q.stepTag}
-            </span>
-            <span className="tabular-nums text-xs font-semibold text-[#6B7280]">
-              {qIdx + 1}
-              <span className="mx-1 text-[#9CA3AF]">/</span>
-              {TOTAL}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            {Array.from({ length: TOTAL }).map((_, i) => (
-              <motion.div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-                  i < qIdx ? "bg-gold-dark" : i === qIdx ? "bg-gold" : "bg-gray-100"
-                }`}
-                animate={{ scaleY: i === qIdx ? 1.18 : 1 }}
-                transition={{ duration: 0.2 }}
-              />
-            ))}
-          </div>
+        <TestHeader stepLabel={`손상도 진단 · ${q.stepTag}`} current={qIdx + 1} total={TOTAL}>
+          <ProgressBar value={((qIdx + 1) / TOTAL) * 100} />
+        </TestHeader>
+
+        {/* ── 질문 본문 ── */}
+        <div className="flex flex-1 flex-col overflow-y-auto px-5">
+          <AnimatePresence mode="wait" custom={dir}>
+            <motion.div
+              key={q.qKey}
+              custom={dir}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-1 flex-col justify-center py-6"
+            >
+              <div className="mb-6">
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#A8884A]">
+                  {q.no}
+                </p>
+                <h2 className="font-serif text-xl font-bold leading-snug text-[#2F2A22] whitespace-pre-line">
+                  {q.title}
+                </h2>
+                {q.hint && (
+                  <p className="mt-2 text-xs leading-relaxed text-[#9C9482]">{q.hint}</p>
+                )}
+              </div>
+
+              <div className="space-y-2.5">
+                {q.options.map((opt) => {
+                  const isSel = q.multi
+                    ? answers.q4_habits.includes(opt.id as HabitFlag)
+                    : answers[q.qKey] === opt.id;
+
+                  return (
+                    <RoundedOptionButton
+                      key={opt.id}
+                      icon={opt.icon}
+                      label={opt.label}
+                      desc={opt.desc}
+                      selected={isSel}
+                      multi={q.multi}
+                      disabled={!q.multi && pending}
+                      onSelect={() => (q.multi ? toggleHabit(opt.id) : handleSelectSingle(opt.id))}
+                    />
+                  );
+                })}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </header>
 
-      {/* ── 질문 본문 ── */}
-      <div className="flex flex-1 flex-col overflow-y-auto px-4">
-        <AnimatePresence mode="wait" custom={dir}>
-          <motion.div
-            key={q.qKey}
-            custom={dir}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-1 flex-col justify-center py-4"
-          >
-            <div className="mb-3">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.18em] text-gold">
-                {q.no}
-              </p>
-              <h2 className="font-serif text-lg font-bold leading-snug text-[#2F2F2F] whitespace-pre-line">
-                {q.title}
-              </h2>
-              {q.hint && (
-                <p className="mt-1 text-xs leading-relaxed text-[#6B7280]">{q.hint}</p>
-              )}
-            </div>
+        {/* ── 하단 네비게이션 ── */}
+        <div className="flex-none px-5 py-4">
+          <div className="flex items-center gap-3">
+            {qIdx > 0 ? (
+              <button
+                onClick={goBack}
+                disabled={pending}
+                className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22] disabled:opacity-40"
+              >
+                ← 이전
+              </button>
+            ) : (
+              <a href="/damage-check" className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+                나가기
+              </a>
+            )}
 
-            <div className="space-y-2">
-              {q.options.map((opt) => {
-                const isSel = q.multi
-                  ? answers.q4_habits.includes(opt.id as HabitFlag)
-                  : answers[q.qKey] === opt.id;
-
-                return (
-                  <motion.button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => (q.multi ? toggleHabit(opt.id) : handleSelectSingle(opt.id))}
-                    disabled={!q.multi && pending}
-                    whileTap={{ scale: 0.985 }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-3.5 py-2.5 text-left transition-all duration-200 ${
-                      isSel
-                        ? "border-gold bg-gold/10 shadow-[0_2px_16px_rgba(200,168,107,0.22)]"
-                        : "border-gray-100 bg-white shadow-sm hover:border-gold/40 hover:bg-[#FBF6EA]"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg text-base transition-colors ${
-                        isSel ? "bg-gold-dark text-charcoal" : "bg-gray-100 text-[#6B7280]"
-                      }`}
-                    >
-                      {opt.icon}
-                    </span>
-
-                    <span className="flex-1">
-                      <span className={`block font-bold leading-snug text-sm ${isSel ? "text-gold-dark" : "text-[#2F2F2F]"}`}>
-                        {opt.label}
-                      </span>
-                      <span className={`mt-0.5 block text-xs text-gray-500 ${isSel ? "text-gray-600" : ""}`}>
-                        {opt.desc}
-                      </span>
-                    </span>
-
-                    {q.multi ? (
-                      <span
-                        className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border-2 transition-colors ${
-                          isSel ? "border-gold bg-gold" : "border-gray-200 bg-white"
-                        }`}
-                      >
-                        {isSel && (
-                          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-charcoal">
-                            <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </span>
-                    ) : (
-                      isSel && (
-                        <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 flex-none text-gold">
-                          <path d="M5 12.5l4.5 4.5L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* ── 하단 네비게이션 ── */}
-      <div className="flex-none border-t border-gray-100 bg-white/95 px-4 py-3 backdrop-blur-md">
-        <div className="flex gap-2.5">
-          {qIdx > 0 ? (
-            <button
-              onClick={goBack}
-              disabled={pending}
-              className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-[#6B7280] transition-colors hover:text-[#2F2F2F] disabled:opacity-40"
-            >
-              ← 이전
-            </button>
-          ) : (
-            <a
-              href="/damage-check"
-              className="flex h-11 items-center justify-center rounded-xl border border-gray-200 bg-white px-5 text-sm font-medium text-[#6B7280] transition-colors hover:text-[#2F2F2F]"
-            >
-              나가기
-            </a>
-          )}
-
-          {isMultiQuestion ? (
-            <button
-              onClick={handleConfirmMulti}
-              disabled={!canConfirmMulti}
-              className="flex h-11 flex-1 items-center justify-center rounded-xl text-sm font-bold text-charcoal transition-all disabled:opacity-40"
-              style={{ background: "linear-gradient(105deg, #E4D2A8 0%, #C8A86B 50%, #A8884A 100%)" }}
-            >
-              진단 결과 보기 →
-            </button>
-          ) : (
-            <div className="flex h-11 flex-1 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 text-xs text-[#9CA3AF]">
-              선택하면 자동으로 넘어가요
-            </div>
+            {isMultiQuestion && (
+              <div className="flex-1">
+                <BlackCTAButton onClick={handleConfirmMulti} disabled={!canConfirmMulti} className="h-11">
+                  진단 결과 보기 →
+                </BlackCTAButton>
+              </div>
+            )}
+          </div>
+          {!isMultiQuestion && (
+            <p className="mt-2 text-center text-[11px] text-[#9C9482]">선택하면 자동으로 넘어가요</p>
           )}
         </div>
-      </div>
-    </main>
+      </main>
+    </SilkBackground>
   );
 }

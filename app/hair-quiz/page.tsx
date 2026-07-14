@@ -3,6 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import GlassCard from "@/components/beauty-ui/GlassCard";
+import TestHeader from "@/components/beauty-ui/TestHeader";
+import ProgressBar from "@/components/beauty-ui/ProgressBar";
+import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
+import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
+import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -231,29 +239,26 @@ function IntroView({ onStart }: { onStart: () => void }) {
       transition={{ duration: 0.45 }}
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
     >
-      <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-4 py-1.5 text-xs font-bold tracking-wide text-gold">
+      <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
         ✦ 청담동 헤어 클리닉 전문가 진단
       </span>
 
-      <h1 className="font-serif text-[2rem] font-extrabold leading-tight text-[#2F2F2F]">
+      <h1 className="font-serif text-[2rem] font-extrabold leading-tight text-[#2F2A22]">
         내 머리가<br />미용실에서만<br />예쁜 진짜 이유
       </h1>
-      <p className="mt-2 text-sm font-semibold text-gold/75">feat. 미용실 100% 활용법</p>
+      <p className="mt-2 text-sm font-semibold text-[#A8884A]/80">feat. 미용실 100% 활용법</p>
 
-      <div className="my-7 h-px w-16 bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+      <div className="my-7 h-px w-16 bg-gradient-to-r from-transparent via-[#C8A86B]/40 to-transparent" />
 
-      <p className="max-w-[270px] text-sm leading-relaxed text-[#6B7280]">
+      <p className="max-w-[270px] text-sm leading-relaxed text-[#6B6355]">
         6문항으로 당신의 헤어 홈케어 습관을 분석합니다.<br />
         청담동 수석 원장급 팩트 폭격이 기다리고 있습니다.
       </p>
 
-      <button
-        onClick={onStart}
-        className="mt-10 flex h-14 w-full max-w-sm items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]"
-      >
-        진단 시작하기 →
-      </button>
-      <p className="mt-3 text-xs text-[#9CA3AF]">약 1분 소요 · 총 6문항</p>
+      <div className="mt-10 w-full max-w-sm">
+        <BlackCTAButton onClick={onStart}>진단 시작하기</BlackCTAButton>
+      </div>
+      <p className="mt-3 text-xs text-[#9C9482]">약 1분 소요 · 총 6문항</p>
     </motion.div>
   );
 }
@@ -278,30 +283,9 @@ function SurveyView({
       exit={{ opacity: 0 }}
       className="flex min-h-screen flex-col"
     >
-      {/* 진행 바 */}
-      <div className="h-0.5 w-full bg-gray-100">
-        <motion.div
-          className="h-full bg-gradient-to-r from-gold-light to-gold"
-          animate={{ width: `${((currentQ + 1) / QUESTIONS.length) * 100}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        />
-      </div>
-
-      {/* 상단 헤더 */}
-      <div className="flex items-center justify-between px-5 py-4">
-        <button
-          onClick={onBack}
-          className={`text-sm font-medium text-[#9CA3AF] transition-colors hover:text-[#6B7280] ${
-            currentQ === 0 ? "invisible" : ""
-          }`}
-        >
-          ← 이전
-        </button>
-        <span className="text-xs font-bold text-[#9CA3AF]">
-          {currentQ + 1} <span className="text-[#9CA3AF]">/</span> {QUESTIONS.length}
-        </span>
-        <div className="w-10" />
-      </div>
+      <TestHeader stepLabel="헤어 습관 진단" current={currentQ + 1} total={QUESTIONS.length}>
+        <ProgressBar value={((currentQ + 1) / QUESTIONS.length) * 100} />
+      </TestHeader>
 
       {/* 질문 + 보기 */}
       <div className="flex flex-1 flex-col justify-center px-6 pb-16">
@@ -313,27 +297,34 @@ function SurveyView({
             exit={{ opacity: 0, y: -18 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-gold">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">
               Q{currentQ + 1}
             </p>
-            <h2 className="mb-8 whitespace-pre-line font-serif text-2xl font-bold leading-snug text-[#2F2F2F]">
+            <h2 className="mb-8 whitespace-pre-line font-serif text-2xl font-bold leading-snug text-[#2F2A22]">
               {q.question}
             </h2>
             <div className="space-y-3">
               {q.options.map((opt) => (
-                <button
+                <RoundedOptionButton
                   key={opt.key}
-                  onClick={() => onAnswer(opt.key)}
-                  className="w-full rounded-2xl border border-gray-100 bg-white shadow-sm px-5 py-4 text-left text-sm font-medium text-[#2F2F2F] transition-all hover:border-gold/40 hover:bg-[#FBF6EA] active:scale-[0.98]"
-                >
-                  <span className="mr-2.5 font-bold text-gold">{opt.key}.</span>
-                  {opt.label}
-                </button>
+                  icon={opt.key}
+                  label={opt.label}
+                  selected={false}
+                  onSelect={() => onAnswer(opt.key)}
+                />
               ))}
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {currentQ > 0 && (
+        <div className="flex-none px-6 pb-4">
+          <button onClick={onBack} className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+            ← 이전
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -358,7 +349,7 @@ function AnalyzingView() {
           borderRightColor: "rgba(200,168,107,0.2)",
         }}
       />
-      <p className="text-sm font-medium text-[#6B7280]">진단 결과 분석 중...</p>
+      <p className="text-sm font-medium text-[#6B6355]">진단 결과 분석 중...</p>
     </motion.div>
   );
 }
@@ -373,103 +364,74 @@ function ResultView({ result, onCta, onRetry }: { result: ResultData; onCta: () 
       exit={{ opacity: 0 }}
       className="min-h-screen pb-36"
     >
-      <div className="mx-auto max-w-[430px] px-4 pt-8 pb-6 sm:px-6">
+      <div className="mx-auto max-w-[430px] px-4 pt-8 pb-6 sm:px-6 space-y-4">
 
-        {/* 완료 배지 */}
-        <div className="mb-6 flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/35 bg-white/5 px-4 py-1.5 text-xs font-bold tracking-wide text-gold">
-            ✦ 청담동 헤어 클리닉 진단 완료
-          </span>
-        </div>
-
-        {/* 유형 라벨 */}
-        <p className="mb-2 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-gold/60">
-          {result.badge}
-        </p>
-
-        {/* 진단명 */}
-        <h1 className="mb-4 whitespace-pre-line text-center font-serif text-[1.6rem] font-extrabold leading-snug text-gold-light">
-          {result.title}
-        </h1>
-
-        {/* 요약 */}
-        <p className="mb-8 text-center text-sm leading-relaxed text-[#6B7280]">
-          {result.summary}
-        </p>
+        <ResultHeroCard
+          eyebrow="✦ 청담동 헤어 클리닉 진단 완료"
+          badge={result.badge}
+          title={result.title}
+          description={result.summary}
+        />
 
         {/* ① 원인 분석 */}
-        <div className="mb-3 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
-          <div className="px-5 py-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              원인 분석 — 팩트 폭격
-            </p>
-            <div className="space-y-3">
-              {result.causes.map((c, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <span className="mt-2 h-1 w-1 flex-none rounded-full bg-gold/55" />
-                  <p className="text-sm leading-relaxed text-[#6B7280]">{c}</p>
-                </div>
-              ))}
-            </div>
+        <GlassCard accent className="px-5 py-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+            원인 분석 — 팩트 폭격
+          </p>
+          <div className="space-y-3">
+            {result.causes.map((c, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
+                <p className="text-sm leading-relaxed text-[#6B6355]">{c}</p>
+              </div>
+            ))}
           </div>
-        </div>
+        </GlassCard>
 
         {/* ② 전문가 데일리 처방전 */}
-        <div className="mb-3 overflow-hidden rounded-2xl border border-gold/20 bg-gradient-to-br from-gold/[0.07] to-transparent">
-          <div className="px-5 py-4">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              전문가 데일리 처방전
-            </p>
-            <div className="space-y-2.5">
-              {result.prescriptions.map((p, i) => (
-                <div key={i} className="rounded-xl border border-gray-100 bg-white px-4 py-3">
-                  <p className="mb-1 text-xs font-bold text-gold-light">{p.title}</p>
-                  <p className="text-xs leading-relaxed text-[#6B7280]">{p.detail}</p>
-                </div>
-              ))}
-            </div>
+        <GlassCard className="px-5 py-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+            전문가 데일리 처방전
+          </p>
+          <div className="space-y-2.5">
+            {result.prescriptions.map((p, i) => (
+              <div key={i} className="rounded-xl border border-[#EDE7DA] bg-white/60 px-4 py-3">
+                <p className="mb-1 text-xs font-bold text-[#2F2A22]">{p.title}</p>
+                <p className="text-xs leading-relaxed text-[#6B6355]">{p.detail}</p>
+              </div>
+            ))}
           </div>
-        </div>
+        </GlassCard>
 
         {/* ③ 미용실 소통 팁 */}
-        <div className="mb-8 rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="px-5 py-4">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-gold">
-              Feat. 미용실 소통 팁
-            </p>
-            <p className="mb-3 text-[11px] text-[#9CA3AF]">
-              다음 미용실 갈 때 이 대본을 그대로 읽으세요 👇
-            </p>
-            <div className="rounded-xl border border-gold/15 bg-gold/[0.05] px-4 py-3">
-              <p className="text-sm italic leading-relaxed text-[#6B7280]">{result.salonScript}</p>
-            </div>
+        <GlassCard className="px-5 py-4">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+            Feat. 미용실 소통 팁
+          </p>
+          <p className="mb-3 text-[11px] text-[#9C9482]">
+            다음 미용실 갈 때 이 대본을 그대로 읽으세요 👇
+          </p>
+          <div className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
+            <p className="text-sm italic leading-relaxed text-[#6B6355]">{result.salonScript}</p>
           </div>
-        </div>
+        </GlassCard>
 
         {/* 다시 진단받기 */}
         <button
           onClick={onRetry}
-          className="mx-auto flex items-center gap-1 text-xs text-[#9CA3AF] transition-colors hover:text-[#6B7280]"
+          className="mx-auto flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
         >
           ↺ 다시 진단받기
         </button>
       </div>
 
       {/* CTA 고정 하단 */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-100 bg-white/95 px-4 py-4 backdrop-blur-md">
-        <div className="mx-auto max-w-[430px]">
-          <button
-            onClick={onCta}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-gold-light via-gold to-gold-dark text-base font-bold text-charcoal shadow-gold transition-all hover:brightness-105 active:scale-[0.98]"
-          >
-            ✨ AI 헤어 분석으로 내 스타일 찾기!
-          </button>
-          <p className="mt-2 text-center text-xs text-[#9CA3AF]">
-            AI가 두상·모질을 분석해 최적 스타일을 찾아드립니다
-          </p>
-        </div>
-      </div>
+      <BottomStickyCTA>
+        <BlackCTAButton onClick={onCta}>AI 헤어 분석으로 내 스타일 찾기!</BlackCTAButton>
+        <p className="mt-1 text-center text-xs text-[#9C9482]">
+          AI가 두상·모질을 분석해 최적 스타일을 찾아드립니다
+        </p>
+      </BottomStickyCTA>
     </motion.div>
   );
 }
@@ -519,31 +481,33 @@ export default function HairQuizPage() {
   }
 
   return (
-    <main className="mx-auto max-w-[430px] min-h-screen bg-[#F9FAFB] text-[#2F2F2F]">
-      <AnimatePresence mode="wait">
-        {phase === "intro" && (
-          <IntroView key="intro" onStart={handleStart} />
-        )}
-        {phase === "survey" && (
-          <SurveyView
-            key="survey"
-            currentQ={currentQ}
-            onAnswer={handleAnswer}
-            onBack={handleBack}
-          />
-        )}
-        {phase === "analyzing" && (
-          <AnalyzingView key="analyzing" />
-        )}
-        {phase === "result" && (
-          <ResultView
-            key="result"
-            result={RESULTS[resultKey]}
-            onCta={() => router.push("/style")}
-            onRetry={handleRetry}
-          />
-        )}
-      </AnimatePresence>
-    </main>
+    <SilkBackground>
+      <main className="mx-auto max-w-[430px] min-h-screen text-[#2F2A22]">
+        <AnimatePresence mode="wait">
+          {phase === "intro" && (
+            <IntroView key="intro" onStart={handleStart} />
+          )}
+          {phase === "survey" && (
+            <SurveyView
+              key="survey"
+              currentQ={currentQ}
+              onAnswer={handleAnswer}
+              onBack={handleBack}
+            />
+          )}
+          {phase === "analyzing" && (
+            <AnalyzingView key="analyzing" />
+          )}
+          {phase === "result" && (
+            <ResultView
+              key="result"
+              result={RESULTS[resultKey]}
+              onCta={() => router.push("/style")}
+              onRetry={handleRetry}
+            />
+          )}
+        </AnimatePresence>
+      </main>
+    </SilkBackground>
   );
 }
