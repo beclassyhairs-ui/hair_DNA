@@ -19,9 +19,8 @@ import {
 } from "../constants";
 import {
   getStyleEntry,
-  buildAhaText,
-  getPrimaryConcern,
-  type AhaBlock,
+  getHairTypeReport,
+  type HairTypeEntry,
 } from "../recommend";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 import { trackEvent } from "../../../lib/trackEvent";
@@ -320,30 +319,82 @@ function BeforeAfterSection({
   );
 }
 
-// ─── 아하! 공감형 3-Block 카드 ───────────────────────────────────────────────
+// ─── 모발 성질 기반 헤어 방향 리포트 카드 5종 ────────────────────────────────
+// 손상 이력(historyCount)은 AvoidCard의 damageCaution 한 줄에서만 modifier로
+// 등장한다 — 모발 타입 제목(hairTypeTitle)이나 다른 카드의 방향성은 절대 바꾸지
+// 않는다(care_matrix_v3 원칙 그대로 유지).
 
-function AhaCard({ aha }: { aha: AhaBlock }) {
+function TextureReportCard({ report }: { report: HairTypeEntry }) {
   return (
-    <GlassCard accent className="space-y-4 px-5 py-5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">AI 모발 진단</p>
+    <GlassCard accent className="space-y-2 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">모발 성질 리포트</p>
+      <p className="text-sm leading-relaxed text-[#4A453B]">{report.textureSummary}</p>
+    </GlassCard>
+  );
+}
 
-      {/* Block A: 원인 */}
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex-none rounded-full bg-[#F3EEE3] px-2 py-0.5 text-[9px] font-bold text-[#A8884A] whitespace-nowrap">원인</span>
-        <p className="text-sm leading-relaxed text-[#4A453B]">{aha.cause}</p>
-      </div>
+function StyleDirectionCard({ report }: { report: HairTypeEntry }) {
+  return (
+    <GlassCard className="space-y-2 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">추천 스타일 방향</p>
+      <p className="text-sm leading-relaxed text-[#4A453B]">{report.styleDirection}</p>
+    </GlassCard>
+  );
+}
 
-      {/* Block B: 아하! 공감 */}
-      <div className="flex items-start gap-3 rounded-xl border border-[#EDE7DA] bg-white/60 px-3.5 py-3">
-        <span className="mt-0.5 flex-none rounded-full bg-[#F3EEE3] px-2 py-0.5 text-[9px] font-bold text-[#A8884A] whitespace-nowrap">공감</span>
-        <p className="text-sm font-medium leading-relaxed text-[#2F2A22]">{aha.sympathy}</p>
+function AvoidCard({ report }: { report: HairTypeEntry }) {
+  return (
+    <GlassCard className="space-y-3 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">피해야 할 스타일 · 시술</p>
+      <div className="space-y-2">
+        {report.avoid.map((line) => (
+          <div key={line} className="flex items-start gap-2.5">
+            <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
+            <p className="text-sm leading-relaxed text-[#4A453B]">{line}</p>
+          </div>
+        ))}
       </div>
+      {/* 손상 이력 modifier — 제목/방향은 바꾸지 않고 주의 한 줄로만 반영 */}
+      <div className="rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
+        <p className="text-sm font-medium text-[#6B5B3A]">{report.damageCaution}</p>
+      </div>
+    </GlassCard>
+  );
+}
 
-      {/* Block C: 솔루션 */}
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex-none rounded-full bg-[#EFEAE0] px-2 py-0.5 text-[9px] font-bold text-[#6B6355] whitespace-nowrap">처방</span>
-        <p className="text-sm leading-relaxed text-[#4A453B]">{aha.solution}</p>
+function SalonTipCard({ report }: { report: HairTypeEntry }) {
+  return (
+    <GlassCard className="space-y-3 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">미용실 상담 팁</p>
+      <p className="text-sm leading-relaxed text-[#6B6355]">{report.procedureHint}</p>
+      <div className="space-y-2">
+        {report.salonRequest.map((line) => (
+          <div key={line} className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
+            <p className="text-sm italic leading-relaxed text-[#6B6355]">{line}</p>
+          </div>
+        ))}
       </div>
+    </GlassCard>
+  );
+}
+
+function HomeCareCard({ report }: { report: HairTypeEntry }) {
+  return (
+    <GlassCard className="space-y-3 px-5 py-5">
+      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
+      <div className="space-y-2">
+        {report.homeCare.map((line) => (
+          <div key={line} className="flex items-start gap-2.5">
+            <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
+            <p className="text-sm leading-relaxed text-[#4A453B]">{line}</p>
+          </div>
+        ))}
+      </div>
+      {/* 제품 카드 직접 노출 없음 — 발견템(/items)으로만 작은 문구로 연결 */}
+      <Link href="/items" className="flex items-center justify-between gap-3 text-xs font-medium text-[#9C9482] hover:text-[#2F2A22]">
+        이 타입에 맞는 관리템은 발견템에서 볼 수 있어요
+        <span className="flex-none text-[#A8884A]">→</span>
+      </Link>
     </GlassCard>
   );
 }
@@ -363,8 +414,8 @@ const Q_DEBUG_LABELS: Record<string, [string, Record<string, string>]> = {
 };
 
 function DiagnosisDebugPanel({
-  answers, styleName, concern,
-}: { answers: StyleAnswers; styleName: string; concern: string }) {
+  answers, styleName, report,
+}: { answers: StyleAnswers; styleName: string; report: HairTypeEntry }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -411,12 +462,16 @@ function DiagnosisDebugPanel({
                 </div>
               </div>
 
-              {/* 아하! 블록 선택 */}
+              {/* 모발 타입 리포트 — 손상 modifier가 타입/방향을 안 바꾸는지 확인용 */}
               <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
-                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-yellow-600/70">아하! 블록 선택</p>
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-yellow-600/70">모발 타입 리포트</p>
+                <div className="flex justify-between border-b border-gray-100 py-1">
+                  <span className="text-[#9CA3AF]">타입 키</span>
+                  <span className="font-bold text-yellow-600">{report.hairTypeKey}</span>
+                </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-[#9CA3AF]">우선 고민</span>
-                  <span className="font-bold text-yellow-600">{concern}</span>
+                  <span className="text-[#9CA3AF]">손상 modifier</span>
+                  <span className="font-bold text-yellow-600">{report.damageModifier}</span>
                 </div>
               </div>
             </motion.div>
@@ -521,8 +576,7 @@ export default function StyleResultPage() {
   if (!ready) return <main className="min-h-screen bg-[#FBF9F4]" />;
 
   const entry   = getStyleEntry(answers);
-  const aha      = buildAhaText(answers);
-  const concern  = getPrimaryConcern(answers);
+  const report  = getHairTypeReport(answers);
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
@@ -550,11 +604,12 @@ export default function StyleResultPage() {
             <Link href="/style" className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">처음부터</Link>
           </div>
 
-          {/* 결과 히어로 — Before/After + 스타일명 + 태그 */}
+          {/* 결과 히어로 — Before/After + 스타일명 + 모발 타입 한 줄 정의 + 태그 */}
           <ResultHeroCard
             eyebrow="AI STYLE DIAGNOSIS"
             visual={<BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
             badge={entry.name}
+            title={report.hairTypeTitle}
           >
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
@@ -567,8 +622,12 @@ export default function StyleResultPage() {
           {/* 잠금 시 블러 */}
           <div className={`mt-4 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
 
-            {/* 아하! 공감형 3-Block 모발 진단 카드 */}
-            <AhaCard aha={aha} />
+            {/* 모발 성질 기반 헤어 방향 리포트 — 손상도 중심 AhaCard를 대체 */}
+            <TextureReportCard report={report} />
+            <StyleDirectionCard report={report} />
+            <AvoidCard report={report} />
+            <SalonTipCard report={report} />
+            <HomeCareCard report={report} />
 
             {/* 저장 + 공유 */}
             <GlassCard className="space-y-2.5 px-5 py-5">
@@ -602,7 +661,7 @@ export default function StyleResultPage() {
         <DiagnosisDebugPanel
           answers={answers}
           styleName={entry.name}
-          concern={concern}
+          report={report}
         />
 
         {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}

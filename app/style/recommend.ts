@@ -5,6 +5,11 @@
 
 import type { StyleAnswers } from "./surveyData";
 
+// 모발 성질 기반 헤어 방향 리포트(q3_curl/q7_thickness/q8_density/q10_history_count
+// 108조합) — 데이터/조회 함수 본체는 app/style/hairTypeMatrix.ts에 있고, 기존
+// getStyleEntry와 동일한 진입점(../recommend)에서 가져다 쓸 수 있도록 재노출한다.
+export { getHairTypeReport, type HairTypeEntry } from "./hairTypeMatrix";
+
 // ─── 스타일 명칭 조립 시스템 [2×6×3×4 = 144조합] ─────────────────────────────
 // 60종 하드코딩 테이블 전면 폐기 → 런타임 생성 함수로 교체
 
