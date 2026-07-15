@@ -22,6 +22,7 @@ import {
   getHairTypeReport,
   type HairTypeEntry,
 } from "../recommend";
+import { getHairTypeCopy, type HairTypeCopy } from "../hairTypeCopy";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 import { trackEvent } from "../../../lib/trackEvent";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
@@ -320,34 +321,35 @@ function BeforeAfterSection({
 }
 
 // ─── 모발 성질 기반 헤어 방향 리포트 카드 5종 ────────────────────────────────
-// 손상 이력(historyCount)은 AvoidCard의 damageCaution 한 줄에서만 modifier로
-// 등장한다 — 모발 타입 제목(hairTypeTitle)이나 다른 카드의 방향성은 절대 바꾸지
-// 않는다(care_matrix_v3 원칙 그대로 유지).
+// care_matrix_v3 원문(report) 대신 사용자 언어로 번역된 copy(hairTypeCopy.ts)를
+// 보여준다. 손상 이력(historyCount)은 AvoidCard의 damageCaution 한 줄에서만
+// modifier로 등장한다 — painPointHeadline/whyItHappens/stylePrescription은
+// copy layer 설계상 손상 이력과 무관하게 항상 동일하다.
 
-function TextureReportCard({ report }: { report: HairTypeEntry }) {
+function TextureReportCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard accent className="space-y-2 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">모발 성질 리포트</p>
-      <p className="text-sm leading-relaxed text-[#4A453B]">{report.textureSummary}</p>
+      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.whyItHappens}</p>
     </GlassCard>
   );
 }
 
-function StyleDirectionCard({ report }: { report: HairTypeEntry }) {
+function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard className="space-y-2 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">추천 스타일 방향</p>
-      <p className="text-sm leading-relaxed text-[#4A453B]">{report.styleDirection}</p>
+      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.stylePrescription}</p>
     </GlassCard>
   );
 }
 
-function AvoidCard({ report }: { report: HairTypeEntry }) {
+function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution: string }) {
   return (
     <GlassCard className="space-y-3 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">피해야 할 스타일 · 시술</p>
       <div className="space-y-2">
-        {report.avoid.map((line) => (
+        {copy.avoidWithReason.map((line) => (
           <div key={line} className="flex items-start gap-2.5">
             <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
             <p className="text-sm leading-relaxed text-[#4A453B]">{line}</p>
@@ -356,19 +358,18 @@ function AvoidCard({ report }: { report: HairTypeEntry }) {
       </div>
       {/* 손상 이력 modifier — 제목/방향은 바꾸지 않고 주의 한 줄로만 반영 */}
       <div className="rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
-        <p className="text-sm font-medium text-[#6B5B3A]">{report.damageCaution}</p>
+        <p className="text-sm font-medium text-[#6B5B3A]">{damageCaution}</p>
       </div>
     </GlassCard>
   );
 }
 
-function SalonTipCard({ report }: { report: HairTypeEntry }) {
+function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard className="space-y-3 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">미용실 상담 팁</p>
-      <p className="text-sm leading-relaxed text-[#6B6355]">{report.procedureHint}</p>
       <div className="space-y-2">
-        {report.salonRequest.map((line) => (
+        {copy.salonScript.map((line) => (
           <div key={line} className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
             <p className="text-sm italic leading-relaxed text-[#6B6355]">{line}</p>
           </div>
@@ -378,21 +379,14 @@ function SalonTipCard({ report }: { report: HairTypeEntry }) {
   );
 }
 
-function HomeCareCard({ report }: { report: HairTypeEntry }) {
+function HomeCareCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard className="space-y-3 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
-      <div className="space-y-2">
-        {report.homeCare.map((line) => (
-          <div key={line} className="flex items-start gap-2.5">
-            <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
-            <p className="text-sm leading-relaxed text-[#4A453B]">{line}</p>
-          </div>
-        ))}
-      </div>
-      {/* 제품 카드 직접 노출 없음 — 발견템(/items)으로만 작은 문구로 연결 */}
+      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.homeCareDirection}</p>
+      {/* 제품 카드 직접 노출 없음 — discoveryItemHint는 카테고리 힌트로만, 실제 제품은 발견템(/items)에서 */}
       <Link href="/items" className="flex items-center justify-between gap-3 text-xs font-medium text-[#9C9482] hover:text-[#2F2A22]">
-        이 타입에 맞는 관리템은 발견템에서 볼 수 있어요
+        {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
         <span className="flex-none text-[#A8884A]">→</span>
       </Link>
     </GlassCard>
@@ -577,6 +571,7 @@ export default function StyleResultPage() {
 
   const entry   = getStyleEntry(answers);
   const report  = getHairTypeReport(answers);
+  const copy    = getHairTypeCopy(answers);
 
   const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
   const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
@@ -604,12 +599,12 @@ export default function StyleResultPage() {
             <Link href="/style" className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">처음부터</Link>
           </div>
 
-          {/* 결과 히어로 — Before/After + 스타일명 + 모발 타입 한 줄 정의 + 태그 */}
+          {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
           <ResultHeroCard
             eyebrow="AI STYLE DIAGNOSIS"
             visual={<BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
             badge={entry.name}
-            title={report.hairTypeTitle}
+            title={copy.painPointHeadline}
           >
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
@@ -623,11 +618,11 @@ export default function StyleResultPage() {
           <div className={`mt-4 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
 
             {/* 모발 성질 기반 헤어 방향 리포트 — 손상도 중심 AhaCard를 대체 */}
-            <TextureReportCard report={report} />
-            <StyleDirectionCard report={report} />
-            <AvoidCard report={report} />
-            <SalonTipCard report={report} />
-            <HomeCareCard report={report} />
+            <TextureReportCard copy={copy} />
+            <StyleDirectionCard copy={copy} />
+            <AvoidCard copy={copy} damageCaution={report.damageCaution} />
+            <SalonTipCard copy={copy} />
+            <HomeCareCard copy={copy} />
 
             {/* 저장 + 공유 */}
             <GlassCard className="space-y-2.5 px-5 py-5">
