@@ -16,10 +16,16 @@ import { trackEvent } from "../../lib/trackEvent";
 
 const DIAGNOSIS_HUB_ITEMS = [
   {
-    type: "hair_mbti",
-    label: "헤어 성향 MBTI",
-    desc: "내 성향으로 알아보는 헤어 타입",
-    href: "/mbti",
+    type: "style",
+    label: "AI 헤어 스타일 분석",
+    desc: "얼굴형 기반 인생 헤어스타일 찾기",
+    href: "/style",
+  },
+  {
+    type: "damage",
+    label: "손상도 체크",
+    desc: "미용실 가기 전 1분 팩트체크",
+    href: "/damage-check",
   },
   {
     type: "bangs",
@@ -28,14 +34,8 @@ const DIAGNOSIS_HUB_ITEMS = [
     href: "/bangs",
   },
   {
-    type: "style",
-    label: "인생 헤어스타일 (동안비법)",
-    desc: "얼굴형 기반 인생 헤어스타일 찾기",
-    href: "/style",
-  },
-  {
     type: "hair_quiz",
-    label: "내 머리가 미용실에서만 예쁜 이유 (청담동 팩트폭격)",
+    label: "머리가 미용실에서만 예쁜 이유",
     desc: "3문항 퀵 진단",
     href: "/hair-quiz",
   },

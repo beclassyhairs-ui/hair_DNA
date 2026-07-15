@@ -117,7 +117,9 @@ export default function StyleLoadingPage() {
         ]);
       } catch { /**/ } finally {
         // 15초 + API 모두 완료 → 결과지 이동 (결과지에서 이중 로딩 없음)
-        router.push("/style/result");
+        // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
+        // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
+        router.replace("/style/result");
       }
     }
 

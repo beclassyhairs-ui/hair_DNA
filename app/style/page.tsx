@@ -124,13 +124,13 @@ export default function StyleLandingPage() {
               개인정보 미저장 · 약 2분 소요 · 무료
             </p>
 
-            {/* 재방문 다이어리 링크 */}
+            {/* 재방문 링크 — /my-diary(구 다크 UI) 대신 /home으로 안내 */}
             <GlassCard>
               <Link
-                href="/my-diary"
+                href="/home"
                 className="flex h-14 w-full items-center justify-center text-base font-semibold text-[#6B6355] underline underline-offset-[5px] transition-all duration-200 hover:text-[#2F2A22] active:scale-[0.98]"
               >
-                이미 분석받으셨나요? · 내 다이어리 보기
+                이미 분석받으셨나요? · 저장한 진단 보기
               </Link>
             </GlassCard>
           </motion.div>
