@@ -28,3 +28,70 @@ create index if not exists idx_products_created_at on products (created_at desc)
 alter table products enable row level security;
 
 -- 의도적으로 anon 대상 정책을 만들지 않음 (anon은 조회/등록/수정/삭제 모두 불가)
+
+-- ============================================================================
+-- 확장(설계 단계, 미적용) — 발견템(/items) 노출 파이프라인을 위한
+-- draft → review → approved → hidden 워크플로우 필드 추가.
+-- 기존 5개 컬럼(product_name/category/concern_tags/image_url/buy_link)은
+-- 전혀 건드리지 않는다 — 전부 IF NOT EXISTS 신규 컬럼 추가만 수행한다.
+--
+-- Gemini가 만드는 CSV의 컬럼명이 DB 컬럼명과 다른 경우:
+--   CSV `product_url`  →  DB `buy_link`  (신규 컬럼이 아니라 기존 buy_link에 매핑)
+--   CSV는 status/created_at/updated_at을 포함하지 않는다 — status는 항상
+--   서버(추후 import 로직)에서 'draft'로 강제하고, 나머지는 DB가 자동 관리한다.
+-- ============================================================================
+
+alter table products
+  add column if not exists status text not null default 'draft'
+    check (status in ('draft', 'review', 'approved', 'hidden')),
+  add column if not exists sales_type text
+    check (sales_type is null or sales_type in (
+      'affiliate', 'coupang', 'naver',
+      'domestic_consignment', 'overseas_candidate', 'own'
+    )),
+  -- fit_hair_types / avoid_hair_types: 한글 라벨("곱슬모" 등)이 아니라
+  -- 시스템 코드값을 저장한다. 코드값 규칙 = `${curl}__${thickness}__${density}`
+  -- (app/style/hairTypeCopy.ts의 coreKey()와 동일 포맷)
+  --   curl:      straight_hair | wavy_hair | curly_hair
+  --   thickness: coarse | medium_thickness | fine
+  --   density:   thick_density | medium_density | thin_density
+  --   예) "straight_hair__fine__thin_density", "curly_hair__coarse__thick_density",
+  --       "wavy_hair__fine__thin_density"
+  add column if not exists fit_hair_types text[],
+  add column if not exists avoid_hair_types text[],
+  -- solves_concern: 신규 매칭 로직이 사용할 고민 태그. 기존 concern_tags(jsonb)는
+  -- legacy로 유지·삭제하지 않는다 — 기존 admin 등록/수정 폼이 계속 그대로 동작해야 함.
+  add column if not exists solves_concern text[],
+  add column if not exists recommend_reason text,
+  add column if not exists usage_guide text,
+  add column if not exists caution_note text,
+  add column if not exists sourcing_note text,
+  add column if not exists updated_at timestamptz not null default now();
+
+create index if not exists idx_products_status         on products (status);
+create index if not exists idx_products_fit_hair_types on products using gin (fit_hair_types);
+create index if not exists idx_products_solves_concern  on products using gin (solves_concern);
+
+-- updated_at 자동 갱신 — API 코드를 건드리지 않고 DB 트리거로만 처리한다.
+create or replace function set_products_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_products_updated_at on products;
+create trigger trg_products_updated_at
+  before update on products
+  for each row execute function set_products_updated_at();
+
+-- ── 참고: /items 공개 조회용 RLS — 지금 적용하지 않음. /items 연동 단계에서 재검토 ──
+-- create policy "public can read approved products"
+--   on products for select to anon
+--   using (status = 'approved');
+
+-- ============================================================================
+-- ⚠️ 이 아래 확장 SQL은 설계/버전관리 목적이다. 실제 Supabase에는 아직
+-- 적용하지 않았다 — 적용 시점은 별도 승인 후 SQL Editor에서 수동 실행한다.
+-- ============================================================================
