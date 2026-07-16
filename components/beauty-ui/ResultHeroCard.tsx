@@ -6,12 +6,15 @@ import type { ReactNode } from "react";
 // 버전이 되고, visual을 넘기면 그 위에 큰 이미지가 올라간다(bangs, style 등).
 // badge: 등급/결과명처럼 짧은 pill로 강조하고 싶은 값(선택)
 // title은 선택 — 결과명을 badge로만 보여주고 싶을 땐 생략할 수 있다.
+// badgeVariant="subtle": title(예: 불편함 헤드라인)을 1차 후킹으로 세우고
+// badge는 보조 태그로 낮추고 싶을 때만 사용 — 미지정 시 기존 solid 스타일 그대로.
 // ============================================================================
 
 export default function ResultHeroCard({
   eyebrow,
   visual,
   badge,
+  badgeVariant = "solid",
   title,
   description,
   children,
@@ -19,6 +22,7 @@ export default function ResultHeroCard({
   eyebrow?: string;
   visual?: ReactNode;
   badge?: ReactNode;
+  badgeVariant?: "solid" | "subtle";
   title?: string;
   description?: ReactNode;
   children?: ReactNode;
@@ -31,13 +35,23 @@ export default function ResultHeroCard({
       )}
       {badge && (
         <div className="mt-4 flex justify-center">
-          <span className="inline-flex flex-col items-center gap-0.5 rounded-full bg-[#1C1A17] px-6 py-2.5 font-serif text-base font-bold text-white">
+          <span
+            className={
+              badgeVariant === "subtle"
+                ? "inline-flex flex-col items-center gap-0.5 rounded-full border border-[#EDE7DA] bg-white/70 px-4 py-1.5 text-xs font-semibold text-[#A8884A]"
+                : "inline-flex flex-col items-center gap-0.5 rounded-full bg-[#1C1A17] px-6 py-2.5 font-serif text-base font-bold text-white"
+            }
+          >
             {badge}
           </span>
         </div>
       )}
       {title && (
-        <h1 className="mt-4 font-serif text-[1.65rem] font-bold leading-snug text-[#2F2A22]">
+        <h1
+          className={`font-serif font-bold leading-snug text-[#2F2A22] ${
+            badgeVariant === "subtle" ? "mt-3 text-[1.85rem]" : "mt-4 text-[1.65rem]"
+          }`}
+        >
           {title}
         </h1>
       )}

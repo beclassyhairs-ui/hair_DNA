@@ -2,7 +2,7 @@
 
 // ============================================================================
 // 결과지 — 이중 로딩 없음, 세션에서 즉시 렌더링
-// 캡처 방지 + 알림 신청 버튼 + 배열 다이어리 저장
+// 캡처 방지 + 저장하고 홈에서 오늘 케어 보기 CTA + 배열 다이어리 저장
 // ============================================================================
 
 import { useEffect, useState } from "react";
@@ -337,7 +337,7 @@ function TextureReportCard({ copy }: { copy: HairTypeCopy }) {
 
 function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
   return (
-    <GlassCard className="space-y-2 px-5 py-5">
+    <GlassCard accent className="space-y-2 px-5 py-5">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">추천 스타일 방향</p>
       <p className="text-sm leading-relaxed text-[#4A453B]">{copy.stylePrescription}</p>
     </GlassCard>
@@ -346,7 +346,7 @@ function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
 
 function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution: string }) {
   return (
-    <GlassCard className="space-y-3 px-5 py-5">
+    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">피해야 할 스타일 · 시술</p>
       <div className="space-y-2">
         {copy.avoidWithReason.map((line) => (
@@ -366,7 +366,7 @@ function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution:
 
 function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
   return (
-    <GlassCard className="space-y-3 px-5 py-5">
+    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">미용실 상담 팁</p>
       <div className="space-y-2">
         {copy.salonScript.map((line) => (
@@ -381,11 +381,14 @@ function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
 
 function HomeCareCard({ copy }: { copy: HairTypeCopy }) {
   return (
-    <GlassCard className="space-y-3 px-5 py-5">
+    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
       <p className="text-sm leading-relaxed text-[#4A453B]">{copy.homeCareDirection}</p>
       {/* 제품 카드 직접 노출 없음 — discoveryItemHint는 카테고리 힌트로만, 실제 제품은 발견템(/items)에서 */}
-      <Link href="/items" className="flex items-center justify-between gap-3 text-xs font-medium text-[#9C9482] hover:text-[#2F2A22]">
+      <Link
+        href="/items"
+        className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-xs font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
+      >
         {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
         <span className="flex-none text-[#A8884A]">→</span>
       </Link>
@@ -476,49 +479,6 @@ function DiagnosisDebugPanel({
   );
 }
 
-// ─── 알림 신청 버튼 (하단 고정 CTA 교체) ──────────────────────────────────────
-
-type NotifyState = "idle" | "loading" | "done";
-
-function NotifyButton() {
-  const [state, setState] = useState<NotifyState>("idle");
-
-  async function handleNotify() {
-    if (state !== "idle") return;
-    setState("loading");
-    try {
-      localStorage.setItem("abeauty:notifyConsent", JSON.stringify({ ts: Date.now(), src: "result" }));
-      void fetch("/api/track", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event: "notify_consent" }),
-      });
-      await new Promise(r => setTimeout(r, 700));
-      setState("done");
-    } catch { setState("done"); }
-  }
-
-  if (state === "done") {
-    return (
-      <div className="flex h-14 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] bg-[#F3EEE3] text-base font-semibold text-[#A8884A]">
-        ✓ 알림 신청이 완료되었습니다!
-      </div>
-    );
-  }
-  return (
-    <button onClick={handleNotify} disabled={state === "loading"}
-      className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98] disabled:opacity-60">
-      {state === "loading"
-        ? <motion.span
-            className="inline-block h-4 w-4 rounded-full"
-            style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(255,255,255,0.25)" }}
-            animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-          />
-        : "새로운 AI 분석 서비스 오픈 알림 받기"}
-    </button>
-  );
-}
-
 // ============================================================================
 // 메인 결과 페이지 — 폴링 없음, sessionStorage 즉시 읽기
 // ============================================================================
@@ -604,6 +564,7 @@ export default function StyleResultPage() {
             eyebrow="AI STYLE DIAGNOSIS"
             visual={<BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
             badge={entry.name}
+            badgeVariant="subtle"
             title={copy.painPointHeadline}
           >
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
@@ -615,14 +576,20 @@ export default function StyleResultPage() {
           </ResultHeroCard>
 
           {/* 잠금 시 블러 */}
-          <div className={`mt-4 space-y-4 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
+          <div className={`mt-4 space-y-5 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
 
-            {/* 모발 성질 기반 헤어 방향 리포트 — 손상도 중심 AhaCard를 대체 */}
-            <TextureReportCard copy={copy} />
-            <StyleDirectionCard copy={copy} />
-            <AvoidCard copy={copy} damageCaution={report.damageCaution} />
-            <SalonTipCard copy={copy} />
-            <HomeCareCard copy={copy} />
+            {/* Tier 1 — 핵심 진단: 왜 불편한지 + 어떻게 하면 되는지 */}
+            <div className="space-y-3">
+              <TextureReportCard copy={copy} />
+              <StyleDirectionCard copy={copy} />
+            </div>
+
+            {/* Tier 2 — 참고 정보: 시술 주의 / 상담 팁 / 홈케어 */}
+            <div className="space-y-2.5">
+              <AvoidCard copy={copy} damageCaution={report.damageCaution} />
+              <SalonTipCard copy={copy} />
+              <HomeCareCard copy={copy} />
+            </div>
 
             {/* 저장 + 공유 */}
             <GlassCard className="space-y-2.5 px-5 py-5">
@@ -659,7 +626,7 @@ export default function StyleResultPage() {
           report={report}
         />
 
-        {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 알림 신청 버튼 */}
+        {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 결과지 저장 CTA */}
         <BottomStickyCTA>
           {locked ? (
             <button
@@ -668,7 +635,11 @@ export default function StyleResultPage() {
               카카오 로그인하고 결과 보기
             </button>
           ) : (
-            <NotifyButton />
+            <button
+              onClick={() => setShowSave(true)}
+              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98]">
+              저장하고 홈에서 오늘 케어 보기
+            </button>
           )}
         </BottomStickyCTA>
 
