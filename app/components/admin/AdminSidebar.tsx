@@ -2,7 +2,8 @@
 
 // ============================================================================
 // 어뷰티 어드민 — 좌측 사이드 네비게이션
-// [대시보드] /admin, [제품 관리] /admin/products 두 탭을 라우트로 분리한다.
+// [대시보드] /admin, [제품 관리] /admin/products, [소싱 검수] /admin/sourcing
+// 세 탭을 라우트로 분리한다.
 // ============================================================================
 
 import Link from "next/link";
@@ -30,6 +31,16 @@ const NAV_ITEMS = [
           strokeLinejoin="round"
         />
         <path d="M3.5 8.5 12 13l8.5-4.5M12 13v7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/sourcing",
+    label: "소싱 검수",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
+        <circle cx="11" cy="11" r="7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
