@@ -30,10 +30,14 @@ alter table products enable row level security;
 -- 의도적으로 anon 대상 정책을 만들지 않음 (anon은 조회/등록/수정/삭제 모두 불가)
 
 -- ============================================================================
--- 확장(설계 단계, 미적용) — 발견템(/items) 노출 파이프라인을 위한
--- draft → review → approved → hidden 워크플로우 필드 추가.
--- 기존 5개 컬럼(product_name/category/concern_tags/image_url/buy_link)은
--- 전혀 건드리지 않는다 — 전부 IF NOT EXISTS 신규 컬럼 추가만 수행한다.
+-- 확장 — 발견템(/items) 노출 파이프라인을 위한 최종 마이그레이션 SQL
+-- (설계 완료, 아직 Supabase에는 미적용 — 적용 시점은 별도 승인 후 SQL Editor에서
+-- 수동 실행한다)
+--
+-- 기존 6개 컬럼(product_name/category/concern_tags/image_url/buy_link/
+-- created_at)과 위 기본 RLS 정책(anon 완전 차단)은 전혀 건드리지 않는다.
+-- 전부 public.products로 스키마를 명시했고, IF NOT EXISTS / DO 블록으로
+-- 작성해 여러 번 실행해도 안전(idempotent)하다.
 --
 -- Gemini가 만드는 CSV의 컬럼명이 DB 컬럼명과 다른 경우:
 --   CSV `product_url`  →  DB `buy_link`  (신규 컬럼이 아니라 기존 buy_link에 매핑)
@@ -41,57 +45,204 @@ alter table products enable row level security;
 --   서버(추후 import 로직)에서 'draft'로 강제하고, 나머지는 DB가 자동 관리한다.
 -- ============================================================================
 
-alter table products
-  add column if not exists status text not null default 'draft'
-    check (status in ('draft', 'review', 'approved', 'hidden')),
-  add column if not exists sales_type text
-    check (sales_type is null or sales_type in (
-      'affiliate', 'coupang', 'naver',
-      'domestic_consignment', 'overseas_candidate', 'own'
-    )),
-  -- fit_hair_types / avoid_hair_types: 한글 라벨("곱슬모" 등)이 아니라
-  -- 시스템 코드값을 저장한다. 코드값 규칙 = `${curl}__${thickness}__${density}`
-  -- (app/style/hairTypeCopy.ts의 coreKey()와 동일 포맷)
-  --   curl:      straight_hair | wavy_hair | curly_hair
-  --   thickness: coarse | medium_thickness | fine
-  --   density:   thick_density | medium_density | thin_density
-  --   예) "straight_hair__fine__thin_density", "curly_hair__coarse__thick_density",
-  --       "wavy_hair__fine__thin_density"
-  add column if not exists fit_hair_types text[],
-  add column if not exists avoid_hair_types text[],
-  -- solves_concern: 신규 매칭 로직이 사용할 고민 태그. 기존 concern_tags(jsonb)는
-  -- legacy로 유지·삭제하지 않는다 — 기존 admin 등록/수정 폼이 계속 그대로 동작해야 함.
-  add column if not exists solves_concern text[],
-  add column if not exists recommend_reason text,
-  add column if not exists usage_guide text,
-  add column if not exists caution_note text,
-  add column if not exists sourcing_note text,
+-- ─── 1) 신규 컬럼 추가 ────────────────────────────────────────────────────────
+
+alter table public.products
+  add column if not exists status text not null default 'draft';
+
+alter table public.products
+  add column if not exists sales_type text;
+
+alter table public.products
+  add column if not exists fit_hair_types text[];
+
+alter table public.products
+  add column if not exists avoid_hair_types text[];
+
+alter table public.products
+  add column if not exists solves_concern text[];
+
+alter table public.products
+  add column if not exists recommend_reason text;
+
+alter table public.products
+  add column if not exists usage_guide text;
+
+alter table public.products
+  add column if not exists caution_note text;
+
+alter table public.products
+  add column if not exists sourcing_note text;
+
+alter table public.products
   add column if not exists updated_at timestamptz not null default now();
 
-create index if not exists idx_products_status         on products (status);
-create index if not exists idx_products_fit_hair_types on products using gin (fit_hair_types);
-create index if not exists idx_products_solves_concern  on products using gin (solves_concern);
+alter table public.products
+  add column if not exists detail_image_urls text[];
 
--- updated_at 자동 갱신 — API 코드를 건드리지 않고 DB 트리거로만 처리한다.
-create or replace function set_products_updated_at()
-returns trigger language plpgsql as $$
+alter table public.products
+  add column if not exists image_source text;
+
+alter table public.products
+  add column if not exists image_status text not null default 'needs_review';
+
+alter table public.products
+  add column if not exists image_alt text;
+
+alter table public.products
+  add column if not exists image_note text;
+
+-- fit_hair_types / avoid_hair_types: 한글 라벨("곱슬모" 등)이 아니라 시스템
+-- 코드값을 저장한다. 코드값 규칙 = `${curl}__${thickness}__${density}`
+-- (app/style/hairTypeCopy.ts의 coreKey()와 동일 포맷)
+--   curl:      straight_hair | wavy_hair | curly_hair
+--   thickness: coarse | medium_thickness | fine
+--   density:   thick_density | medium_density | thin_density
+--   예) "straight_hair__fine__thin_density", "curly_hair__coarse__thick_density",
+--       "wavy_hair__fine__thin_density"
+--
+-- solves_concern: 신규 매칭 로직이 사용할 고민 태그. 기존 concern_tags(jsonb)는
+-- legacy로 유지·삭제하지 않는다 — 기존 admin 등록/수정 폼이 계속 그대로 동작해야 함.
+
+-- ─── 2) 컬럼이 이미 존재하는 경우를 위한 default/not null 보정 ────────────────
+-- ADD COLUMN IF NOT EXISTS는 컬럼이 이미 있으면 그 정의를 통째로 건너뛴다.
+-- status/updated_at/image_status가 과거에 다른 정의로 먼저 만들어졌을 가능성을
+-- 대비해, 기존 NULL 값을 먼저 백필한 뒤 default/not null을 명시적으로 재적용한다.
+
+update public.products set status = 'draft' where status is null;
+alter table public.products alter column status set default 'draft';
+alter table public.products alter column status set not null;
+
+update public.products set updated_at = now() where updated_at is null;
+alter table public.products alter column updated_at set default now();
+alter table public.products alter column updated_at set not null;
+
+update public.products set image_status = 'needs_review' where image_status is null;
+alter table public.products alter column image_status set default 'needs_review';
+alter table public.products alter column image_status set not null;
+
+-- ─── 3) CHECK 제약 — pg_constraint 존재 여부를 먼저 확인하는 DO 블록 방식 ──────
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'products_status_check'
+      and conrelid = 'public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_status_check
+      check (status in ('draft', 'review', 'approved', 'hidden'));
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'products_sales_type_check'
+      and conrelid = 'public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_sales_type_check
+      check (
+        sales_type is null
+        or sales_type in (
+          'affiliate',
+          'coupang',
+          'naver',
+          'domestic_consignment',
+          'overseas_candidate',
+          'own'
+        )
+      );
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'products_image_source_check'
+      and conrelid = 'public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_image_source_check
+      check (
+        image_source is null
+        or image_source in (
+          'official',
+          'affiliate',
+          'seller',
+          'manual_upload',
+          'placeholder',
+          'unknown'
+        )
+      );
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'products_image_status_check'
+      and conrelid = 'public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_image_status_check
+      check (
+        image_status in (
+          'needs_image',
+          'needs_review',
+          'approved',
+          'rejected'
+        )
+      );
+  end if;
+end $$;
+
+-- ─── 4) 인덱스 ────────────────────────────────────────────────────────────────
+
+create index if not exists idx_products_status
+  on public.products (status);
+
+create index if not exists idx_products_fit_hair_types
+  on public.products using gin (fit_hair_types);
+
+create index if not exists idx_products_solves_concern
+  on public.products using gin (solves_concern);
+
+-- ─── 5) updated_at 자동 갱신 트리거 — API 코드를 건드리지 않고 DB 트리거로만 처리 ──
+
+create or replace function public.set_products_updated_at()
+returns trigger
+language plpgsql
+as $$
 begin
   new.updated_at = now();
   return new;
 end;
 $$;
 
-drop trigger if exists trg_products_updated_at on products;
-create trigger trg_products_updated_at
-  before update on products
-  for each row execute function set_products_updated_at();
+drop trigger if exists trg_products_updated_at on public.products;
 
--- ── 참고: /items 공개 조회용 RLS — 지금 적용하지 않음. /items 연동 단계에서 재검토 ──
--- create policy "public can read approved products"
---   on products for select to anon
---   using (status = 'approved');
+create trigger trg_products_updated_at
+  before update on public.products
+  for each row
+  execute function public.set_products_updated_at();
 
 -- ============================================================================
--- ⚠️ 이 아래 확장 SQL은 설계/버전관리 목적이다. 실제 Supabase에는 아직
+-- RLS 관련: 이 블록은 RLS 정책을 추가/변경하지 않는다. 기존
+-- "alter table products enable row level security;" 상태와 anon 대상
+-- 정책 0개(조회/등록/수정/삭제 전부 차단)는 위쪽 기본 정의 그대로 유지된다.
+-- /items 공개 조회용 RLS는 여기서 열지 않고, 이후 별도 서버 API 라우트로
+-- 처리하는 방향으로 정리했다(서버 API 경유 방식 — RLS 오픈보다 안전).
+--
+-- ⚠️ 이 파일은 설계/버전관리 목적의 SQL이다. 실제 Supabase에는 아직
 -- 적용하지 않았다 — 적용 시점은 별도 승인 후 SQL Editor에서 수동 실행한다.
 -- ============================================================================
