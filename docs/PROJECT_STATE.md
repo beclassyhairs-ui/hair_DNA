@@ -5,33 +5,33 @@
 
 ## 현재 상태 한 줄
 
-경로 오타 수정(`doce/` → `docs/`) 완료. products 확장 SQL 커밋 완료(4fc0061). 관리자 products GET/POST/PUT 전체 필드 제한 커밋 완료(3e8ec61, Codex 재검수 1회 후 통과 — 최초 검수에서 POST/PUT의 `select("*")`가 신규 내부 필드를 노출할 수 있다는 지적을 받아 범위를 GET뿐 아니라 POST/PUT까지 확장). 다음은 Supabase 읽기 전용 사전점검 → 확장 블록 실행.
+**중요 발견(2026-07-18): Supabase public 스키마에 `products` 테이블이 아예 존재하지 않음** (실존 테이블은 `events` 하나뿐 — 사전점검 쿼리에서 `relation "public.products" does not exist` 확인). 기존 "확장 블록만 실행" 계획은 폐기하고, `supabase/products_schema.sql` 전체를 빈 DB 대상 최초 생성 스크립트(BEGIN/COMMIT 원자적 실행, `public.` 스키마 명시)로 재작성 → Codex 검수 통과. 다음은 사용자가 SQL 전문을 Supabase SQL Editor에 붙여넣어 1회 실행.
 
 ## 미커밋 변경
 
-없음
+- `supabase/products_schema.sql` (빈 DB 최초 생성용으로 재구성 — public. 프리픽스 추가 + BEGIN/COMMIT 래핑, Codex 검수 통과, 커밋 대기)
 
 ## 다음 작업 순서
 
 1. [x] `supabase/products_schema.sql` 커밋 — `chore: harden products discovery schema migration` (4fc0061)
 2. [x] 관리자 products GET/POST/PUT 필드 제한 — `app/api/admin/products/route.ts`, `[id]/route.ts` 7개 필드만 명시. Codex 최초 검수에서 POST/PUT 노출 문제 지적 → 수정 → 재검수 통과 — `fix: restrict admin products API responses to explicit fields` (3e8ec61)
-3. [ ] Supabase 읽기 전용 사전점검 — 사용자가 직접 SQL Editor에서 실행: (a) 기존 CHECK/인덱스/트리거 이름+정의 확인 쿼리 (b) column_presence CTE 방식 값 분포 쿼리
-4. [ ] 사전점검 정상 시 확장 블록만 실행 — `-- 1) 신규 컬럼 추가`부터 `execute function public.set_products_updated_at();`까지 `BEGIN; ... COMMIT;`으로. 에러 시 ROLLBACK
-5. [ ] 실행 후 확인 — 컬럼/제약/기존 /admin/products 정상 작동
-6. [ ] `/api/admin/products` GET/POST/PUT 신규 필드 확장
-7. [ ] `/admin/products` UI 확장 (status 컨트롤, 이미지 검수 필드)
-8. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결
-9. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist)
-10. [ ] `/items` DB 연동 + hairTags 매칭
-11. [ ] `/items/[id]` 상세페이지
+3. [x] ~~Supabase 읽기 전용 사전점검~~ → 사용자가 직접 실행, `products` 테이블 미존재 확인됨. 계획 변경 트리거
+4. [ ] `supabase/products_schema.sql` (최초 생성용 재작성본) 커밋 — Codex 검수 통과 완료, 커밋만 남음
+5. [ ] 사용자가 Supabase SQL Editor에 파일 전문을 붙여넣어 1회 실행 (테이블 생성 + RLS + 확장 필드 + 제약 + 인덱스 + 트리거, 전부 BEGIN/COMMIT 트랜잭션 안)
+6. [ ] 실행 후 확인 — 테이블/컬럼/제약/인덱스/트리거 생성 여부, 기존 `/admin/products` 정상 작동(제품 0건 상태에서 신규 등록 테스트)
+7. [ ] `/api/admin/products` GET/POST/PUT 신규 필드 확장
+8. [ ] `/admin/products` UI 확장 (status 컨트롤, 이미지 검수 필드)
+9. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결
+10. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist)
+11. [ ] `/items` DB 연동 + hairTags 매칭
+12. [ ] `/items/[id]` 상세페이지
 
 ## 확정된 결정사항
 
-- 관리자 전체 인증은 지금 안 만든다. GET 필드 제한(최소 방어)만 하고 진행. 전체 인증은 백로그.
-- SQL은 파일 전체가 아니라 확장 블록만, BEGIN/COMMIT으로 실행한다.
-- 사전점검 쿼리는 column_presence CTE 개선판을 쓴다 (컬럼 미존재 시 오집계 방지).
+- 관리자 전체 인증은 지금 안 만든다. GET/POST/PUT 필드 제한(최소 방어)만 하고 진행. 전체 인증은 백로그.
+- `products` 테이블이 Supabase에 아예 없었음이 확인됨(2026-07-18) — "확장 블록만 BEGIN/COMMIT 실행" 계획은 폐기. 대신 `products_schema.sql` 파일 전체(테이블 생성+RLS+확장)를 BEGIN/COMMIT으로 감싸 한 번에 실행하는 방식으로 변경.
 - product_verification_logs 같은 감사 테이블은 지금 안 만들고 운영에서 필요해지면 추가.
-- 커밋 히스토리 참고: 28a2f1e(sourcing 도구), 45cf3ea(스키마 1차)는 이미 존재.
+- 커밋 히스토리 참고: 28a2f1e(sourcing 도구), 45cf3ea(스키마 1차), 4fc0061(스키마 확장 1차), 3e8ec61(GET/POST/PUT 필드 제한)는 이미 존재.
 
 ## 백로그 (차단 아님, 기록)
 
@@ -41,7 +41,6 @@
 - lib/sourcing.ts fit_hair_types 매핑 불일치 (bangs_babyhair, damaged_hair_high_history)
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
 - CSV 파서: 닫히지 않은 따옴표 오류 미보고
-- products_schema.sql 상단 기본 블록 `public.` 스키마명 미명시
 - /home dead CTA 2개 (진단 다시보기, items 이유보기), mainConcern 하드코딩 문구
 - /hair-quiz 저장 미연결 (kind는 준비됨)
 - /api/hair-transform의 pickReferenceUrl/getBaseUrl dead code + public/references 폴더 비어있음 — 의도 확인 필요
