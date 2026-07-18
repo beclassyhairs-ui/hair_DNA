@@ -8,9 +8,67 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
-import type { Product, ProductInput } from "../../../lib/products";
+import type {
+  Product,
+  ProductInput,
+  ProductStatus,
+  ProductImageStatus,
+  ProductImageSource,
+} from "../../../lib/products";
 
-const EMPTY_FORM = { product_name: "", category: "", image_url: "", buy_link: "" };
+const EMPTY_FORM = {
+  product_name: "",
+  category: "",
+  image_url: "",
+  buy_link: "",
+  status: "draft" as ProductStatus,
+  image_status: "needs_review" as ProductImageStatus,
+  image_source: "" as ProductImageSource | "",   // "" = 미설정 → 전송 시 undefined
+  image_alt: "",
+  image_note: "",
+};
+
+const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
+  { value: "draft", label: "초안" },
+  { value: "review", label: "검토중" },
+  { value: "approved", label: "승인" },
+  { value: "hidden", label: "숨김" },
+];
+
+const IMAGE_STATUS_OPTIONS: { value: ProductImageStatus; label: string }[] = [
+  { value: "needs_image", label: "이미지 필요" },
+  { value: "needs_review", label: "검수 대기" },
+  { value: "approved", label: "승인" },
+  { value: "rejected", label: "반려" },
+];
+
+const IMAGE_SOURCE_OPTIONS: { value: ProductImageSource; label: string }[] = [
+  { value: "official", label: "공식" },
+  { value: "affiliate", label: "제휴" },
+  { value: "seller", label: "판매자" },
+  { value: "manual_upload", label: "직접 업로드" },
+  { value: "placeholder", label: "임시" },
+  { value: "unknown", label: "미상" },
+];
+
+const STATUS_BADGE: Record<ProductStatus, string> = {
+  draft: "bg-white/[0.06] text-cream/45",
+  review: "bg-amber-400/15 text-amber-200",
+  approved: "bg-emerald-400/15 text-emerald-200",
+  hidden: "bg-white/[0.03] text-cream/25",
+};
+
+const IMAGE_STATUS_BADGE: Record<ProductImageStatus, string> = {
+  needs_image: "bg-red-400/15 text-red-200",
+  needs_review: "bg-amber-400/15 text-amber-200",
+  approved: "bg-emerald-400/15 text-emerald-200",
+  rejected: "bg-red-400/15 text-red-200",
+};
+
+const statusLabel = (v: ProductStatus) =>
+  STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v;
+const imageStatusLabel = (v: ProductImageStatus) =>
+  IMAGE_STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v;
 
 export default function ProductManager() {
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -55,6 +113,11 @@ export default function ProductManager() {
       category: p.category ?? "",
       image_url: p.image_url ?? "",
       buy_link: p.buy_link ?? "",
+      status: p.status ?? "draft",
+      image_status: p.image_status ?? "needs_review",
+      image_source: p.image_source ?? "",
+      image_alt: p.image_alt ?? "",
+      image_note: p.image_note ?? "",
     });
     setTagsInput((p.concern_tags ?? []).join(", "));
     setFormError(null);
@@ -77,6 +140,12 @@ export default function ProductManager() {
       concern_tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
       image_url: form.image_url.trim(),
       buy_link: form.buy_link.trim(),
+      status: form.status,
+      image_status: form.image_status,
+      // 미설정("")은 DB CHECK 제약(빈 문자열 거부)에 걸리므로 아예 전송하지 않는다.
+      image_source: form.image_source || undefined,
+      image_alt: form.image_alt.trim(),
+      image_note: form.image_note.trim(),
     };
 
     try {
@@ -215,6 +284,87 @@ export default function ProductManager() {
                   className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
                 />
               </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-cream/50">공개 상태</span>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ProductStatus }))}
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-cream focus:border-gold/40 focus:outline-none"
+                >
+                  {STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value} className="bg-neutral-900">
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-[11px] text-cream/30">
+                  공개 노출은 <span className="text-emerald-200/80">승인</span> + 이미지 <span className="text-emerald-200/80">승인</span>일 때만 됩니다.
+                </p>
+              </label>
+
+              {/* ── 이미지 검수 ─────────────────────────────── */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <p className="text-xs font-semibold text-cream/60">이미지 검수</p>
+
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">검수 상태</span>
+                    <select
+                      value={form.image_status}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, image_status: e.target.value as ProductImageStatus }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream focus:border-gold/40 focus:outline-none"
+                    >
+                      {IMAGE_STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-neutral-900">
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">이미지 출처</span>
+                    <select
+                      value={form.image_source}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, image_source: e.target.value as ProductImageSource | "" }))
+                      }
+                      className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream focus:border-gold/40 focus:outline-none"
+                    >
+                      <option value="" className="bg-neutral-900">미설정</option>
+                      {IMAGE_SOURCE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-neutral-900">
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <label className="mt-3 block">
+                  <span className="text-[11px] font-medium text-cream/45">대체 텍스트 (alt)</span>
+                  <input
+                    value={form.image_alt}
+                    onChange={(e) => setForm((f) => ({ ...f, image_alt: e.target.value }))}
+                    placeholder="예: 갈색 유리병 두피 세럼 정면"
+                    className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                  />
+                </label>
+
+                <label className="mt-3 block">
+                  <span className="text-[11px] font-medium text-cream/45">내부 검수 메모 (유저 비노출)</span>
+                  <textarea
+                    value={form.image_note}
+                    onChange={(e) => setForm((f) => ({ ...f, image_note: e.target.value }))}
+                    rows={2}
+                    placeholder="예: 공식몰 이미지 저작권 확인 필요"
+                    className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                  />
+                </label>
+              </div>
             </div>
 
             {formError && <p className="mt-3 text-xs text-red-300">{formError}</p>}
@@ -287,11 +437,19 @@ export default function ProductManager() {
                         </div>
                       </div>
 
-                      {p.category && (
-                        <span className="mt-1 inline-block rounded-full bg-gold/10 px-2 py-0.5 text-[11px] text-gold-light">
-                          {p.category}
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[p.status] ?? "bg-white/[0.06] text-cream/45"}`}>
+                          {statusLabel(p.status)}
                         </span>
-                      )}
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${IMAGE_STATUS_BADGE[p.image_status] ?? "bg-white/[0.06] text-cream/45"}`}>
+                          이미지 · {imageStatusLabel(p.image_status)}
+                        </span>
+                        {p.category && (
+                          <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[11px] text-gold-light">
+                            {p.category}
+                          </span>
+                        )}
+                      </div>
 
                       {p.concern_tags && p.concern_tags.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
