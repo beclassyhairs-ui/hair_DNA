@@ -5,7 +5,7 @@
 
 ## 현재 상태 한 줄
 
-**`products` 스키마 Supabase 적용 완료(2026-07-18) — Table Editor에서 테이블+전체 컬럼 생성 확인, 현재 0 records.** 관리자 products API(GET/POST/PUT)에 이미지 검수·소싱 확장 필드까지 노출/저장하도록 확장 완료(`ADMIN_PRODUCT_FIELDS` 상수로 select 통일, Codex 검수). 다음은 `/admin/products` UI를 신규 필드(status 컨트롤, 이미지 검수)로 확장하는 작업.
+**`products` 스키마 Supabase 적용 완료(2026-07-18) — Table Editor에서 테이블+전체 컬럼 생성 확인, 현재 0 records.** 관리자 products API(GET/POST/PUT) + `/admin/products` UI에 status 컨트롤·이미지 검수 필드까지 확장 완료(폼 렌더 dev 서버 검증). 다음은 `/admin/sourcing` keep → draft 저장 버튼 연결(9번).
 
 ## 미커밋 변경
 
@@ -20,8 +20,8 @@
 5. [x] Supabase SQL Editor에 전문 1회 실행 — **성공. Table Editor에서 products 테이블+전체 컬럼 생성 확인, 0 records**
 6. [x] 실행 후 확인 — 테이블/컬럼 생성 확인됨 (제약/인덱스/트리거는 스키마 스크립트에 포함, 개별 재확인은 필요 시)
 7. [x] `/api/admin/products` GET/POST/PUT 신규 필드 확장 — 이미지/소싱 필드 노출·저장, `ADMIN_PRODUCT_FIELDS` 상수화. PUT은 `!== undefined` 가드로 기존 폼 저장 시 신규 필드 미삭제. Codex 검수: diff 자체 결함 없음(인증 부재만 지적 — 백로그 항목). `feat:` 커밋 예정
-8. [ ] `/admin/products` UI 확장 (status 컨트롤, 이미지 검수 필드) ← **다음 작업**
-9. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결
+8. [x] `/admin/products` UI 확장 — 공개 상태(status) 셀렉트 + 이미지 검수 블록(image_status/image_source/image_alt/image_note) + 리스트 status·image_status 뱃지. image_source 미설정은 undefined로 전송(빈 문자열 CHECK 위반 방지). 폼 렌더 dev 서버 검증 — `feat: add status and image-review controls to admin product form` (b91ad62)
+9. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결 ← **다음 작업**
 10. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist)
 11. [ ] `/items` DB 연동 + hairTags 매칭
 12. [ ] `/items/[id]` 상세페이지
