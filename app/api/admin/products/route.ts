@@ -15,7 +15,7 @@ import type { ProductInput } from "../../../../lib/products";
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("products")
-    .select("*")
+    .select("id, product_name, category, concern_tags, image_url, buy_link, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       image_url: body.image_url?.trim() || null,
       buy_link: body.buy_link?.trim() || null,
     })
-    .select("*")
+    .select("id, product_name, category, concern_tags, image_url, buy_link, created_at")
     .single();
 
   if (error) {

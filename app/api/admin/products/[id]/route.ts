@@ -32,7 +32,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       buy_link: body.buy_link?.trim() || null,
     })
     .eq("id", id)
-    .select("*")
+    .select("id, product_name, category, concern_tags, image_url, buy_link, created_at")
     .single();
 
   if (error) {
