@@ -5,18 +5,16 @@
 
 ## 현재 상태 한 줄
 
-경로 오타 수정(`doce/` → `docs/`) 완료. products 확장 SQL 파일 최종안 완료·미커밋, 관리자 GET 필드 제한도 코드 반영 완료·미커밋(둘 다 Codex 검수 전). 다음은 두 변경 Codex 검수 → 커밋 → 읽기 전용 사전점검 → 확장 블록 실행.
+경로 오타 수정(`doce/` → `docs/`) 완료. products 확장 SQL 커밋 완료(4fc0061). 관리자 products GET/POST/PUT 전체 필드 제한 커밋 완료(3e8ec61, Codex 재검수 1회 후 통과 — 최초 검수에서 POST/PUT의 `select("*")`가 신규 내부 필드를 노출할 수 있다는 지적을 받아 범위를 GET뿐 아니라 POST/PUT까지 확장). 다음은 Supabase 읽기 전용 사전점검 → 확장 블록 실행.
 
 ## 미커밋 변경
 
-- `supabase/products_schema.sql` (확장 마이그레이션 최종안, 195+/44-)
-- `app/api/admin/products/route.ts` (GET `select("*")` → 7개 필드 명시, 이미 구현됨 — Codex 검수 전)
-- `CLAUDE.md` (신규, untracked)
+없음
 
 ## 다음 작업 순서
 
-1. [ ] `supabase/products_schema.sql` — Codex 검수 → 커밋 — `chore: harden products discovery schema migration`
-2. [ ] `app/api/admin/products/route.ts` GET 필드 제한 — 이미 코드 반영됨, Codex 검수 → 커밋 (POST/PUT/DELETE/UI/스키마는 변경 없음 확인)
+1. [x] `supabase/products_schema.sql` 커밋 — `chore: harden products discovery schema migration` (4fc0061)
+2. [x] 관리자 products GET/POST/PUT 필드 제한 — `app/api/admin/products/route.ts`, `[id]/route.ts` 7개 필드만 명시. Codex 최초 검수에서 POST/PUT 노출 문제 지적 → 수정 → 재검수 통과 — `fix: restrict admin products API responses to explicit fields` (3e8ec61)
 3. [ ] Supabase 읽기 전용 사전점검 — 사용자가 직접 SQL Editor에서 실행: (a) 기존 CHECK/인덱스/트리거 이름+정의 확인 쿼리 (b) column_presence CTE 방식 값 분포 쿼리
 4. [ ] 사전점검 정상 시 확장 블록만 실행 — `-- 1) 신규 컬럼 추가`부터 `execute function public.set_products_updated_at();`까지 `BEGIN; ... COMMIT;`으로. 에러 시 ROLLBACK
 5. [ ] 실행 후 확인 — 컬럼/제약/기존 /admin/products 정상 작동
