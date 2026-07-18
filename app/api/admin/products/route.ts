@@ -10,12 +10,12 @@ export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
-import type { ProductInput } from "../../../../lib/products";
+import { ADMIN_PRODUCT_FIELDS, type ProductInput } from "../../../../lib/products";
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from("products")
-    .select("id, product_name, category, concern_tags, image_url, buy_link, created_at")
+    .select(ADMIN_PRODUCT_FIELDS)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -44,8 +44,24 @@ export async function POST(req: Request) {
       concern_tags: body.concern_tags?.length ? body.concern_tags : null,
       image_url: body.image_url?.trim() || null,
       buy_link: body.buy_link?.trim() || null,
+
+      status: body.status,
+      sales_type: body.sales_type,
+      fit_hair_types: body.fit_hair_types?.length ? body.fit_hair_types : null,
+      avoid_hair_types: body.avoid_hair_types?.length ? body.avoid_hair_types : null,
+      solves_concern: body.solves_concern?.length ? body.solves_concern : null,
+      recommend_reason: body.recommend_reason?.trim() || null,
+      usage_guide: body.usage_guide?.trim() || null,
+      caution_note: body.caution_note?.trim() || null,
+      sourcing_note: body.sourcing_note?.trim() || null,
+
+      detail_image_urls: body.detail_image_urls?.length ? body.detail_image_urls : null,
+      image_source: body.image_source,
+      image_status: body.image_status,
+      image_alt: body.image_alt?.trim() || null,
+      image_note: body.image_note?.trim() || null,
     })
-    .select("id, product_name, category, concern_tags, image_url, buy_link, created_at")
+    .select(ADMIN_PRODUCT_FIELDS)
     .single();
 
   if (error) {

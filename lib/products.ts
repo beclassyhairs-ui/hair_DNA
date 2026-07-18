@@ -1,10 +1,9 @@
 // ============================================================================
 // 어뷰티 — 제품 관리(Product CMS) 공용 타입
-// 테이블 정의: supabase/products_schema.sql
+// 테이블 정의: supabase/products_schema.sql (Supabase DB에 적용 완료)
 //
 // status/sales_type/fit_hair_types 등은 draft → review → approved → hidden
-// 워크플로우를 위한 확장 필드다 (설계 단계 — products_schema.sql 하단
-// ALTER TABLE 참고, 아직 실제 Supabase DB에는 미적용).
+// 워크플로우를 위한 확장 필드다.
 // 기존 concern_tags는 legacy로 유지하고, 신규 매칭 로직은 solves_concern을
 // 사용한다 — 기존 /admin/products 폼·API는 계속 concern_tags 그대로 사용 가능.
 // ============================================================================
@@ -18,6 +17,16 @@ export type ProductSalesType =
   | "domestic_consignment"
   | "overseas_candidate"
   | "own";
+
+export type ProductImageSource =
+  | "official"
+  | "affiliate"
+  | "seller"
+  | "manual_upload"
+  | "placeholder"
+  | "unknown";
+
+export type ProductImageStatus = "needs_image" | "needs_review" | "approved" | "rejected";
 
 // fit_hair_types / avoid_hair_types 코드값 규칙:
 //   `${curl}__${thickness}__${density}` — app/style/hairTypeCopy.ts의 coreKey()와
@@ -46,6 +55,12 @@ export interface Product {
   caution_note: string | null;
   sourcing_note: string | null;    // 내부 소싱 메모 — 유저 비노출
 
+  detail_image_urls: string[] | null;
+  image_source: ProductImageSource | null;
+  image_status: ProductImageStatus;
+  image_alt: string | null;
+  image_note: string | null;       // 내부 이미지 검수 메모 — 유저 비노출
+
   created_at: string;
   updated_at: string;
 }
@@ -68,7 +83,20 @@ export interface ProductInput {
 
   image_url?: string;
   buy_link?: string;
+  detail_image_urls?: string[];
+  image_source?: ProductImageSource;
+  image_status?: ProductImageStatus;   // 생략 시 DB 기본값 'needs_review'
+  image_alt?: string;
+  image_note?: string;
 }
+
+/** 관리자 API(GET/POST/PUT)가 공통으로 노출하는 필드 — select("*") 대신 이 목록을 명시한다 */
+export const ADMIN_PRODUCT_FIELDS =
+  "id, product_name, category, concern_tags, image_url, buy_link, " +
+  "status, sales_type, fit_hair_types, avoid_hair_types, solves_concern, " +
+  "recommend_reason, usage_guide, caution_note, sourcing_note, " +
+  "detail_image_urls, image_source, image_status, image_alt, image_note, " +
+  "created_at, updated_at";
 
 // ============================================================================
 // Gemini CSV 컬럼 매핑 (참고용 — 실제 import 파서는 아직 구현하지 않음)
