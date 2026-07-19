@@ -23,6 +23,11 @@
 
 ## 이번 세션 가벼운 픽스 (2026-07-19)
 
+- [x] **결과/전 페이지 확대 금지 제거** — `app/layout.tsx` viewport에서 `maximumScale:1`·`userScalable:false` 삭제. 핀치 줌 허용(40~50대 접근성). 브라우저 검증: viewport=`width=device-width, initial-scale=1`. UI 전용(Codex 생략) — `fix: 확대 금지 제거` (dec5e77)
+- [x] **/home 가짜 날씨 개인화 문구 제거** — `app/home/page.tsx`의 고정 문구 "오늘은 습도가 높아..."(실시간 개인화처럼 보임)를 진단 기반 문구로 교체. 브라우저 렌더 검증. UI 전용 — `fix: /home 가짜 날씨 개인화 문구 제거` (eb920c8)
+- [ ] **alert/confirm → 토스트** — 유저 대면 alert 3곳(링크복사 성공 result/mbti, 다운로드 실패 my-diary)만 대상. admin confirm 2곳(삭제 확인)은 유지. **토스트 시스템 신규 필요 → 디자인 방향(위치/스타일/자동해제) 사용자 지시 대기.**
+- (문서) `docs/ROADMAP.md` 추적 시작 + CLAUDE.md 규칙 0(ROADMAP 병행 읽기)·14(연속 진행 모드) 추가 (60d3d84, 3be5d09)
+
 - [x] **/style/loading 15초 강제 대기 제거** — 최소 15초 광고 대기 타이머(`Promise.allSettled`)를 걷어내고 hair-transform API 완료 즉시 `/style/result`로 라우팅. AdSense 정책 리스크 + 초반 이탈 원인 제거. 광고는 합성 대기 시간에만 자연 노출 — `fix: /style/loading 15초 강제 대기 제거` (eb7dd0f, push 완료)
 - [x] **/my-diary 기장 라벨** — 확인 결과 **이미 정상**. `A_LABELS.q11_length`가 `app/style/surveyData.ts`의 `LENGTH_LABEL_MAP`(SSOT)을 import해 쓰고 있어 `bob=단발` 등 정확히 렌더됨(과거 하드코딩 `bob=숏단발` 오표기는 이미 리팩터로 제거됨, 코드 주석에 기록). 다이어리는 style 플로우만 저장하므로 style 서베이가 올바른 기준이며 별도 수정 불필요. (참고: diagnosis 서베이의 `shoulder=어깨선`은 다른 플로우로 다이어리에 저장되지 않음)
 
