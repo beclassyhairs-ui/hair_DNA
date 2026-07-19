@@ -5,11 +5,21 @@
 
 ## 현재 상태 한 줄
 
-**데이터 파이프라인 코드 완성(2026-07-19) — `hair-dna.vercel.app` 라이브.** 소싱→draft 저장, 관리자 인증 게이트, `/admin/products` 매칭/추천 입력 UI, 공개 `/items` 목록(coreKey 매칭) + `/items/[id]` 상세까지 전 구간 코드 연결. 관리자가 fit_hair_types를 UI로 넣을 수 있고, 승인 상품이 매칭 유저의 목록·상세·구매까지 이어짐. 남은 건 실제 상품 1건으로 수동 E2E 완주(16번, 승인은 규칙4상 사용자 수동). 관리자 게이트 라이브 검증됨. products 스키마 Supabase 적용 완료(현재 0 records).
+**퍼널 트래킹 5종 + UTM 태깅 코드 완성(2026-07-19) — 커밋/배포 대기.** trackEvent 이원화(console fallback vs Supabase)를 단일 코어로 통합: `lib/trackEvent.ts`가 `lib/eventTracking.ts`를 re-export → 기존 문자열 이벤트 호출부까지 전부 Supabase `events` 적재. 핵심 `/style` 진단(랜딩/시작/답변/완료)과 커머스(노출/클릭/구매)를 전 구간 계측해 `조회수→유입→진단완료→상품클릭→구매전환` 퍼널 완성. first-touch UTM(source/utm_medium/utm_campaign)을 모든 이벤트에 자동 동승(어느 쇼츠/캠페인 유입인지 전환까지 추적). 스키마 외 임의 키는 `meta`(jsonb, sanitize 가드)로 분리. Codex 재검수 통과, 로컬 빌드 통과. **⚠️ `supabase/events_attribution_migration.sql`을 Supabase에서 먼저 실행해야 이벤트 insert가 성공(배포 순서 강제).**
 
-## 미커밋 변경
+데이터 파이프라인(이전): 소싱→draft 저장, 관리자 인증 게이트, `/admin/products` 매칭/추천 입력, 공개 `/items`+`/items/[id]`까지 코드 연결 완료. `hair-dna.vercel.app` 라이브.
 
-- (없음 — 아래 커밋 완료)
+## 미커밋 변경 (커밋 대기)
+
+- `lib/eventTracking.ts` — 통합 트래킹 코어(관대한 payload→컬럼/meta 분리, first-touch UTM 캡처/동승, sanitizeMeta 가드, 이벤트 2종 추가)
+- `lib/trackEvent.ts` — eventTracking re-export(하위호환 래퍼)
+- `app/components/AttributionCapture.tsx` (신규) + `app/layout.tsx` — 루트 UTM 캡처 마운트
+- `app/style/page.tsx`·`survey/page.tsx`·`result/page.tsx` — landing/start/answer/complete + 발견템 CTA 계측
+- `app/items/page.tsx`·`[id]/ItemBuyButton.tsx` — 상품 노출/클릭/구매 계측
+- `app/components/AdminDashboard.tsx` — 퍼널에 구매 단계 + 신규 이벤트 라벨
+- `supabase/schema.sql`(신규환경) + `supabase/events_attribution_migration.sql`(기존환경) — utm_medium/utm_campaign/meta 컬럼·인덱스
+- `docs/PROJECT_STATE.md` — 본 갱신
+- (참고: `docs/ROADMAP.md` 미추적 파일은 이번 작업과 무관 — 커밋 제외)
 
 ## 이번 세션 가벼운 픽스 (2026-07-19)
 
@@ -20,9 +30,10 @@
 
 ### 🎯 8월 배포 우선순위 (확정)
 
-1. [ ] **faceswap 복원 + 84 레퍼런스 + 일일 제한 + 품질 승인** — faceswap 합성 파이프라인 복원, 레퍼런스 84종 구성, `lib/dailyLimit.ts`를 hair-transform 라우트에 실제 적용(현재 미적용, 백로그 확인 필요), 합성 결과 품질 승인 게이트.
-2. [ ] **이벤트 5종 + UTM 태깅 전 구간** — 핵심 이벤트 5종 정의·계측, UTM 파라미터 태깅을 유입~전환 전 구간에 일관 적용.
-3. [ ] **상품 20~30개 엄선 등재(반자동)** — 소싱→draft→관리자 승인 흐름으로 20~30개 상품 엄선 등재. 완전 자동화 아님(반자동, 사람 검수 유지).
+1. [ ] **faceswap 복원 + 84 레퍼런스 + 일일 제한 + 품질 승인** — faceswap 합성 파이프라인 복원, 레퍼런스 84종 구성, `lib/dailyLimit.ts`를 hair-transform 라우트에 실제 적용(현재 미적용, 백로그 확인 필요), 합성 결과 품질 승인 게이트. ← **다음 작업**
+2. [ ] **상품 20~30개 엄선 등재(반자동)** — 소싱→draft→관리자 승인 흐름으로 20~30개 상품 엄선 등재. 완전 자동화 아님(반자동, 사람 검수 유지).
+
+> ~~이벤트 5종 + UTM 태깅~~ → **완료(2026-07-19)**, 아래 완료 이력 17번. 배포 순서: migration SQL 먼저 → 코드 push.
 
 ### 참고사항 (8월 배포 전제)
 
@@ -49,6 +60,7 @@
 14. [x] `/admin/products` 매칭/추천 입력 UI — fit/avoid_hair_types를 curl/thickness/density 선택 조합으로 추가·삭제(자유입력 금지, 오타 방지), solves_concern·recommend_reason·usage_guide·caution_note 입력. 빈 값 undefined. 프론트 전용(API는 기존에 이미 수용) — `feat: add matching + copy fields to admin product form` (091367d)
 15. [x] `/items/[id]` 상세페이지 + 공개 상세 API — `lib/publicProducts.ts`(서버전용 공용 조회), `GET /api/items/[id]`(approved만·allowlist만·없는id 404), `/items/[id]` 서버컴포넌트(notFound 실제 404) + 구매버튼 trackEvent, 카드→상세 이동. Codex 통과 — `feat: /items/[id] detail page + public detail API` (730d74b)
 16. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저의 /items 노출→상세→buy_link 확인 ← **남은 단계(사용자 수동)**
+17. [ ] **이벤트 5종 + UTM 태깅 전 구간(코드 완성 2026-07-19, 커밋/배포 대기)** — trackEvent 단일 코어 통합, 5종 퍼널(landing_view/diagnosis_start·complete/product_clicked/purchase_click) + 보조(answer_selected/product_viewed) 계측, /style·/items 전 구간 채움, first-touch UTM 3종 모든 이벤트 동승, meta jsonb 분리+가드. Codex 2회 검수(1차 수정필요→반영→통과). **배포 전 필수: Supabase에 `events_attribution_migration.sql` 실행(utm_medium/utm_campaign/meta 컬럼 추가) → 안 하면 모든 insert 실패.**
 
 ## 확정된 결정사항
 
@@ -65,6 +77,9 @@
 - **sourcing→draft 저장 DB 멱등성** — 현재 중복 방지는 브라우저 메모리(savedKeys) 단위라 새로고침/재붙여넣기 후 같은 후보 재저장 가능. DB 수준 멱등성(예: buy_link 유니크 제약 또는 upsert) 필요 시 도입.
 - **/items 진단 전 노출 정책** — coreKey 없는(진단 전) 방문자에겐 approved 전체를 최신순 노출 중. "진단 전엔 범용(fit 비어있음) 상품만" 또는 "진단 유도 CTA만" 정책으로 바꿀지 결정 필요.
 - **/items 고민 기반 매칭 보강** — 현재 매칭은 모발타입(coreKey↔fit_hair_types)만. hairTags(한글 고민어휘) ↔ solves_concern 매칭을 추가하면 정밀도 향상 가능(현재 solves_concern은 노출만 하고 매칭엔 미사용).
+- **events anon INSERT 무결성 강화** — RLS `with check(true)`라 anon key 보유자가 임의 event_name/위조 user_id/대용량 payload를 직접 insert 가능(선재 조건, 이번 변경 아님). Codex 확인상 SELECT/UPDATE/DELETE 우회·service_role 노출은 없음. 트래픽/스팸 리스크 붙기 전 DB 제약(허용 event_name·JSON 크기·필수필드)이나 서버 API 경유 insert로 보강 검토.
+- **랜딩별 커머스 귀속** — /items·/items/[id] 이벤트엔 landing_id가 없어(커머스는 진단 랜딩과 분리된 면) 랜딩별 퍼널의 제품클릭/구매는 0으로 집계됨. **집계(랜딩 무관) 퍼널은 정상**. 랜딩별 귀속하려면 session_id 기반 스티칭 필요.
+- **PRODUCT_VIEWED 퍼널 단계** — 이벤트는 수집되나 AdminDashboard FUNNEL_STAGES엔 미포함. 노출→클릭 전환율 화면 표시하려면 추가.
 - `sourcing_candidates` 테이블 — 리서치 에이전트가 API로 직접 후보 등록하는 구조. 관리자 인증 이후
 - lib/sourcing.ts fit_hair_types 매핑 불일치 (bangs_babyhair, damaged_hair_high_history)
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
