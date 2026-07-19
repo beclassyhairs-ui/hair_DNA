@@ -35,6 +35,25 @@ const DECISION_ACTIVE_CLASS: Record<Decision, string> = {
 
 const SAMPLE_HEADER = RAW_CANDIDATE_COLUMNS.join("\t");
 
+/** image_url이 있을 때만 작은 섬네일을 그린다. 로드 실패 시 조용히 숨긴다. */
+function Thumbnail({ src, alt }: { src?: string | null; alt: string }) {
+  const url = src?.trim();
+  if (!url) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={alt}
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+      }}
+      className="h-9 w-9 shrink-0 rounded-md border border-white/10 object-cover"
+    />
+  );
+}
+
 function FlagBadges({ candidate }: { candidate: ParsedCandidate }) {
   const { flags } = candidate;
   const badges: { key: string; label: string; className: string }[] = [];
@@ -282,10 +301,30 @@ export default function SourcingReview() {
                 {candidates.map((candidate) => (
                   <tr key={getCandidateRowKey(candidate.raw)} className="border-b border-white/5 last:border-0">
                     <td className="px-3 py-2.5 text-cream/40">{candidate.raw.rowIndex}</td>
-                    <td className="px-3 py-2.5 text-cream">{candidate.raw.korean_display_name || "—"}</td>
+                    <td className="px-3 py-2.5 text-cream">
+                      <div className="flex items-center gap-2">
+                        <Thumbnail
+                          src={candidate.raw.image_url}
+                          alt={candidate.raw.korean_display_name || "상품 이미지"}
+                        />
+                        <span>{candidate.raw.korean_display_name || "—"}</span>
+                      </div>
+                    </td>
                     <td className="px-3 py-2.5 text-cream/70">{candidate.raw.source_platform || "—"}</td>
-                    <td className="max-w-[220px] truncate px-3 py-2.5 text-cream/50">
-                      {candidate.raw.product_url || "—"}
+                    <td className="max-w-[220px] px-3 py-2.5 text-cream/50">
+                      {candidate.raw.product_url ? (
+                        <a
+                          href={candidate.raw.product_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={candidate.raw.product_url}
+                          className="block truncate text-gold-light/80 underline decoration-dotted underline-offset-2 hover:text-gold-light"
+                        >
+                          {candidate.raw.product_url}
+                        </a>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-3 py-2.5">
                       <FlagBadges candidate={candidate} />
@@ -396,7 +435,12 @@ function AdminImportTable({ candidates }: { candidates: ParsedCandidate[] }) {
           {previews.map(([key, preview]) => (
             <tr key={key} className="border-b border-white/5 last:border-0">
               <td className="px-3 py-2.5 text-cream/40">{preview.rowIndex}</td>
-              <td className="px-3 py-2.5 text-cream">{preview.product_name ?? "—"}</td>
+              <td className="px-3 py-2.5 text-cream">
+                <div className="flex items-center gap-2">
+                  <Thumbnail src={preview.image_url} alt={preview.product_name ?? "상품 이미지"} />
+                  <span>{preview.product_name ?? "—"}</span>
+                </div>
+              </td>
               <td className="px-3 py-2.5 text-cream/70">{preview.category ?? "—"}</td>
               <td className="max-w-[200px] truncate px-3 py-2.5 text-cream/50">{preview.buy_link ?? "—"}</td>
               <td className="px-3 py-2.5">
