@@ -7,7 +7,7 @@
 // ============================================================================
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const NAV_ITEMS = [
   {
@@ -73,6 +73,16 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // 로그인 화면에서는 사이드바를 숨긴다(전체화면 로그인 카드가 덮지만, 모바일 탭바 중복 방지).
+  if (pathname === "/admin/login") return null;
+
+  const handleLogout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+    router.replace("/admin/login");
+    router.refresh();
+  };
 
   return (
     <>
@@ -83,10 +93,21 @@ export default function AdminSidebar() {
           <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-cream/35">Admin Console</p>
         </div>
         <NavLinks pathname={pathname} />
-        <div className="mt-auto px-2 pt-6 text-[11px] leading-relaxed text-cream/25">
-          헤어 고민 해결 커머스
-          <br />
-          어뷰티 관리자 전용
+        <div className="mt-auto px-2 pt-6">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-cream/45 transition-colors hover:bg-white/[0.04] hover:text-cream/80"
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
+              <path d="M15 17l5-5-5-5M20 12H9M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            로그아웃
+          </button>
+          <p className="mt-4 px-1 text-[11px] leading-relaxed text-cream/25">
+            헤어 고민 해결 커머스
+            <br />
+            어뷰티 관리자 전용
+          </p>
         </div>
       </aside>
 
