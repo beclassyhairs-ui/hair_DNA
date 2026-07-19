@@ -5,27 +5,19 @@
 
 ## 현재 상태 한 줄
 
-**퍼널 트래킹 5종 + UTM 태깅 코드 완성(2026-07-19) — 커밋/배포 대기.** trackEvent 이원화(console fallback vs Supabase)를 단일 코어로 통합: `lib/trackEvent.ts`가 `lib/eventTracking.ts`를 re-export → 기존 문자열 이벤트 호출부까지 전부 Supabase `events` 적재. 핵심 `/style` 진단(랜딩/시작/답변/완료)과 커머스(노출/클릭/구매)를 전 구간 계측해 `조회수→유입→진단완료→상품클릭→구매전환` 퍼널 완성. first-touch UTM(source/utm_medium/utm_campaign)을 모든 이벤트에 자동 동승(어느 쇼츠/캠페인 유입인지 전환까지 추적). 스키마 외 임의 키는 `meta`(jsonb, sanitize 가드)로 분리. Codex 재검수 통과, 로컬 빌드 통과. **⚠️ `supabase/events_attribution_migration.sql`을 Supabase에서 먼저 실행해야 이벤트 insert가 성공(배포 순서 강제).**
+**퍼널 트래킹 5종 + UTM 태깅 — push·배포·migration SQL 실행까지 전부 완료(2026-07-19).** trackEvent 이원화(console fallback vs Supabase)를 단일 코어로 통합: `lib/trackEvent.ts`가 `lib/eventTracking.ts`를 re-export → 기존 문자열 이벤트 호출부까지 전부 Supabase `events` 적재. 핵심 `/style` 진단(랜딩/시작/답변/완료)과 커머스(노출/클릭/구매)를 전 구간 계측해 `조회수→유입→진단완료→상품클릭→구매전환` 퍼널 완성. first-touch UTM(source/utm_medium/utm_campaign)을 모든 이벤트에 자동 동승. 스키마 외 임의 키는 `meta`(jsonb, sanitize 가드)로 분리. `events_attribution_migration.sql` 실행 완료 → events insert 정상 적재 중.
 
 데이터 파이프라인(이전): 소싱→draft 저장, 관리자 인증 게이트, `/admin/products` 매칭/추천 입력, 공개 `/items`+`/items/[id]`까지 코드 연결 완료. `hair-dna.vercel.app` 라이브.
 
 ## 미커밋 변경 (커밋 대기)
 
-- `lib/eventTracking.ts` — 통합 트래킹 코어(관대한 payload→컬럼/meta 분리, first-touch UTM 캡처/동승, sanitizeMeta 가드, 이벤트 2종 추가)
-- `lib/trackEvent.ts` — eventTracking re-export(하위호환 래퍼)
-- `app/components/AttributionCapture.tsx` (신규) + `app/layout.tsx` — 루트 UTM 캡처 마운트
-- `app/style/page.tsx`·`survey/page.tsx`·`result/page.tsx` — landing/start/answer/complete + 발견템 CTA 계측
-- `app/items/page.tsx`·`[id]/ItemBuyButton.tsx` — 상품 노출/클릭/구매 계측
-- `app/components/AdminDashboard.tsx` — 퍼널에 구매 단계 + 신규 이벤트 라벨
-- `supabase/schema.sql`(신규환경) + `supabase/events_attribution_migration.sql`(기존환경) — utm_medium/utm_campaign/meta 컬럼·인덱스
-- `docs/PROJECT_STATE.md` — 본 갱신
-- (참고: `docs/ROADMAP.md` 미추적 파일은 이번 작업과 무관 — 커밋 제외)
+- (없음 — 이벤트 트래킹 전체가 커밋·push·배포·migration 실행까지 완료됨. 완료이력 17번 참고)
 
 ## 이번 세션 가벼운 픽스 (2026-07-19)
 
 - [x] **결과/전 페이지 확대 금지 제거** — `app/layout.tsx` viewport에서 `maximumScale:1`·`userScalable:false` 삭제. 핀치 줌 허용(40~50대 접근성). 브라우저 검증: viewport=`width=device-width, initial-scale=1`. UI 전용(Codex 생략) — `fix: 확대 금지 제거` (dec5e77)
 - [x] **/home 가짜 날씨 개인화 문구 제거** — `app/home/page.tsx`의 고정 문구 "오늘은 습도가 높아..."(실시간 개인화처럼 보임)를 진단 기반 문구로 교체. 브라우저 렌더 검증. UI 전용 — `fix: /home 가짜 날씨 개인화 문구 제거` (eb920c8)
-- [ ] **alert/confirm → 토스트** — 유저 대면 alert 3곳(링크복사 성공 result/mbti, 다운로드 실패 my-diary)만 대상. admin confirm 2곳(삭제 확인)은 유지. **토스트 시스템 신규 필요 → 디자인 방향(위치/스타일/자동해제) 사용자 지시 대기.**
+- [x] **alert/confirm → 토스트** — `lib/toast.ts`(모듈 pub/sub) + `app/components/Toaster.tsx`(하단 중앙, 2.5초 자동 해제) 신설, layout에 마운트. 유저 대면 alert 3곳(result 링크복사·mbti 링크복사·my-diary 다운로드 실패) → `toast()` 교체. admin 삭제 confirm 2곳은 차단형이라 유지. 브라우저 검증(위치/스타일/컴파일). UI 전용 — 커밋 예정
 - (문서) `docs/ROADMAP.md` 추적 시작 + CLAUDE.md 규칙 0(ROADMAP 병행 읽기)·14(연속 진행 모드) 추가 (60d3d84, 3be5d09)
 
 - [x] **/style/loading 15초 강제 대기 제거** — 최소 15초 광고 대기 타이머(`Promise.allSettled`)를 걷어내고 hair-transform API 완료 즉시 `/style/result`로 라우팅. AdSense 정책 리스크 + 초반 이탈 원인 제거. 광고는 합성 대기 시간에만 자연 노출 — `fix: /style/loading 15초 강제 대기 제거` (eb7dd0f, push 완료)
@@ -65,7 +57,7 @@
 14. [x] `/admin/products` 매칭/추천 입력 UI — fit/avoid_hair_types를 curl/thickness/density 선택 조합으로 추가·삭제(자유입력 금지, 오타 방지), solves_concern·recommend_reason·usage_guide·caution_note 입력. 빈 값 undefined. 프론트 전용(API는 기존에 이미 수용) — `feat: add matching + copy fields to admin product form` (091367d)
 15. [x] `/items/[id]` 상세페이지 + 공개 상세 API — `lib/publicProducts.ts`(서버전용 공용 조회), `GET /api/items/[id]`(approved만·allowlist만·없는id 404), `/items/[id]` 서버컴포넌트(notFound 실제 404) + 구매버튼 trackEvent, 카드→상세 이동. Codex 통과 — `feat: /items/[id] detail page + public detail API` (730d74b)
 16. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저의 /items 노출→상세→buy_link 확인 ← **남은 단계(사용자 수동)**
-17. [ ] **이벤트 5종 + UTM 태깅 전 구간(코드 완성 2026-07-19, 커밋/배포 대기)** — trackEvent 단일 코어 통합, 5종 퍼널(landing_view/diagnosis_start·complete/product_clicked/purchase_click) + 보조(answer_selected/product_viewed) 계측, /style·/items 전 구간 채움, first-touch UTM 3종 모든 이벤트 동승, meta jsonb 분리+가드. Codex 2회 검수(1차 수정필요→반영→통과). **배포 전 필수: Supabase에 `events_attribution_migration.sql` 실행(utm_medium/utm_campaign/meta 컬럼 추가) → 안 하면 모든 insert 실패.**
+17. [x] **이벤트 5종 + UTM 태깅 전 구간 (2026-07-19 완료)** — trackEvent 단일 코어 통합, 5종 퍼널(landing_view/diagnosis_start·complete/product_clicked/purchase_click) + 보조(answer_selected/product_viewed) 계측, /style·/items 전 구간 채움, first-touch UTM 3종 모든 이벤트 동승, meta jsonb 분리+가드. Codex 2회 검수(1차 수정필요→반영→통과). **push·Vercel 배포·Supabase `events_attribution_migration.sql` 실행까지 전부 완료 → events insert 정상.**
 
 ## 확정된 결정사항
 
