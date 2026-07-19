@@ -77,9 +77,9 @@ function HairProfileWidget() {
       </div>
 
       <p className="relative mt-4 text-[15px] leading-relaxed text-[#2F2F2F]">
-        오늘은 습도가 높아 정수리와 앞머리 라인이 쉽게 무너질 수 있어요.
+        진단으로 확인된 {userProfile.name}님의 모발 특성에 맞춘 데일리 루틴이에요.
         <br />
-        무거운 오일보다는 가벼운 픽싱 미스트와 뿌리 볼륨 루틴을 추천해요.
+        무거운 오일보다는 가벼운 픽싱 미스트와 뿌리 볼륨 케어를 추천해요.
       </p>
 
       <button
