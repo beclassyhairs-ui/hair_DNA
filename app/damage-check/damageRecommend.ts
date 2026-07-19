@@ -15,6 +15,9 @@
 //  - Level 1(건강모)이면 습관과 무관하게 Type은 HEALTHY로 고정
 //  - Level 2 이상인데 원인 축이 전부 0점(습관에서 "해당 없음"만 고름)이면
 //    ENV(환경·노화성 손상형)로 폴백
+//  - 탈색(chem_bleach) 경험이 있으면 점수 계산과 무관하게 Level 하한을 강제한다:
+//    최소 Lv3, 물리 테스트 손상 신호(당김이 snap/stretch)까지 있으면 Lv4
+//    (전문가 규칙 하드 필터, calcLevel 이후 후처리로 적용 — 감점이 아니라 하한선)
 // ============================================================================
 
 import type {
@@ -181,6 +184,19 @@ function calcLevel(answers: DamageSurveyAnswers): DamageLevel {
   return 4;
 }
 
+// ─── 하드 필터: 탈색 경험 Level 강제 승급 ─────────────────────────────────────
+// 전문가 근거: 탈색모는 회복 불가 영역이라 자가진단 점수(당김/마찰/건조)와
+// 무관하게 고손상 관리가 필요하다. 점수 합산 결과를 깎지 않고(감점 방식이 아니라)
+// 계산된 Level에 하한선만 얹는 후처리 하드 필터로 적용 — 기존 calcLevel 로직은
+// 그대로 둔 채, chem_bleach 선택 시에만 결과를 상향 보정한다.
+function applyBleachLevelFloor(level: DamageLevel, answers: DamageSurveyAnswers): DamageLevel {
+  if (!answers.q4_habits.includes("chem_bleach")) return level;
+
+  const hasPhysicalDamageSignal = answers.q1_pull === "snap" || answers.q1_pull === "stretch";
+  const floor: DamageLevel = hasPhysicalDamageSignal ? 4 : 3;
+  return level < floor ? floor : level;
+}
+
 // ─── Type 산출 ────────────────────────────────────────────────────────────────
 
 function calcAxes(answers: DamageSurveyAnswers): { heat: number; chem: number; perm: number } {
@@ -241,7 +257,7 @@ function buildConcernTags(level: DamageLevel, type: DamageType): string[] {
 // ─── 메인 엔트리 ──────────────────────────────────────────────────────────────
 
 export function diagnoseDamage(answers: DamageSurveyAnswers): DamageResult {
-  const level    = calcLevel(answers);
+  const level    = applyBleachLevelFloor(calcLevel(answers), answers);
   const axes     = calcAxes(answers);
   const type     = pickType(level, axes, answers.q4_habits);
   const levelInfo = LEVEL_INFO[level];
