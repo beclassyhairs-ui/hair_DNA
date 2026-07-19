@@ -26,6 +26,9 @@ const EMPTY_FORM = {
   image_source: "" as ProductImageSource | "",   // "" = 미설정 → 전송 시 undefined
   image_alt: "",
   image_note: "",
+  recommend_reason: "",
+  usage_guide: "",
+  caution_note: "",
 };
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
@@ -50,6 +53,110 @@ const IMAGE_SOURCE_OPTIONS: { value: ProductImageSource; label: string }[] = [
   { value: "placeholder", label: "임시" },
   { value: "unknown", label: "미상" },
 ];
+
+// fit_hair_types / avoid_hair_types의 coreKey(`curl__thickness__density`)를 자유
+// 텍스트가 아니라 선택지 조합으로 만들어 오타로 매칭이 깨지는 걸 막는다.
+// (app/style/hairTypeCopy.ts coreKey / lib/itemsMatch.ts와 동일 포맷·값)
+const CURL_OPTIONS = [
+  { value: "straight_hair", label: "직모" },
+  { value: "wavy_hair", label: "반곱슬" },
+  { value: "curly_hair", label: "곱슬" },
+];
+const THICKNESS_OPTIONS = [
+  { value: "coarse", label: "굵은모" },
+  { value: "medium_thickness", label: "보통 굵기" },
+  { value: "fine", label: "가는모" },
+];
+const DENSITY_OPTIONS = [
+  { value: "thick_density", label: "숱 많음" },
+  { value: "medium_density", label: "숱 보통" },
+  { value: "thin_density", label: "숱 적음" },
+];
+
+/** coreKey 코드를 사람이 읽는 라벨로 변환 (예: "곱슬·가는모·숱 적음"). */
+function coreKeyLabel(code: string): string {
+  const [curl, thickness, density] = code.split("__");
+  const c = CURL_OPTIONS.find((o) => o.value === curl)?.label ?? curl;
+  const t = THICKNESS_OPTIONS.find((o) => o.value === thickness)?.label ?? thickness;
+  const d = DENSITY_OPTIONS.find((o) => o.value === density)?.label ?? density;
+  return `${c}·${t}·${d}`;
+}
+
+const CORE_SELECT_CLASS =
+  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[11px] text-cream focus:border-gold/40 focus:outline-none";
+
+/** curl/thickness/density 선택 → coreKey 추가/삭제 리스트 빌더 (복수 가능). */
+function CoreKeyBuilder({
+  label,
+  hint,
+  values,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const [curl, setCurl] = useState(CURL_OPTIONS[0].value);
+  const [thickness, setThickness] = useState(THICKNESS_OPTIONS[0].value);
+  const [density, setDensity] = useState(DENSITY_OPTIONS[0].value);
+
+  const add = () => {
+    const code = `${curl}__${thickness}__${density}`;
+    if (!values.includes(code)) onChange([...values, code]);
+  };
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
+      <p className="text-[11px] font-medium text-cream/45">{label}</p>
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        <select value={curl} onChange={(e) => setCurl(e.target.value)} className={CORE_SELECT_CLASS}>
+          {CURL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value} className="bg-neutral-900">{o.label}</option>
+          ))}
+        </select>
+        <select value={thickness} onChange={(e) => setThickness(e.target.value)} className={CORE_SELECT_CLASS}>
+          {THICKNESS_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value} className="bg-neutral-900">{o.label}</option>
+          ))}
+        </select>
+        <select value={density} onChange={(e) => setDensity(e.target.value)} className={CORE_SELECT_CLASS}>
+          {DENSITY_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value} className="bg-neutral-900">{o.label}</option>
+          ))}
+        </select>
+      </div>
+      <button
+        type="button"
+        onClick={add}
+        className="mt-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-cream/70 hover:bg-white/[0.08]"
+      >
+        + 추가
+      </button>
+      {values.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {values.map((code) => (
+            <span
+              key={code}
+              className="inline-flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5 text-[10px] text-gold-light"
+            >
+              {coreKeyLabel(code)}
+              <button
+                type="button"
+                onClick={() => onChange(values.filter((v) => v !== code))}
+                className="text-gold-light/60 hover:text-gold-light"
+                aria-label="삭제"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {hint && <p className="mt-1.5 text-[10px] text-cream/25">{hint}</p>}
+    </div>
+  );
+}
 
 const STATUS_BADGE: Record<ProductStatus, string> = {
   draft: "bg-white/[0.06] text-cream/45",
@@ -78,6 +185,9 @@ export default function ProductManager() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm]           = useState(EMPTY_FORM);
   const [tagsInput, setTagsInput] = useState("");
+  const [fitHairTypes, setFitHairTypes]     = useState<string[]>([]);
+  const [avoidHairTypes, setAvoidHairTypes] = useState<string[]>([]);
+  const [solvesInput, setSolvesInput]       = useState("");
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -103,6 +213,9 @@ export default function ProductManager() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setTagsInput("");
+    setFitHairTypes([]);
+    setAvoidHairTypes([]);
+    setSolvesInput("");
     setFormError(null);
   };
 
@@ -118,8 +231,14 @@ export default function ProductManager() {
       image_source: p.image_source ?? "",
       image_alt: p.image_alt ?? "",
       image_note: p.image_note ?? "",
+      recommend_reason: p.recommend_reason ?? "",
+      usage_guide: p.usage_guide ?? "",
+      caution_note: p.caution_note ?? "",
     });
     setTagsInput((p.concern_tags ?? []).join(", "));
+    setFitHairTypes(p.fit_hair_types ?? []);
+    setAvoidHairTypes(p.avoid_hair_types ?? []);
+    setSolvesInput((p.solves_concern ?? []).join(", "));
     setFormError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -134,6 +253,8 @@ export default function ProductManager() {
     setSaving(true);
     setFormError(null);
 
+    const solvesConcern = solvesInput.split(",").map((t) => t.trim()).filter(Boolean);
+
     const payload: ProductInput = {
       product_name: form.product_name.trim(),
       category: form.category.trim(),
@@ -146,6 +267,13 @@ export default function ProductManager() {
       image_source: form.image_source || undefined,
       image_alt: form.image_alt.trim(),
       image_note: form.image_note.trim(),
+      // 매칭 & 추천 — 빈 값은 undefined로 전송(기존 신규 필드 규칙 유지)
+      fit_hair_types: fitHairTypes.length ? fitHairTypes : undefined,
+      avoid_hair_types: avoidHairTypes.length ? avoidHairTypes : undefined,
+      solves_concern: solvesConcern.length ? solvesConcern : undefined,
+      recommend_reason: form.recommend_reason.trim() || undefined,
+      usage_guide: form.usage_guide.trim() || undefined,
+      caution_note: form.caution_note.trim() || undefined,
     };
 
     try {
@@ -364,6 +492,72 @@ export default function ProductManager() {
                     className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
                   />
                 </label>
+              </div>
+
+              {/* ── 매칭 (모발 타입) & 추천 카피 ─────────────── */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
+                <p className="text-xs font-semibold text-cream/60">매칭 & 추천</p>
+                <p className="mt-1 text-[10px] text-cream/30">
+                  모발 타입은 선택지 조합으로 추가합니다(자유 입력 금지 — 오타로 매칭이 깨지지 않게).
+                </p>
+
+                <div className="mt-3 space-y-3">
+                  <CoreKeyBuilder
+                    label="맞는 모발 타입 (fit)"
+                    hint="이 타입 유저에게 노출됩니다. 비우면 전체(범용) 노출."
+                    values={fitHairTypes}
+                    onChange={setFitHairTypes}
+                  />
+                  <CoreKeyBuilder
+                    label="피할 모발 타입 (avoid)"
+                    hint="이 타입 유저에게는 숨깁니다."
+                    values={avoidHairTypes}
+                    onChange={setAvoidHairTypes}
+                  />
+
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">해결 고민 (쉼표로 구분)</span>
+                    <input
+                      value={solvesInput}
+                      onChange={(e) => setSolvesInput(e.target.value)}
+                      placeholder="예: 볼륨처짐, 손상모"
+                      className="mt-1.5 w-full rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">추천 이유 (유저 노출)</span>
+                    <textarea
+                      value={form.recommend_reason}
+                      onChange={(e) => setForm((f) => ({ ...f, recommend_reason: e.target.value }))}
+                      rows={2}
+                      placeholder="예: 정수리 볼륨이 쉽게 죽는 분께 무게감 없이 뿌리만 세워줘요."
+                      className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">사용법 (유저 노출)</span>
+                    <textarea
+                      value={form.usage_guide}
+                      onChange={(e) => setForm((f) => ({ ...f, usage_guide: e.target.value }))}
+                      rows={2}
+                      placeholder="예: 말린 모발 뿌리에 5cm 띄우고 분사 후 손으로 볼륨을 잡아주세요."
+                      className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-[11px] font-medium text-cream/45">주의사항 (유저 노출)</span>
+                    <textarea
+                      value={form.caution_note}
+                      onChange={(e) => setForm((f) => ({ ...f, caution_note: e.target.value }))}
+                      rows={2}
+                      placeholder="예: 두피 자극이 있으면 사용을 중단하세요."
+                      className="mt-1.5 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs text-cream placeholder:text-cream/25 focus:border-gold/40 focus:outline-none"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
