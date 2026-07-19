@@ -4,7 +4,7 @@
 
 ## 0. 세션 시작 시 필수
 
-1. `docs/PROJECT_STATE.md`를 먼저 읽고 현재 상태를 파악한다.
+1. `docs/PROJECT_STATE.md`와 `docs/ROADMAP.md`를 둘 다 읽는다. 작업 순서·정책은 ROADMAP.md를 따르고, 진척 상태는 PROJECT_STATE.md를 따른다.
 2. `git status --short`와 `git log --oneline -5`로 실제 워크스페이스 상태를 확인한다.
 3. PROJECT_STATE.md와 실제 상태가 다르면 사용자에게 보고하고 PROJECT_STATE.md를 먼저 갱신한다.
 
