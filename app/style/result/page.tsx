@@ -157,6 +157,7 @@ function KakaoSaveModal({
       const hairTags = buildHairTags(answers);
       const entry = {
         id,
+        kind: "style" as const,
         answers,
         styleName,
         savedAt:           Date.now(),
