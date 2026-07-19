@@ -44,6 +44,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: "/admin/matching-preview",
+    label: "매칭 미리보기",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
+        <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5 20c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ] as const;
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

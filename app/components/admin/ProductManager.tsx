@@ -15,6 +15,7 @@ import type {
   ProductImageStatus,
   ProductImageSource,
 } from "../../../lib/products";
+import { CURL_OPTIONS, THICKNESS_OPTIONS, DENSITY_OPTIONS, coreKeyLabel } from "../../../lib/hairTypeOptions";
 
 const EMPTY_FORM = {
   product_name: "",
@@ -55,33 +56,8 @@ const IMAGE_SOURCE_OPTIONS: { value: ProductImageSource; label: string }[] = [
 ];
 
 // fit_hair_types / avoid_hair_types의 coreKey(`curl__thickness__density`)를 자유
-// 텍스트가 아니라 선택지 조합으로 만들어 오타로 매칭이 깨지는 걸 막는다.
-// (app/style/hairTypeCopy.ts coreKey / lib/itemsMatch.ts와 동일 포맷·값)
-const CURL_OPTIONS = [
-  { value: "straight_hair", label: "직모" },
-  { value: "wavy_hair", label: "반곱슬" },
-  { value: "curly_hair", label: "곱슬" },
-];
-const THICKNESS_OPTIONS = [
-  { value: "coarse", label: "굵은모" },
-  { value: "medium_thickness", label: "보통 굵기" },
-  { value: "fine", label: "가는모" },
-];
-const DENSITY_OPTIONS = [
-  { value: "thick_density", label: "숱 많음" },
-  { value: "medium_density", label: "숱 보통" },
-  { value: "thin_density", label: "숱 적음" },
-];
-
-/** coreKey 코드를 사람이 읽는 라벨로 변환 (예: "곱슬·가는모·숱 적음"). */
-function coreKeyLabel(code: string): string {
-  const [curl, thickness, density] = code.split("__");
-  const c = CURL_OPTIONS.find((o) => o.value === curl)?.label ?? curl;
-  const t = THICKNESS_OPTIONS.find((o) => o.value === thickness)?.label ?? thickness;
-  const d = DENSITY_OPTIONS.find((o) => o.value === density)?.label ?? density;
-  return `${c}·${t}·${d}`;
-}
-
+// 선택 어휘(CURL/THICKNESS/DENSITY_OPTIONS)·coreKeyLabel은 lib/hairTypeOptions.ts에서
+// import — 매칭 시뮬레이터와 동일 출처를 공유해 값이 어긋나지 않게 한다.
 const CORE_SELECT_CLASS =
   "w-full rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5 text-[11px] text-cream focus:border-gold/40 focus:outline-none";
 
