@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "./components/Analytics";
 import AttributionCapture from "./components/AttributionCapture";
 import Toaster from "./components/Toaster";
+import SiteFooter from "./components/SiteFooter";
 
 // 본문용: 가독성 높은 고딕
 const notoSans = Noto_Sans_KR({
@@ -55,6 +56,7 @@ export default function RootLayout({
         <Analytics />
         <AttributionCapture />
         {children}
+        <SiteFooter />
         <Toaster />
       </body>
     </html>
