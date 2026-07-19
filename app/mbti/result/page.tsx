@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
+import { toast } from "../../../lib/toast";
 
 const LANDING_ID = "mbti_test";
 
@@ -247,7 +248,7 @@ function MbtiResultPage() {
       navigator.share({ title: "헤어 MBTI 테스트", text, url: shareUrl }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(shareUrl).then(() => {
-        alert("링크가 복사되었습니다! 카톡 채팅방에 붙여넣기 해주세요🚀");
+        toast("링크가 복사되었습니다! 카톡 채팅방에 붙여넣기 해주세요🚀");
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       });

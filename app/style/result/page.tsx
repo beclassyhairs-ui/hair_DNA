@@ -24,6 +24,7 @@ import {
 } from "../recommend";
 import { getHairTypeCopy, type HairTypeCopy } from "../hairTypeCopy";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
+import { toast } from "../../../lib/toast";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
@@ -625,7 +626,7 @@ export default function StyleResultPage() {
                   onClick={() => {
                     const url = typeof window !== "undefined" ? `${window.location.origin}/style` : "/style";
                     if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
-                    else navigator.clipboard?.writeText(url).then(() => alert("링크가 복사됐어요!"));
+                    else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
                   className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-sm font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
                   공유하기

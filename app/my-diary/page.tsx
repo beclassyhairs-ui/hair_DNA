@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { LENGTH_LABEL_MAP } from "../style/surveyData";
+import { toast } from "../../lib/toast";
 
 // ─── 레이블 매핑 ─────────────────────────────────────────────────────────────
 
@@ -158,7 +159,7 @@ async function downloadImage(url: string, styleName: string) {
     document.body.removeChild(a);
     URL.revokeObjectURL(objectUrl);
   } catch {
-    alert("다운로드에 실패했어요. 이미지를 길게 눌러 저장해 주세요.");
+    toast("다운로드에 실패했어요. 이미지를 길게 눌러 저장해 주세요.");
   }
 }
 
