@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import TestHeader from "@/components/beauty-ui/TestHeader";
@@ -228,6 +229,32 @@ function getResultKey(score: number): string {
   return "D";
 }
 
+// ── 저장용 헬퍼 ───────────────────────────────────────────────────────────────
+
+function uid(): string {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
+
+function buildAnswersObject(answers: string[]): Record<string, string> {
+  const obj: Record<string, string> = {};
+  QUESTIONS.forEach((q, i) => { obj[`q${q.id}`] = answers[i] ?? ""; });
+  return obj;
+}
+
+// Q6(지금 당장 내 머리의 가장 큰 불만)만 채점(calcScore)에 안 쓰이던 죽은 입력값이었다 —
+// 결과 저장 시엔 이 답변을 콘서른 태그로 살려서 hairTags에 반영한다.
+const COMPLAINT_CONCERN_TAG: Record<string, string> = {
+  A: "#볼륨처짐",
+  B: "#부스스",
+  C: "#스타일유지어려움",
+};
+
+function buildConcernTags(answers: string[]): string[] {
+  const tag = COMPLAINT_CONCERN_TAG[answers[5]];
+  return tag ? [tag] : [];
+}
+
 // ── 인트로 화면 ───────────────────────────────────────────────────────────────
 
 function IntroView({ onStart }: { onStart: () => void }) {
@@ -356,7 +383,15 @@ function AnalyzingView() {
 
 // ── 결과 화면 ─────────────────────────────────────────────────────────────────
 
-function ResultView({ result, onCta, onRetry }: { result: ResultData; onCta: () => void; onRetry: () => void }) {
+function ResultView({
+  result, onCta, onRetry, onSave, saved,
+}: {
+  result: ResultData;
+  onCta: () => void;
+  onRetry: () => void;
+  onSave: () => void;
+  saved: boolean;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -416,6 +451,17 @@ function ResultView({ result, onCta, onRetry }: { result: ResultData; onCta: () 
           </div>
         </GlassCard>
 
+        {/* 저장 CTA */}
+        <GlassCard className="px-5 py-5">
+          <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
+          <p className="mt-1 text-center text-sm text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
+          <div className="mt-4">
+            <BlackCTAButton onClick={onSave} disabled={saved}>
+              {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
+            </BlackCTAButton>
+          </div>
+        </GlassCard>
+
         {/* 다시 진단받기 */}
         <button
           onClick={onRetry}
@@ -446,6 +492,7 @@ export default function HairQuizPage() {
   const [currentQ,  setCurrentQ]  = useState(0);
   const [answers,   setAnswers]   = useState<string[]>([]);
   const [resultKey, setResultKey] = useState("A");
+  const [saved,     setSaved]     = useState(false);
 
   function handleStart() {
     setPhase("survey");
@@ -477,7 +524,28 @@ export default function HairQuizPage() {
   function handleRetry() {
     setAnswers([]);
     setCurrentQ(0);
+    setSaved(false);
     setPhase("intro");
+  }
+
+  function handleSave() {
+    try {
+      appendDiaryEntry({
+        id: uid(),
+        kind: "hairquiz",
+        savedAt: Date.now(),
+        resultKey,
+        badge: RESULTS[resultKey].badge,
+        title: RESULTS[resultKey].title,
+        diagnosisSummary: RESULTS[resultKey].summary,
+        hairTags: buildConcernTags(answers),
+        concernTags: buildConcernTags(answers),
+        answers: buildAnswersObject(answers),
+      });
+      refreshBeautyUserProfileFromDiary();
+    } catch { /**/ }
+    setSaved(true);
+    router.push("/home");
   }
 
   return (
@@ -504,6 +572,8 @@ export default function HairQuizPage() {
               result={RESULTS[resultKey]}
               onCta={() => router.push("/style")}
               onRetry={handleRetry}
+              onSave={handleSave}
+              saved={saved}
             />
           )}
         </AnimatePresence>
