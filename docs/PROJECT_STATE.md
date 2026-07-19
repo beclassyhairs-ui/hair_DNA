@@ -5,7 +5,7 @@
 
 ## 현재 상태 한 줄
 
-**프로덕션 배포 완료(2026-07-19) — `hair-dna.vercel.app` 라이브.** 관리자 최소 인증 게이트(`middleware.ts` + `ADMIN_SECRET` HMAC 세션 쿠키, 만료 강제·fail-closed)가 `/admin/*`·`/api/admin/*` 전체를 보호하며, 라이브에서 무인증=401·틀린 비번=401·실제 로그인 성공까지 검증됨. products 스키마 Supabase 적용 완료(0 records). 다음은 `/admin/sourcing` keep → draft 저장(11번).
+**프로덕션 배포 완료 + sourcing→draft 저장 구현(2026-07-19) — `hair-dna.vercel.app` 라이브.** 관리자 최소 인증 게이트(`middleware.ts` + `ADMIN_SECRET` HMAC 세션 쿠키, 만료 강제·fail-closed)가 `/admin/*`·`/api/admin/*` 전체를 보호(라이브 검증 완료). `/admin/sourcing`의 keep 후보를 명시적 버튼으로 products에 draft 저장하는 기능 완료(서버가 status='draft'/image_status='needs_review' 강제, Codex 검수 통과). products 스키마 Supabase 적용 완료(0 records). 다음은 `/items` 공개 조회 API 신설(12번).
 
 ## 미커밋 변경
 
@@ -23,8 +23,8 @@
 8. [x] `/admin/products` UI 확장 — 공개 상태(status) 셀렉트 + 이미지 검수 블록(image_status/image_source/image_alt/image_note) + 리스트 status·image_status 뱃지. image_source 미설정은 undefined로 전송(빈 문자열 CHECK 위반 방지). 폼 렌더 dev 서버 검증 — `feat: add status and image-review controls to admin product form` (b91ad62)
 9. [x] **관리자 최소 인증 게이트** — `middleware.ts` + `lib/adminAuth.ts`(HMAC 세션 토큰 `exp.sig`, 만료 강제) + `/api/admin/login`·`/logout` + `/admin/login` + 사이드바 로그아웃. Codex 1차 '수정 필요'(세션 만료 미검증) → 만료시각 서명 포함으로 수정 → 재검수 통과. 로컬 검증(위조/만료 토큰 거부 포함) — `feat: add minimal admin auth gate before public deploy` (e7947bf)
 10. [x] **배포 완료(2026-07-19)** — main push → Vercel 프로덕션 배포(`hair-dna.vercel.app`). 빌드 1차 실패(`/admin/login` useSearchParams Suspense 누락) → 수정 후 재배포 성공(`9f8a529`). `ADMIN_SECRET` Vercel Production 등록 + 재배포 후 게이트 라이브 검증 완료: 무인증 API=401, 무인증 페이지=307→login, 틀린/빈 비번=401, 사용자 실제 비번 로그인 성공. 공개 사이트 정상.
-11. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결 ← **다음 작업**
-12. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist)
+11. [x] `/admin/sourcing` keep → draft 저장 — 신규 `POST /api/admin/sourcing/import`(인증 게이트 뒤, status='draft'/image_status='needs_review' 서버 강제, 필드 allowlist, 배치 상한 200) + SourcingReview 명시적 버튼(keep 클릭만으론 저장 안 함, savedKeys 재클릭 중복 방지). Codex 1차 수정필요(중복 저장·오류 원문 노출) → 수정 → 재검수 통과 — `feat: save sourced keep candidates to products as draft` (a0d940e)
+12. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist) ← **다음 작업**
 13. [ ] `/items` DB 연동 + hairTags 매칭
 14. [ ] `/items/[id]` 상세페이지
 
@@ -39,7 +39,8 @@
 ## 백로그 (차단 아님, 기록)
 
 - **관리자 전체 인증** — 최소 게이트(방안 A: 공유 비밀번호+서명 쿠키, 2026-07-19 구현)로 1차 방어됨. 남은 개선(백로그): 로그인 rate limit(서버리스 KV 필요), 계정별 인증(방안 B: Supabase Auth+allowlist), `ADMIN_SESSION_SECRET` 분리. 발견템 파이프라인 트래픽 붙기 전 검토.
-- 공개 상품 API `/api/products` 분리 신설 (9번 작업에서 처리)
+- 공개 상품 API `/api/products` 분리 신설
+- **sourcing→draft 저장 DB 멱등성** — 현재 중복 방지는 브라우저 메모리(savedKeys) 단위라 새로고침/재붙여넣기 후 같은 후보 재저장 가능. DB 수준 멱등성(예: buy_link 유니크 제약 또는 upsert) 필요 시 도입.
 - `sourcing_candidates` 테이블 — 리서치 에이전트가 API로 직접 후보 등록하는 구조. 관리자 인증 이후
 - lib/sourcing.ts fit_hair_types 매핑 불일치 (bangs_babyhair, damaged_hair_high_history)
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
