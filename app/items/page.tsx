@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
 import { trackEvent } from "../../lib/trackEvent";
 import { readDiaryEntries, readBeautyUserProfile } from "../../lib/beautyProfile";
@@ -19,7 +20,13 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
   const reason = item.recommend_reason || item.usage_guide || "진단 결과와 결이 맞는 발견템이에요.";
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <Link
+      href={`/items/${item.id}`}
+      onClick={() =>
+        trackEvent("product_card_view", { productId: item.id, coreKey, source: "items_page" })
+      }
+      className="block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow active:shadow-md"
+    >
       <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">AI 헤어 분석 결과 기반</p>
 
       <div className="mt-3 flex gap-3.5">
@@ -41,33 +48,12 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
         </div>
       </div>
 
-      <p className="mt-4 text-[13px] leading-relaxed text-[#6B7280]">{reason}</p>
-      {item.caution_note && (
-        <p className="mt-2 text-[11px] leading-relaxed text-[#9AA0A6]">유의: {item.caution_note}</p>
-      )}
+      <p className="mt-4 line-clamp-2 text-[13px] leading-relaxed text-[#6B7280]">{reason}</p>
 
-      {item.buy_link ? (
-        <a
-          href={item.buy_link}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() =>
-            trackEvent("product_buy_click", {
-              productId: item.id,
-              coreKey,
-              source: "items_page",
-            })
-          }
-          className="mt-5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#2F2F2F] py-3.5 text-sm font-semibold text-white transition-colors active:bg-black"
-        >
-          구매하러 가기 →
-        </a>
-      ) : (
-        <div className="mt-5 flex w-full items-center justify-center rounded-xl bg-[#F3F4F6] py-3.5 text-sm font-semibold text-[#9AA0A6]">
-          구매 링크 준비 중
-        </div>
-      )}
-    </section>
+      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3 text-sm font-semibold text-[#8A6D2F]">
+        자세히 보기 →
+      </span>
+    </Link>
   );
 }
 

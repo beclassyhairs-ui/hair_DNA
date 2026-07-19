@@ -15,22 +15,15 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "../../../lib/supabaseAdmin";
-import { PUBLIC_PRODUCT_FIELDS, type PublicProduct } from "../../../lib/products";
+import { fetchApprovedProducts } from "../../../lib/publicProducts";
 
 export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from("products")
-    .select(PUBLIC_PRODUCT_FIELDS)
-    .eq("status", "approved")
-    .eq("image_status", "approved")
-    .order("created_at", { ascending: false });
-
-  if (error) {
+  try {
+    const items = await fetchApprovedProducts();
+    return NextResponse.json({ ok: true, items });
+  } catch (error) {
     // 상세는 서버 로그에만, 응답은 일반화한다.
     console.error("[api/items] 조회 실패:", error);
     return NextResponse.json({ ok: false, error: "상품을 불러오지 못했습니다." }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, items: (data ?? []) as unknown as PublicProduct[] });
 }
