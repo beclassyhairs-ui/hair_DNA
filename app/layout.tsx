@@ -23,8 +23,7 @@ const notoSerif = Noto_Serif_KR({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // 확대 금지 제거(maximumScale/userScalable) — 40~50대 타깃 접근성: 핀치 줌 허용
 };
 
 export const metadata: Metadata = {
