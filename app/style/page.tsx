@@ -11,6 +11,7 @@ import {
   STYLE_UNLOCKED_KEY,
 } from "./constants";
 import { getRemainingUses, canUseToday, DAILY_MAX } from "@/lib/dailyLimit";
+import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
@@ -28,10 +29,13 @@ export default function StyleLandingPage() {
       sessionStorage.removeItem(STYLE_UNLOCKED_KEY);
     } catch { /**/ }
     setRemaining(getRemainingUses());
+    // 유입/조회 — 핵심 진단(/style) 랜딩 진입 1회
+    trackEvent(EVENT_NAMES.LANDING_VIEW, { landing_id: "style", diagnosis_type: "style" });
   }, []);
 
   function handleStart() {
     if (!canUseToday()) { setShowLimitModal(true); return; }
+    trackEvent(EVENT_NAMES.DIAGNOSIS_START, { landing_id: "style", diagnosis_type: "style" });
     router.push("/style/survey");
   }
 

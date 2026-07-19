@@ -22,7 +22,9 @@ const EVENT_LABELS: Record<string, string> = {
   [EVENT_NAMES.DIAGNOSIS_START]:    "진단 시작",
   [EVENT_NAMES.ANSWER_SELECTED]:    "문항 답변",
   [EVENT_NAMES.DIAGNOSIS_COMPLETE]: "진단 완료",
+  [EVENT_NAMES.PRODUCT_VIEWED]:     "제품 노출",
   [EVENT_NAMES.PRODUCT_CLICKED]:    "제품 클릭",
+  [EVENT_NAMES.PURCHASE_CLICK]:     "구매 클릭",
   [EVENT_NAMES.LOGIN_CLICKED]:      "로그인 클릭",
 };
 
@@ -31,6 +33,7 @@ const FUNNEL_STAGES = [
   { key: EVENT_NAMES.DIAGNOSIS_START,    label: "시작" },
   { key: EVENT_NAMES.DIAGNOSIS_COMPLETE, label: "완료" },
   { key: EVENT_NAMES.PRODUCT_CLICKED,    label: "제품클릭" },
+  { key: EVENT_NAMES.PURCHASE_CLICK,     label: "구매" },
 ] as const;
 
 const GOLD_RAMP = ["#E4D2A8", "#D9BE86", "#C8A86B", "#A8884A"];

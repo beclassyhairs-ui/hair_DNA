@@ -24,7 +24,7 @@ import {
 } from "../recommend";
 import { getHairTypeCopy, type HairTypeCopy } from "../hairTypeCopy";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
-import { trackEvent } from "../../../lib/trackEvent";
+import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
@@ -387,6 +387,7 @@ function HomeCareCard({ copy }: { copy: HairTypeCopy }) {
       {/* 제품 카드 직접 노출 없음 — discoveryItemHint는 카테고리 힌트로만, 실제 제품은 발견템(/items)에서 */}
       <Link
         href="/items"
+        onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_homecare", diagnosis_type: "style" })}
         className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-xs font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
       >
         {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
@@ -493,6 +494,7 @@ export default function StyleResultPage() {
   const [locked,     setLocked]     = useState(true);
   const [ready,      setReady]      = useState(false);
   const [showSave,   setShowSave]   = useState(false);
+  const [completeTracked, setCompleteTracked] = useState(false);
 
 
   // 세션 데이터 즉시 로드 (폴링 없음)
@@ -516,6 +518,20 @@ export default function StyleResultPage() {
     } catch { /**/ }
     setReady(true);
   }, []);
+
+  // 진단 완료 — 결과지 진입(답변 로드 완료) 시 1회 적재. 퍼널의 "진단완료" 단계.
+  useEffect(() => {
+    if (!ready || completeTracked) return;
+    if (!answers || Object.keys(answers).length === 0) return;
+    const report = getHairTypeReport(answers);
+    trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+      landing_id: "style",
+      diagnosis_type: "style",
+      result_type: report.hairTypeKey,
+      concern_tags: buildHairTags(answers),
+    });
+    setCompleteTracked(true);
+  }, [ready, answers, completeTracked]);
 
   function handleUnlock() {
     try { sessionStorage.setItem(STYLE_UNLOCKED_KEY, "1"); } catch { /**/ }

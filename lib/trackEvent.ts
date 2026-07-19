@@ -1,13 +1,13 @@
 // ============================================================================
-// 어뷰티 — 홈 대시보드 계열 페이지(app/home, app/diagnosis, app/consulting,
-// app/items, app/myhair) 공용 이벤트 트래킹 fallback.
+// 어뷰티 — 공용 이벤트 트래킹 진입점 (하위 호환 래퍼)
 //
-// 실제 analytics 연동 경로(lib/analytics.ts — GA4/Clarity, lib/eventTracking.ts —
-// Supabase 실DB)가 두 갈래로 나뉘어 있어, 우선 이 로컬 fallback(console.log)으로
-// 이벤트를 남긴다. 추후 실 연동 시 이 함수 내부만 교체하면 되도록 시그니처
-// (name, payload)를 통일해둔다.
+// 과거 이 파일은 console.log만 하는 로컬 fallback이었으나, 이제 실제 트래킹 코어
+// (lib/eventTracking.ts)를 그대로 re-export한다. 따라서 `trackEvent("문자열", {...})`
+// 형태로 호출하던 기존 호출부(home/items/consulting/style 등)도 전부 Supabase `events`
+// 테이블에 적재된다. 스키마에 없는 키는 meta(jsonb)로 자동 분리된다.
+//
+// 신규 코드는 lib/eventTracking.ts에서 직접 import 하는 것을 권장한다.
 // ============================================================================
 
-export const trackEvent = (eventName: string, payload?: Record<string, unknown>) => {
-  console.log("[trackEvent]", eventName, payload);
-};
+export { trackEvent, EVENT_NAMES } from "./eventTracking";
+export type { EventPayload, TrackedEventName } from "./eventTracking";

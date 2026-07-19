@@ -8,10 +8,10 @@
 // 매칭: diaryEntries에서 도출한 유저 coreKey ↔ 상품 fit_hair_types/avoid_hair_types.
 // ============================================================================
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
-import { trackEvent } from "../../lib/trackEvent";
+import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
 import { readDiaryEntries, readBeautyUserProfile } from "../../lib/beautyProfile";
 import { deriveCoreKeyFromEntries, productMatchesCoreKey } from "../../lib/itemsMatch";
 import type { PublicProduct } from "../../lib/products";
@@ -23,7 +23,12 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
     <Link
       href={`/items/${item.id}`}
       onClick={() =>
-        trackEvent("product_card_view", { productId: item.id, coreKey, source: "items_page" })
+        trackEvent(EVENT_NAMES.PRODUCT_CLICKED, {
+          product_id_clicked: String(item.id),
+          product_group_clicked: item.category ?? undefined,
+          ui: "items_list",
+          coreKey,
+        })
       }
       className="block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow active:shadow-md"
     >
@@ -93,6 +98,23 @@ export default function ItemsPage() {
       productMatchesCoreKey(p.fit_hair_types, p.avoid_hair_types, coreKey),
     );
   }, [items, coreKey]);
+
+  // 상품 노출(임프레션) — 매칭 리스트가 실제로 렌더되는 상품에 대해 상품당 1회만 기록.
+  // 재렌더/필터 변화로 중복 발화하지 않도록 ref Set으로 방어(퍼널의 "상품 노출" 단계).
+  const impressed = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    for (const item of matched) {
+      if (impressed.current.has(item.id)) continue;
+      impressed.current.add(item.id);
+      // 노출(view)이므로 "_clicked" 컬럼을 쓰지 않고 상품 식별자는 meta에 담는다.
+      trackEvent(EVENT_NAMES.PRODUCT_VIEWED, {
+        product_id: String(item.id),
+        category: item.category ?? undefined,
+        ui: "items_list",
+        coreKey,
+      });
+    }
+  }, [matched, coreKey]);
 
   return (
     <AppShell>

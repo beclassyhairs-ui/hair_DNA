@@ -16,6 +16,7 @@ import {
   type StyleAnswers,
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
+import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
@@ -89,6 +90,13 @@ export default function StyleSurveyPage() {
         delete next.q14_layer;
       }
     }
+
+    // 문항 답변 — 진단 드롭오프 분석용 (qIdx는 0-based → 1-based 문항번호로 기록)
+    trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
+      landing_id: "style",
+      diagnosis_type: "style",
+      answers: { questionId: q.id, choice: optId, step: qIdx + 1 },
+    });
 
     setAnswers(next);
     setPending(true);

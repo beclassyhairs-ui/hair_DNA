@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "./components/Analytics";
+import AttributionCapture from "./components/AttributionCapture";
 
 // 본문용: 가독성 높은 고딕
 const notoSans = Noto_Sans_KR({
@@ -52,6 +53,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <Analytics />
+        <AttributionCapture />
         {children}
       </body>
     </html>
