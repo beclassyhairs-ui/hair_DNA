@@ -98,6 +98,33 @@ export const ADMIN_PRODUCT_FIELDS =
   "detail_image_urls, image_source, image_status, image_alt, image_note, " +
   "created_at, updated_at";
 
+/**
+ * 공개(/api/items)에서 노출해도 되는 필드만 담은 allowlist.
+ * ⚠️ 내부 전용 필드(sourcing_note, image_note, sales_type, status, image_status,
+ *    image_source 등)는 절대 포함하지 않는다. 매칭에 필요한 fit/avoid/solves와
+ *    유저 대면 카피(recommend_reason/usage_guide/caution_note)만 노출한다.
+ */
+export const PUBLIC_PRODUCT_FIELDS =
+  "id, product_name, category, image_url, buy_link, " +
+  "recommend_reason, usage_guide, caution_note, " +
+  "fit_hair_types, avoid_hair_types, solves_concern, image_alt";
+
+/** 공개 API가 반환하는 상품 형태 — PUBLIC_PRODUCT_FIELDS와 1:1 대응. */
+export interface PublicProduct {
+  id: number;
+  product_name: string;
+  category: string | null;
+  image_url: string | null;
+  buy_link: string | null;
+  recommend_reason: string | null;
+  usage_guide: string | null;
+  caution_note: string | null;
+  fit_hair_types: string[] | null;
+  avoid_hair_types: string[] | null;
+  solves_concern: string[] | null;
+  image_alt: string | null;
+}
+
 // ============================================================================
 // Gemini CSV 컬럼 매핑 (참고용 — 실제 import 파서는 아직 구현하지 않음)
 //
