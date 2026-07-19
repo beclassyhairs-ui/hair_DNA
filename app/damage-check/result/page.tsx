@@ -192,6 +192,19 @@ export default function DamageCheckResultPage() {
               </div>
             </GlassCard>
 
+            {/* Lv4(극손상모) 전용 정직 처방 — 담담한 전문가 톤, 공포 조장 없음 */}
+            {result.level.cutAdvice && (
+              <GlassCard tone="soft" className="px-5 py-5">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">전문가 처방</p>
+                <p className="text-sm leading-relaxed text-[#4A453B]">{result.level.cutAdvice}</p>
+                {result.level.keratinCaution && (
+                  <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
+                    <p className="text-sm font-medium text-[#6B5B3A]">{result.level.keratinCaution}</p>
+                  </div>
+                )}
+              </GlassCard>
+            )}
+
             {/* 원인 분석 — 차분한 톤(경고색 제거) */}
             <GlassCard accent className="px-5 py-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">

@@ -43,6 +43,10 @@ export interface LevelInfo {
   label: string;         // "손상모"
   careIntensity: string; // "전문 클리닉 권장"
   summary: string;
+  /** Lv4(극손상모) 전용 — 홈케어보다 커트가 우선이라는 정직 처방. 담담한 전문가 톤 */
+  cutAdvice?: string;
+  /** Lv4(극손상모) 전용 — 압착식 케라틴류(바르고 매직기로 펴는 시술) 주의 문구 */
+  keratinCaution?: string;
 }
 
 export interface TypeInfo {
@@ -81,6 +85,10 @@ const LEVEL_INFO: Record<DamageLevel, LevelInfo> = {
   4: {
     level: 4, label: "극손상모", careIntensity: "즉시 집중 관리 + 시술 자제",
     summary: "모발 손상이 심각한 단계예요. 추가 시술(염색·펌·탈색)은 잠시 멈추고, 집중 복구 케어가 먼저 필요해요.",
+    cutAdvice:
+      "이 단계에서는 어떤 홈케어보다 손상 부위를 잘라내는 것이 가장 확실한 회복입니다. 트리트먼트는 커트까지 시간을 벌어주는 보조 수단이에요. 끝을 1~2cm만 정리해도 관리 난이도가 크게 줄어듭니다.",
+    keratinCaution:
+      "압착식 케라틴류(바르고 매직기로 펴는 시술)는 일시적으로 좋아 보이게 하지만 장기적으로 모발을 더 상하게 할 수 있어요.",
   },
 };
 
