@@ -80,43 +80,37 @@ export default function StyleLoadingPage() {
           }),
         });
 
-        // ★ Promise.allSettled — 두 작업을 병렬 실행, 둘 다 끝났을 때만 결과지로 이동
-        // [1] 최소 15초 대기 (광고 노출 + AdSense 수익 보장)
-        // [2] Replicate AI 합성 (62초 타임아웃)
-        // → API가 15초보다 빠르면 15초 채운 뒤 이동, 느리면 API 완료 시 이동
-        await Promise.allSettled([
-          new Promise<void>(resolve => setTimeout(resolve, 15_000)),
-          (async () => {
-            try {
-              incrementUsage(); // 실제 API 비용 발생 시점에 횟수 차감
-              console.log("[AI] /api/hair-transform 호출 시작...");
-              const res  = await fetch("/api/hair-transform", {
-                method:  "POST",
-                headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ userPhoto: photo, answers }),
-                signal:  AbortSignal.timeout(62_000),
-              });
-              const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string; debugError?: string };
+        // ★ Replicate AI 합성 (62초 타임아웃) — 완료 즉시 결과지로 이동한다.
+        // (예전엔 "최소 15초 광고 강제 대기" 타이머가 있었으나 AdSense 정책 리스크 +
+        //  이탈 원인이라 제거했다. 광고는 합성이 걸리는 자연 대기 시간에만 노출한다.)
+        try {
+          incrementUsage(); // 실제 API 비용 발생 시점에 횟수 차감
+          console.log("[AI] /api/hair-transform 호출 시작...");
+          const res  = await fetch("/api/hair-transform", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ userPhoto: photo, answers }),
+            signal:  AbortSignal.timeout(62_000),
+          });
+          const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string; debugError?: string };
 
-              // ★ 콘솔 디버그 — 어떤 URL이 돌아오는지 확인
-              console.log("[AI] 응답 전체:", data);
-              if (data.ok && data.imageUrl) {
-                console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
-                try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-                try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-              } else {
-                const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
-                console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
-                // 결과 페이지에서 붉은 글씨로 표시할 실제 에러 저장
-                try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
-              }
-            } catch (e) {
-              console.error("[AI] ❌ API 호출 예외:", e);
-            }
-          })(),
-        ]);
+          // ★ 콘솔 디버그 — 어떤 URL이 돌아오는지 확인
+          console.log("[AI] 응답 전체:", data);
+          if (data.ok && data.imageUrl) {
+            console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
+            try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+            try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+          } else {
+            const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
+            console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
+            // 결과 페이지에서 붉은 글씨로 표시할 실제 에러 저장
+            try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
+          }
+        } catch (e) {
+          console.error("[AI] ❌ API 호출 예외:", e);
+        }
       } catch { /**/ } finally {
-        // 15초 + API 모두 완료 → 결과지 이동 (결과지에서 이중 로딩 없음)
+        // API 완료(성공/실패/타임아웃 무관) → 즉시 결과지 이동 (결과지에서 이중 로딩 없음)
         // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
         // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
         router.replace("/style/result");
