@@ -5,7 +5,7 @@
 
 ## 현재 상태 한 줄
 
-**관리자 최소 인증 게이트 신설 완료(2026-07-19) — `middleware.ts`가 `ADMIN_SECRET` 기반 HMAC 세션 쿠키로 `/admin/*`·`/api/admin/*` 전체 보호(만료 강제, fail-closed). Codex 보안 재검수 통과, 로컬 end-to-end 검증 완료.** 이로써 무인증 관리자 CRUD 노출 차단 → 공개 배포 가능. products 스키마는 Supabase 적용 완료(0 records). **배포 전 필수: 사용자가 Vercel + .env.local에 `ADMIN_SECRET` 설정(미설정 시 admin 영역 fail-closed 500).**
+**프로덕션 배포 완료(2026-07-19) — `hair-dna.vercel.app` 라이브.** 관리자 최소 인증 게이트(`middleware.ts` + `ADMIN_SECRET` HMAC 세션 쿠키, 만료 강제·fail-closed)가 `/admin/*`·`/api/admin/*` 전체를 보호하며, 라이브에서 무인증=401·틀린 비번=401·실제 로그인 성공까지 검증됨. products 스키마 Supabase 적용 완료(0 records). 다음은 `/admin/sourcing` keep → draft 저장(11번).
 
 ## 미커밋 변경
 
@@ -22,8 +22,8 @@
 7. [x] `/api/admin/products` GET/POST/PUT 신규 필드 확장 — 이미지/소싱 필드 노출·저장, `ADMIN_PRODUCT_FIELDS` 상수화. PUT은 `!== undefined` 가드로 기존 폼 저장 시 신규 필드 미삭제. Codex 검수: diff 자체 결함 없음(인증 부재만 지적 — 백로그 항목). `feat:` 커밋 예정
 8. [x] `/admin/products` UI 확장 — 공개 상태(status) 셀렉트 + 이미지 검수 블록(image_status/image_source/image_alt/image_note) + 리스트 status·image_status 뱃지. image_source 미설정은 undefined로 전송(빈 문자열 CHECK 위반 방지). 폼 렌더 dev 서버 검증 — `feat: add status and image-review controls to admin product form` (b91ad62)
 9. [x] **관리자 최소 인증 게이트** — `middleware.ts` + `lib/adminAuth.ts`(HMAC 세션 토큰 `exp.sig`, 만료 강제) + `/api/admin/login`·`/logout` + `/admin/login` + 사이드바 로그아웃. Codex 1차 '수정 필요'(세션 만료 미검증) → 만료시각 서명 포함으로 수정 → 재검수 통과. 로컬 검증(위조/만료 토큰 거부 포함) — `feat: add minimal admin auth gate before public deploy` (e7947bf)
-10. [ ] **배포**: 사용자가 Vercel 환경변수 `ADMIN_SECRET` 설정 → main push(=Vercel 자동 배포) → 배포본에서 /admin 로그인 동작 확인 ← **진행 중**
-11. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결
+10. [x] **배포 완료(2026-07-19)** — main push → Vercel 프로덕션 배포(`hair-dna.vercel.app`). 빌드 1차 실패(`/admin/login` useSearchParams Suspense 누락) → 수정 후 재배포 성공(`9f8a529`). `ADMIN_SECRET` Vercel Production 등록 + 재배포 후 게이트 라이브 검증 완료: 무인증 API=401, 무인증 페이지=307→login, 틀린/빈 비번=401, 사용자 실제 비번 로그인 성공. 공개 사이트 정상.
+11. [ ] `/admin/sourcing` keep → draft 저장 버튼 연결 ← **다음 작업**
 12. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist)
 13. [ ] `/items` DB 연동 + hairTags 매칭
 14. [ ] `/items/[id]` 상세페이지
