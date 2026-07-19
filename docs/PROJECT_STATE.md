@@ -5,7 +5,7 @@
 
 ## 현재 상태 한 줄
 
-**프로덕션 배포 완료 + sourcing→draft 저장 구현(2026-07-19) — `hair-dna.vercel.app` 라이브.** 관리자 최소 인증 게이트(`middleware.ts` + `ADMIN_SECRET` HMAC 세션 쿠키, 만료 강제·fail-closed)가 `/admin/*`·`/api/admin/*` 전체를 보호(라이브 검증 완료). `/admin/sourcing`의 keep 후보를 명시적 버튼으로 products에 draft 저장하는 기능 완료(서버가 status='draft'/image_status='needs_review' 강제, Codex 검수 통과). products 스키마 Supabase 적용 완료(0 records). 다음은 `/items` 공개 조회 API 신설(12번).
+**데이터 파이프라인 코드 완성(2026-07-19) — `hair-dna.vercel.app` 라이브.** 소싱→draft 저장, 관리자 인증 게이트, 그리고 공개 `/items`(승인 상품만·coreKey 매칭)까지 코드가 연결됨. 이제 파이프라인 전 구간(소싱→검수→승인→매칭 노출→구매)이 코드상 이어져 있고, 남은 건 실제 상품 1건으로 수동 E2E 완주(15번). 관리자 게이트는 `middleware.ts`+`ADMIN_SECRET`으로 라이브 검증됨. products 스키마 Supabase 적용 완료(현재 0 records).
 
 ## 미커밋 변경
 
@@ -24,9 +24,10 @@
 9. [x] **관리자 최소 인증 게이트** — `middleware.ts` + `lib/adminAuth.ts`(HMAC 세션 토큰 `exp.sig`, 만료 강제) + `/api/admin/login`·`/logout` + `/admin/login` + 사이드바 로그아웃. Codex 1차 '수정 필요'(세션 만료 미검증) → 만료시각 서명 포함으로 수정 → 재검수 통과. 로컬 검증(위조/만료 토큰 거부 포함) — `feat: add minimal admin auth gate before public deploy` (e7947bf)
 10. [x] **배포 완료(2026-07-19)** — main push → Vercel 프로덕션 배포(`hair-dna.vercel.app`). 빌드 1차 실패(`/admin/login` useSearchParams Suspense 누락) → 수정 후 재배포 성공(`9f8a529`). `ADMIN_SECRET` Vercel Production 등록 + 재배포 후 게이트 라이브 검증 완료: 무인증 API=401, 무인증 페이지=307→login, 틀린/빈 비번=401, 사용자 실제 비번 로그인 성공. 공개 사이트 정상.
 11. [x] `/admin/sourcing` keep → draft 저장 — 신규 `POST /api/admin/sourcing/import`(인증 게이트 뒤, status='draft'/image_status='needs_review' 서버 강제, 필드 allowlist, 배치 상한 200) + SourcingReview 명시적 버튼(keep 클릭만으론 저장 안 함, savedKeys 재클릭 중복 방지). Codex 1차 수정필요(중복 저장·오류 원문 노출) → 수정 → 재검수 통과 — `feat: save sourced keep candidates to products as draft` (a0d940e)
-12. [ ] `/items` 공개 조회 API 신설 (approved + image approved 필터, 필드 allowlist) ← **다음 작업**
-13. [ ] `/items` DB 연동 + hairTags 매칭
-14. [ ] `/items/[id]` 상세페이지
+12. [x] `/items` 공개 조회 API 신설 — `GET /api/items`(공개, 인증 게이트 밖), status='approved' AND image_status='approved'만, `PUBLIC_PRODUCT_FIELDS` allowlist(내부필드 미노출), supabaseAdmin 서버 경유(anon RLS 안 엶). Codex 통과 — `feat: public /api/items ...` (cf33726)
+13. [x] `/items` DB 연동 + 매칭 — 하드코딩 제거, `/api/items` 연동. 매칭은 유저 coreKey(최신 /style answers의 curl__thickness__density) ↔ 상품 fit/avoid_hair_types(무작위 아님). 구매 링크(buy_link) 연결. 매칭 로직 유닛테스트 9/9. (hairTags는 한글 고민어휘라 미사용) — 같은 커밋
+14. [ ] `/items/[id]` 상세페이지 (또는 카드 확장) ← **다음 작업**
+15. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved)→매칭 유저의 /items 노출→buy_link 확인
 
 ## 확정된 결정사항
 
@@ -41,6 +42,8 @@
 - **관리자 전체 인증** — 최소 게이트(방안 A: 공유 비밀번호+서명 쿠키, 2026-07-19 구현)로 1차 방어됨. 남은 개선(백로그): 로그인 rate limit(서버리스 KV 필요), 계정별 인증(방안 B: Supabase Auth+allowlist), `ADMIN_SESSION_SECRET` 분리. 발견템 파이프라인 트래픽 붙기 전 검토.
 - 공개 상품 API `/api/products` 분리 신설
 - **sourcing→draft 저장 DB 멱등성** — 현재 중복 방지는 브라우저 메모리(savedKeys) 단위라 새로고침/재붙여넣기 후 같은 후보 재저장 가능. DB 수준 멱등성(예: buy_link 유니크 제약 또는 upsert) 필요 시 도입.
+- **/items 진단 전 노출 정책** — coreKey 없는(진단 전) 방문자에겐 approved 전체를 최신순 노출 중. "진단 전엔 범용(fit 비어있음) 상품만" 또는 "진단 유도 CTA만" 정책으로 바꿀지 결정 필요.
+- **/items 고민 기반 매칭 보강** — 현재 매칭은 모발타입(coreKey↔fit_hair_types)만. hairTags(한글 고민어휘) ↔ solves_concern 매칭을 추가하면 정밀도 향상 가능(현재 solves_concern은 노출만 하고 매칭엔 미사용).
 - `sourcing_candidates` 테이블 — 리서치 에이전트가 API로 직접 후보 등록하는 구조. 관리자 인증 이후
 - lib/sourcing.ts fit_hair_types 매핑 불일치 (bangs_babyhair, damaged_hair_high_history)
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
