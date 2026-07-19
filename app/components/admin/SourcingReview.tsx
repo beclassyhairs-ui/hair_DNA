@@ -1,12 +1,14 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 어드민 — 소싱 후보 검수(Sourcing Review) MVP
+// 어뷰티 어드민 — 소싱 후보 검수(Sourcing Review)
 // Gemini가 만든 raw_candidates TSV/CSV 표를 붙여넣으면 자동 파싱 + 검수 플래그 +
-// admin_import 미리보기까지만 보여준다.
+// admin_import 미리보기를 보여준다.
 //
-// ⚠️ 이 화면은 어떤 API도 호출하지 않고, DB에도 저장하지 않는다. "draft로
-// 저장하기" 버튼은 다음 단계 연결 전까지 항상 비활성 상태로만 존재한다.
+// ⚠️ 저장 규칙: "채택(keep)" 선택 자체로는 아무것도 저장하지 않는다. 아래
+// "draft로 저장하기" 버튼을 명시적으로 눌러야만 keep 후보가 products에 저장된다.
+// 저장은 /api/admin/sourcing/import로 가며, 서버가 status='draft',
+// image_status='needs_review'를 강제한다(이 화면은 그 값을 정하지 않는다).
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
@@ -100,15 +102,26 @@ function DecisionPicker({
   );
 }
 
+type SaveResult = { inserted: number; skipped: number };
+
 export default function SourcingReview() {
   const [raw, setRaw] = useState("");
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
+  // 이미 저장된 후보의 row key — 같은 배치를 다시 눌러 중복 생성하는 것을 막는다.
+  const [savedKeys, setSavedKeys] = useState<Set<string>>(() => new Set());
 
   // 입력 표가 바뀌면 이전 배치의 keep/maybe/drop 선택이 새 배치에 잘못
   // 이어붙지 않도록 결정 상태를 통째로 초기화한다 (row key도 내용 기반이라
   // 이중으로 안전하지만, 완전히 새 붙여넣기에서는 항상 깨끗하게 시작해야 한다).
   useEffect(() => {
     setDecisions({});
+    setSaveResult(null);
+    setSaveError(null);
+    setSavedKeys(new Set());
   }, [raw]);
 
   const parsed = useMemo(() => {
@@ -144,6 +157,50 @@ export default function SourcingReview() {
   }
 
   const keepRows = candidates.filter((c) => decisionFor(c) === "keep");
+  // 아직 저장하지 않은 keep 후보만 실제 저장 대상 — 재클릭 중복 생성 방지.
+  const unsavedKeepRows = keepRows.filter((c) => !savedKeys.has(getCandidateRowKey(c.raw)));
+
+  async function handleSaveDrafts() {
+    if (unsavedKeepRows.length === 0 || saving) return;
+    if (
+      !window.confirm(
+        `"채택"으로 결정한 ${unsavedKeepRows.length}건을 products에 draft로 저장합니다.\n` +
+          `(status=draft, image_status=needs_review로 저장되며 공개 노출되지 않습니다)\n계속할까요?`,
+      )
+    ) {
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    setSaveResult(null);
+
+    // 저장 대상은 아직 저장 안 된 keep 후보의 admin_import 변환값만 보낸다.
+    // status/image_status는 서버가 강제하므로 여기서 정하지 않는다.
+    const batch = unsavedKeepRows;
+    const items = batch.map((c) => buildAdminImportPreview(c));
+
+    try {
+      const res = await fetch("/api/admin/sourcing/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+      // 저장 성공한 배치의 키를 기록해 같은 후보를 다시 저장하지 못하게 한다.
+      setSavedKeys((prev) => {
+        const next = new Set(prev);
+        for (const c of batch) next.add(getCandidateRowKey(c.raw));
+        return next;
+      });
+      setSaveResult({ inserted: body.inserted ?? 0, skipped: body.skipped ?? 0 });
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="px-5 py-8 md:px-10 md:py-10">
@@ -276,20 +333,37 @@ export default function SourcingReview() {
           </div>
         )}
 
-        {/* 다음 단계 전송 — 이번 단계에서는 항상 비활성 */}
+        {/* draft로 저장 — "채택" 후보만, 명시적 버튼 클릭 시에만 저장 */}
         {candidates.length > 0 && (
-          <div className="mt-8 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-            <p className="text-xs text-cream/40">
-              &ldquo;채택&rdquo;으로 표시된 {keepRows.length}건을 /admin/products draft로 넘기는 기능은 다음 단계에서 연결됩니다.
-            </p>
-            <button
-              type="button"
-              disabled
-              title="다음 단계에서 /admin/products와 연결 예정 — 이번 단계에서는 비활성"
-              className="cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-cream/30"
-            >
-              draft로 저장하기 (비활성)
-            </button>
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-cream/40">
+                &ldquo;채택&rdquo; {keepRows.length}건 중 <span className="text-cream/70">미저장 {unsavedKeepRows.length}건</span>을 products에 <span className="text-gold-light/80">draft</span>로 저장합니다.
+                저장 시 <span className="text-cream/60">status=draft · image_status=needs_review</span>로 들어가며 공개 노출되지 않습니다.
+              </p>
+              <button
+                type="button"
+                onClick={handleSaveDrafts}
+                disabled={saving || unsavedKeepRows.length === 0}
+                className="shrink-0 rounded-xl border border-gold/30 bg-gold/15 px-4 py-2.5 text-sm font-semibold text-gold-light transition-colors hover:bg-gold/25 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {saving
+                  ? "저장 중…"
+                  : unsavedKeepRows.length === 0 && savedKeys.size > 0
+                    ? "모두 저장됨"
+                    : `draft로 저장하기${unsavedKeepRows.length > 0 ? ` (${unsavedKeepRows.length})` : ""}`}
+              </button>
+            </div>
+
+            {saveError && <p className="mt-3 text-xs text-red-300">저장 실패: {saveError}</p>}
+            {saveResult && (
+              <p className="mt-3 text-xs text-emerald-300">
+                {saveResult.inserted}건을 draft로 저장했습니다
+                {saveResult.skipped > 0 ? ` (product_name 없음 등 ${saveResult.skipped}건 건너뜀)` : ""}.
+                {" "}
+                <a href="/admin/products" className="underline hover:text-emerald-200">/admin/products에서 확인</a>
+              </p>
+            )}
           </div>
         )}
       </div>
