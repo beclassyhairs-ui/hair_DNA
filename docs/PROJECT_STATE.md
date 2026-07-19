@@ -5,7 +5,7 @@
 
 ## 현재 상태 한 줄
 
-**데이터 파이프라인 코드 완성(2026-07-19) — `hair-dna.vercel.app` 라이브.** 소싱→draft 저장, 관리자 인증 게이트, 그리고 공개 `/items`(승인 상품만·coreKey 매칭)까지 코드가 연결됨. 이제 파이프라인 전 구간(소싱→검수→승인→매칭 노출→구매)이 코드상 이어져 있고, 남은 건 실제 상품 1건으로 수동 E2E 완주(15번). 관리자 게이트는 `middleware.ts`+`ADMIN_SECRET`으로 라이브 검증됨. products 스키마 Supabase 적용 완료(현재 0 records).
+**데이터 파이프라인 코드 완성(2026-07-19) — `hair-dna.vercel.app` 라이브.** 소싱→draft 저장, 관리자 인증 게이트, `/admin/products` 매칭/추천 입력 UI, 공개 `/items` 목록(coreKey 매칭) + `/items/[id]` 상세까지 전 구간 코드 연결. 관리자가 fit_hair_types를 UI로 넣을 수 있고, 승인 상품이 매칭 유저의 목록·상세·구매까지 이어짐. 남은 건 실제 상품 1건으로 수동 E2E 완주(16번, 승인은 규칙4상 사용자 수동). 관리자 게이트 라이브 검증됨. products 스키마 Supabase 적용 완료(현재 0 records).
 
 ## 미커밋 변경
 
@@ -26,8 +26,9 @@
 11. [x] `/admin/sourcing` keep → draft 저장 — 신규 `POST /api/admin/sourcing/import`(인증 게이트 뒤, status='draft'/image_status='needs_review' 서버 강제, 필드 allowlist, 배치 상한 200) + SourcingReview 명시적 버튼(keep 클릭만으론 저장 안 함, savedKeys 재클릭 중복 방지). Codex 1차 수정필요(중복 저장·오류 원문 노출) → 수정 → 재검수 통과 — `feat: save sourced keep candidates to products as draft` (a0d940e)
 12. [x] `/items` 공개 조회 API 신설 — `GET /api/items`(공개, 인증 게이트 밖), status='approved' AND image_status='approved'만, `PUBLIC_PRODUCT_FIELDS` allowlist(내부필드 미노출), supabaseAdmin 서버 경유(anon RLS 안 엶). Codex 통과 — `feat: public /api/items ...` (cf33726)
 13. [x] `/items` DB 연동 + 매칭 — 하드코딩 제거, `/api/items` 연동. 매칭은 유저 coreKey(최신 /style answers의 curl__thickness__density) ↔ 상품 fit/avoid_hair_types(무작위 아님). 구매 링크(buy_link) 연결. 매칭 로직 유닛테스트 9/9. (hairTags는 한글 고민어휘라 미사용) — 같은 커밋
-14. [ ] `/items/[id]` 상세페이지 (또는 카드 확장) ← **다음 작업**
-15. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved)→매칭 유저의 /items 노출→buy_link 확인
+14. [x] `/admin/products` 매칭/추천 입력 UI — fit/avoid_hair_types를 curl/thickness/density 선택 조합으로 추가·삭제(자유입력 금지, 오타 방지), solves_concern·recommend_reason·usage_guide·caution_note 입력. 빈 값 undefined. 프론트 전용(API는 기존에 이미 수용) — `feat: add matching + copy fields to admin product form` (091367d)
+15. [x] `/items/[id]` 상세페이지 + 공개 상세 API — `lib/publicProducts.ts`(서버전용 공용 조회), `GET /api/items/[id]`(approved만·allowlist만·없는id 404), `/items/[id]` 서버컴포넌트(notFound 실제 404) + 구매버튼 trackEvent, 카드→상세 이동. Codex 통과 — `feat: /items/[id] detail page + public detail API` (730d74b)
+16. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저의 /items 노출→상세→buy_link 확인 ← **남은 단계(사용자 수동)**
 
 ## 확정된 결정사항
 
