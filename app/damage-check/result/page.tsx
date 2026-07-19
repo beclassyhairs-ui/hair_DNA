@@ -217,12 +217,20 @@ export default function DamageCheckResultPage() {
             </GlassCard>
 
             {/* 홈케어 제품은 결과지에 직접 노출하지 않고 발견템으로 안내만 */}
-            <GlassCard className="px-5 py-4">
+            <GlassCard className="space-y-3 px-5 py-4">
               <Link
                 href="/items"
                 className="flex items-center justify-between gap-3 text-sm font-medium text-[#4A453B] hover:text-[#2F2A22]"
               >
                 발견템에서 손상도 단계에 맞는 홈케어 제품을 볼 수 있어요
+                <span className="flex-none text-[#A8884A]">→</span>
+              </Link>
+              <div className="h-px bg-[#EDE7DA]" />
+              <Link
+                href="/hair-quiz"
+                className="flex items-center justify-between gap-3 text-sm font-medium text-[#4A453B] hover:text-[#2F2A22]"
+              >
+                평소 손질 습관 진단
                 <span className="flex-none text-[#A8884A]">→</span>
               </Link>
             </GlassCard>

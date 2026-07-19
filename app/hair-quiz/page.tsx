@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../lib/beautyProfile";
@@ -462,13 +463,22 @@ function ResultView({
           </div>
         </GlassCard>
 
-        {/* 다시 진단받기 */}
-        <button
-          onClick={onRetry}
-          className="mx-auto flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
-        >
-          ↺ 다시 진단받기
-        </button>
+        {/* 다시 진단받기 + 손상도 체크 교차 진단 */}
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={onRetry}
+            className="flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
+          >
+            ↺ 다시 진단받기
+          </button>
+          <span className="text-xs text-[#D8CDB8]">·</span>
+          <Link
+            href="/damage-check"
+            className="flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
+          >
+            내 손상도도 확인해보기 →
+          </Link>
+        </div>
       </div>
 
       {/* CTA 고정 하단 */}

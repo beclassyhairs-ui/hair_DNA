@@ -381,7 +381,7 @@ function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
   );
 }
 
-function HomeCareCard({ copy }: { copy: HairTypeCopy }) {
+function HomeCareCard({ copy, showDamageCTA }: { copy: HairTypeCopy; showDamageCTA: boolean }) {
   return (
     <GlassCard tone="soft" className="space-y-3 px-5 py-4">
       <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
@@ -395,6 +395,16 @@ function HomeCareCard({ copy }: { copy: HairTypeCopy }) {
         {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
         <span className="flex-none text-[#A8884A]">→</span>
       </Link>
+      {/* 시술 이력 7회 이상(count_7plus) 답변자에게만 노출되는 교차 진단 CTA */}
+      {showDamageCTA && (
+        <Link
+          href="/damage-check"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-xs font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
+        >
+          정밀 손상 진단 받아보기
+          <span className="flex-none text-[#A8884A]">→</span>
+        </Link>
+      )}
     </GlassCard>
   );
 }
@@ -607,7 +617,7 @@ export default function StyleResultPage() {
             <div className="space-y-2.5">
               <AvoidCard copy={copy} damageCaution={report.damageCaution} />
               <SalonTipCard copy={copy} />
-              <HomeCareCard copy={copy} />
+              <HomeCareCard copy={copy} showDamageCTA={answers.q10_history_count === "count_7plus"} />
             </div>
 
             {/* 저장 + 공유 */}
