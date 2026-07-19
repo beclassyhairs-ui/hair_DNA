@@ -27,7 +27,7 @@
 
 ### 🎯 8월 배포 우선순위 (확정)
 
-1. [ ] **faceswap 복원 + 84 레퍼런스 + 일일 제한 + 품질 승인** — faceswap 합성 파이프라인 복원, 레퍼런스 84종 구성, `lib/dailyLimit.ts`를 hair-transform 라우트에 실제 적용(현재 미적용, 백로그 확인 필요), 합성 결과 품질 승인 게이트. ← **다음 작업**
+1. [~] **faceswap 복원 + 84 레퍼런스 + 일일 제한 + 품질 승인** — **복원 초안 완료(브랜치 `feature/faceswap-restore`, 미push). main 반영·배포는 셀카 품질 테스트 사업주 승인 후에만.** 남은 것: ① 레퍼런스 실이미지 채우기(84폴더+default) ② 셀카 품질 테스트→승인 ③ 개인정보 문구 값 확정 ④ 서버측 일일제한 도입 여부 ⑤ face-swap version hash 유효성. 상세: `docs/faceswap_restore_notes.md`. (dailyLimit은 클라이언트에 이미 연결됨 — 서버 강제만 미도입)
 2. [ ] **상품 20~30개 엄선 등재(반자동)** — 소싱→draft→관리자 승인 흐름으로 20~30개 상품 엄선 등재. 완전 자동화 아님(반자동, 사람 검수 유지).
 
 > ~~이벤트 5종 + UTM 태깅~~ → **완료(2026-07-19)**, 아래 완료 이력 17번. 배포 순서: migration SQL 먼저 → 코드 push.
@@ -57,6 +57,7 @@
 14. [x] `/admin/products` 매칭/추천 입력 UI — fit/avoid_hair_types를 curl/thickness/density 선택 조합으로 추가·삭제(자유입력 금지, 오타 방지), solves_concern·recommend_reason·usage_guide·caution_note 입력. 빈 값 undefined. 프론트 전용(API는 기존에 이미 수용) — `feat: add matching + copy fields to admin product form` (091367d)
 15. [x] `/items/[id]` 상세페이지 + 공개 상세 API — `lib/publicProducts.ts`(서버전용 공용 조회), `GET /api/items/[id]`(approved만·allowlist만·없는id 404), `/items/[id]` 서버컴포넌트(notFound 실제 404) + 구매버튼 trackEvent, 카드→상세 이동. Codex 통과 — `feat: /items/[id] detail page + public detail API` (730d74b)
 16. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저의 /items 노출→상세→buy_link 확인 ← **남은 단계(사용자 수동)**
+18. [~] **faceswap 복원 초안 (브랜치, 2026-07-19)** — `feature/faceswap-restore`(미push). route.ts를 flux→codeplugtech/face-swap 복원(히스토리 9e6eb04 기반), `getReferenceCandidateDirs`(84-밖 폴백 규칙 초안), 144조합 폴더 매핑 매니페스트·개인정보 문구 초안·복원 노트 작성. Codex 검수: 1차 '수정 필요'(SSRF·셀카URL 로그노출)→반영→재검수 통과. tsc 통과. **배포 안 함 — 승인 게이트 대기.** 커밋 `1403a30`(브랜치).
 17. [x] **이벤트 5종 + UTM 태깅 전 구간 (2026-07-19 완료)** — trackEvent 단일 코어 통합, 5종 퍼널(landing_view/diagnosis_start·complete/product_clicked/purchase_click) + 보조(answer_selected/product_viewed) 계측, /style·/items 전 구간 채움, first-touch UTM 3종 모든 이벤트 동승, meta jsonb 분리+가드. Codex 2회 검수(1차 수정필요→반영→통과). **push·Vercel 배포·Supabase `events_attribution_migration.sql` 실행까지 전부 완료 → events insert 정상.**
 
 ## 확정된 결정사항
