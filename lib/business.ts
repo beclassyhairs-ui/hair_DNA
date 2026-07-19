@@ -25,3 +25,14 @@ export const BUSINESS_INFO_FIELDS: { label: string; value: string }[] = [
   { label: "주소",             value: BUSINESS_INFO.address },
   { label: "이메일",           value: BUSINESS_INFO.email },
 ];
+
+/**
+ * 사업자 표시 6항목이 모두 실값(플레이스홀더 아님·공백 아님)일 때만 true.
+ * 하나라도 미기재면 false → 푸터의 사업자 표시 블록을 숨긴다.
+ * 값을 채우는 순간 자동으로 true가 되어 별도 코드 변경 없이 표시된다.
+ */
+export function isBusinessInfoReady(): boolean {
+  return BUSINESS_INFO_FIELDS.every(
+    (f) => f.value.trim() !== "" && f.value !== BUSINESS_PLACEHOLDER,
+  );
+}

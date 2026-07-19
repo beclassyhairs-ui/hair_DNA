@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BUSINESS_INFO_FIELDS } from "../../lib/business";
+import { BUSINESS_INFO_FIELDS, isBusinessInfoReady } from "../../lib/business";
 
 export default function SiteFooter() {
   const pathname = usePathname();
@@ -23,14 +23,17 @@ export default function SiteFooter() {
           <Link href="/terms" className="underline-offset-2 hover:underline">이용약관</Link>
         </nav>
 
-        <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-1.5 text-[12px] leading-relaxed sm:grid-cols-2">
-          {BUSINESS_INFO_FIELDS.map((f) => (
-            <div key={f.label} className="flex gap-1.5">
-              <dt className="shrink-0 text-[#9A927F]">{f.label}</dt>
-              <dd className="min-w-0 break-words text-[#6B6355]">{f.value}</dd>
-            </div>
-          ))}
-        </dl>
+        {/* 사업자 표시 블록 — 6항목 실값이 모두 채워졌을 때만 렌더(플레이스홀더 노출 방지) */}
+        {isBusinessInfoReady() && (
+          <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-1.5 text-[12px] leading-relaxed sm:grid-cols-2">
+            {BUSINESS_INFO_FIELDS.map((f) => (
+              <div key={f.label} className="flex gap-1.5">
+                <dt className="shrink-0 text-[#9A927F]">{f.label}</dt>
+                <dd className="min-w-0 break-words text-[#6B6355]">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
 
         <p className="mt-5 text-[11px] text-[#A79E8B]">
           © {new Date().getFullYear()} 어뷰티(A-Beauty). All rights reserved.
