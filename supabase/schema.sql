@@ -10,9 +10,11 @@ create table if not exists events (
   anonymous_id                text not null,  -- localStorage 기반 익명 ID
   kakao_user_id               text,           -- 카카오 로그인 시 부여
 
-  -- 유입 경로
-  landing_id                  text,           -- 예: 'mbti_test', 'bang_test'
+  -- 유입 경로 (UTM 어트리뷰션 — first-touch로 모든 이벤트에 동승)
+  landing_id                  text,           -- 예: 'mbti_test', 'style'
   source                      text,           -- utm_source 기반
+  utm_medium                  text,           -- utm_medium
+  utm_campaign                text,           -- utm_campaign (어느 쇼츠/캠페인 유입인지)
   content_id                  text,
 
   -- 세션/진단
@@ -34,6 +36,9 @@ create table if not exists events (
   marketing_consent           boolean,
   kakao_channel_added         boolean,
 
+  -- 스키마에 없는 임의 이벤트 컨텍스트(productId, coreKey, ui 위치, postId 등)
+  meta                        jsonb,
+
   created_at                  timestamptz not null default now()
 );
 
@@ -42,6 +47,8 @@ create index if not exists idx_events_event_name   on events (event_name);
 create index if not exists idx_events_landing_id   on events (landing_id);
 create index if not exists idx_events_anonymous_id on events (anonymous_id);
 create index if not exists idx_events_created_at   on events (created_at desc);
+create index if not exists idx_events_utm_campaign on events (utm_campaign);
+create index if not exists idx_events_utm_medium   on events (utm_medium);
 
 -- ============================================================================
 -- RLS(Row Level Security) — anon key는 "쓰기 전용"으로 제한
