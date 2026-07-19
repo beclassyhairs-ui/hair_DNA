@@ -25,11 +25,24 @@
 
 ## 이번 세션 배포전 정비 4종 (2026-07-19, 게이트 없음 · 전부 커밋 · next build 통과 · push 대기)
 
-- [x] **공통 푸터 + 사업자 표시(전자상거래법)** — `lib/business.ts`(상호/대표자/사업자등록번호/통신판매업신고번호/주소/이메일 6항목, 값 전부 `[사업주 기재 필요]`) + `app/components/SiteFooter.tsx`(루트 마운트, `/admin` 제외, /privacy·/terms 링크). 브라우저 검증(/style 6개 표시·링크, /admin 부재). `feat: 공통 푸터…` (a51c525)
+- [x] **공통 푸터 + 사업자 표시(전자상거래법)** — `lib/business.ts`(상호/대표자/사업자등록번호/통신판매업신고번호/주소/이메일 6항목) + `app/components/SiteFooter.tsx`(루트 마운트, `/admin` 제외, /privacy·/terms 링크). 사업자 표시 블록은 `isBusinessInfoReady()`로 **6항목 실값이 모두 채워졌을 때만 렌더**(플레이스홀더 노출 방지, 값 채우면 자동 표시). 법적 링크·저작권은 항상 표시. `feat: 공통 푸터…` (a51c525) + 조건부 렌더 후속.
+  - 📌 **메모**: 사업자 표시 실값은 현 사업자(아내 명의) 기준으로 2일 내 입력 예정. 2027-01-01 법인 전환 시 `lib/business.ts` 값만 교체하면 됨.
 - [x] **/privacy·/terms 초안** — 수집(진단답변/셀카/이벤트로그)·목적·보유기간·처리위탁(Supabase/Vercel/Replicate/Google)·국외이전(Replicate 미국·얼굴이미지)·이용자권리·보호책임자(placeholder)·만14세 미만 미수집. 상단 "초안" 배너 + noindex. 검증 완료. `feat: /privacy /terms…` (6822395)
 - [x] **관리자 매칭 미리보기 시뮬레이터** — `/admin/matching-preview`: curl/thickness/density 조합 → /items에서 보게 될 목록·순서 미리보기. **데이터는 /items와 동일 `/api/items`, 매칭은 `lib/itemsMatch.productMatchesCoreKey` 그대로 재사용(별도구현 없음)**. 타입 어휘를 `lib/hairTypeOptions.ts`로 추출해 ProductManager와 단일 출처 공유. 사이드바 링크 추가. (admin 인증 뒤라 UI 실행검증은 미수행 — tsc+build+로직 재사용으로 확인) `feat(admin): 매칭 미리보기…` (8a6d69f)
 - [x] **SEO 기본 정비** — `app/robots.ts`(admin·api 차단) + `app/sitemap.ts`(공개 엔트리) + 루트 metadata(title/desc/OG/twitter, OG이미지=`/og-default.png` 플레이스홀더) + `app/items/layout.tsx`. 기존 랜딩 metadata는 유지. robots/sitemap/title 브라우저 검증. `feat: SEO 기본 정비…` (63eb9d0)
   - ⚠️ 시도했던 `app/opengraph-image.tsx`(ImageResponse 생성형 OG)는 `@vercel/og` Invalid URL로 **빌드 실패** → 제거하고 정적 플레이스홀더 경로 참조로 전환. `public/OG_PLACEHOLDER_README.md` 참고.
+
+## 이번 세션 랜딩 P0 픽스 6종 (2026-07-20, 프론트만 · 백엔드 세션과 병행 진행 · 전부 커밋 · 개별 커밋 분리)
+
+> 근거 자료: `docs/landing_diagnosis_audit.md`(랜딩 4종 구조 조사 보고서). 백엔드(관리자 인증/`app/api`/`lib/supabase*`/`middleware.ts`/`supabase/`)는 건드리지 않음 — 다른 세션 작업 중이라 스코프 제외.
+
+- [x] **디버그 패널 프로덕션 차단** — style `DiagnosisDebugPanel` + bangs `?debug=1` 박스를 `NODE_ENV==="development"`일 때만 렌더링. `fix: 진단 로직 디버그 패널 프로덕션 노출 차단` (bfcbacf)
+- [x] **style 저장에 kind:"style" 명시** — 기존 암묵(kind 없음=style) 규칙 대신 명시적 저장. `classifyKind()`는 로직 변경 없이 그대로 하위호환. `fix: style 저장 항목에 kind:"style" 명시` (27d6780)
+- [x] **hair-quiz 저장 연동** — `lib/beautyProfile.ts`에 이미 준비돼 있던 kind:"hairquiz" 구조를 실제 연결(`appendDiaryEntry`+`refreshBeautyUserProfileFromDiary`+저장 버튼). 채점 미반영이던 Q6(가장 큰 불만) 답변을 concernTags(#볼륨처짐/#부스스/#스타일유지어려움)로 살려서 저장. `feat: hair-quiz 결과 저장 연동 + Q6 죽은 입력값 활용` (5e2b3f1)
+- [x] **damage-check 탈색 하드 필터** — `chem_bleach` 선택 시 점수 계산과 무관하게 Level 하한 강제(최소 Lv3, 물리 손상 신호(snap/stretch) 동반 시 Lv4). 기존 점수 로직 유지, 후처리 필터로 추가. `feat: damage-check 탈색 경험 Level 하드 필터 추가` (2afcafe)
+- [x] **damage-check Lv4 정직 처방** — 극손상모 결과지에 "홈케어보다 커트가 우선" 처방 + 압착식 케라틴류 주의 문구 추가(담담한 톤, 공포 조장 없음). `feat: damage-check Lv4(극손상모) 결과지 정직 처방 추가` (de21e3c)
+- [x] **교차 진단 CTA 3종** — style(시술 7회 이상만)→damage-check, damage-check→hair-quiz(+기존 /style 유지), hair-quiz→damage-check(+기존 /style 유지). 텍스트 링크만 추가, 신규 컴포넌트 없음. `feat: 랜딩 3종 교차 진단 CTA 추가` (7e1182e)
+- ⚠️ **빌드 검증 이슈**: `npm run build` 4회 시도 — 매번 컴파일(`Compiled successfully`)·타입체크는 통과했으나, `.next/server` 디렉터리 파일 write/rename 단계에서 매번 다른 파일에 ENOENT/EINVAL(파일 잠금류 오류) 발생. 프로젝트가 OneDrive 동기화 폴더 안에 있어 OneDrive 실시간 동기화가 `.next` 빌드 산출물을 잠그는 것으로 추정(코드 문제 아님 — 컴파일·타입체크 자체는 4회 모두 정상). `rm -rf .next`는 파괴적 명령이라 사용자 승인 없이 실행 안 함. **다음 세션에서 OneDrive 동기화 일시중지 후 재빌드 확인 필요.**
 
 ## 다음 작업 순서
 
@@ -94,7 +107,7 @@
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
 - CSV 파서: 닫히지 않은 따옴표 오류 미보고
 - /home dead CTA 2개 (진단 다시보기, items 이유보기), mainConcern 하드코딩 문구
-- /hair-quiz 저장 미연결 (kind는 준비됨)
+- ~~/hair-quiz 저장 미연결 (kind는 준비됨)~~ → **해소됨(2026-07-20)**, 랜딩 P0 픽스 6종 참고
 - /api/hair-transform의 pickReferenceUrl/getBaseUrl dead code + public/references 폴더 비어있음 — 의도 확인 필요
 - lib/dailyLimit.ts가 hair-transform 라우트에 미적용 — 실제 호출 제한 여부 확인 필요
 
