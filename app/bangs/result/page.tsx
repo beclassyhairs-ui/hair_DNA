@@ -253,7 +253,7 @@ export default function BangsResultPage() {
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
   const [lightbox,  setLightbox]  = useState<{ type: BangType; label: string } | null>(null);
-  const showDebug = SHOW_BANG_DEBUG || debugParam;
+  const showDebug = process.env.NODE_ENV === "development" && (SHOW_BANG_DEBUG || debugParam);
 
   useEffect(() => {
     try {

@@ -416,6 +416,7 @@ function DiagnosisDebugPanel({
   answers, styleName, report,
 }: { answers: StyleAnswers; styleName: string; report: HairTypeEntry }) {
   const [open, setOpen] = useState(false);
+  if (process.env.NODE_ENV !== "development") return null;
   return (
     <>
       <button
