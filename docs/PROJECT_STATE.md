@@ -3,9 +3,24 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-07-20
 
-## 🚀 배포 대기 상태 (2026-07-20)
+## ✅ 배포 완료 (2026-07-20)
 
-**랜딩 P0 6종 + 회귀픽스 + 파트너스 고지 제거 — 전부 검증 완료, `push 가능`.** `main`이 origin보다 9커밋 앞서 있고(bfcbacf~f0c4eb8), `npm run build` 통과 + 화면 검증 완료. **push는 사용자 승인 대기 중 — 아직 하지 않음.**
+**랜딩 P0 6종 + 회귀픽스 + 파트너스 제거 + /mbti 분리 — 전부 검증 후 push·배포 완료.** 누적 미push 18커밋을 사용자 승인 하에 일괄 push(`c767c80..3eabdb7`), Vercel 프로덕션 Ready. 라이브 검증: `/style`·`/items`·`/privacy`·`/my-diary` 전부 200, sitemap에서 `/mbti` 제외 확인, `/mbti` noindex 확인, 프로덕션 `/my-diary`에 coupang 링크·고지 0건.
+
+이후 `/mbti` 유입 경로 차단(6a63669) 추가 — 배포 진행 중.
+
+### /mbti 미끼 랜딩 분리 정책 (확정, 2026-07-20)
+
+`/mbti`는 **파트너스 링크·고지를 유지하는 실험장**이고 본진(hair-dna 본 서비스)과 완전 분리한다. **페이지 코드는 삭제하지 않고 방치** — 더 손대지 않는다.
+
+- `app/sitemap.ts`에서 제외 (3eabdb7)
+- `app/mbti/layout.tsx`에 `robots: { index: false, follow: false }` — `/mbti/result`도 상속 (3eabdb7)
+- `og:`/`twitter:` 태그는 **의도적으로 유지** — 카카오톡 공유 미리보기가 미끼 랜딩의 핵심이고, noindex는 검색 색인만 막지 SNS 공유 카드엔 영향 없음
+- `next.config.mjs`의 `/upload`·`/result`·`/ai-loading` 리다이렉트 대상을 `/mbti` → `/style`로 변경 (6a63669). **이게 유일하게 살아 있던 손님 유입 경로였다** — `/diagnosis`(sitemap 공개 엔트리) → `/diagnosis/quick` → `/upload` → 리다이렉트 → `/mbti` 착지. 이제 `/style`로 간다.
+- `AdminDashboard` 빈 상태 안내의 `/mbti` 링크 → `/style` (6a63669)
+- **현재 코드베이스에 `/mbti` href·리다이렉트 0건** (`/mbti` 자체 코드 제외). 남은 `mbti` 문자열은 전부 링크 아님: AdminDashboard의 analytics 라벨 맵(`mbti_test`, 과거 이벤트 표시용), `/hair-mbti-og.png` 이미지 파일명(`app/result/*` — 라우트 아님), 주석.
+
+> ⚠️ **`/result` 페이지는 도달 불가 코드다.** `next.config.mjs`가 `/result`를 통째로 리다이렉트하므로 `app/result/page.tsx`는 렌더되지 않는다. 과거 이 페이지의 제휴 링크를 제거했지만(f0c4eb8) 실효는 없었고 dead code 정리였다. 이 페이지를 되살리려면 리다이렉트부터 걷어내야 한다.
 
 ## 현재 상태 한 줄
 
