@@ -24,13 +24,57 @@
 
 ## 현재 상태 한 줄
 
-**퍼널 트래킹 5종 + UTM 태깅 — push·배포·migration SQL 실행까지 전부 완료(2026-07-19).** trackEvent 이원화(console fallback vs Supabase)를 단일 코어로 통합: `lib/trackEvent.ts`가 `lib/eventTracking.ts`를 re-export → 기존 문자열 이벤트 호출부까지 전부 Supabase `events` 적재. 핵심 `/style` 진단(랜딩/시작/답변/완료)과 커머스(노출/클릭/구매)를 전 구간 계측해 `조회수→유입→진단완료→상품클릭→구매전환` 퍼널 완성. first-touch UTM(source/utm_medium/utm_campaign)을 모든 이벤트에 자동 동승. 스키마 외 임의 키는 `meta`(jsonb, sanitize 가드)로 분리. `events_attribution_migration.sql` 실행 완료 → events insert 정상 적재 중.
+**체크리스트 C-1(이미지 자체 스토리지 복사) + C-3(어드민 퍼널 대시보드) 구현·검수 완료, 커밋됨 — push 대기(2026-07-20).** 아래 "이번 세션" 항목 참고. 사업주 조치 2건 대기: ① `supabase/events_funnel_index_migration.sql` 실행 ② Vercel에 `BLOB_READ_WRITE_TOKEN` 등록 확인.
+
+**(이전) 퍼널 트래킹 5종 + UTM 태깅 — push·배포·migration SQL 실행까지 전부 완료(2026-07-19).** trackEvent 이원화(console fallback vs Supabase)를 단일 코어로 통합: `lib/trackEvent.ts`가 `lib/eventTracking.ts`를 re-export → 기존 문자열 이벤트 호출부까지 전부 Supabase `events` 적재. 핵심 `/style` 진단(랜딩/시작/답변/완료)과 커머스(노출/클릭/구매)를 전 구간 계측해 `조회수→유입→진단완료→상품클릭→구매전환` 퍼널 완성. first-touch UTM(source/utm_medium/utm_campaign)을 모든 이벤트에 자동 동승. 스키마 외 임의 키는 `meta`(jsonb, sanitize 가드)로 분리. `events_attribution_migration.sql` 실행 완료 → events insert 정상 적재 중.
 
 데이터 파이프라인(이전): 소싱→draft 저장, 관리자 인증 게이트, `/admin/products` 매칭/추천 입력, 공개 `/items`+`/items/[id]`까지 코드 연결 완료. `hair-dna.vercel.app` 라이브.
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — 이벤트 트래킹 전체가 커밋·push·배포·migration 실행까지 완료됨. 완료이력 17번 참고)
+- (없음 — 이번 세션 작업 2건 모두 커밋 완료. **단 push는 안 했다**: `f4aef57`, `ee499c1` 미push)
+
+## 이번 세션 (2026-07-20) — 체크리스트 C-1 + C-3
+
+### C-1. 상품 이미지 자체 스토리지 복사 (미러링) — `f4aef57`
+
+공급사(도매꾹 등) 이미지 핫링크는 공급사가 원본을 내리는 순간 상품 카드가 깨진다. 관리자 게이트 안쪽에서 서버가 원본을 받아 Vercel Blob에 올리고 자체 URL을 반환하는 경로를 신설했다.
+
+- `lib/imageMirror.ts` (서버 전용) — SSRF 방어 + 다운로드 검증. https 스킴만 · 호스트 allowlist(10개, `IMAGE_MIRROR_EXTRA_HOSTS`로 확장·형식 검증) · 리다이렉트 미추종 · **node:https `lookup` 훅으로 연결 시점 사설/루프백 IP 차단**(사전 조회는 DNS 리바인딩 창이 생겨 폐기) · IPv6 16바이트 정규화 후 범위 판정 · 스트리밍 10MB 상한 · 무활동 15초/전체 30초 타임아웃 · Content-Type allowlist + 매직바이트 검증
+- `POST /api/admin/products/mirror-image` — 자체 URL 반환. 저장은 하지 않는다(관리자가 "저장"을 눌러야 반영)
+- `ProductManager` — 공급사 이미지면 경고 + "자체 저장소로 복사" 버튼, 목록에 "공급사 이미지 · 복사 필요" 뱃지(**기존 등록분 식별용** — 컨퓸 미스트 등은 수정 → 복사 → 저장 3단계로 옮긴다)
+- `lib/products.ts`에 `isSelfHostedImageUrl` (클라이언트/서버 공용)
+
+**Codex 검수 4회** — 1차 '수정 필요'(arrayBuffer 무제한 적재, DNS 리바인딩) → 2차 '수정 필요'(**IPv6 표기 우회**: `::ffff:a00:1`·`0:0:0:0:0:ffff:10.0.0.1` 등이 사설 IP로 연결됨, setTimeout이 무활동 상한) → 3차 '수정 필요'(`::` 문법 위반 승인, NAT64 판정이 /32) → **4차 통과**. 방어 로직 단위 검증 73건 통과.
+
+📌 **PSL(Public Suffix List) 전수 검증은 의도적으로 도입하지 않았다.** `IMAGE_MIRROR_EXTRA_HOSTS`는 외부 입력이 아니라 사업주가 Vercel에서 직접 넣는 값이고, 잘못 넣어도 내부망 접근은 연결 시점 IP 검증이 따로 막는다. 이유를 코드 주석에 남겼고 Codex도 "수용 가능한 위험 판단"으로 동의. 관리자가 여럿이 되면 재검토.
+
+### C-3. 어드민 퍼널 대시보드 확장 — `ee499c1`
+
+- `GET /api/admin/funnel?range=today|7d|30d` — 5단계 퍼널 고유 유저 수 + 단계/전체 전환율, utm_source·utm_campaign별 분해, **조회수 1만당 구매 계수**. 집계는 전부 서버에서 수행하고 숫자만 반환(원본 행·anonymous_id 미노출)
+- `lib/funnelAggregate.ts` — 집계 수식을 순수 함수로 분리(합성 데이터로 검증 가능하게). 단위 검증 21건 통과
+- `FunnelPanel` — 기간 필터 + 핵심 계수 카드 3종 + 퍼널 표 + UTM 분해 표 2종. `AdminDashboard` 상단에 마운트(기존 섹션 유지)
+
+**Codex 검수 4회** — 지적 6건 전부 반영 후 통과:
+1. offset 페이지네이션 중복·누락 → **`(event_time, id)` keyset 커서로 교체**. `event_time`이 **클라이언트 생성값**이라 조회 중 도착한 과거 시각 행이 앞 페이지에 끼어들면 뒤 페이지가 밀린다
+2. `truncated` 경계값 오탐 → 커서 다음 1건 probe
+3. `'오늘'`이 서버 시간대 의존(Vercel=UTC) → `kstTodayStart()` KST 자정 기준
+4. probe 오류 무시 → 500 반환
+5. `event_time` 인덱스 부재 → 마이그레이션 SQL 작성
+6. `asOf`가 스냅샷 미보장 → **상한을 DB 발급 `id`로 고정** + `Number.isSafeInteger` 검증
+
+### ⚠️ 이번 세션 검증 공백 (배포 후 확인 필요)
+
+- **관리자 화면 실행 검증 미수행** — 로컬 `.env.local`에 `ADMIN_SECRET`이 없어 게이트가 fail-closed 500이라 `/admin` 진입 불가. 빌드·타입체크·로직 단위 검증까지만 했다. **/admin 화면 실렌더는 배포 후 사업주 확인 필요.**
+- **이미지 복사 실동작 미확인** — 실제 공급사 이미지로 복사되는지는 배포 후 1회 눌러봐야 확정. `BLOB_READ_WRITE_TOKEN`이 Vercel Production에 있어야 하고, 도매꾹 실제 이미지 도메인이 allowlist와 맞는지 확인 필요(다르면 `IMAGE_MIRROR_EXTRA_HOSTS`에 추가)
+- **스트리밍 10MB 상한** — 로컬 https 인증서 제약으로 실행 검증 못 함(코드 리뷰로만 확인)
+- **keyset 쿼리 실제 응답 미확인** — PostgREST 문법은 Codex가 공식 문서로 확인해줬고 URL 직렬화도 확인했으나, 실제 응답은 못 봤다. **이벤트 1,000건 이하면 커서 경로를 안 타므로 데이터가 쌓인 뒤 대시보드를 한 번 확인할 것.**
+
+### 🔴 사업주 조치 대기
+
+1. **`supabase/events_funnel_index_migration.sql` 실행** (SQL Editor) — `events`에 `event_time` 인덱스가 없어 기간 필터·정렬이 순차 스캔. 지금은 데이터가 적어 체감 안 되지만 쌓이면 대시보드가 느려진다
+2. **Vercel `BLOB_READ_WRITE_TOKEN` 등록 확인** — 없으면 이미지 복사 API가 503을 반환한다
+3. **push 승인** — `f4aef57`, `ee499c1` 2커밋 대기 중
 
 ## 이번 세션 가벼운 픽스 (2026-07-19)
 
