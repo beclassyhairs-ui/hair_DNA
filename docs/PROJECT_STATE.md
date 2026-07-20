@@ -1,7 +1,11 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-07-19
+> 최종 갱신: 2026-07-20
+
+## 🚀 배포 대기 상태 (2026-07-20)
+
+**랜딩 P0 6종 + 회귀픽스 + 파트너스 고지 제거 — 전부 검증 완료, `push 가능`.** `main`이 origin보다 9커밋 앞서 있고(bfcbacf~f0c4eb8), `npm run build` 통과 + 화면 검증 완료. **push는 사용자 승인 대기 중 — 아직 하지 않음.**
 
 ## 현재 상태 한 줄
 
@@ -42,7 +46,40 @@
 - [x] **damage-check 탈색 하드 필터** — `chem_bleach` 선택 시 점수 계산과 무관하게 Level 하한 강제(최소 Lv3, 물리 손상 신호(snap/stretch) 동반 시 Lv4). 기존 점수 로직 유지, 후처리 필터로 추가. `feat: damage-check 탈색 경험 Level 하드 필터 추가` (2afcafe)
 - [x] **damage-check Lv4 정직 처방** — 극손상모 결과지에 "홈케어보다 커트가 우선" 처방 + 압착식 케라틴류 주의 문구 추가(담담한 톤, 공포 조장 없음). `feat: damage-check Lv4(극손상모) 결과지 정직 처방 추가` (de21e3c)
 - [x] **교차 진단 CTA 3종** — style(시술 7회 이상만)→damage-check, damage-check→hair-quiz(+기존 /style 유지), hair-quiz→damage-check(+기존 /style 유지). 텍스트 링크만 추가, 신규 컴포넌트 없음. `feat: 랜딩 3종 교차 진단 CTA 추가` (7e1182e)
-- ⚠️ **빌드 검증 이슈**: `npm run build` 4회 시도 — 매번 컴파일(`Compiled successfully`)·타입체크는 통과했으나, `.next/server` 디렉터리 파일 write/rename 단계에서 매번 다른 파일에 ENOENT/EINVAL(파일 잠금류 오류) 발생. 프로젝트가 OneDrive 동기화 폴더 안에 있어 OneDrive 실시간 동기화가 `.next` 빌드 산출물을 잠그는 것으로 추정(코드 문제 아님 — 컴파일·타입체크 자체는 4회 모두 정상). `rm -rf .next`는 파괴적 명령이라 사용자 승인 없이 실행 안 함. **다음 세션에서 OneDrive 동기화 일시중지 후 재빌드 확인 필요.**
+- [x] ~~⚠️ 빌드 검증 이슈(ENOENT/EINVAL)~~ → **해소됨(2026-07-20)**: `npm run build` 재실행 시 재현되지 않고 정상 통과. OneDrive 실시간 동기화의 일시적 파일 잠금이 맞았고 코드 문제 아니었음. 별도 조치 불필요.
+
+## 이번 세션 검증 + 회귀픽스 (2026-07-20)
+
+랜딩 P0 6종을 빌드·화면 검증까지 완주. 검증 방법과 결과:
+
+- [x] **빌드** — `npm run build` 통과(수정 전/후 각각). 타입체크(`npx tsc --noEmit`)도 클린.
+- [x] **디버그 패널 차단 검증** — 프로덕션 번들 문자열 grep으로 확정. style의 `"진단 로직"`, bangs의 `"왜 이 앞머리가 추천됐나요"`가 `.next/static/`에서 제거됨(같은 청크의 일반 문구는 잔존 → grep 자체는 유효). dev 번들에는 정상 노출.
+- [x] **탈색 하드 필터 실측 3케이스** — ①최건강 응답+탈색 → **Lv3**(필터 없으면 Lv1) ②snap+탈색 → **Lv4**+처방 블록 ③최건강, 탈색 없음 → **Lv1**, 처방 없음(대조군). 의도대로 동작.
+- [x] **Lv4 정직 처방** — 노출/미노출 조건 정확. 톤 담담함 확인.
+- [x] **교차 CTA** — style 결과지에서 `count_7plus`일 때만 "정밀 손상 진단 받아보기" 노출, `count_1_2`면 사라짐까지 확인. damage-check 결과지의 hair-quiz·/style CTA 2종 라이브 확인.
+- [x] **🐛 회귀 발견·수정** — hair-quiz 저장 연동(5e2b3f1)이 `/my-diary`를 깨뜨림. `/my-diary`는 damage/bangs만 분기하고 나머지를 전부 style 카드로 흘려보내는데, 이 커밋 전엔 hairquiz 엔트리가 없어 드러나지 않던 경로. 실제 저장 시 **"STYLE 1" 라벨 + 제목 빈칸 + 엉뚱한 제품 추천**으로 렌더됐음. 기존 damage 카드 패턴대로 `HairQuizDiaryEntry` 타입 + `isHairQuizEntry` 가드 + `HairQuizDiaryCard` 추가 → 3종(style/hairquiz/damage) 동시 저장 실측으로 분기 정상 확인. `fix: /my-diary hairquiz 엔트리 전용 카드 분기 추가` (2340ba9)
+- (문서) `docs/landing_diagnosis_audit.md` 커밋 (507b6a6)
+
+### ⚠️ 검증 환경 한계 (앱 버그 아님)
+
+Browser pane 탭이 `visibilityState: hidden`(requestAnimationFrame 0프레임)이라 **framer-motion 애니메이션이 전부 정지**한다. `AnimatePresence mode="wait"` 구간이 멈춰서 설문 클릭 진행·모달 오픈이 불가. 이번엔 sessionStorage/localStorage를 직접 시딩해 결과지를 렌더하는 방식으로 우회했다. 다음에도 같은 증상이 보이면 앱 버그로 오진하지 말 것.
+
+이 한계 때문에 **코드 확인까지만 하고 실렌더 미확인**인 항목(실기기 스모크 1회로 덮을 범위):
+- hair-quiz 결과지의 교차 CTA 2종 (코드상 `href="/damage-check"`, `router.push("/style")` 존재)
+- style 저장 버튼 → localStorage 기록 (핸들러가 카카오 모달 내부에 있음)
+- `/result` 페이지 렌더 (진입 게이트에 막힘 — `/upload` ← `/diagnosis/quick` 경유 필요)
+
+## 이번 세션 파트너스 고지 제거 (2026-07-20)
+
+확정 정책(**본진에 파트너스 링크·고지 금지, 파트너스는 미끼 랜딩 전용**)에 따라 본진 화면에서 외부 제휴 흔적 제거. 제품 노출은 자체 커머스(`/items`)로만 유도. `fix: 본진에서 쿠팡 파트너스 링크·고지 제거` (f0c4eb8)
+
+- `/my-diary`: 고지 문구 삭제 + 제품 카드 실링크 4종 → 카테고리 힌트 + 발견템 CTA로 교체(damage 카드 외부 링크도 동일 처리). 실측: coupang 링크 0개, `/items` 링크 2개, 고지 문구 없음.
+- `/result`: 제품 보기 버튼의 플레이스홀더 제휴 링크(`XXXXXXX`) → `/items`
+- `app/result/masterData.ts`, `app/style/recommend.ts`: 미사용 `coupangUrl` 필드 제거(후자는 완전 dead code였음)
+- `app/damage-check/damageRecommend.ts`, `lib/analytics.ts`: 정책과 모순되던 주석 정리
+- **최종 검증**: 프로덕션 번들 전수 grep 결과 `link.coupang.com`·고지 문구가 **`/mbti/result` 청크에만** 잔존 → 의도대로.
+
+> 📌 **`/mbti`는 이번 범위에서 의도적으로 제외** — 실제 파트너스 링크 16개 + 고지 문구가 붙은 실수익 페이지인데 sitemap에 `/style`·`/bangs`와 나란히 **본진 도메인 공개 엔트리**로 등록돼 있어 정책상 충돌한다. 수익 직결이라 사용자 결정 대기. 아래 백로그 참고.
 
 ## 다음 작업 순서
 
@@ -91,6 +128,8 @@
 
 ## 백로그 (차단 아님, 기록)
 
+- **`/mbti` 파트너스 정책 충돌 (결정 필요)** — `/mbti/result`에 실제 쿠팡 파트너스 링크 16개 + 법적 고지가 있는데, `/mbti`가 `app/sitemap.ts`에 본진 도메인 공개 엔트리(priority 0.8)로 등록돼 있어 "본진 파트너스 금지" 정책과 충돌. 선택지: ①본진에서도 제거하고 발견템 유도로 교체(결과지 하단이 비어 대체 CTA 필요) ②sitemap에서 빼고 미끼 랜딩으로 명확히 분리 ③별도 도메인 분리. 수익 직결이라 사업 판단 필요.
+
 - **랜딩 4종(style/bangs/damage-check/hair-quiz) 구조 조사 보고서 작성 완료(2026-07-19)** — `docs/landing_diagnosis_audit.md`. 진단 알고리즘 재설계(전문가 규칙 기반 2층 구조) 착수 전 기초 자료. 코드 수정 없음(읽기 전용 조사). 핵심 관찰: damage-check의 Level/Type 축 분리 설계가 4개 중 가장 확장 친화적이라 2층 구조 참고 모델로 적합. hair-quiz는 저장 미연동(`lib/beautyProfile.ts`는 이미 kind:"hairquiz" 준비됨, 연결 작업만 남음).
 
 
@@ -107,7 +146,7 @@
 - 해외 플랫폼 변형(AliExpress US 등) sales_type=null 처리 개선
 - CSV 파서: 닫히지 않은 따옴표 오류 미보고
 - /home dead CTA 2개 (진단 다시보기, items 이유보기), mainConcern 하드코딩 문구
-- ~~/hair-quiz 저장 미연결 (kind는 준비됨)~~ → **해소됨(2026-07-20)**, 랜딩 P0 픽스 6종 참고
+- ~~/hair-quiz 저장 미연결 (kind는 준비됨)~~ → **해소됨(2026-07-20)**, 랜딩 P0 픽스 6종 참고 (+ 이로 인한 /my-diary 회귀도 같은 날 수정)
 - /api/hair-transform의 pickReferenceUrl/getBaseUrl dead code + public/references 폴더 비어있음 — 의도 확인 필요
 - lib/dailyLimit.ts가 hair-transform 라우트에 미적용 — 실제 호출 제한 여부 확인 필요
 
