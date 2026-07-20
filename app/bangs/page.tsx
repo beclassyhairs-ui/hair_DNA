@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 
-import { EVENT_NAMES, trackEvent, getUtmSource } from "../../lib/eventTracking";
+import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
@@ -14,7 +14,6 @@ export default function BangsLandingPage() {
   useEffect(() => {
     trackEvent(EVENT_NAMES.LANDING_VIEW, {
       landing_id: LANDING_ID,
-      source: getUtmSource(),
       diagnosis_type: LANDING_ID,
     });
   }, []);

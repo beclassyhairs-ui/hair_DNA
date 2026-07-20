@@ -40,6 +40,8 @@ export default function DamageCheckSurveyPage() {
 
   function finishAndGoToResult(finalAnswers: DamageSurveyAnswers) {
     try { sessionStorage.setItem(DAMAGE_SURVEY_KEY, JSON.stringify(finalAnswers)); } catch { /**/ }
+    // 진단 완료 — 마지막 문항 제출 시점(단일/복수 선택 두 경로 공통). 결과지 열람은 report_view.
+    trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
     router.push("/damage-check/result");
   }
 

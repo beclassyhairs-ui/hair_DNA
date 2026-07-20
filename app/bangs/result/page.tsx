@@ -277,7 +277,7 @@ export default function BangsResultPage() {
 
   useEffect(() => {
     if (!ready) return;
-    trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+    trackEvent(EVENT_NAMES.REPORT_VIEW, {
       landing_id: LANDING_ID,
       diagnosis_type: LANDING_ID,
       result_type: result.primaryBang,

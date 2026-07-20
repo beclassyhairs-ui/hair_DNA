@@ -24,7 +24,8 @@ export const EVENT_NAMES = {
   LANDING_VIEW:        "landing_view",       // 유입/조회
   DIAGNOSIS_START:     "diagnosis_start",    // 진단 시작
   ANSWER_SELECTED:     "answer_selected",    // 문항 답변(드롭오프 분석용)
-  DIAGNOSIS_COMPLETE:  "diagnosis_complete", // 진단 완료
+  DIAGNOSIS_COMPLETE:  "diagnosis_complete", // 진단 완료(마지막 설문 제출 시점)
+  REPORT_VIEW:         "report_view",        // 리포트(결과지) 열람 — 완료 후 실제로 결과를 본 시점
   PRODUCT_VIEWED:      "product_viewed",     // 상품 노출(임프레션)
   PRODUCT_CLICKED:     "product_clicked",    // 상품 클릭
   PURCHASE_CLICK:      "purchase_click",     // 구매 전환(외부 구매 링크 클릭)

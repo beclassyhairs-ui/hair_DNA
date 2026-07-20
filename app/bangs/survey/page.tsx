@@ -58,6 +58,8 @@ export default function BangsSurveyPage() {
       setPending(false);
       if (isLast) {
         try { sessionStorage.setItem(BANGS_SURVEY_KEY, JSON.stringify(newAnswers)); } catch { /**/ }
+        // 진단 완료 — 마지막 문항 제출 시점. 결과지 열람은 report_view로 별도 계측.
+        trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
         router.push("/bangs/result");
       } else {
         setDir(1);

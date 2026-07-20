@@ -23,6 +23,7 @@ const EVENT_LABELS: Record<string, string> = {
   [EVENT_NAMES.DIAGNOSIS_START]:    "진단 시작",
   [EVENT_NAMES.ANSWER_SELECTED]:    "문항 답변",
   [EVENT_NAMES.DIAGNOSIS_COMPLETE]: "진단 완료",
+  [EVENT_NAMES.REPORT_VIEW]:        "리포트 열람",
   [EVENT_NAMES.PRODUCT_VIEWED]:     "제품 노출",
   [EVENT_NAMES.PRODUCT_CLICKED]:    "제품 클릭",
   [EVENT_NAMES.PURCHASE_CLICK]:     "구매 클릭",

@@ -532,12 +532,13 @@ export default function StyleResultPage() {
     setReady(true);
   }, []);
 
-  // 진단 완료 — 결과지 진입(답변 로드 완료) 시 1회 적재. 퍼널의 "진단완료" 단계.
+  // 리포트 열람 — 결과지 진입(답변 로드 완료) 시 1회 적재. 퍼널의 "리포트열람" 단계.
+  // 진단 완료(diagnosis_complete)는 설문 마지막 제출 시점(/style/survey)에서 발화한다.
   useEffect(() => {
     if (!ready || completeTracked) return;
     if (!answers || Object.keys(answers).length === 0) return;
     const report = getHairTypeReport(answers);
-    trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+    trackEvent(EVENT_NAMES.REPORT_VIEW, {
       landing_id: "style",
       diagnosis_type: "style",
       result_type: report.hairTypeKey,

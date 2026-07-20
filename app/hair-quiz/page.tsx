@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { trackEvent, EVENT_NAMES } from "../../lib/eventTracking";
 import { motion, AnimatePresence } from "framer-motion";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
@@ -496,6 +497,8 @@ function ResultView({
 
 type Phase = "intro" | "survey" | "analyzing" | "result";
 
+const LANDING_ID = "hair-quiz";
+
 export default function HairQuizPage() {
   const router = useRouter();
   const [phase,     setPhase]     = useState<Phase>("intro");
@@ -504,17 +507,75 @@ export default function HairQuizPage() {
   const [resultKey, setResultKey] = useState("A");
   const [saved,     setSaved]     = useState(false);
 
+  // 연타 잠금 — 다른 설문(style/bangs/damage-check)의 `pending` 가드에 대응한다.
+  // state가 아니라 ref인 이유: 같은 렌더 사이클 안에서 들어온 두 번째 클릭을 동기적으로 막아야
+  // 문항 건너뛰기와 이벤트 중복 발화(answer_selected/diagnosis_complete)를 함께 차단할 수 있다.
+  const lockRef      = useRef(false);
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 해제는 문항 번호가 바뀐 직후가 아니라 "퇴장 애니메이션이 끝난 뒤"여야 한다.
+  // AnimatePresence mode="wait"는 퇴장(0.35s) 동안 이전 문항을 화면에 그대로 두는데,
+  // 그 사이 이전 선택지를 다시 누르면 옛 closure로 answer_selected가 중복 발화하고
+  // setCurrentQ(q => q + 1)가 한 번 더 돌아 문항을 건너뛴다.
+  // 이 화면의 최장 퇴장 애니메이션에 맞춘다: intro 0.45s(268행) > 문항 0.35s(327행).
+  // 짧게 잡으면 intro 퇴장 잔여 구간에서 시작 버튼이 다시 눌려 diagnosis_start가 중복 발화한다.
+  const TRANSITION_LOCK_MS = 520;
+  function lockDuringTransition() {
+    lockRef.current = true;
+    if (lockTimerRef.current) clearTimeout(lockTimerRef.current);
+    lockTimerRef.current = setTimeout(() => { lockRef.current = false; }, TRANSITION_LOCK_MS);
+  }
+
+  useEffect(() => () => { if (lockTimerRef.current) clearTimeout(lockTimerRef.current); }, []);
+
+  // 유입 — 랜딩 진입 시 1회. first-touch UTM은 trackEvent가 자동으로 실어보낸다.
+  useEffect(() => {
+    trackEvent(EVENT_NAMES.LANDING_VIEW, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
+  }, []);
+
+  // 리포트 열람 — 이 진단은 단일 페이지라 결과 phase 진입이 곧 결과지 열람이다.
+  useEffect(() => {
+    if (phase !== "result") return;
+    trackEvent(EVENT_NAMES.REPORT_VIEW, {
+      landing_id: LANDING_ID,
+      diagnosis_type: LANDING_ID,
+      result_type: resultKey,
+      concern_tags: buildConcernTags(answers),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   function handleStart() {
+    if (lockRef.current) return;
+    lockDuringTransition();
+    trackEvent(EVENT_NAMES.DIAGNOSIS_START, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
     setPhase("survey");
   }
 
   function handleAnswer(key: string) {
+    if (lockRef.current) return;
+    lockDuringTransition();
+
     const newAnswers = [...answers, key];
     setAnswers(newAnswers);
 
+    trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
+      landing_id: LANDING_ID,
+      diagnosis_type: LANDING_ID,
+      answers: { questionId: QUESTIONS[currentQ].id, choice: key, step: currentQ + 1 },
+    });
+
     if (currentQ === QUESTIONS.length - 1) {
       const score = calcScore(newAnswers);
-      setResultKey(getResultKey(score));
+      const nextKey = getResultKey(score);
+      setResultKey(nextKey);
+      // 진단 완료 — 마지막 문항 제출 시점. 결과지 열람은 위 report_view로 별도 계측.
+      trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, {
+        landing_id: LANDING_ID,
+        diagnosis_type: LANDING_ID,
+        result_type: nextKey,
+        concern_tags: buildConcernTags(newAnswers),
+      });
       setPhase("analyzing");
       setTimeout(() => setPhase("result"), 1800);
     } else {
@@ -523,6 +584,8 @@ export default function HairQuizPage() {
   }
 
   function handleBack() {
+    if (lockRef.current) return;
+    lockDuringTransition();
     if (currentQ === 0) {
       setPhase("intro");
       return;
@@ -532,6 +595,8 @@ export default function HairQuizPage() {
   }
 
   function handleRetry() {
+    if (lockRef.current) return;
+    lockDuringTransition();
     setAnswers([]);
     setCurrentQ(0);
     setSaved(false);

@@ -68,6 +68,9 @@ export default function StyleSurveyPage() {
   function advance(next: StyleAnswers) {
     try { sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(next)); } catch { /**/ }
     if (isLast) {
+      // 진단 완료 — 마지막 문항 제출 시점. 결과지 열람(report_view)은 upload→loading(AI 합성)을
+      // 거친 뒤라 별도 이벤트다. 두 이벤트 사이 격차가 곧 합성 대기 이탈률이다.
+      trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, { landing_id: "style", diagnosis_type: "style" });
       router.push("/style/upload");
     } else {
       setDir(1);
