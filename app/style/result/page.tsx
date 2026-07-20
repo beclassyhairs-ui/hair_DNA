@@ -630,11 +630,8 @@ export default function StyleResultPage() {
               <p className="text-center text-[13px] text-[#6B6355] -mt-1">
                 다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
               </p>
+              {/* 공유(③)가 재진단(④)보다 우선 — 좌측 우선 배치 */}
               <div className="flex gap-2.5">
-                <Link href="/style/survey"
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] text-[15px] font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22]">
-                  다시 진단하기
-                </Link>
                 <button
                   onClick={() => {
                     const url = typeof window !== "undefined" ? `${window.location.origin}/style` : "/style";
@@ -644,6 +641,10 @@ export default function StyleResultPage() {
                   className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-[15px] font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
                   공유하기
                 </button>
+                <Link href="/style/survey"
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] text-[15px] font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22]">
+                  다시 진단하기
+                </Link>
               </div>
             </GlassCard>
           </div>

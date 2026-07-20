@@ -587,18 +587,22 @@ export default function BangsResultPage() {
               </GlassCard>
             </motion.div>
 
+            {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
+            <motion.div variants={FADE_UP} className="flex justify-center pb-2">
+              <Link href="/bangs"
+                className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
+                ↺ 처음부터 다시 하기
+              </Link>
+            </motion.div>
+
           </motion.div>
         </div>
 
-        {/* ── 하단 고정 CTA ── */}
+        {/* ── 하단 고정 CTA — 최우선 행동은 '저장·프로필 누적' ── */}
         <BottomStickyCTA>
           <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
-            내 맞춤 헤어홈으로 이동하기
+            {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 내 헤어홈으로"}
           </BlackCTAButton>
-          <Link href="/bangs"
-            className="flex h-10 w-full items-center justify-center text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
-            ← 처음부터 다시 하기
-          </Link>
         </BottomStickyCTA>
 
       </main>

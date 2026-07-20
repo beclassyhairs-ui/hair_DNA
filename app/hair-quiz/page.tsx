@@ -464,30 +464,49 @@ function ResultView({
           </div>
         </GlassCard>
 
-        {/* 다시 진단받기 + 손상도 체크 교차 진단 */}
-        <div className="flex items-center justify-center gap-4">
+        {/* 교차 진단 — 발견템·다른 진단 연결 */}
+        <GlassCard className="space-y-3 px-5 py-4">
+          <Link
+            href="/items"
+            className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+          >
+            내 모발에 맞는 홈케어 제품 보기
+            <span className="flex-none text-[#A8884A]">→</span>
+          </Link>
+          <div className="h-px bg-[#EDE7DA]" />
+          <button
+            onClick={onCta}
+            className="flex w-full items-center justify-between gap-3 text-left text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+          >
+            AI 헤어 분석으로 내 스타일 찾기
+            <span className="flex-none text-[#A8884A]">→</span>
+          </button>
+          <div className="h-px bg-[#EDE7DA]" />
+          <Link
+            href="/damage-check"
+            className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+          >
+            내 손상도도 확인해보기
+            <span className="flex-none text-[#A8884A]">→</span>
+          </Link>
+        </GlassCard>
+
+        {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
+        <div className="flex justify-center pb-2">
           <button
             onClick={onRetry}
-            className="flex items-center gap-1 text-[13px] text-[#6B6355] transition-colors hover:text-[#2F2A22]"
+            className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]"
           >
             ↺ 다시 진단받기
           </button>
-          <span className="text-[13px] text-[#D8CDB8]">·</span>
-          <Link
-            href="/damage-check"
-            className="flex items-center gap-1 text-[13px] text-[#6B6355] transition-colors hover:text-[#2F2A22]"
-          >
-            내 손상도도 확인해보기 →
-          </Link>
         </div>
       </div>
 
-      {/* CTA 고정 하단 */}
+      {/* CTA 고정 하단 — 최우선 행동은 '저장·프로필 누적' */}
       <BottomStickyCTA>
-        <BlackCTAButton onClick={onCta}>AI 헤어 분석으로 내 스타일 찾기!</BlackCTAButton>
-        <p className="mt-1 text-center text-[13px] text-[#6B6355]">
-          AI가 두상·모질을 분석해 최적 스타일을 찾아드립니다
-        </p>
+        <BlackCTAButton onClick={onSave} disabled={saved}>
+          {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
+        </BlackCTAButton>
       </BottomStickyCTA>
     </motion.div>
   );

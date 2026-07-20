@@ -233,6 +233,14 @@ export default function DamageCheckResultPage() {
                 평소 손질 습관 진단
                 <span className="flex-none text-[#A8884A]">→</span>
               </Link>
+              <div className="h-px bg-[#EDE7DA]" />
+              <Link
+                href="/style"
+                className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+              >
+                AI 헤어 분석으로 내 스타일도 찾기
+                <span className="flex-none text-[#A8884A]">→</span>
+              </Link>
             </GlassCard>
 
             {/* 저장 + 홈 이동 */}
@@ -259,18 +267,22 @@ export default function DamageCheckResultPage() {
               {copied && <p className="mt-2 text-center text-[13px] text-[#6B6355]">✓ 링크가 복사됐어요</p>}
             </GlassCard>
 
+            {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
+            <div className="flex justify-center pb-2">
+              <Link href="/damage-check"
+                className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
+                ↺ 처음부터 다시 하기
+              </Link>
+            </div>
+
           </motion.div>
         </div>
 
-        {/* ── 하단 고정 CTA ── */}
+        {/* ── 하단 고정 CTA — 최우선 행동은 '저장·프로필 누적' ── */}
         <BottomStickyCTA>
-          <BlackCTAButton href="/style">
-            AI 헤어 분석으로 내 스타일도 찾기
+          <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
+            {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 내 홈에서 관리 시작"}
           </BlackCTAButton>
-          <Link href="/damage-check"
-            className="flex h-10 w-full items-center justify-center text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
-            ← 처음부터 다시 하기
-          </Link>
         </BottomStickyCTA>
 
       </main>
