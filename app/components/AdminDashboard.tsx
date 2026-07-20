@@ -287,7 +287,8 @@ export default function AdminDashboard() {
           <div className="mt-6 rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
             <p className="text-sm text-cream/50">아직 Supabase에 쌓인 이벤트가 없습니다.</p>
             <p className="mt-1 text-xs text-cream/30">
-              <a href="/mbti" className="text-gold-light hover:underline">헤어 MBTI 테스트</a> 또는{" "}
+              {/* /mbti는 본진에서 완전 분리된 미끼 랜딩이라 안내에서 제외 — 본진 진단으로만 유도 */}
+              <a href="/style" className="text-gold-light hover:underline">AI 스타일 진단</a> 또는{" "}
               <a href="/bangs" className="text-gold-light hover:underline">인생 앞머리 테스트</a>를 진행해보면 여기 데이터가 쌓입니다.
             </p>
           </div>
