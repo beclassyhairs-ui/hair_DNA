@@ -68,11 +68,11 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={guideImg.src} alt="촬영 가이드" className="h-auto w-full" />
             </GlassCard>
-            <p className="mt-3 px-2 text-center text-sm text-[#6B6355]">
+            <p className="mt-3 px-2 text-center text-[15px] text-[#6B6355]">
               정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
             </p>
             <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-50/80 px-4 py-3">
-              <p className="text-center text-xs leading-relaxed text-amber-700/90">
+              <p className="text-center text-[13px] leading-relaxed text-amber-700/90">
                 <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
                 손가락이 머리카락과 겹치면 AI가 손 모양을 변형할 수 있어요.<br />
                 손은 아래로 자연스럽게 내린 자세로 촬영해 주세요.
@@ -104,11 +104,11 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
               )}
             </span>
             <span>
-              <span className="block text-sm font-medium leading-snug text-[#4A453B]">
+              <span className="block text-[15px] font-medium leading-snug text-[#4A453B]">
                 AI 헤어 분석을 위한 사진 촬영 및 임시 처리에 동의합니다.{" "}
                 <span className="text-[#A8884A]">(필수)</span>
               </span>
-              <span className="mt-1 block text-xs text-[#9C9482]">
+              <span className="mt-1 block text-[13px] text-[#6B6355]">
                 *업로드된 사진은 AI 분석 즉시 안전하게 파기됩니다.
               </span>
             </span>
@@ -403,7 +403,7 @@ export default function StyleUploadPage() {
         {/* ── 헤더 (flex-none) ── */}
         <header className="flex flex-none items-center justify-between border-b border-white/50 bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-xl">
           <button onClick={() => router.push("/style/survey")}
-            className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+            className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
             ← 질문으로
           </button>
           <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">사진 등록</span>
@@ -463,7 +463,7 @@ export default function StyleUploadPage() {
             <>
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
                 {/* 카메라 권한 안내 문구 */}
-                <p className="mb-1 max-w-xs text-center text-xs leading-relaxed text-white/50">
+                <p className="mb-1 max-w-xs text-center text-[13px] leading-relaxed text-white/50">
                   정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
@@ -499,7 +499,7 @@ export default function StyleUploadPage() {
           {/* 카메라 오류 토스트 */}
           {camError && (
             <div className="absolute inset-x-4 top-4 z-30 flex justify-center">
-              <p className="rounded-xl bg-black/75 px-4 py-2.5 text-center text-sm text-red-300/90 backdrop-blur-sm">
+              <p className="rounded-xl bg-black/75 px-4 py-2.5 text-center text-[15px] text-red-300/90 backdrop-blur-sm">
                 {camError}
               </p>
             </div>
@@ -509,14 +509,14 @@ export default function StyleUploadPage() {
           {showImageCrop && (
             <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center px-6">
               <div className="flex items-center gap-3 rounded-2xl bg-black/65 px-5 py-2.5 backdrop-blur-sm">
-                <span className="text-sm text-white/45">－</span>
+                <span className="text-[15px] text-white/45">－</span>
                 <input
                   type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
                   value={transform.scale} onChange={onSlide}
                   className="w-36 cursor-pointer accent-gold sm:w-48"
                   aria-label="확대/축소"
                 />
-                <span className="text-sm text-white/45">＋</span>
+                <span className="text-[15px] text-white/45">＋</span>
               </div>
             </div>
           )}
@@ -524,7 +524,7 @@ export default function StyleUploadPage() {
           {/* 저장된 사진 안내 텍스트 */}
           {showSavedPreview && (
             <div className="absolute inset-x-4 top-4 z-10 flex justify-center">
-              <p className="rounded-xl bg-black/65 px-4 py-2 text-center text-sm text-white/70 backdrop-blur-sm">
+              <p className="rounded-xl bg-black/65 px-4 py-2 text-center text-[15px] text-white/70 backdrop-blur-sm">
                 이전에 올린 사진이에요. 계속 진행하거나 다시 등록할 수 있어요.
               </p>
             </div>

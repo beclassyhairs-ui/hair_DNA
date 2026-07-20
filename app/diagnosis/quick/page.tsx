@@ -125,10 +125,10 @@ export default function DiagnosisQuickPage() {
       <header className="sticky top-0 z-20 border-b border-accent/10 bg-cream/92 backdrop-blur-md">
         <div className="mx-auto w-full max-w-lg px-5 pb-3 pt-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-[0.2em] text-gold-dark">
+            <span className="text-[13px] font-bold uppercase tracking-[0.2em] text-gold-dark">
               {getStepLabel(qIdx)}
             </span>
-            <span className="tabular-nums text-sm font-semibold text-brown-light">
+            <span className="tabular-nums text-[15px] font-semibold text-brown-light">
               {qIdx + 1}
               <span className="mx-1 text-brown/25">/</span>
               {TOTAL}
@@ -169,7 +169,7 @@ export default function DiagnosisQuickPage() {
           >
             {/* 질문 헤더 */}
             <div className="mb-8">
-              <p className="mb-2 text-sm font-bold uppercase tracking-[0.22em] text-gold-dark">
+              <p className="mb-2 text-[15px] font-bold uppercase tracking-[0.22em] text-gold-dark">
                 {q.no}
               </p>
               <h2 className="font-serif text-[1.8rem] font-bold leading-snug text-brown sm:text-3xl">
@@ -381,7 +381,7 @@ function IllustratedGrid({
                 {opt.label}
               </p>
               {opt.desc && (
-                <p className={`mt-0.5 text-xs ${isSel ? "text-brown-light" : "text-brown-light/55"}`}>
+                <p className={`mt-0.5 text-[13px] ${isSel ? "text-brown-light" : "text-brown-light/55"}`}>
                   {opt.desc}
                 </p>
               )}

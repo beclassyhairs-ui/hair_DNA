@@ -33,7 +33,7 @@ export default function Toaster() {
           key={t.id}
           role="status"
           aria-live="polite"
-          className="pointer-events-auto max-w-[90%] rounded-full bg-[#2F2A22]/95 px-5 py-3 text-center text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] backdrop-blur"
+          className="pointer-events-auto max-w-[90%] rounded-full bg-[#2F2A22]/95 px-5 py-3 text-center text-[15px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)] backdrop-blur"
         >
           {t.message}
         </div>

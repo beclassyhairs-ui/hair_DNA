@@ -69,7 +69,7 @@ function HairProfileWidget() {
         {userProfile.hairTags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#8A6D2F] backdrop-blur"
+            className="rounded-full bg-white/70 px-2.5 py-1 text-[13px] font-semibold text-[#8A6D2F] backdrop-blur"
           >
             {tag.startsWith("#") ? tag : `#${tag}`}
           </span>
@@ -84,7 +84,7 @@ function HairProfileWidget() {
 
       <button
         onClick={() => trackEvent("profile_result_view", { source: "home_profile_card" })}
-        className="relative mt-5 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(47,47,47,0.6)] transition-opacity active:opacity-80"
+        className="relative mt-5 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(47,47,47,0.6)] transition-opacity active:opacity-80"
       >
         내 진단 결과 다시보기
       </button>
@@ -121,7 +121,7 @@ function PersonalizedRoutineWidget() {
         <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">
           오늘 {userProfile.name}님에게 맞는 루틴
         </h2>
-        <span className="text-xs font-semibold text-[#C8A96A]">
+        <span className="text-[13px] font-semibold text-[#C8A96A]">
           {total}개 중 {completedCount}개 완료
         </span>
       </div>
@@ -133,7 +133,7 @@ function PersonalizedRoutineWidget() {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums text-[#C8A96A]">
+        <span className="w-9 shrink-0 text-right text-[13px] font-semibold tabular-nums text-[#C8A96A]">
           {Math.round(progress)}%
         </span>
       </div>
@@ -166,8 +166,8 @@ function PersonalizedRoutineWidget() {
                   )}
                 </span>
                 <span
-                  className={`flex-1 text-sm leading-snug transition-opacity ${
-                    isChecked ? "text-gray-400 line-through opacity-60" : "text-[#2F2F2F]"
+                  className={`flex-1 text-[15px] leading-snug transition-opacity ${
+                    isChecked ? "text-gray-500 line-through opacity-75" : "text-[#2F2F2F]"
                   }`}
                 >
                   {step.label}
@@ -199,11 +199,11 @@ function QuickDiagnosisBanner() {
     >
       <div className="min-w-0">
         <p className="text-[11px] font-semibold text-[#C8A96A]">아직 안 해본 진단이 있어요</p>
-        <p className="mt-0.5 text-[13px] font-semibold leading-snug text-[#2F2F2F]">
+        <p className="mt-0.5 text-[15px] font-semibold leading-snug text-[#2F2F2F]">
           내 머리가 미용실에서만 예쁜 이유, 3문항으로 확인하기
         </p>
       </div>
-      <span className="shrink-0 rounded-lg bg-[#2F2F2F] px-3.5 py-2.5 text-xs font-semibold text-white">
+      <span className="shrink-0 rounded-lg bg-[#2F2F2F] px-3.5 py-2.5 text-[15px] font-semibold text-white">
         퀵 진단 시작
       </span>
     </Link>

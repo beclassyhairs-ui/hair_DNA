@@ -87,7 +87,7 @@ export default function AiLoadingPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8 flex items-center justify-center gap-2"
             >
-              <span className="rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-sm font-semibold text-gold-light">
+              <span className="rounded-full border border-gold/30 bg-gold/10 px-4 py-1.5 text-[15px] font-semibold text-gold-light">
                 ✦ {selectedStyle.label} 스타일 AI 합성 중
               </span>
             </motion.div>
@@ -122,7 +122,7 @@ export default function AiLoadingPage() {
                 <span className="text-4xl font-bold tabular-nums text-gold-light">
                   {Math.floor(progress)}
                 </span>
-                <span className="text-sm font-medium text-cream/50">%</span>
+                <span className="text-[15px] font-medium text-cream/50">%</span>
               </div>
             </div>
 
@@ -164,21 +164,21 @@ export default function AiLoadingPage() {
                 {/* 광고 플레이스홀더 */}
                 <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
                   <div className="flex items-center justify-between border-b border-white/8 px-4 py-2">
-                    <span className="text-xs text-cream/30">광고</span>
-                    <span className="rounded bg-white/5 px-2 py-0.5 text-xs text-cream/25">AD</span>
+                    <span className="text-[13px] text-cream/30">광고</span>
+                    <span className="rounded bg-white/5 px-2 py-0.5 text-[13px] text-cream/25">AD</span>
                   </div>
                   <div className="flex aspect-[5/2] w-full items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
                     <div className="text-center">
                       <p className="text-2xl">💄</p>
-                      <p className="mt-2 text-sm font-medium text-cream/40">광고 영역</p>
-                      <p className="text-xs text-cream/25">Google AdSense · 네이버 GFA</p>
+                      <p className="mt-2 text-[15px] font-medium text-cream/40">광고 영역</p>
+                      <p className="text-[13px] text-cream/25">Google AdSense · 네이버 GFA</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 헤어 팁 카드 */}
                 <div className="mt-5">
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-gold/60">
+                  <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-gold/60">
                     Hair Tip
                   </p>
                   <AnimatePresence mode="wait">
@@ -193,7 +193,7 @@ export default function AiLoadingPage() {
                       <p className="font-semibold text-gold-light">
                         {HAIR_TIPS[tipIndex].title}
                       </p>
-                      <p className="mt-2 text-sm leading-relaxed text-cream/65">
+                      <p className="mt-2 text-[15px] leading-relaxed text-cream/65">
                         {HAIR_TIPS[tipIndex].body}
                       </p>
                     </motion.div>
@@ -229,12 +229,12 @@ function Stepper() {
         {steps.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <span
-              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[15px] font-medium transition-colors ${
                 i <= active ? "bg-gold/15 text-gold-light" : "text-cream/40"
               }`}
             >
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-bold ${
                   i < active
                     ? "bg-gold-dark text-charcoal"
                     : i === active

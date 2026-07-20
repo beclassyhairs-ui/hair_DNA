@@ -33,7 +33,7 @@ export default function BottomNav() {
             >
               <span className="text-xl leading-none">{item.icon}</span>
               <span
-                className={`text-[11px] font-medium ${active ? "text-[#C8A96A]" : "text-gray-400"}`}
+                className={`text-[12px] font-medium ${active ? "text-[#C8A96A]" : "text-gray-500"}`}
               >
                 {item.label}
               </span>

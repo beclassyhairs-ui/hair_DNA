@@ -45,7 +45,7 @@ export default function DamageCheckLandingPage() {
             </svg>
           </GlassCard>
 
-          <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
+          <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
             미용실 가기 전 1분 팩트체크
           </span>
 
@@ -73,7 +73,7 @@ export default function DamageCheckLandingPage() {
           >
             1분 자가진단 시작하기
           </BlackCTAButton>
-          <p className="mt-3 text-center text-[11px] text-[#9C9482]">
+          <p className="mt-3 text-center text-[13px] text-[#6B6355]">
             개인정보 미저장 · 4문항 · 약 1분 소요
           </p>
         </motion.div>

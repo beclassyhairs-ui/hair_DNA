@@ -35,7 +35,7 @@ export default function SiteFooter() {
           </dl>
         )}
 
-        <p className="mt-5 text-[11px] text-[#A79E8B]">
+        <p className="mt-5 text-[12px] text-[#8A8171]">
           © {new Date().getFullYear()} 어뷰티(A-Beauty). All rights reserved.
         </p>
       </div>

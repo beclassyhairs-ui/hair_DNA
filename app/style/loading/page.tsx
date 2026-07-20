@@ -128,7 +128,7 @@ export default function StyleLoadingPage() {
         <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
           style={{ flex: "0 0 40%" }}>
 
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
             AI 스타일 합성 중
           </span>
 
@@ -152,7 +152,7 @@ export default function StyleLoadingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
-              className="max-w-[260px] text-center text-sm font-medium leading-relaxed text-[#4A453B]"
+              className="max-w-[260px] text-center text-[15px] font-medium leading-relaxed text-[#4A453B]"
             >
               {STEPS[stepIdx]}
             </motion.p>

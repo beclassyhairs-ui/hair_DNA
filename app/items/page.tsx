@@ -44,7 +44,7 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#2F2F2F]">{item.product_name}</p>
+          <p className="text-[15px] font-bold text-[#2F2F2F]">{item.product_name}</p>
           {item.category && (
             <span className="mt-1.5 inline-block rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
               {item.category}
@@ -53,9 +53,9 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-2 text-[13px] leading-relaxed text-[#6B7280]">{reason}</p>
+      <p className="mt-4 line-clamp-2 text-[15px] leading-relaxed text-[#6B7280]">{reason}</p>
 
-      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3 text-sm font-semibold text-[#8A6D2F]">
+      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3 text-[15px] font-semibold text-[#8A6D2F]">
         자세히 보기 →
       </span>
     </Link>
@@ -115,7 +115,7 @@ export default function ItemsPage() {
     <AppShell>
       <div>
         <h1 className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">{name}님을 위한 맞춤 발견템</h1>
-        <p className="mt-1 text-xs text-[#6B7280]">
+        <p className="mt-1 text-[15px] text-[#6B7280]">
           {coreKey
             ? "진단에서 확인된 모발 타입과 매칭된 제품만 모았어요."
             : "먼저 헤어 진단을 하면 모발 타입에 맞춰 더 정확히 추천해드려요."}
@@ -123,19 +123,19 @@ export default function ItemsPage() {
       </div>
 
       {loading && (
-        <div className="flex min-h-[160px] items-center justify-center text-sm text-[#9AA0A6]">
+        <div className="flex min-h-[160px] items-center justify-center text-[15px] text-[#5F6368]">
           발견템 불러오는 중…
         </div>
       )}
 
       {!loading && error && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-500">
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-[15px] text-red-500">
           발견템을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
         </div>
       )}
 
       {!loading && !error && matched.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-10 text-center text-sm text-[#9AA0A6]">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-10 text-center text-[15px] text-[#5F6368]">
           {coreKey
             ? "지금 모발 타입에 딱 맞는 발견템을 준비하고 있어요. 곧 채워질 예정이에요."
             : "아직 공개된 발견템이 없어요. 곧 채워질 예정이에요."}

@@ -49,7 +49,7 @@ export default function BangsLandingPage() {
             </svg>
           </GlassCard>
 
-          <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
+          <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
 5초 얼굴형 분석
           </span>
 
@@ -76,7 +76,7 @@ export default function BangsLandingPage() {
           >
             테스트 시작하기
           </BlackCTAButton>
-          <p className="mt-3 text-center text-[11px] text-[#9C9482]">
+          <p className="mt-3 text-center text-[13px] text-[#6B6355]">
             개인정보 미저장 · 결과는 디바이스에만 보관됩니다
           </p>
         </motion.div>

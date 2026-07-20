@@ -122,9 +122,9 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
         transition={{ type: "spring", stiffness: 280, damping: 24 }}
         className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-xl backdrop-blur-xl">
         <div className="px-7 py-8 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">A-Beauty</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">A-Beauty</p>
           <h2 className="mt-3 font-serif text-2xl font-bold text-[#2F2A22]">결과지가 완성됐어요!</h2>
-          <p className="mt-2 text-sm text-[#6B6355]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
+          <p className="mt-2 text-[15px] text-[#6B6355]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
           <button onClick={handleLogin} disabled={loading}
             className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
             {loading
@@ -135,7 +135,7 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
                 />
               : "카카오 1초 로그인하고 결과 확인하기"}
           </button>
-          <p className="mt-2.5 text-[11px] text-[#9C9482]">별도 가입 없이 카카오 계정으로 바로 확인</p>
+          <p className="mt-2.5 text-[13px] text-[#6B6355]">별도 가입 없이 카카오 계정으로 바로 확인</p>
         </div>
       </motion.div>
     </motion.div>
@@ -205,14 +205,14 @@ function KakaoSaveModal({
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[28px] border-t border-white/60 bg-white/95 shadow-xl px-6 pb-10 pt-5 backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#EDE7DA]" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">A-Beauty Diary</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">A-Beauty Diary</p>
         <h3 className="mt-2 font-serif text-xl font-bold text-[#2F2A22]">내 다이어리에 저장하고 평생 소장하기</h3>
-        <p className="mt-2 text-sm text-[#6B6355] leading-relaxed">
+        <p className="mt-2 text-[15px] text-[#6B6355] leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
         </p>
         <div className="mt-4 space-y-2">
           {["맞춤 홈케어 제품 상단 노출 (시술 이력 기반)", "내 헤어 스타일 히스토리 보관", "전문가 케어 처방전 저장"].map(b => (
-            <div key={b} className="flex items-center gap-2.5 text-sm text-[#6B6355]">
+            <div key={b} className="flex items-center gap-2.5 text-[15px] text-[#6B6355]">
               <span className="h-1 w-1 flex-none rounded-full bg-[#A8884A]" />{b}
             </div>
           ))}
@@ -227,7 +227,7 @@ function KakaoSaveModal({
               />
             : "카카오 1초 로그인/가입으로 저장하기"}
         </button>
-        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-sm text-[#9C9482] hover:text-[#2F2A22]">
+        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-[15px] text-[#6B6355] hover:text-[#2F2A22]">
           나중에 저장하기
         </button>
       </motion.div>
@@ -265,7 +265,7 @@ function BeforeAfterSection({
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-cream/60">Before</span>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-cream/60">Before</span>
         </div>
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/55">
@@ -290,7 +290,7 @@ function BeforeAfterSection({
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-cream/25" stroke="currentColor" strokeWidth={1.2}>
               <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
             </svg>
-            <p className="text-[11px] leading-snug text-cream/40">AI 합성에<br />실패했어요</p>
+            <p className="text-[13px] leading-snug text-cream/80">AI 합성에<br />실패했어요</p>
             {debugError && (
               <div className="w-full rounded-lg border border-red-500/40 bg-red-950/60 px-2 py-2 text-left">
                 <p className="text-[9px] font-bold uppercase tracking-wider text-red-400 mb-1">[개발자 디버그] 에러 원인:</p>
@@ -298,13 +298,13 @@ function BeforeAfterSection({
               </div>
             )}
             <button onClick={onRetry}
-              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[11px] font-bold text-gold transition-colors hover:bg-gold/15">
+              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[13px] font-bold text-gold transition-colors hover:bg-gold/15">
               다시 시도
             </button>
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gold">After</span>
+          <span className="text-[11px] font-bold uppercase tracking-widest text-gold">After</span>
         </div>
         {!locked && generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
@@ -331,8 +331,8 @@ function BeforeAfterSection({
 function TextureReportCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard accent className="space-y-2 px-5 py-5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">모발 성질 리포트</p>
-      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.whyItHappens}</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">모발 성질 리포트</p>
+      <p className="text-[15px] leading-relaxed text-[#4A453B]">{copy.whyItHappens}</p>
     </GlassCard>
   );
 }
@@ -340,8 +340,8 @@ function TextureReportCard({ copy }: { copy: HairTypeCopy }) {
 function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard accent className="space-y-2 px-5 py-5">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">추천 스타일 방향</p>
-      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.stylePrescription}</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">추천 스타일 방향</p>
+      <p className="text-[15px] leading-relaxed text-[#4A453B]">{copy.stylePrescription}</p>
     </GlassCard>
   );
 }
@@ -349,18 +349,18 @@ function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
 function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution: string }) {
   return (
     <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">피해야 할 스타일 · 시술</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">피해야 할 스타일 · 시술</p>
       <div className="space-y-2">
         {copy.avoidWithReason.map((line) => (
           <div key={line} className="flex items-start gap-2.5">
             <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
-            <p className="text-sm leading-relaxed text-[#4A453B]">{line}</p>
+            <p className="text-[15px] leading-relaxed text-[#4A453B]">{line}</p>
           </div>
         ))}
       </div>
       {/* 손상 이력 modifier — 제목/방향은 바꾸지 않고 주의 한 줄로만 반영 */}
       <div className="rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
-        <p className="text-sm font-medium text-[#6B5B3A]">{damageCaution}</p>
+        <p className="text-[15px] font-medium text-[#6B5B3A]">{damageCaution}</p>
       </div>
     </GlassCard>
   );
@@ -369,11 +369,11 @@ function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution:
 function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
   return (
     <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">미용실 상담 팁</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">미용실 상담 팁</p>
       <div className="space-y-2">
         {copy.salonScript.map((line) => (
           <div key={line} className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
-            <p className="text-sm italic leading-relaxed text-[#6B6355]">{line}</p>
+            <p className="text-[15px] italic leading-relaxed text-[#6B6355]">{line}</p>
           </div>
         ))}
       </div>
@@ -384,13 +384,13 @@ function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
 function HomeCareCard({ copy, showDamageCTA }: { copy: HairTypeCopy; showDamageCTA: boolean }) {
   return (
     <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
-      <p className="text-sm leading-relaxed text-[#4A453B]">{copy.homeCareDirection}</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">홈케어 방향</p>
+      <p className="text-[15px] leading-relaxed text-[#4A453B]">{copy.homeCareDirection}</p>
       {/* 제품 카드 직접 노출 없음 — discoveryItemHint는 카테고리 힌트로만, 실제 제품은 발견템(/items)에서 */}
       <Link
         href="/items"
         onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_homecare", diagnosis_type: "style" })}
-        className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-xs font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
+        className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-[13px] font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
       >
         {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
         <span className="flex-none text-[#A8884A]">→</span>
@@ -399,7 +399,7 @@ function HomeCareCard({ copy, showDamageCTA }: { copy: HairTypeCopy; showDamageC
       {showDamageCTA && (
         <Link
           href="/damage-check"
-          className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-xs font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
+          className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-3.5 py-2.5 text-[13px] font-semibold text-[#8A7648] transition-colors hover:bg-[#F3EEE3] hover:text-[#2F2A22]"
         >
           정밀 손상 진단 받아보기
           <span className="flex-none text-[#A8884A]">→</span>
@@ -579,14 +579,14 @@ export default function StyleResultPage() {
 
           {/* 헤더 */}
           <div className="flex items-center justify-between pb-4">
-            <Link href="/style/upload" className="flex items-center gap-1 text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+            <Link href="/style/upload" className="flex items-center gap-1 text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               다시 찍기
             </Link>
-            <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">스타일 결과지</span>
-            <Link href="/style" className="text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">처음부터</Link>
+            <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">스타일 결과지</span>
+            <Link href="/style" className="text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">처음부터</Link>
           </div>
 
           {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
@@ -600,7 +600,7 @@ export default function StyleResultPage() {
             <div className="mt-3 flex flex-wrap justify-center gap-1.5">
               {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
                 .filter(Boolean).map(tag => (
-                  <span key={tag} className="rounded-full bg-[#F3EEE3] px-3 py-0.5 text-xs font-semibold text-[#A8884A]">{tag}</span>
+                  <span key={tag} className="rounded-full bg-[#F3EEE3] px-3 py-0.5 text-[13px] font-semibold text-[#A8884A]">{tag}</span>
                 ))}
             </div>
           </ResultHeroCard>
@@ -627,12 +627,12 @@ export default function StyleResultPage() {
                 className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-[#EDE7DA] bg-white text-base font-bold text-[#2F2A22] transition-all hover:bg-[#FBF6EA] active:scale-[0.98]">
                 사진 다운받기 (다이어리 저장 후 가능)
               </button>
-              <p className="text-center text-xs text-[#9C9482] -mt-1">
+              <p className="text-center text-[13px] text-[#6B6355] -mt-1">
                 다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
               </p>
               <div className="flex gap-2.5">
                 <Link href="/style/survey"
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] text-sm font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22]">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] text-[15px] font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22]">
                   다시 진단하기
                 </Link>
                 <button
@@ -641,7 +641,7 @@ export default function StyleResultPage() {
                     if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-sm font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#EDE7DA] bg-[#FBF6EA] text-[15px] font-semibold text-[#A8884A] transition-all hover:bg-[#F3EEE3]">
                   공유하기
                 </button>
               </div>

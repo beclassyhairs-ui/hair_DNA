@@ -210,7 +210,7 @@ function CategoryFilterTabs({
         <button
           key={tab}
           onClick={() => onChange(tab)}
-          className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
+          className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
             active === tab ? "bg-[#2F2F2F] text-white" : "bg-white text-[#6B7280] border border-gray-100"
           }`}
         >
@@ -275,7 +275,7 @@ function ConsultFeedCard({
         </p>
       </button>
 
-      <div className="mt-3.5 flex items-center gap-3 text-xs text-[#6B7280]">
+      <div className="mt-3.5 flex items-center gap-3 text-[13px] text-[#6B7280]">
         <span>👁️ {post.viewCount.toLocaleString()}</span>
         <span>💬 {post.commentCount}</span>
         <button
@@ -291,12 +291,12 @@ function ConsultFeedCard({
       {isOpen && (
         <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
           {post.comments.length === 0 ? (
-            <p className="text-xs text-[#6B7280]">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
+            <p className="text-[13px] text-[#6B7280]">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
           ) : (
             post.comments.map((comment) => (
               <div key={comment.id} className="rounded-xl bg-[#F9FAFB] px-4 py-3">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-[#2F2F2F]">{comment.nickname}</span>
+                  <span className="text-[13px] font-semibold text-[#2F2F2F]">{comment.nickname}</span>
                   {comment.isExpert && (
                     <span className="rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[10px] font-bold text-[#8A6D2F]">
                       전문가 답변
@@ -313,11 +313,11 @@ function ConsultFeedCard({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="댓글을 남겨보세요"
-              className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm outline-none focus:border-[#C8A96A]"
+              className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[15px] outline-none focus:border-[#C8A96A]"
             />
             <button
               onClick={handleSubmitComment}
-              className="shrink-0 rounded-xl bg-[#2F2F2F] px-4 py-2.5 text-xs font-semibold text-white active:opacity-80"
+              className="shrink-0 rounded-xl bg-[#2F2F2F] px-4 py-2.5 text-[13px] font-semibold text-white active:opacity-80"
             >
               등록
             </button>
@@ -336,7 +336,7 @@ function WriteFab({ onClick }: { onClick: () => void }) {
       <div className="mx-auto flex max-w-[430px] justify-end px-5">
         <button
           onClick={onClick}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-[#2F2F2F] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_12px_24px_-10px_rgba(47,47,47,0.55)] active:opacity-80"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-[#2F2F2F] px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(47,47,47,0.55)] active:opacity-80"
         >
           ✍️ 내 고민 등록하기
         </button>
@@ -386,7 +386,7 @@ function WriteConsultSheet({
             <button
               key={c}
               onClick={() => setCategory(c)}
-              className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition-colors ${
+              className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
                 category === c ? "bg-[#2F2F2F] text-white" : "bg-[#F9FAFB] text-[#6B7280] border border-gray-100"
               }`}
             >
@@ -399,20 +399,20 @@ function WriteConsultSheet({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력해주세요"
-          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#C8A96A]"
+          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-[15px] outline-none focus:border-[#C8A96A]"
         />
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="어떤 고민인지 편하게 적어주세요"
           rows={4}
-          className="mt-2.5 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-[#C8A96A]"
+          className="mt-2.5 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[15px] outline-none focus:border-[#C8A96A]"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="mt-4 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-sm font-semibold text-white transition-opacity disabled:opacity-30 active:opacity-80"
+          className="mt-4 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-[15px] font-semibold text-white transition-opacity disabled:opacity-30 active:opacity-80"
         >
           등록 완료
         </button>
@@ -481,7 +481,7 @@ export default function ConsultingPage() {
     <AppShell>
       <div>
         <h1 className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">고민상담소</h1>
-        <p className="mt-1 text-xs text-[#6B7280]">나와 비슷한 고민을 나누고, 전문가 답변도 받아보세요.</p>
+        <p className="mt-1 text-[13px] text-[#6B7280]">나와 비슷한 고민을 나누고, 전문가 답변도 받아보세요.</p>
       </div>
 
       <WeeklyHotTopics topics={HOT_TOPICS} />

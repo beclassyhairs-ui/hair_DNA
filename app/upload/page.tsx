@@ -441,7 +441,7 @@ export default function UploadPage() {
       <div className="mx-auto w-full max-w-2xl px-6">
         {/* 헤더 */}
         <div className="pt-8 text-center">
-          <span className="text-xs font-medium uppercase tracking-[0.2em] text-gold">
+          <span className="text-[13px] font-medium uppercase tracking-[0.2em] text-gold">
             Step 1 · Photo
           </span>
           <h1 className="mt-2 font-serif text-3xl font-semibold leading-snug text-cream">
@@ -532,7 +532,7 @@ export default function UploadPage() {
 
             {/* 카메라 권한/에러 안내 */}
             {camError && (
-              <p className="mx-auto mt-4 max-w-sm text-center text-sm text-red-300/90">
+              <p className="mx-auto mt-4 max-w-sm text-center text-[15px] text-red-300/90">
                 {camError}
               </p>
             )}
@@ -540,7 +540,7 @@ export default function UploadPage() {
             {/* 줌 슬라이더 (편집 중일 때만) */}
             {src && !camera && (
               <div className="mx-auto mt-5 flex w-full max-w-sm items-center gap-3">
-                <span className="text-sm text-cream/50">－</span>
+                <span className="text-[15px] text-cream/50">－</span>
                 <input
                   type="range"
                   min={MIN_SCALE}
@@ -551,7 +551,7 @@ export default function UploadPage() {
                   className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-gold"
                   aria-label="확대 / 축소"
                 />
-                <span className="text-sm text-cream/50">＋</span>
+                <span className="text-[15px] text-cream/50">＋</span>
               </div>
             )}
 
@@ -563,10 +563,10 @@ export default function UploadPage() {
         {!camera && (
           <div className="mx-auto mt-8 w-full max-w-sm">
             <div className="rounded-2xl border border-gold/25 bg-gold/5 p-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold">
+              <p className="mb-2 text-[13px] font-semibold uppercase tracking-widest text-gold">
                 [테스트] 임시 얼굴형 선택
               </p>
-              <p className="mb-3 text-xs text-cream/50">
+              <p className="mb-3 text-[13px] text-cream/50">
                 Vision API 연동 전 결과지 테스트용이에요. 실제 서비스에서는 AI가 자동 분석합니다.
               </p>
               <select
@@ -586,7 +586,7 @@ export default function UploadPage() {
                 ))}
               </select>
               {mockFaceShape && (
-                <p className="mt-2 text-xs text-gold-light/80">
+                <p className="mt-2 text-[13px] text-gold-light/80">
                   선택됨: <span className="font-semibold">{FACE_SHAPE_OPTIONS.find(o => o.value === mockFaceShape)?.label}</span>
                 </p>
               )}
@@ -710,12 +710,12 @@ function Stepper() {
         {steps.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <span
-              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${
+              className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-[15px] font-medium ${
                 i <= active ? "bg-gold/15 text-gold-light" : "text-cream/40"
               }`}
             >
               <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-bold ${
                   i <= active ? "bg-gold-dark text-charcoal" : "bg-white/10 text-cream/50"
                 }`}
               >

@@ -96,14 +96,14 @@ export default function BangsSurveyPage() {
               className="flex flex-1 flex-col justify-center py-6"
             >
               <div className="mb-6">
-                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#A8884A]">
+                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-[#A8884A]">
                   {q.no}
                 </p>
                 <h2 className="font-serif text-lg font-bold leading-snug text-[#2F2A22]">
                   {q.title}
                 </h2>
                 {q.hint && (
-                  <p className="mt-2 text-xs leading-relaxed text-[#9C9482]">{q.hint}</p>
+                  <p className="mt-2 text-[13px] leading-relaxed text-[#6B6355]">{q.hint}</p>
                 )}
               </div>
 
@@ -134,16 +134,16 @@ export default function BangsSurveyPage() {
             <button
               onClick={goBack}
               disabled={pending}
-              className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22] disabled:opacity-40"
+              className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22] disabled:opacity-40"
             >
               ← 이전
             </button>
           ) : (
-            <a href="/bangs" className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+            <a href="/bangs" className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
               나가기
             </a>
           )}
-          <p className="mt-2 text-center text-[11px] text-[#9C9482]">선택하면 자동으로 넘어가요</p>
+          <p className="mt-2 text-center text-[13px] text-[#6B6355]">선택하면 자동으로 넘어가요</p>
         </div>
       </main>
     </SilkBackground>

@@ -268,18 +268,18 @@ function IntroView({ onStart }: { onStart: () => void }) {
       transition={{ duration: 0.45 }}
       className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
     >
-      <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-xs font-bold tracking-wide text-[#A8884A]">
+      <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
 청담동 헤어 클리닉 전문가 진단
       </span>
 
       <h1 className="font-serif text-[2rem] font-extrabold leading-tight text-[#2F2A22]">
         내 머리가<br />미용실에서만<br />예쁜 진짜 이유
       </h1>
-      <p className="mt-2 text-sm font-semibold text-[#A8884A]/80">feat. 미용실 100% 활용법</p>
+      <p className="mt-2 text-[15px] font-semibold text-[#A8884A]/80">feat. 미용실 100% 활용법</p>
 
       <div className="my-7 h-px w-16 bg-gradient-to-r from-transparent via-[#C8A86B]/40 to-transparent" />
 
-      <p className="max-w-[270px] text-sm leading-relaxed text-[#6B6355]">
+      <p className="max-w-[270px] text-[15px] leading-relaxed text-[#6B6355]">
         6문항으로 당신의 헤어 홈케어 습관을 분석합니다.<br />
         청담동 수석 원장급 팩트 폭격이 기다리고 있습니다.
       </p>
@@ -287,7 +287,7 @@ function IntroView({ onStart }: { onStart: () => void }) {
       <div className="mt-10 w-full max-w-sm">
         <BlackCTAButton onClick={onStart}>진단 시작하기</BlackCTAButton>
       </div>
-      <p className="mt-3 text-xs text-[#9C9482]">약 1분 소요 · 총 6문항</p>
+      <p className="mt-3 text-[13px] text-[#6B6355]">약 1분 소요 · 총 6문항</p>
     </motion.div>
   );
 }
@@ -326,7 +326,7 @@ function SurveyView({
             exit={{ opacity: 0, y: -18 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
           >
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">
               Q{currentQ + 1}
             </p>
             <h2 className="mb-8 whitespace-pre-line font-serif text-2xl font-bold leading-snug text-[#2F2A22]">
@@ -349,7 +349,7 @@ function SurveyView({
 
       {currentQ > 0 && (
         <div className="flex-none px-6 pb-4">
-          <button onClick={onBack} className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+          <button onClick={onBack} className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
             ← 이전
           </button>
         </div>
@@ -378,7 +378,7 @@ function AnalyzingView() {
           borderRightColor: "rgba(200,168,107,0.2)",
         }}
       />
-      <p className="text-sm font-medium text-[#6B6355]">진단 결과 분석 중...</p>
+      <p className="text-[15px] font-medium text-[#6B6355]">진단 결과 분석 중...</p>
     </motion.div>
   );
 }
@@ -412,14 +412,14 @@ function ResultView({
 
         {/* ① 원인 분석 */}
         <GlassCard accent className="px-5 py-4">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+          <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
             원인 분석 — 팩트 폭격
           </p>
           <div className="space-y-3">
             {result.causes.map((c, i) => (
               <div key={i} className="flex items-start gap-3">
                 <span className="mt-2 h-1 w-1 flex-none rounded-full bg-[#C8A86B]/60" />
-                <p className="text-sm leading-relaxed text-[#6B6355]">{c}</p>
+                <p className="text-[15px] leading-relaxed text-[#6B6355]">{c}</p>
               </div>
             ))}
           </div>
@@ -427,14 +427,14 @@ function ResultView({
 
         {/* ② 전문가 데일리 처방전 */}
         <GlassCard className="px-5 py-4">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+          <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
             전문가 데일리 처방전
           </p>
           <div className="space-y-2.5">
             {result.prescriptions.map((p, i) => (
               <div key={i} className="rounded-xl border border-[#EDE7DA] bg-white/60 px-4 py-3">
-                <p className="mb-1 text-xs font-bold text-[#2F2A22]">{p.title}</p>
-                <p className="text-xs leading-relaxed text-[#6B6355]">{p.detail}</p>
+                <p className="mb-1 text-[13px] font-bold text-[#2F2A22]">{p.title}</p>
+                <p className="text-[13px] leading-relaxed text-[#6B6355]">{p.detail}</p>
               </div>
             ))}
           </div>
@@ -442,21 +442,21 @@ function ResultView({
 
         {/* ③ 미용실 소통 팁 */}
         <GlassCard className="px-5 py-4">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
+          <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">
             Feat. 미용실 소통 팁
           </p>
-          <p className="mb-3 text-[11px] text-[#9C9482]">
+          <p className="mb-3 text-[13px] text-[#6B6355]">
             다음 미용실 갈 때 이 대본을 그대로 읽으세요
           </p>
           <div className="rounded-xl border border-[#EDE7DA] bg-[#FBF6EA] px-4 py-3">
-            <p className="text-sm italic leading-relaxed text-[#6B6355]">{result.salonScript}</p>
+            <p className="text-[15px] italic leading-relaxed text-[#6B6355]">{result.salonScript}</p>
           </div>
         </GlassCard>
 
         {/* 저장 CTA */}
         <GlassCard className="px-5 py-5">
           <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
-          <p className="mt-1 text-center text-sm text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
+          <p className="mt-1 text-center text-[15px] text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
           <div className="mt-4">
             <BlackCTAButton onClick={onSave} disabled={saved}>
               {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
@@ -468,14 +468,14 @@ function ResultView({
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={onRetry}
-            className="flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
+            className="flex items-center gap-1 text-[13px] text-[#6B6355] transition-colors hover:text-[#2F2A22]"
           >
             ↺ 다시 진단받기
           </button>
-          <span className="text-xs text-[#D8CDB8]">·</span>
+          <span className="text-[13px] text-[#D8CDB8]">·</span>
           <Link
             href="/damage-check"
-            className="flex items-center gap-1 text-xs text-[#9C9482] transition-colors hover:text-[#2F2A22]"
+            className="flex items-center gap-1 text-[13px] text-[#6B6355] transition-colors hover:text-[#2F2A22]"
           >
             내 손상도도 확인해보기 →
           </Link>
@@ -485,7 +485,7 @@ function ResultView({
       {/* CTA 고정 하단 */}
       <BottomStickyCTA>
         <BlackCTAButton onClick={onCta}>AI 헤어 분석으로 내 스타일 찾기!</BlackCTAButton>
-        <p className="mt-1 text-center text-xs text-[#9C9482]">
+        <p className="mt-1 text-center text-[13px] text-[#6B6355]">
           AI가 두상·모질을 분석해 최적 스타일을 찾아드립니다
         </p>
       </BottomStickyCTA>

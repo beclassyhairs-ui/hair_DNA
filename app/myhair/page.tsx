@@ -28,7 +28,7 @@ function HistoryCard({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
         </span>
         <span className="text-[11px] text-[#6B7280]">{item.date}</span>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-[#2F2F2F]">{item.summary}</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-[#2F2F2F]">{item.summary}</p>
     </div>
   );
 }

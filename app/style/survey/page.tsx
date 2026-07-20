@@ -136,14 +136,14 @@ export default function StyleSurveyPage() {
               className="flex flex-1 flex-col py-7"
             >
               <div className="mb-6">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">
                   Q{q.no}
                 </p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-[#2F2A22] sm:text-2xl">
                   {q.title}
                 </h2>
                 {q.hint && (
-                  <p className="mt-2 text-sm leading-relaxed text-[#9C9482]">{q.hint}</p>
+                  <p className="mt-2 text-[15px] leading-relaxed text-[#6B6355]">{q.hint}</p>
                 )}
               </div>
 
@@ -167,15 +167,15 @@ export default function StyleSurveyPage() {
         <div className="flex-none px-5 pb-8 pt-4">
           {qIdx > 0 ? (
             <button onClick={goBack} disabled={pending}
-              className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22] disabled:opacity-40">
+              className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22] disabled:opacity-40">
               ← 이전
             </button>
           ) : (
-            <Link href="/style" className="text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+            <Link href="/style" className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
               나가기
             </Link>
           )}
-          <p className="mt-2 text-center text-[11px] text-[#9C9482]">선택하면 자동으로 넘어가요</p>
+          <p className="mt-2 text-center text-[13px] text-[#6B6355]">선택하면 자동으로 넘어가요</p>
         </div>
       </main>
     </SilkBackground>

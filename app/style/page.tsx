@@ -61,13 +61,13 @@ export default function StyleLandingPage() {
                 onClick={e => e.stopPropagation()}
               >
                 <h2 className="font-serif text-lg font-bold text-[#2F2A22]">오늘의 무료 진단이 끝났어요</h2>
-                <p className="mt-3 text-sm leading-relaxed text-[#6B6355]">
+                <p className="mt-3 text-[15px] leading-relaxed text-[#6B6355]">
                   하루 무료 진단 횟수({DAILY_MAX}회)를 모두 사용하셨습니다.<br />
                   내일 다시 찾아와 주세요!
                 </p>
                 <button
                   onClick={() => setShowLimitModal(false)}
-                  className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#F3EEE3] text-sm font-semibold text-[#2F2A22] transition hover:bg-[#EDE7DA]"
+                  className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#F3EEE3] text-[15px] font-semibold text-[#2F2A22] transition hover:bg-[#EDE7DA]"
                 >
                   확인
                 </button>
@@ -95,7 +95,7 @@ export default function StyleLandingPage() {
             내 인생 헤어스타일
           </h1>
 
-          <p className="mt-4 text-sm leading-relaxed text-[#6B6355] sm:text-base">
+          <p className="mt-4 text-[15px] leading-relaxed text-[#6B6355] sm:text-base">
             나의 모질과 희망 스타일을 분석해 최적의 헤어를 처방합니다.
           </p>
 
@@ -108,7 +108,7 @@ export default function StyleLandingPage() {
           >
             {/* 남은 횟수 뱃지 */}
             <div className="flex justify-center">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold ${
                 remaining === 0
                   ? "bg-red-500/10 text-red-500/80"
                   : "bg-[#F3EEE3] text-[#A8884A]"
@@ -124,7 +124,7 @@ export default function StyleLandingPage() {
               나의 맞춤 스타일 분석하기
             </BlackCTAButton>
 
-            <p className="text-center text-[11px] text-[#9C9482]">
+            <p className="text-center text-[13px] text-[#6B6355]">
               개인정보 미저장 · 약 2분 소요 · 무료
             </p>
 

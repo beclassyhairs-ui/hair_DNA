@@ -114,7 +114,7 @@ function BangImageCard({
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#F3EEE3]">
-          <p className="px-2 text-center text-[10px] font-bold text-[#A8884A]">{bangLabel}</p>
+          <p className="px-2 text-center text-[12px] font-bold text-[#A8884A]">{bangLabel}</p>
         </div>
       )}
 
@@ -135,7 +135,7 @@ function BangImageCard({
         className="absolute inset-x-0 bottom-0 z-10 px-2.5 pb-2.5 pt-8"
         style={{ background: "linear-gradient(to top, rgba(28,26,24,0.90) 0%, transparent 100%)" }}
       >
-        <p className="mt-0.5 font-serif text-xs font-bold leading-tight text-white">{bangLabel}</p>
+        <p className="mt-0.5 font-serif text-[13px] font-bold leading-tight text-white">{bangLabel}</p>
       </div>
     </button>
   );
@@ -400,11 +400,11 @@ export default function BangsResultPage() {
 
         {/* ── 헤더 ── */}
         <header className="sticky top-0 z-20 flex items-center justify-between bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-md">
-          <Link href="/bangs/survey" className="shrink-0 whitespace-nowrap text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+          <Link href="/bangs/survey" className="shrink-0 whitespace-nowrap text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">
             ← 다시 하기
           </Link>
-          <span className="shrink-0 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">진단 결과지</span>
-          <button onClick={handleKakaoShare} className="shrink-0 whitespace-nowrap text-sm font-medium text-[#9C9482] hover:text-[#2F2A22] transition-colors">
+          <span className="shrink-0 whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">진단 결과지</span>
+          <button onClick={handleKakaoShare} className="shrink-0 whitespace-nowrap text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">
             {kakaoSent ? "전송됨 ✓" : "공유"}
           </button>
         </header>
@@ -443,14 +443,14 @@ export default function BangsResultPage() {
                         onExpand={() => setLightbox({ type: result.secondaryBang, label: result.secondaryBangLabel })}
                       />
                     </div>
-                    <p className="mt-2 text-[10px] text-[#9C9482]">이미지를 탭하면 크게 볼 수 있어요</p>
+                    <p className="mt-2 text-[13px] text-[#6B6355]">이미지를 탭하면 크게 볼 수 있어요</p>
                   </>
                 }
                 badge={
                   <>
                     <span>{BANG_SHORT_LABEL[result.primaryBang]}</span>
                     {BANG_SUB_LABEL[result.primaryBang] && (
-                      <span className="text-[11px] font-normal text-white/65">{BANG_SUB_LABEL[result.primaryBang]}</span>
+                      <span className="text-[13px] font-normal text-white/85">{BANG_SUB_LABEL[result.primaryBang]}</span>
                     )}
                   </>
                 }
@@ -461,9 +461,9 @@ export default function BangsResultPage() {
             {/* 2. 서브 추천 */}
             <motion.div variants={FADE_UP}>
               <GlassCard className="p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">함께 고려해볼 스타일</p>
+                <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">함께 고려해볼 스타일</p>
                 <p className="mt-2 font-serif text-lg font-bold text-[#2F2A22]">{result.secondaryBangLabel}</p>
-                <p className="mt-2 text-sm leading-relaxed text-[#4A453B]">
+                <p className="mt-2 text-[15px] leading-relaxed text-[#4A453B]">
                   {reasonFor(result.secondaryBang, result.secondaryBangLabel)}
                 </p>
               </GlassCard>
@@ -473,8 +473,8 @@ export default function BangsResultPage() {
             {sameFaceBang ? (
               <motion.div variants={FADE_UP}>
                 <GlassCard accent className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추천 이유</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-[#4A453B]">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추천 이유</p>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-[#4A453B]">
                     선택하신 얼굴형과 추가 답변이 같은 방향을 가리켰어요.<br />
                     두 기준 모두 <strong className="font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</strong>이 잘 맞는 것으로 나타나 최종 1순위로 추천드려요.
                   </p>
@@ -483,14 +483,14 @@ export default function BangsResultPage() {
             ) : (
               <motion.div variants={FADE_UP} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <GlassCard className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#9C9482]">내가 고른 얼굴형 기준</p>
-                  <p className="mt-1 text-sm font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-[#6B6355]">{result.selectedFaceReason}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B6355]">내가 고른 얼굴형 기준</p>
+                  <p className="mt-1 text-[15px] font-bold text-[#2F2A22]">{result.selectedFaceBangLabel}</p>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B6355]">{result.selectedFaceReason}</p>
                 </GlassCard>
                 <GlassCard accent className="p-4">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추가 답변까지 반영한 추천</p>
-                  <p className="mt-1 text-sm font-bold text-[#2F2A22]">{result.signalBasedBangLabel}</p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-[#6B6355]">{result.signalBasedReason}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#A8884A]">추가 답변까지 반영한 추천</p>
+                  <p className="mt-1 text-[15px] font-bold text-[#2F2A22]">{result.signalBasedBangLabel}</p>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B6355]">{result.signalBasedReason}</p>
                 </GlassCard>
               </motion.div>
             )}
@@ -498,22 +498,22 @@ export default function BangsResultPage() {
             {/* 현재 스타일 체크 */}
             <motion.div variants={FADE_UP}>
               <GlassCard className="p-5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">현재 스타일 체크</p>
-                <p className="mt-2 text-sm leading-relaxed text-[#4A453B]">{result.currentStyleCheck.text}</p>
+                <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">현재 스타일 체크</p>
+                <p className="mt-2 text-[15px] leading-relaxed text-[#4A453B]">{result.currentStyleCheck.text}</p>
               </GlassCard>
             </motion.div>
 
             {/* 5. 피하면 좋은 스타일 — 차분한 톤(경고색 제거) */}
             <motion.div variants={FADE_UP}>
               <GlassCard className="px-4 py-3">
-                <p className="text-sm font-medium text-[#6B5B3A]">이런 스타일은 피해보세요 — {result.ngStyle}</p>
+                <p className="text-[15px] font-medium text-[#6B5B3A]">이런 스타일은 피해보세요 — {result.ngStyle}</p>
               </GlassCard>
             </motion.div>
 
             {/* 6. 테스트용 디버그 박스 — "왜 이 앞머리가 추천됐나요?" */}
             {showDebug && (
               <motion.div variants={FADE_UP} className="rounded-2xl border border-dashed border-yellow-400/50 bg-yellow-50 p-5 font-mono">
-                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-yellow-700">
+                <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-yellow-700">
                   왜 이 앞머리가 추천됐나요? (테스트용)
                 </p>
 
@@ -558,7 +558,7 @@ export default function BangsResultPage() {
             <motion.div variants={FADE_UP}>
               <GlassCard className="px-5 py-5">
                 <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
-                <p className="mt-1 text-center text-sm text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
+                <p className="mt-1 text-center text-[15px] text-[#6B6355]">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
                 <div className="mt-4">
                   <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
                     {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 오늘헤어에서 보기"}
@@ -571,7 +571,7 @@ export default function BangsResultPage() {
             <motion.div variants={FADE_UP}>
               <GlassCard className="px-5 py-5">
                 <p className="text-center text-base font-semibold text-[#2F2A22]">친구도 인생 앞머리 찾아줄까요?</p>
-                <p className="mt-1 text-center text-sm text-[#6B6355]">결과를 공유하고 서로 비교해 보세요</p>
+                <p className="mt-1 text-center text-[15px] text-[#6B6355]">결과를 공유하고 서로 비교해 보세요</p>
                 <button
                   onClick={handleKakaoShare}
                   className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
@@ -580,7 +580,7 @@ export default function BangsResultPage() {
                 </button>
                 <button
                   onClick={handleCopyLink}
-                  className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] text-sm font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22] active:scale-[0.98]"
+                  className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#EDE7DA] text-[15px] font-medium text-[#6B6355] transition-all hover:border-[#D8CDB8] hover:text-[#2F2A22] active:scale-[0.98]"
                 >
                   {copied ? "✓ 복사됨" : "링크 복사"}
                 </button>
@@ -596,7 +596,7 @@ export default function BangsResultPage() {
             내 맞춤 헤어홈으로 이동하기
           </BlackCTAButton>
           <Link href="/bangs"
-            className="flex h-10 w-full items-center justify-center text-sm font-medium text-[#9C9482] transition-colors hover:text-[#2F2A22]">
+            className="flex h-10 w-full items-center justify-center text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
             ← 처음부터 다시 하기
           </Link>
         </BottomStickyCTA>

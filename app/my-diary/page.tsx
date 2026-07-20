@@ -205,14 +205,14 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
               Style {index + 1}
             </p>
             <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
               {entry.styleName}
             </p>
           </div>
-          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
         </div>
 
         {/* After 이미지 썸네일 */}
@@ -227,7 +227,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               <img src={entry.generatedImageUrl} alt="AI 변신 결과"
                 className="h-48 w-full object-cover" />
               <div className="px-3 py-1.5 text-center" style={{ background: "rgba(200,168,107,0.06)" }}>
-                <p className="text-[10px]" style={{ color: "rgba(200,168,107,0.7)" }}>탭하면 크게 볼 수 있어요</p>
+                <p className="text-[13px]" style={{ color: "rgba(200,168,107,0.7)" }}>탭하면 크게 볼 수 있어요</p>
               </div>
             </button>
             <button
@@ -237,7 +237,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
                 setDownloading(false);
               }}
               disabled={downloading}
-              className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-60"
+              className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-[13px] font-bold transition-all active:scale-[0.98] disabled:opacity-60"
               style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}
             >
               {downloading ? "저장 중..." : "📥 사진 갤러리에 저장하기"}
@@ -248,8 +248,8 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         {/* 접기/펼치기 */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex w-full items-center justify-between px-4 pb-3 text-xs transition-colors"
-          style={{ color: "rgba(253,251,250,0.4)" }}
+          className="flex w-full items-center justify-between px-4 pb-3 text-[13px] transition-colors"
+          style={{ color: "rgba(253,251,250,0.72)" }}
         >
           <span>진단 데이터 {expanded ? "접기" : "보기"}</span>
           <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} stroke="currentColor" strokeWidth={2}>
@@ -263,8 +263,8 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               const val = entry.answers[qId] ?? "";
               return (
                 <div key={qId} className="rounded-lg px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <p className="text-[9px]" style={{ color: "rgba(253,251,250,0.35)" }}>{Q_LABELS[qId]}</p>
-                  <p className="text-xs font-semibold" style={{ color: "rgba(253,251,250,0.75)" }}>
+                  <p className="text-[12px]" style={{ color: "rgba(253,251,250,0.68)" }}>{Q_LABELS[qId]}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.75)" }}>
                     {A_LABELS[qId]?.[val] ?? "—"}
                   </p>
                 </div>
@@ -278,16 +278,16 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
           <div className="flex items-center gap-3 px-3 py-3">
             <span className="text-2xl">{hint.emoji}</span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(200,168,107,0.6)" }}>
+              <p className="text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(200,168,107,0.85)" }}>
                 {hint.category}
               </p>
-              <p className="truncate text-xs font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
+              <p className="truncate text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
                 이 진단에 맞는 제품 보기
               </p>
             </div>
           </div>
           <Link href="/items"
-            className="flex h-9 w-full items-center justify-center text-xs font-bold transition-all"
+            className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
             style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
             발견템에서 보기 →
           </Link>
@@ -314,24 +314,24 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
       <div style={{ background: "rgba(255,255,255,0.02)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
               손상도 진단 · {entry.resultCode}
             </p>
             <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
               {entry.levelLabel} · {entry.typeLabel}
             </p>
           </div>
-          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-3 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+        <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
           {entry.headline}
         </p>
 
         {entry.concernTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-3">
             {entry.concernTags.map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
                 style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
                 {tag}
               </span>
@@ -343,17 +343,17 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           <div className="flex items-center gap-3 px-3 py-3">
             <span className="text-2xl">{entry.product.emoji}</span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
+              <p className="truncate text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
                 {entry.product.name}
               </p>
-              <p className="truncate text-[10px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+              <p className="truncate text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
                 {entry.product.description}
               </p>
             </div>
           </div>
           {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
           <Link href="/items"
-            className="flex h-9 w-full items-center justify-center text-xs font-bold transition-all"
+            className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
             style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
             발견템에서 보기 →
           </Link>
@@ -381,18 +381,18 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
       <div style={{ background: "rgba(255,255,255,0.02)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
               손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
             </p>
             <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
               {entry.title}
             </p>
           </div>
-          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
         </div>
 
         {entry.diagnosisSummary && (
-          <p className="px-4 pb-3 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+          <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
             {entry.diagnosisSummary}
           </p>
         )}
@@ -400,7 +400,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {tags.map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
                 style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
                 {tag}
               </span>
@@ -428,7 +428,7 @@ function DiaryImageThumb({ label, url }: { label: string; url: string }) {
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 px-1.5 py-1" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
-        <p className="truncate text-[9px] font-semibold text-white/90">{label}</p>
+        <p className="truncate text-[12px] font-semibold text-white/90">{label}</p>
       </div>
     </div>
   );
@@ -450,23 +450,23 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
       <div style={{ background: "rgba(255,255,255,0.02)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
               인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
             <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
               {entry.primaryBangLabel}
             </p>
           </div>
-          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-2 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+        <p className="px-4 pb-2 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
           {entry.diagnosisSummary}
         </p>
-        <p className="px-4 pb-1 text-[11px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+        <p className="px-4 pb-1 text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
           선택 얼굴형 기준: {entry.selectedFaceBangLabel} · 답변 신호 기준: {entry.signalBasedBangLabel}
         </p>
-        <p className="px-4 pb-3 text-[11px]" style={{ color: "rgba(253,251,250,0.4)" }}>
+        <p className="px-4 pb-3 text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
           함께 고려한 스타일: {entry.secondaryBangLabel}
         </p>
 
@@ -481,7 +481,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
         {(entry.concernTags.length > 0 || entry.hairTextureTag) && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {[...entry.concernTags, entry.hairTextureTag].map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
                 style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
                 {tag}
               </span>
@@ -529,13 +529,13 @@ export default function MyDiaryPage() {
 
       {/* 헤더 */}
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-4 backdrop-blur-md">
-        <Link href="/" className="text-sm font-medium transition-colors" style={{ color: "rgba(253,251,250,0.4)" }}>
+        <Link href="/" className="text-[15px] font-medium transition-colors" style={{ color: "rgba(253,251,250,0.72)" }}>
           ← 홈
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "#C8A86B" }}>
+        <span className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "#C8A86B" }}>
           내 다이어리
         </span>
-        <Link href="/style/survey" className="text-xs font-medium transition-colors" style={{ color: "rgba(200,168,107,0.55)" }}>
+        <Link href="/style/survey" className="text-[13px] font-medium transition-colors" style={{ color: "rgba(200,168,107,0.85)" }}>
           새 진단
         </Link>
       </header>
@@ -551,7 +551,7 @@ export default function MyDiaryPage() {
                 <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="mb-6 text-sm" style={{ color: "rgba(253,251,250,0.4)" }}>
+            <p className="mb-6 text-[15px]" style={{ color: "rgba(253,251,250,0.72)" }}>
               저장된 진단 결과가 없어요.
             </p>
             <Link
@@ -567,10 +567,10 @@ export default function MyDiaryPage() {
             {/* 진단 이력 헤더 */}
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.55)" }}>
+                <p className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.85)" }}>
                   A-Beauty Hair Diary
                 </p>
-                <p className="mt-0.5 text-sm" style={{ color: "rgba(253,251,250,0.5)" }}>
+                <p className="mt-0.5 text-[15px]" style={{ color: "rgba(253,251,250,0.76)" }}>
                   진단 이력 {entries.length}건
                 </p>
               </div>

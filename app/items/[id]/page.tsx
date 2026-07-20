@@ -46,22 +46,22 @@ export default async function ItemDetailPage({ params }: { params: { id: string 
 
           {item.recommend_reason && (
             <section className="mt-5">
-              <h2 className="text-[13px] font-bold text-[#2F2F2F]">왜 나에게 맞을까요</h2>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[#6B7280]">{item.recommend_reason}</p>
+              <h2 className="text-[15px] font-bold text-[#2F2F2F]">왜 나에게 맞을까요</h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B7280]">{item.recommend_reason}</p>
             </section>
           )}
 
           {item.usage_guide && (
             <section className="mt-4">
-              <h2 className="text-[13px] font-bold text-[#2F2F2F]">사용법</h2>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[#6B7280]">{item.usage_guide}</p>
+              <h2 className="text-[15px] font-bold text-[#2F2F2F]">사용법</h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B7280]">{item.usage_guide}</p>
             </section>
           )}
 
           {item.caution_note && (
             <section className="mt-4 rounded-xl bg-[#FBF7F0] p-3.5">
-              <h2 className="text-[12px] font-bold text-[#8A6D2F]">주의사항</h2>
-              <p className="mt-1 text-[12px] leading-relaxed text-[#9A7B43]">{item.caution_note}</p>
+              <h2 className="text-[14px] font-bold text-[#8A6D2F]">주의사항</h2>
+              <p className="mt-1 text-[14px] leading-relaxed text-[#7A5F2E]">{item.caution_note}</p>
             </section>
           )}
 
