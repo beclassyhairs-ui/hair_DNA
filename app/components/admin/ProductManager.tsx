@@ -15,6 +15,7 @@ import type {
   ProductImageStatus,
   ProductImageSource,
 } from "../../../lib/products";
+import { isSelfHostedImageUrl } from "../../../lib/products";
 import { CURL_OPTIONS, THICKNESS_OPTIONS, DENSITY_OPTIONS, coreKeyLabel } from "../../../lib/hairTypeOptions";
 
 const EMPTY_FORM = {
@@ -167,7 +168,14 @@ export default function ProductManager() {
   const [saving, setSaving]       = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // 이미지 자체 스토리지 복사(미러링) 상태
+  const [mirroring, setMirroring]     = useState(false);
+  const [mirrorNote, setMirrorNote]   = useState<string | null>(null);
+  const [mirrorError, setMirrorError] = useState<string | null>(null);
+
   const isEditing = editingId !== null;
+  const imageUrl = form.image_url.trim();
+  const imageIsSelfHosted = isSelfHostedImageUrl(imageUrl);
 
   const loadProducts = () => {
     setLoading(true);
@@ -193,6 +201,8 @@ export default function ProductManager() {
     setAvoidHairTypes([]);
     setSolvesInput("");
     setFormError(null);
+    setMirrorNote(null);
+    setMirrorError(null);
   };
 
   const startEdit = (p: Product) => {
@@ -216,7 +226,46 @@ export default function ProductManager() {
     setAvoidHairTypes(p.avoid_hair_types ?? []);
     setSolvesInput((p.solves_concern ?? []).join(", "));
     setFormError(null);
+    setMirrorNote(null);
+    setMirrorError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /**
+   * 공급사 이미지를 우리 스토리지로 복사하고 폼의 image_url을 자체 URL로 교체한다.
+   * 저장(handleSubmit)과는 분리돼 있어, 복사 후 반드시 "저장"을 눌러야 DB에 반영된다
+   * — 복사만 하고 저장을 안 하면 상품은 여전히 공급사 이미지를 가리킨다.
+   */
+  const handleMirrorImage = async () => {
+    const target = form.image_url.trim();
+    if (!target) {
+      setMirrorError("먼저 이미지 URL을 입력하세요.");
+      return;
+    }
+
+    setMirroring(true);
+    setMirrorError(null);
+    setMirrorNote(null);
+
+    try {
+      const res = await fetch("/api/admin/products/mirror-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: target }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.ok) throw new Error(body?.error ?? `HTTP ${res.status}`);
+
+      setForm((f) => ({ ...f, image_url: body.url as string }));
+      setMirrorNote(
+        `자체 저장소로 복사했습니다 (${Math.round((body.bytes as number) / 1024)}KB). ` +
+        `아직 저장 전입니다 — 아래 "저장"을 눌러야 반영됩니다.`,
+      );
+    } catch (e) {
+      setMirrorError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setMirroring(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -377,6 +426,33 @@ export default function ProductManager() {
                 <p className="mt-1.5 text-[11px] text-cream/30">
                   파일 업로드는 지원하지 않습니다 — 제품 이미지가 올라가 있는 외부 링크(쇼핑몰, CDN 등)를 복사해 붙여넣으세요.
                 </p>
+
+                {/* 자체 스토리지 복사 — 공급사 이미지 핫링크는 공급사가 내리면 그대로 깨진다 */}
+                {imageUrl && (
+                  <div className="mt-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5">
+                    {imageIsSelfHosted ? (
+                      <p className="text-[11px] leading-relaxed text-emerald-300/80">
+                        ✓ 자체 저장소 이미지입니다 — 공급사가 원본을 내려도 깨지지 않습니다.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-[11px] leading-relaxed text-amber-300/80">
+                          공급사 이미지를 직접 링크(핫링크)하고 있습니다. 공급사가 이미지를 내리면 상품 사진이 깨집니다.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleMirrorImage}
+                          disabled={mirroring}
+                          className="mt-2 rounded-lg border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold-light transition-colors hover:bg-gold/20 disabled:opacity-50"
+                        >
+                          {mirroring ? "복사 중…" : "자체 저장소로 복사"}
+                        </button>
+                      </>
+                    )}
+                    {mirrorNote && <p className="mt-2 text-[11px] leading-relaxed text-emerald-300/80">{mirrorNote}</p>}
+                    {mirrorError && <p className="mt-2 text-[11px] leading-relaxed text-red-300/80">{mirrorError}</p>}
+                  </div>
+                )}
               </label>
 
               <label className="block">
@@ -617,6 +693,12 @@ export default function ProductManager() {
                         {p.category && (
                           <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[11px] text-gold-light">
                             {p.category}
+                          </span>
+                        )}
+                        {/* 공급사 핫링크는 원본이 내려가면 깨지므로 목록에서 바로 눈에 띄게 표시 */}
+                        {p.image_url && !isSelfHostedImageUrl(p.image_url) && (
+                          <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300/90">
+                            공급사 이미지 · 복사 필요
                           </span>
                         )}
                       </div>

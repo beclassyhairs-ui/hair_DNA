@@ -90,6 +90,22 @@ export interface ProductInput {
   image_note?: string;
 }
 
+/**
+ * 이미 자체 스토리지(Vercel Blob)에 복사된 이미지인지 판별한다.
+ * 공급사 이미지 핫링크(공급사가 내리면 상품 사진이 깨짐)를 관리자 화면에서
+ * 구분해 보여주기 위한 것 — 클라이언트/서버 양쪽에서 쓰므로 여기 둔다.
+ * (실제 복사 로직은 서버 전용 lib/imageMirror.ts)
+ */
+export function isSelfHostedImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "public.blob.vercel-storage.com" || host.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
 /** 관리자 API(GET/POST/PUT)가 공통으로 노출하는 필드 — select("*") 대신 이 목록을 명시한다 */
 export const ADMIN_PRODUCT_FIELDS =
   "id, product_name, category, concern_tags, image_url, buy_link, " +
