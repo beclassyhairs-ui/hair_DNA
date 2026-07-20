@@ -99,7 +99,22 @@ interface BangsDiaryEntry {
   resultImages?:         { label: string; url: string }[]; // 사진첩용 — 파일 없으면 카드가 폴백 처리
 }
 
-type AnyEntry = DiaryEntry | DamageDiaryEntry | BangsDiaryEntry;
+// /hair-quiz 결과지가 저장하는 판별자 붙은 엔트리 — 생성 이미지·styleName이 없어서
+// DiaryEntry(style) 카드로 렌더하면 "Style N" 라벨에 제목이 비어 보인다. 별도 카드로 렌더링한다.
+interface HairQuizDiaryEntry {
+  id:                string;
+  kind:              "hairquiz";
+  savedAt:           number;
+  resultKey:         string;
+  badge:             string;
+  title:             string;
+  diagnosisSummary:  string;
+  hairTags:          string[];
+  concernTags:       string[];
+  answers:           Record<string, string>;
+}
+
+type AnyEntry = DiaryEntry | DamageDiaryEntry | BangsDiaryEntry | HairQuizDiaryEntry;
 
 function isDamageEntry(entry: AnyEntry): entry is DamageDiaryEntry {
   return (entry as DamageDiaryEntry).kind === "damage";
@@ -107,6 +122,10 @@ function isDamageEntry(entry: AnyEntry): entry is DamageDiaryEntry {
 
 function isBangsEntry(entry: AnyEntry): entry is BangsDiaryEntry {
   return (entry as BangsDiaryEntry).kind === "bangs";
+}
+
+function isHairQuizEntry(entry: AnyEntry): entry is HairQuizDiaryEntry {
+  return (entry as HairQuizDiaryEntry).kind === "hairquiz";
 }
 
 // ─── 이미지 모달 ─────────────────────────────────────────────────────────────
@@ -341,6 +360,55 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
   );
 }
 
+// ─── 손질 습관 진단(hair-quiz) 다이어리 카드 ──────────────────────────────────
+
+function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index: number }) {
+  const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  const tags = entry.concernTags?.length ? entry.concernTags : entry.hairTags ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: index * 0.07 }}
+      className="overflow-hidden rounded-2xl"
+      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
+      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.55)" }}>
+              손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
+            </p>
+            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+              {entry.title}
+            </p>
+          </div>
+          <p className="text-xs" style={{ color: "rgba(253,251,250,0.35)" }}>{date}</p>
+        </div>
+
+        {entry.diagnosisSummary && (
+          <p className="px-4 pb-3 text-xs leading-relaxed" style={{ color: "rgba(253,251,250,0.6)" }}>
+            {entry.diagnosisSummary}
+          </p>
+        )}
+
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-4 pb-4">
+            {tags.map((tag) => (
+              <span key={tag} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── 인생앞머리 진단 다이어리 카드 ────────────────────────────────────────────
 
 // 사진첩 썸네일 — 파일이 없을 수 있으므로 로드 실패 시 깨진 이미지 대신 이모지로 폴백
@@ -512,6 +580,8 @@ export default function MyDiaryPage() {
                   <DamageDiaryCard key={entry.id} entry={entry} index={i} />
                 ) : isBangsEntry(entry) ? (
                   <BangsDiaryCard key={entry.id} entry={entry} index={i} />
+                ) : isHairQuizEntry(entry) ? (
+                  <HairQuizDiaryCard key={entry.id} entry={entry} index={i} />
                 ) : (
                   <DiaryCard
                     key={entry.id}
