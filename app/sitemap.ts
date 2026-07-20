@@ -4,10 +4,10 @@ const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.a
 
 // 공개·색인 대상 엔트리 페이지만 포함한다.
 // 제외: /admin·/api(robots 차단), 결과/업로드/로딩 등 전이 화면, 개인화면(/home·/myhair),
-//       /privacy·/terms(초안 noindex), 동적 상세(/items/[id]).
+//       /privacy·/terms(초안 noindex), 동적 상세(/items/[id]),
+//       /mbti 계열(미끼 랜딩 분리 정책 — 파트너스 링크 유지 + noindex, app/mbti/layout.tsx 참고).
 const PUBLIC_ROUTES: { path: string; priority: number }[] = [
   { path: "/style", priority: 1.0 },        // 플래그십(루트 리다이렉트 대상)
-  { path: "/mbti", priority: 0.8 },
   { path: "/bangs", priority: 0.7 },
   { path: "/damage-check", priority: 0.7 },
   { path: "/hair-quiz", priority: 0.7 },

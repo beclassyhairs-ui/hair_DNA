@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
 
+  // 미끼 랜딩 분리 정책: /mbti 계열은 파트너스 링크·고지를 유지하는 실험장이라
+  // 본진(hair-dna 본 서비스) 검색 노출과 분리한다. sitemap에서도 제외됨.
+  // og:/twitter: 태그는 그대로 둔다 — 카카오톡 공유 미리보기는 계속 필요하고,
+  // noindex는 검색 색인만 막지 SNS 공유 카드에는 영향이 없다.
+  robots: { index: false, follow: false },
+
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
