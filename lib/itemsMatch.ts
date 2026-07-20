@@ -63,3 +63,28 @@ export function productMatchesCoreKey(
   if (!coreKey) return false;
   return fitHairTypes.includes(coreKey);
 }
+
+/** 매칭 판정에 필요한 최소 형태 — PublicProduct가 그대로 만족한다. */
+export interface MatchableProduct {
+  fit_hair_types: string[] | null;
+  avoid_hair_types: string[] | null;
+}
+
+/**
+ * 이 유저(coreKey)가 /items에서 실제로 보게 될 상품을, **보게 될 순서 그대로** 고른다.
+ * 입력 순서(= /api/items 응답 순서)를 유지하며 재정렬하지 않는다.
+ *
+ * ⚠️ `/items`(실서비스)와 `/admin/matching-preview`(미리보기 시뮬레이터)가 **반드시**
+ *    이 함수를 함께 써야 한다. 각자 filter를 복사해 두면 한쪽만 고쳤을 때 미리보기가
+ *    조용히 어긋나고, 그 순간 시뮬레이터는 도구로서 의미를 잃는다.
+ *    노출 규칙을 바꿀 일이 생기면 여기 한 곳만 고칠 것.
+ */
+export function selectMatchedProducts<T extends MatchableProduct>(
+  items: T[] | null,
+  coreKey: string | null,
+): T[] {
+  if (!items) return [];
+  // 진단 전(coreKey 없음)에는 매칭 기준이 없으므로 승인 상품 전체를 보여준다(무작위 아님).
+  if (coreKey === null) return items;
+  return items.filter((p) => productMatchesCoreKey(p.fit_hair_types, p.avoid_hair_types, coreKey));
+}

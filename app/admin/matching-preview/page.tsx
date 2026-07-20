@@ -13,7 +13,7 @@
 // ============================================================================
 
 import { useEffect, useMemo, useState } from "react";
-import { productMatchesCoreKey } from "../../../lib/itemsMatch";
+import { selectMatchedProducts } from "../../../lib/itemsMatch";
 import { CURL_OPTIONS, THICKNESS_OPTIONS, DENSITY_OPTIONS, coreKeyLabel } from "../../../lib/hairTypeOptions";
 import type { PublicProduct } from "../../../lib/products";
 
@@ -44,12 +44,9 @@ export default function MatchingPreviewPage() {
 
   const coreKey = preDiagnosis ? null : `${curl}__${thickness}__${density}`;
 
-  // /items 페이지의 matched 로직과 동일 — coreKey null이면 전체, 아니면 매칭 필터.
-  const matched = useMemo(() => {
-    if (!items) return [];
-    if (coreKey === null) return items;
-    return items.filter((p) => productMatchesCoreKey(p.fit_hair_types, p.avoid_hair_types, coreKey));
-  }, [items, coreKey]);
+  // /items가 쓰는 것과 **같은 함수**를 호출한다(로직 복사 금지) — 이래야 노출 규칙이
+  // 바뀌어도 미리보기가 자동으로 따라가고, 실서비스와 목록·순서가 어긋나지 않는다.
+  const matched = useMemo(() => selectMatchedProducts(items, coreKey), [items, coreKey]);
 
   return (
     <div className="px-5 py-6 md:px-8 md:py-8">

@@ -13,7 +13,7 @@ import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
 import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
 import { readDiaryEntries, readBeautyUserProfile } from "../../lib/beautyProfile";
-import { deriveCoreKeyFromEntries, productMatchesCoreKey } from "../../lib/itemsMatch";
+import { deriveCoreKeyFromEntries, selectMatchedProducts } from "../../lib/itemsMatch";
 import type { PublicProduct } from "../../lib/products";
 
 function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: string | null }) {
@@ -90,14 +90,9 @@ export default function ItemsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const matched = useMemo(() => {
-    if (!items) return [];
-    // 진단 전(coreKey 없음)에는 매칭할 기준이 없으므로 승인 상품 전체를 보여준다(무작위 아님).
-    if (coreKey === null) return items;
-    return items.filter((p) =>
-      productMatchesCoreKey(p.fit_hair_types, p.avoid_hair_types, coreKey),
-    );
-  }, [items, coreKey]);
+  // 노출 규칙은 lib/itemsMatch.selectMatchedProducts 한 곳에만 있다 —
+  // /admin/matching-preview가 같은 함수를 써야 미리보기와 실서비스가 어긋나지 않는다.
+  const matched = useMemo(() => selectMatchedProducts(items, coreKey), [items, coreKey]);
 
   // 상품 노출(임프레션) — 매칭 리스트가 실제로 렌더되는 상품에 대해 상품당 1회만 기록.
   // 재렌더/필터 변화로 중복 발화하지 않도록 ref Set으로 방어(퍼널의 "상품 노출" 단계).
