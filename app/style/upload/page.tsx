@@ -12,6 +12,7 @@
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
@@ -105,14 +106,25 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             </span>
             <span>
               <span className="block text-[15px] font-medium leading-snug text-[#4A453B]">
-                AI 헤어 분석을 위한 사진 촬영 및 임시 처리에 동의합니다.{" "}
+                AI 헤어 분석을 위한 사진 업로드 및 처리에 동의합니다.{" "}
                 <span className="text-[#A8884A]">(필수)</span>
               </span>
+              {/* ⚠️ 실동작과 일치해야 하는 문구 — 사진은 /api/submit-diagnosis를 거쳐
+                  Vercel Blob에 업로드·보관된다. 자동 파기 로직이 도입되기 전까지
+                  "즉시 파기" 류의 표현을 쓰지 말 것. */}
               <span className="mt-1 block text-[13px] text-[#6B6355]">
-                *업로드된 사진은 AI 분석 즉시 안전하게 파기됩니다.
+                사진은 결과 생성을 위해 서버에 업로드·보관됩니다.
               </span>
             </span>
           </button>
+
+          <p className="text-center text-[13px] text-[#6B6355]">
+            보관 기간과 처리 방식은{" "}
+            <Link href="/privacy" className="font-semibold text-[#8A7648] underline underline-offset-2">
+              개인정보처리방침
+            </Link>
+            에서 확인하실 수 있어요
+          </p>
 
           {/* CTA 버튼 — 체크 전 disabled */}
           <BlackCTAButton onClick={onConfirm} disabled={!agreed}>

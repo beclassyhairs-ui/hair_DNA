@@ -76,8 +76,10 @@ export default function BangsLandingPage() {
           >
             테스트 시작하기
           </BlackCTAButton>
+          {/* ⚠️ 실동작 — 사진은 받지 않지만 문항 답변은 이벤트로 서버에 적재된다.
+              "개인정보 미저장"으로 되돌리지 말 것. */}
           <p className="mt-3 text-center text-[13px] text-[#6B6355]">
-            개인정보 미저장 · 결과는 디바이스에만 보관됩니다
+            사진 촬영 없음 · 결과는 내 기기에 보관돼요
           </p>
         </motion.div>
 
