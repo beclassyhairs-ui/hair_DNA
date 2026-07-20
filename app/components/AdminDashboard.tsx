@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { EVENT_NAMES, type StoredEvent } from "../../lib/eventTracking";
+import FunnelPanel from "./admin/FunnelPanel";
 
 const LANDING_LABELS: Record<string, string> = {
   mbti_test: "헤어 MBTI 테스트",
@@ -293,6 +294,10 @@ export default function AdminDashboard() {
             </p>
           </div>
         )}
+
+        {/* 기간별 5단계 퍼널 + UTM 분해 — 서버(/api/admin/funnel)에서 집계한 숫자만 받는다.
+            아래 섹션들과 달리 자체적으로 기간 필터를 걸어 조회하므로 events 유무와 무관하게 렌더한다. */}
+        <FunnelPanel />
 
         {events.length > 0 && (
           <>
