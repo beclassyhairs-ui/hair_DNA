@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // 어뷰티— 결과지 마스터 데이터 (전 연령 대상)
 // ============================================================================
 
@@ -142,7 +142,6 @@ export interface BeautyProduct {
   damages?: string[];
   price: string;
   emoji: string;
-  coupangUrl?: string;
 }
 
 export const PRODUCT_CATALOG: BeautyProduct[] = [
@@ -156,7 +155,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     concerns: ["crown_volume", "side_volume"],
     price: "28,000원",
     emoji: "🌿",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_calming_serum",
@@ -168,7 +166,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     concerns: ["too_fluffy"],
     price: "25,000원",
     emoji: "🌊",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_gray_mascara",
@@ -181,7 +178,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     histories: ["color_root"],
     price: "22,000원",
     emoji: "🖌️",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_repair_ampoule",
@@ -195,7 +191,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     damages: ["damaged", "severe"],
     price: "34,000원",
     emoji: "💧",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_scalp_tonic",
@@ -207,7 +202,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     concerns: ["scalp"],
     price: "29,000원",
     emoji: "❄️",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_hairline_shadow",
@@ -219,7 +213,6 @@ export const PRODUCT_CATALOG: BeautyProduct[] = [
     concerns: ["forehead_wide"],
     price: "24,000원",
     emoji: "🤎",
-    coupangUrl: "https://link.coupang.com/a/XXXXXXX",
   },
   {
     id: "p_glossy_serum",

@@ -1025,15 +1025,14 @@ function ProductCard({ product, no }: { product: BeautyProduct; no: number }) {
         <p className="mt-2 text-sm leading-relaxed text-cream/65">{product.detail}</p>
         <div className="mt-3 flex items-center justify-between">
           <span className="text-base font-bold text-cream">{product.price}</span>
-          <a
-            href={product.coupangUrl ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
+          {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
+          <Link
+            href="/items"
             onClick={handleBuyClick}
             className="rounded-xl bg-gold/15 px-4 py-2 text-sm font-semibold text-gold-light transition-colors hover:bg-gold/25 active:scale-[0.98]"
           >
             제품 보기
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -35,7 +35,7 @@ export interface Product {
   emoji: string;
   name: string;
   description: string;
-  link: string; // TODO: 실제 쿠팡 파트너스 링크로 교체
+  link: string; // 본진 파트너스 링크 금지 — 제품 노출은 자체 커머스(/items)로만 보낸다
 }
 
 export interface LevelInfo {

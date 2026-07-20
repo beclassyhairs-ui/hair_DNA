@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // 어뷰티 스타일 서비스 — 추천 엔진
 // 60종 스타일명 + 케어 처방전 + 맞춤 제품
 // ============================================================================
@@ -219,7 +219,6 @@ export interface StyleProduct {
   category:    string;
   name:        string;
   tagline:     string;
-  coupangUrl:  string;
 }
 
 export function getStyleProduct(answers: StyleAnswers): StyleProduct {
@@ -228,7 +227,6 @@ export function getStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "🧴", category: "새치 케어",
       name: "어뷰티 약산성 새치 케어 샴푸",
       tagline: "두피 pH 균형 회복 + 새치 예방 복합 케어",
-      coupangUrl: "https://link.coupang.com/a/eEoal2SxC8",
     };
   }
   if (answers.q7_thickness === "fine" || answers.q8_density === "thin_density") {
@@ -236,7 +234,6 @@ export function getStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "💊", category: "볼륨 케어",
       name: "어뷰티 뿌리 볼륨 에센스",
       tagline: "가는 모발에 탄력·볼륨을 채워주는 집중 케어",
-      coupangUrl: "https://link.coupang.com/a/eEnDYZ4YEe",
     };
   }
   if (answers.q3_curl === "curly_hair" || answers.q3_curl === "wavy_hair") {
@@ -244,14 +241,12 @@ export function getStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "🌀", category: "컬 케어",
       name: "어뷰티 컬 유지 크림",
       tagline: "곱슬·웨이브 모발의 결을 정돈하고 촉촉하게 유지",
-      coupangUrl: "https://link.coupang.com/a/eEn6wxl4Oy",
     };
   }
   return {
     emoji: "✨", category: "광택 케어",
     name: "어뷰티 글로시 헤어 세럼",
     tagline: "건강한 모발에 빛나는 광택을 더해주는 데일리 세럼",
-    coupangUrl: "https://link.coupang.com/a/eEnlw9bAnQ",
   };
 }
 
@@ -263,7 +258,6 @@ export function getSecondStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "💎", category: "손상 복구",
       name: "어뷰티 딥 리페어 트리트먼트",
       tagline: "극손상 모발 집중 단백질 복구 마스크",
-      coupangUrl: "https://link.coupang.com/a/eEnDYZ4YEe",
     };
   }
   if (answers.q7_thickness === "fine" || answers.q8_density === "thin_density") {
@@ -271,7 +265,6 @@ export function getSecondStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "🌿", category: "두피 강화",
       name: "어뷰티 스칼프 볼류마이저 샴푸",
       tagline: "모근부터 풍성하게, 탈모 예방 강화 루틴",
-      coupangUrl: "https://link.coupang.com/a/eEoal2SxC8",
     };
   }
   if (answers.q3_curl === "curly_hair" || answers.q3_curl === "wavy_hair") {
@@ -279,14 +272,12 @@ export function getSecondStyleProduct(answers: StyleAnswers): StyleProduct {
       emoji: "💧", category: "수분 집중",
       name: "어뷰티 모이스처 인텐시브 마스크",
       tagline: "곱슬 모발 24시간 수분 잠금 팩",
-      coupangUrl: "https://link.coupang.com/a/eEn6wxl4Oy",
     };
   }
   return {
     emoji: "🌟", category: "두피 토닉",
     name: "어뷰티 스칼프 클렌징 에센스",
     tagline: "두피 건강부터 챙기는 데일리 두피 케어",
-    coupangUrl: "https://link.coupang.com/a/eEnlw9bAnQ",
   };
 }
 

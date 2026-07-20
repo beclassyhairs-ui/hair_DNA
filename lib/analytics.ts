@@ -13,7 +13,7 @@ export const EVENTS = {
   PHOTO_CONFIRMED: "photo_confirmed",
   RESULT_VIEW: "result_view",
   // 수익화 전환 이벤트
-  PRODUCT_CLICK: "product_click",     // 쿠팡 파트너스 버튼 클릭
+  PRODUCT_CLICK: "product_click",     // 제품 CTA 클릭 (자체 커머스 /items 유도)
   SHARE_CLICK: "share_click",
   REFERRAL_LANDED: "referral_landed", // ?ref= 파라미터로 유입
 } as const;

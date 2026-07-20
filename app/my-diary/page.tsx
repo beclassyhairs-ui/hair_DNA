@@ -32,18 +32,20 @@ const A_LABELS: Record<string, Record<string, string>> = {
 };
 const Q_ORDER = ["q1_age","q11_length","q14_layer","q13_design","q8_density","q7_thickness","q3_curl","q10_history_count"];
 
-// ─── 맞춤 제품 (간략 버전) ────────────────────────────────────────────────────
+// ─── 맞춤 제품 카테고리 힌트 ──────────────────────────────────────────────────
+// 본진에는 외부 제휴(쿠팡 파트너스) 링크를 넣지 않는다 — 제품 노출은 자체 커머스(/items)로만
+// 보낸다. 여기서는 진단 답변 기반 카테고리 힌트만 만들고, 실제 제품은 발견템에서 매칭한다.
 
-interface MiniProduct { emoji: string; category: string; name: string; url: string; }
+interface ProductHint { emoji: string; category: string; }
 
-function getProduct(answers: Record<string, string>): MiniProduct {
+function getProductHint(answers: Record<string, string>): ProductHint {
   if (answers.q10_history_count === "count_7plus")
-    return { emoji: "🧴", category: "새치 케어", name: "약산성 새치 케어 샴푸", url: "https://link.coupang.com/a/eEoal2SxC8" };
+    return { emoji: "🧴", category: "손상 케어" };
   if (answers.q7_thickness === "fine" || answers.q8_density === "thin_density")
-    return { emoji: "💊", category: "볼륨 케어", name: "뿌리 볼륨 에센스", url: "https://link.coupang.com/a/eEnDYZ4YEe" };
+    return { emoji: "💊", category: "볼륨 케어" };
   if (answers.q3_curl === "curly_hair" || answers.q3_curl === "wavy_hair")
-    return { emoji: "🌀", category: "컬 케어", name: "컬 유지 크림", url: "https://link.coupang.com/a/eEn6wxl4Oy" };
-  return { emoji: "✨", category: "광택 케어", name: "글로시 헤어 세럼", url: "https://link.coupang.com/a/eEnlw9bAnQ" };
+    return { emoji: "🌀", category: "컬 케어" };
+  return { emoji: "✨", category: "광택 케어" };
 }
 
 // ─── 타입 ─────────────────────────────────────────────────────────────────────
@@ -185,7 +187,7 @@ async function downloadImage(url: string, styleName: string) {
 function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: number; onOpenModal: (url: string) => void; }) {
   const [expanded,     setExpanded]     = useState(false);
   const [downloading,  setDownloading]  = useState(false);
-  const product = getProduct(entry.answers);
+  const hint = getProductHint(entry.answers);
   const date    = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 
   return (
@@ -271,24 +273,24 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
           </div>
         )}
 
-        {/* 추천 제품 카드 */}
+        {/* 카테고리 힌트 → 자체 커머스(발견템) 유도 — 외부 제휴 링크 없음 */}
         <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
           <div className="flex items-center gap-3 px-3 py-3">
-            <span className="text-2xl">{product.emoji}</span>
+            <span className="text-2xl">{hint.emoji}</span>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(200,168,107,0.6)" }}>
-                {product.category}
+                {hint.category}
               </p>
               <p className="truncate text-xs font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
-                {product.name}
+                이 진단에 맞는 제품 보기
               </p>
             </div>
           </div>
-          <a href={product.url} target="_blank" rel="noopener noreferrer sponsored"
+          <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-xs font-bold transition-all"
             style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
-            재구매하러 가기 →
-          </a>
+            발견템에서 보기 →
+          </Link>
         </div>
       </div>
     </motion.div>
@@ -349,11 +351,12 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
               </p>
             </div>
           </div>
-          <a href={entry.product.link} target="_blank" rel="noopener noreferrer sponsored"
+          {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
+          <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-xs font-bold transition-all"
             style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
-            제품 보러가기 →
-          </a>
+            발견템에서 보기 →
+          </Link>
         </div>
       </div>
     </motion.div>
@@ -592,10 +595,6 @@ export default function MyDiaryPage() {
                 ),
               )}
             </div>
-
-            <p className="mt-6 text-center text-[10px]" style={{ color: "rgba(253,251,250,0.2)" }}>
-              이 포스팅은 쿠팡 파트너스 활동의 일환으로, 일정액의 수수료를 제공받습니다.
-            </p>
           </>
         )}
       </div>
