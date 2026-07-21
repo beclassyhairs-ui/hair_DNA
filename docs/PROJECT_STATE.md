@@ -51,7 +51,7 @@
 - ① 리프레시 토큰 **미저장**. access_token은 서버에서 회원번호(user/me) 조회에만 쓰고 폐기. 카카오 회원번호(kakao_user_id)만 users에 저장(알림 명단).
 - ② 로그인 **요구 지점 미정**(AI 합성 전 vs 상세 앞) → 엔진만 완성, Phase B 착수 금지. `lib/loginGate.ts`의 `LOGIN_REQUIREMENT_POINT`(현재 `"none"`) 상수 한 곳으로 나중에 켠다.
 - ③ 익명 이벤트 **소급연결 안 함**. 로그인 후부터 user_id 부여(anonymous_id는 계속 적재).
-- ④ `/privacy`에 카카오 수집항목(회원번호/닉네임)·목적·보유기간 **초안 추가([사업주 검토] 표시)**.
+- ④ `/privacy`에 카카오 수집항목(회원번호/닉네임)·목적·보유기간 **초안 작성**. 단 로그인 기능이 꺼진 지금 손님에게 노출되면 실동작과 어긋나므로 **`KAKAO_LOGIN_ENABLED`(현재 false)에 조건부 연동 — 기능 켜질 때 함께 노출**. 손님 화면에 내부 표시(`[사업주 검토]`) 노출 0 확인(flip 검증 완료).
 - ⑤ `lib/brand.ts` 신설(서비스명 "어뷰티" 임시). 신규 OAuth 표면만 상수 사용, 기존 ~50파일 하드코딩 치환은 **백로그**.
 
 ### 만든 것
@@ -73,8 +73,8 @@
 1. **users SQL 실행** — `supabase/users_auth_schema.sql`을 Supabase SQL Editor에서 직접 실행(users/profiles/diagnoses, RLS anon 차단). 되돌리기 어려움 → 사업주 승인.
 2. **카카오 developers 콘솔**: 카카오 로그인 ON / **Redirect URI 등록**(`https://hair-dna.vercel.app/api/auth/kakao/callback` + 로컬 `http://localhost:3000/api/auth/kakao/callback`) / Client Secret 발급·사용 / REST API 키 확인 / 앱 이름(동의창 서비스명, 브랜드 확정 시 함께 변경) / 동의항목(식별용 회원번호는 기본, 닉네임은 선택동의).
 3. **환경변수 등록**(로컬+Vercel): `KAKAO_REST_API_KEY`·`KAKAO_CLIENT_SECRET`·`KAKAO_REDIRECT_URI`·`USER_SESSION_SECRET`(ADMIN_SECRET과 다른 긴 랜덤).
-4. **`/privacy` 카카오 초안 확정** — 현재 [사업주 검토] 표시. 로그인 활성화 = 카카오 정보 저장 개시이므로 켜기 전 문안 확정.
-5. **② 로그인 요구 지점 결정** → 정해지면 Phase B(가짜 게이트 교체) 착수.
+4. **`/privacy` 카카오 문안 확정 후 노출** — 지금은 `KAKAO_LOGIN_ENABLED=false`라 카카오 문구가 손님에게 안 보인다(엔진만 존재, 실동작과 정합). 문안 확정 + 로그인 활성화 시 `lib/loginGate.ts`의 `KAKAO_LOGIN_ENABLED`를 true로 바꾸면 /privacy 카카오 문구가 함께 노출된다.
+5. **② 로그인 요구 지점 결정** → 정해지면 Phase B(가짜 게이트 교체 + `KAKAO_LOGIN_ENABLED`/`LOGIN_REQUIREMENT_POINT` 켜기) 착수.
 
 ## 이번 세션 (2026-07-21) — 셀카 문구 확정 + SEO·OG + Sentry 3파트
 
