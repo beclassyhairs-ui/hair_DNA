@@ -12,6 +12,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
 
 export const metadata: Metadata = {
   title: "개인정보처리방침 | 어뷰티(A-Beauty)",
@@ -46,12 +47,14 @@ export default function PrivacyPage() {
           <li><b>진단 답변</b>: 헤어 진단 설문 응답(모발 타입·고민·습관 등).</li>
           <li><b>셀카 이미지</b>: AI 헤어 변신을 위해 이용자가 업로드한 얼굴 사진.</li>
           <li><b>이벤트·이용 로그</b>: 페이지 조회·진단·상품 클릭 등 행동 이벤트, 유입 경로(UTM), 기기·브라우저 정보.</li>
-          {/* ⚠️ 초안 — 카카오 서버사이드 로그인 도입에 대비한 수집항목 고지.
-              로그인 기능은 아직 활성화되지 않았다(Phase B 미착수·환경변수 미설정). 최종 문안은 사업주 검토 전제. */}
-          <li>
-            <b>카카오 로그인 정보</b>(로그인 이용 시): 카카오 회원번호, (이용자 동의 시) 닉네임·프로필 이미지.{" "}
-            <span className="text-[#B08A3E]">[사업주 검토]</span>
-          </li>
+          {/* 카카오 로그인 수집항목 — 로그인 기능(Phase B, KAKAO_LOGIN_ENABLED) 활성화 시에만 노출한다.
+              기능이 꺼진 지금은 손님에게 보이지 않는다(문구가 실동작과 어긋나지 않게 함).
+              ⚠️ KAKAO_LOGIN_ENABLED를 true로 켜기 전 이 문안을 사업주가 검토·확정할 것. */}
+          {KAKAO_LOGIN_ENABLED && (
+            <li>
+              <b>카카오 로그인 정보</b>(로그인 이용 시): 카카오 회원번호, (이용자 동의 시) 닉네임·프로필 이미지.
+            </li>
+          )}
         </ul>
       </Section>
 
@@ -60,10 +63,10 @@ export default function PrivacyPage() {
           <li>AI 헤어 진단 및 헤어스타일 합성 미리보기 제공</li>
           <li>진단 결과 기반 상품(발견템) 매칭·추천</li>
           <li>서비스 이용 통계·품질 개선 및 유입 경로 분석</li>
-          <li>
-            카카오 로그인 이용 시: 회원 식별·로그인 유지, 진단 결과의 계정 저장·연동{" "}
-            <span className="text-[#B08A3E]">[사업주 검토]</span>
-          </li>
+          {/* 카카오 로그인 활성화(KAKAO_LOGIN_ENABLED) 시에만 노출 */}
+          {KAKAO_LOGIN_ENABLED && (
+            <li>카카오 로그인 이용 시: 회원 식별·로그인 유지, 진단 결과의 계정 저장·연동</li>
+          )}
         </ul>
       </Section>
 
@@ -78,10 +81,12 @@ export default function PrivacyPage() {
             <b>진단 답변·이벤트 로그</b>: 수집·이용 목적을 달성할 때까지 보관하며, 목적 달성 후
             지체 없이 파기합니다.
           </li>
-          <li>
-            <b>카카오 로그인 정보</b>: 회원 탈퇴 또는 로그인 기능 종료 시까지 보관 후 지체 없이 파기.{" "}
-            <span className="text-[#B08A3E]">[사업주 검토]</span>
-          </li>
+          {/* 카카오 로그인 활성화(KAKAO_LOGIN_ENABLED) 시에만 노출 */}
+          {KAKAO_LOGIN_ENABLED && (
+            <li>
+              <b>카카오 로그인 정보</b>: 회원 탈퇴 또는 로그인 기능 종료 시까지 보관 후 지체 없이 파기.
+            </li>
+          )}
           <li>관련 법령이 별도 보존을 요구하는 경우 해당 기간 동안 보관합니다.</li>
         </ul>
       </Section>
