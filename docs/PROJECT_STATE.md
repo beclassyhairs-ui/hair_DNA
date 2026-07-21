@@ -36,7 +36,14 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — 전부 커밋 완료. **미push 1커밋**: `370ec63` 셀카 즉시삭제)
+- (없음 — 전부 커밋·**push·배포 완료**. `b690908..937e916`)
+
+### ✅ 배포 검증 (2026-07-21, 프로덕션 실측)
+
+`hair-dna.vercel.app` 신코드 배포 확인:
+- **submit-diagnosis 아카이브 제거 라이브** — 셀카(`photoDataUrl`) 없이 `answers`만으로 **200 `{ok:true}`**(구코드는 400 요구). 응답에 `photoUrl` 필드 **사라짐**(내부 노출 제거)
+- 주요 경로 7종(`/style`, `/style/upload`, `/bangs`, `/damage-check`, `/hair-quiz`, `/items`, `/home`) 전부 200
+- ⚠️ **hair-transform 즉시삭제 실동작은 미검증** — 실제 Replicate 합성(토큰 필요) 1회 후 Vercel Blob `diagnosis/`에 원본이 안 남는지 배포 후 확인 필요. tsc·build·lint·Codex 6회까지만 확인됨.
 
 ## 이번 세션 (2026-07-21) — 원본 셀카 서버 영구 보관 제거 — `370ec63`
 
