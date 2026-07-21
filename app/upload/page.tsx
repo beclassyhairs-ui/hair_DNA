@@ -382,7 +382,9 @@ export default function UploadPage() {
       const answers = raw ? (JSON.parse(raw) as Record<string, string | string[]>) : {};
       const rawCounts = sessionStorage.getItem(TREATMENT_COUNTS_KEY);
       const treatmentCounts = rawCounts ? (JSON.parse(rawCounts) as Record<string, number>) : {};
-      const body: SubmitDiagnosisBody = { photoDataUrl, answers, treatmentCounts };
+      // 원본 셀카(photoDataUrl)는 보내지 않는다 — 서버가 더 이상 저장하지 않으므로
+      // 얼굴 데이터를 불필요하게 전송하지 않는다(데이터 최소화).
+      const body: SubmitDiagnosisBody = { answers, treatmentCounts };
       await fetch("/api/submit-diagnosis", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

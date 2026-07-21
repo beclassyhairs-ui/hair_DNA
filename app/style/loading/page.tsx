@@ -69,12 +69,13 @@ export default function StyleLoadingPage() {
         // 이전 디버그 에러 초기화
         try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
 
-        // Sheets/Blob 저장 — fire-and-forget
+        // 설문 답변만 Sheets에 기록 — fire-and-forget.
+        // 원본 셀카(photo)는 이 엔드포인트로 보내지 않는다(더 이상 저장하지 않으므로
+        // 얼굴 데이터를 불필요하게 전송하지 않는다). 셀카는 아래 hair-transform에만 전달.
         void fetch("/api/submit-diagnosis", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({
-            photoDataUrl: photo,
             answers:      toSheetAnswers(answers),
             treatmentCounts: {},
           }),

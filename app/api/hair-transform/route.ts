@@ -20,6 +20,7 @@ export const maxDuration = 60; // Node.js 런타임 고정 (fs 사용)
 
 import { access } from "fs/promises";
 import { join }   from "path";
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStyleDirectoryPath,
@@ -28,7 +29,7 @@ import {
   MAX_IMG,
 } from "@/lib/styleReference";
 import type { StyleAnswers } from "@/app/style/surveyData";
-import { uploadPhotoToBlob } from "@/lib/storage";
+import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
 // /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
@@ -116,6 +117,18 @@ function buildReplicateInput(inputImage: string, prompt: string) {
 
 export async function POST(req: NextRequest) {
 
+  // ── 실행 예산 ────────────────────────────────────────────────────────────────
+  // 원본 셀카 즉시삭제(finally)가 maxDuration(60s) 안에서 반드시 돌도록, 요청 시작 시각
+  // 기준으로 삭제+응답 여유(8s)를 뺀 hardDeadline을 잡는다. 업로드·Replicate 초기 호출·
+  // 폴링·삭제가 전부 이 예산을 공유해, 우리 타임아웃이 플랫폼 강제종료보다 먼저 터진다.
+  const HANDLER_START   = Date.now();
+  const DELETE_SAFETY_MS = 8_000;
+  const hardDeadline    = HANDLER_START + (maxDuration * 1_000 - DELETE_SAFETY_MS); // ≈ 52s
+  const budgetLeft = () => hardDeadline - Date.now();
+  // 삭제 전용 마감시각 — finally의 원본 삭제가 maxDuration 직전까지 쓸 수 있는 절대 상한.
+  // (hardDeadline 이후 ~7.5s 창. 플랫폼 강제종료(60s) 0.5s 전에 멈춘다.)
+  const deleteDeadline  = HANDLER_START + (maxDuration * 1_000 - 500);
+
   // 1. API 키 하드 체크
   const token = process.env.REPLICATE_API_TOKEN;
   if (!token) {
@@ -159,53 +172,86 @@ export async function POST(req: NextRequest) {
   const normalizedPhoto = normalizeBase64(userPhoto);
   console.log(`[hair-transform] 유저 사진: ${normalizedPhoto.slice(0, 30)}... (${normalizedPhoto.length}chars)`);
 
-  // 3-1. 유저 셀카 → Vercel Blob 공개 URL 변환
-  // lucataco/faceswap 모델은 data: URI를 URL로 처리해 NoneType 에러 발생
-  // → Blob에 업로드 후 반환된 https:// URL을 swap_image로 전송
-  let swapImageUrl: string;
+  // 유저 셀카는 Replicate가 input_image를 https URL로 가져가야 해서 잠깐 Blob에 올린다
+  // (data: URI 직접 전달은 이 모델에서 불안정). 합성 직후 아래 finally에서 즉시 삭제한다.
+  // 업로드 전 예산 소진 검사 — 여기서 예산이 없으면 아직 Blob이 없으니 삭제할 것도 없다.
+  if (budgetLeft() <= 1_000) {
+    return NextResponse.json({
+      ok: false,
+      reason: "budget_exhausted",
+      debugError: "요청 파싱 단계에서 실행 예산 소진 — 합성을 시작하지 않음(원본 미저장)",
+    });
+  }
+
+  // 원본 셀카 신원을 호출부가 먼저 정한다(랜덤 UUID pathname). 업로드가 abort돼 URL을
+  // 못 받아도 이 pathname으로 삭제할 수 있어 "저장됐지만 참조 불가한 orphan"이 생기지 않는다.
+  const blobPath = `diagnosis/${randomUUID()}.jpg`;
+
+  // ── 4~6. Replicate 합성 (업로드 포함) ────────────────────────────────────────
+  // ★ 원본 셀카 즉시삭제 보장: 업로드 시도 시점부터 전체를 하나의 try/finally로 감싼다.
+  //   업로드 실패·프롬프트 예외·합성 타임아웃 등 어떤 경로로 빠져나가도 finally가
+  //   pathname으로 원본을 지운다(URL 미확보 케이스까지 회수).
   try {
-    swapImageUrl = await uploadPhotoToBlob(normalizedPhoto);
-    if (!swapImageUrl) {
-      const msg = "BLOB_READ_WRITE_TOKEN이 환경변수에 없습니다. Vercel 대시보드 → Storage에서 Blob을 연결하세요.";
-      console.error("[hair-transform]", msg);
+    // 3-1. 유저 셀카 → Vercel Blob 공개 URL (Replicate input_image는 https URL 필요)
+    let swapImageUrl: string;
+    try {
+      // 업로드도 예산을 소비·공유한다(hang 시 남은 예산 내에서 끊어 finally 도달 보장).
+      // 위 가드로 budgetLeft() > 1s가 보장되므로 그대로 캡처해 전달한다.
+      const uploadBudget = budgetLeft();
+      swapImageUrl = await uploadPhotoToBlob(normalizedPhoto, {
+        pathname:    blobPath,
+        abortSignal: AbortSignal.timeout(uploadBudget),
+      });
+      if (!swapImageUrl) {
+        const msg = "BLOB_READ_WRITE_TOKEN이 환경변수에 없습니다. Vercel 대시보드 → Storage에서 Blob을 연결하세요.";
+        console.error("[hair-transform]", msg);
+        return NextResponse.json(
+          { ok: false, reason: "blob_token_missing", debugError: msg },
+          { status: 500 },
+        );
+      }
+      console.log("[hair-transform] ✅ Blob 업로드 완료:", swapImageUrl);
+    } catch (blobErr) {
+      const msg = blobErr instanceof Error ? blobErr.message : String(blobErr);
+      console.error("[hair-transform] ❌ Blob 업로드 실패:", msg);
       return NextResponse.json(
-        { ok: false, reason: "blob_token_missing", debugError: msg },
+        { ok: false, reason: "blob_upload_failed", debugError: `Vercel Blob 업로드 실패: ${msg}` },
         { status: 500 },
       );
     }
-    console.log("[hair-transform] ✅ Blob 업로드 완료:", swapImageUrl);
-  } catch (blobErr) {
-    const msg = blobErr instanceof Error ? blobErr.message : String(blobErr);
-    console.error("[hair-transform] ❌ Blob 업로드 실패:", msg);
-    return NextResponse.json(
-      { ok: false, reason: "blob_upload_failed", debugError: `Vercel Blob 업로드 실패: ${msg}` },
-      { status: 500 },
-    );
-  }
 
-  // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
-  const prompt = buildHairStylePrompt(answers);
+    // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
+    const prompt = buildHairStylePrompt(answers);
 
-  // 5. Payload 로그
-  console.log("[hair-transform] → flux-kontext-pro payload:", JSON.stringify({
-    model:       "black-forest-labs/flux-kontext-pro",
-    input_image: swapImageUrl,
-    prompt:      prompt.slice(0, 120) + "...",
-  }));
+    // 5. Payload 로그
+    console.log("[hair-transform] → flux-kontext-pro payload:", JSON.stringify({
+      model:       "black-forest-labs/flux-kontext-pro",
+      input_image: swapImageUrl,
+      prompt:      prompt.slice(0, 120) + "...",
+    }));
 
-  // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
-  try {
+    // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
+    // 잔여 예산을 한 번 캡처. 없으면 호출하지 않고 즉시 타임아웃 처리(→ finally에서 원본 삭제).
+    const fetchBudget = budgetLeft();
+    if (fetchBudget <= 1_000) {
+      return NextResponse.json({
+        ok: false,
+        reason: "poll_timeout",
+        debugError: "Replicate 호출 전 실행 예산 소진(업로드 지연) — 원본은 삭제됨",
+      });
+    }
+    const waitSec = Math.max(1, Math.min(45, Math.floor(fetchBudget / 1_000) - 2));
     const res = await fetch(REPLICATE_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization:  `Bearer ${token}`,
         "Content-Type": "application/json",
-        Prefer:         "wait=55",
+        Prefer:         `wait=${waitSec}`,
       },
       body: JSON.stringify({
         input: buildReplicateInput(swapImageUrl, prompt),
       }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(fetchBudget),
     });
 
     if (!res.ok) {
@@ -222,14 +268,16 @@ export async function POST(req: NextRequest) {
       urls?:   { get?: string };
     };
 
-    // processing 상태 → polling
-    if (data.status === "processing" && data.urls?.get) {
-      const pollResult = await pollUntilDone(data.urls.get, token);
+    // starting/processing → 완료까지 폴링.
+    // ⚠️ starting을 빼먹으면(워커 미시작 상태) no_output으로 반환한 뒤 finally에서
+    //    원본을 지워, 이후 워커가 input_image를 가져오려 할 때 합성이 깨진다.
+    if ((data.status === "starting" || data.status === "processing") && data.urls?.get) {
+      const pollResult = await pollUntilDone(data.urls.get, token, hardDeadline);
       if (!pollResult) {
         return NextResponse.json({
           ok: false,
           reason: "poll_timeout",
-          debugError: "Replicate 폴링 타임아웃: 50초 내에 이미지 생성 완료되지 않음",
+          debugError: "Replicate 폴링 타임아웃: 제한 시간 내에 이미지 생성 완료되지 않음",
         });
       }
       return NextResponse.json({ ok: true, imageUrl: pollResult });
@@ -259,21 +307,38 @@ export async function POST(req: NextRequest) {
       reason: "exception",
       debugError: `예외 발생: ${msg}`,
     });
+  } finally {
+    // ★ 원본 셀카 즉시삭제 — 합성 성공/실패/타임아웃/업로드 abort 무관하게 지운다.
+    // URL(swapImageUrl)이 아니라 pathname(blobPath)으로 지운다 → 업로드가 abort돼
+    // URL을 못 받았지만 서버엔 저장된 케이스까지 회수한다.
+    // 이 시점(응답 확정)엔 Replicate가 이미 input_image를 가져갔으므로 원본은 불필요.
+    // await로 응답 반환 전에 삭제를 끝내고(서버리스가 얼기 전), deleteDeadline을 공유해
+    // 삭제 재시도가 maxDuration을 넘기지 않도록 한다.
+    await deletePhotoFromBlob(blobPath, { deadline: deleteDeadline });
   }
 }
 
 // ─── Replicate 폴링 ───────────────────────────────────────────────────────────
 
 async function pollUntilDone(
-  pollUrl: string,
-  token:   string,
-  maxMs  = 50_000,
+  pollUrl:  string,
+  token:    string,
+  deadline: number, // 절대 마감시각(ms). 호출부 hardDeadline과 공유해 maxDuration 초과를 막는다.
 ): Promise<string | null> {
-  const deadline = Date.now() + maxMs;
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, 2_500));
+  // 폴 한 사이클(sleep + fetch)에 최소한 이만큼은 남아 있어야 시도한다. 그보다 적으면
+  // 마감을 넘기거나 무의미하므로 중단한다(500ms 강제 부여로 deadline을 넘기지 않도록).
+  const MIN_CYCLE_MS = 1_500;
+  while (deadline - Date.now() >= MIN_CYCLE_MS) {
+    const sleepMs = Math.min(2_500, deadline - Date.now() - 800); // fetch 몫 800ms 확보
+    if (sleepMs > 0) await new Promise(r => setTimeout(r, sleepMs));
+    const remaining = deadline - Date.now();
+    if (remaining < 500) break;
     try {
-      const res  = await fetch(pollUrl, { headers: { Authorization: `Bearer ${token}` } });
+      const res  = await fetch(pollUrl, {
+        headers: { Authorization: `Bearer ${token}` },
+        // poll fetch 자체도 마감을 넘겨 hang하지 않도록 잔여 예산으로 중단
+        signal: AbortSignal.timeout(remaining),
+      });
       const data = await res.json() as {
         status?: string;
         output?: string | string[];
