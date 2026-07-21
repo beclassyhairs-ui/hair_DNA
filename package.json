@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@sentry/nextjs": "^10.67.0",
     "@supabase/supabase-js": "^2.110.0",
     "@vercel/blob": "^2.4.0",
     "framer-motion": "^11.18.2",

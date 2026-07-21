@@ -1,6 +1,13 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  // Sentry instrumentation.ts 훅 활성화 (Next 14.2 — 15에서 stable화)
+  experimental: {
+    instrumentationHook: true,
+  },
 
   // @mediapipe/face_mesh — CommonJS 패키지를 Next.js에서 올바르게 번들링
   transpilePackages: ["@mediapipe/face_mesh"],
@@ -32,4 +39,18 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// ── Sentry 빌드 래핑 ──────────────────────────────────────────────────────────
+// DSN이 없어도 빌드는 정상 통과한다(런타임 init이 no-op). 소스맵 업로드는
+// SENTRY_AUTH_TOKEN이 있을 때만 수행 — 없으면 조용히 건너뛴다(빌드 실패 아님).
+// org/project/authToken은 전부 [사업주 환경변수] 자리다.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,           // 빌드 로그 스팸 억제
+  sourcemaps: {
+    // 토큰 없으면 업로드 시도 자체를 끈다(경고·실패 방지)
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  // Vercel Cron 등에서 자동 계측 라우트 생성 방지 옵션은 기본값 유지
+});
