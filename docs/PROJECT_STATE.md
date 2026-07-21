@@ -24,7 +24,9 @@
 
 ## 현재 상태 한 줄
 
-**셀카 정책 문구 확정 + SEO·OG 정비 + Sentry(에러 모니터링) 도입 3종 — push·배포·프로덕션 검증까지 완료(2026-07-21).**
+**카카오 서버사이드 OAuth "로그인 엔진"(Phase A) 구현 완료 — 커밋됨, push 대기(2026-07-21).** `lib/userAuth.ts`(유저 세션 쿠키, 관리자 인증과 완전분리) + `lib/kakaoAuth.ts`(인가코드→토큰교환→user/me→users upsert, access_token 미저장) + `/api/auth/{kakao/start,kakao/callback,me,logout}` + `lib/brand.ts`(서비스명 상수) + `lib/loginGate.ts`(로그인 요구지점 설정만). **Codex 검수 통과**(state CSRF·오픈리다이렉트·세션위조/만료·service_role·토큰로그 전부 확인). tsc·build 통과, userAuth 토큰 issue/verify/tamper 단위검증 통과, 라우트 스모크(me=loggedIn:false / start=503 / logout POST=ok·GET=405) 통과. **기존 가짜 게이트는 제거 안 하고 공존(Phase B 미착수 — 로그인 요구지점 ② 사업주 미정).** 남은 사업주 조치: 카카오 콘솔 설정 + users SQL 실행 + env 등록(아래 세션 기록).
+
+**(직전) 셀카 정책 문구 확정 + SEO·OG 정비 + Sentry(에러 모니터링) 도입 3종 — push·배포·프로덕션 검증까지 완료(2026-07-21).**
 ① 셀카 즉시파기 문구 확정(`c21e63d`) ② SEO·공유 메타 정비(`425e9d6`) ③ @sentry/nextjs 설치·초기화(DSN 미설정 시 no-op, `55d1c9e`). Codex 2회 검수 반영. `f561eb6..b1263b9` push, Vercel 프로덕션 배포 확인. **라이브 검증**: `/privacy` `확정 필요` 0건·즉시파기 문구 노출, `/style/upload` 국외이전+안심문구, `/hair-quiz`·`/items` og:image=og-default.png(200), `POST /api/admin/debug-sentry` 무인증 401(관리자 게이트 정상), 주요 경로 7종 200. **남은 사업주 결정: Sentry DSN 활성화 전 `/privacy`에 Sentry 수탁·국외이전 고지 추가(활성화=에러 데이터 국외이전 개시).** 상세는 아래 세션 기록.
 
 **(직전) 원본 셀카(합성 전 얼굴) 서버 영구 보관 제거 완료·커밋됨(`370ec63`) — push 대기(2026-07-21).** ① submit-diagnosis 아카이브 업로드 제거(셀카 미저장, 답변만 Sheets) ② hair-transform은 합성 직후 finally에서 pathname 기반 즉시삭제. Codex 6회 검수 반영. 계정 기반 결과이미지 영속화는 카카오 서버 OAuth 완성 이후 단계(현재 카카오 로그인은 클라 SDK뿐, 서버가 유저 식별 못 함). **남은 사업주 결정: 셀카 파기 durable 백스톱(주기적 `diagnosis/` 정리)을 둘지 + 기존 적재분 처리.**
@@ -39,7 +41,40 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — 전부 커밋·**push·배포·프로덕션 검증 완료**. `f561eb6..b1263b9`)
+- **push 대기**: 카카오 OAuth 로그인 엔진(Phase A). 전 파트 커밋됨, push 승인 대기.
+
+## 이번 세션 (2026-07-21) — 카카오 서버사이드 OAuth "로그인 엔진"(Phase A)
+
+조사·설계 보고(직전)의 Phase A를 실제 구현. **로그인 엔진만** 만들고 기존 가짜 게이트 교체(Phase B)는 착수 안 함.
+
+### 확정 결정(사업주 지시)
+- ① 리프레시 토큰 **미저장**. access_token은 서버에서 회원번호(user/me) 조회에만 쓰고 폐기. 카카오 회원번호(kakao_user_id)만 users에 저장(알림 명단).
+- ② 로그인 **요구 지점 미정**(AI 합성 전 vs 상세 앞) → 엔진만 완성, Phase B 착수 금지. `lib/loginGate.ts`의 `LOGIN_REQUIREMENT_POINT`(현재 `"none"`) 상수 한 곳으로 나중에 켠다.
+- ③ 익명 이벤트 **소급연결 안 함**. 로그인 후부터 user_id 부여(anonymous_id는 계속 적재).
+- ④ `/privacy`에 카카오 수집항목(회원번호/닉네임)·목적·보유기간 **초안 추가([사업주 검토] 표시)**.
+- ⑤ `lib/brand.ts` 신설(서비스명 "어뷰티" 임시). 신규 OAuth 표면만 상수 사용, 기존 ~50파일 하드코딩 치환은 **백로그**.
+
+### 만든 것
+- `lib/userAuth.ts` — 유저 세션 쿠키(`abeauty_session`, HMAC `userId.exp.sig`, TTL 30일). **관리자(`abeauty_admin`/`ADMIN_SECRET`)와 시크릿·쿠키·모듈 완전 분리**(CLAUDE.md 8번). 서명키 `USER_SESSION_SECRET`.
+- `lib/kakaoAuth.ts` — `getKakaoEnv`/`buildKakaoAuthorizeUrl`/`exchangeKakaoCode`/`fetchKakaoProfile`/`upsertUserByKakaoId`(service_role 경유, 닉네임/프로필은 있을 때만 갱신) + `sanitizeReturnTo`(오픈리다이렉트 차단). 공급자 응답 본문은 로그 미기록(상태코드만).
+- `app/api/auth/kakao/start` — state(CSRF)+return_to를 httpOnly 쿠키에 담고 카카오 authorize로 302. env 미설정 시 503 안내.
+- `app/api/auth/kakao/callback` — state 대조 → 토큰교환 → user/me → users upsert → 세션 발급 → return_to로 302. 실패 시 `?login=failed`로 복귀.
+- `app/api/auth/me`(세션 확인, 내부 uuid만 반환) · `app/api/auth/logout`(POST만, 쿠키 삭제).
+- `lib/brand.ts` · `lib/loginGate.ts`(설정 상수).
+- `supabase/users_auth_schema.sql` — users/profiles/diagnoses 초안(**실행 금지**, RLS anon deny-all).
+- `/privacy` 카카오 수집항목 초안 · `.env.local.example` 카카오/세션 자리.
+
+### 검증
+- Codex 검수 **통과**(state CSRF·오픈리다이렉트·세션위조/만료·service_role 미노출·토큰 로그 미노출·관리자 분리 확인). 비차단 권고(공급자 응답 본문 로그) 반영.
+- tsc·`next build` 통과(4 라우트 컴파일). `lib/userAuth` 실모듈 issue/verify/tamper/만료/형식 단위검증 6/6. 라우트 스모크: `/api/auth/me`=`{loggedIn:false}`, `/api/auth/kakao/start`(env 없음)=503, `/api/auth/logout` POST=`{ok:true}`·GET=405.
+- ⚠️ **실제 카카오 왕복(토큰교환·user/me·users upsert)은 미검증** — 카카오 콘솔 설정·env·SQL 실행이 사업주 조치라 로컬 불가. 배포 후 사업주 설정 완료 시 1회 확인 필요.
+
+### 🔴 사업주 조치 대기 (로그인 켜기 전)
+1. **users SQL 실행** — `supabase/users_auth_schema.sql`을 Supabase SQL Editor에서 직접 실행(users/profiles/diagnoses, RLS anon 차단). 되돌리기 어려움 → 사업주 승인.
+2. **카카오 developers 콘솔**: 카카오 로그인 ON / **Redirect URI 등록**(`https://hair-dna.vercel.app/api/auth/kakao/callback` + 로컬 `http://localhost:3000/api/auth/kakao/callback`) / Client Secret 발급·사용 / REST API 키 확인 / 앱 이름(동의창 서비스명, 브랜드 확정 시 함께 변경) / 동의항목(식별용 회원번호는 기본, 닉네임은 선택동의).
+3. **환경변수 등록**(로컬+Vercel): `KAKAO_REST_API_KEY`·`KAKAO_CLIENT_SECRET`·`KAKAO_REDIRECT_URI`·`USER_SESSION_SECRET`(ADMIN_SECRET과 다른 긴 랜덤).
+4. **`/privacy` 카카오 초안 확정** — 현재 [사업주 검토] 표시. 로그인 활성화 = 카카오 정보 저장 개시이므로 켜기 전 문안 확정.
+5. **② 로그인 요구 지점 결정** → 정해지면 Phase B(가짜 게이트 교체) 착수.
 
 ## 이번 세션 (2026-07-21) — 셀카 문구 확정 + SEO·OG + Sentry 3파트
 
