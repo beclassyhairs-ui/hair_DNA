@@ -24,7 +24,9 @@
 
 ## 현재 상태 한 줄
 
-**ROADMAP P0에서 코드로 진행 가능한 잔여 3건(가독성 정비 / 결과지 CTA 우선순위 / 개인정보 문구 정정) 완료 — push·배포·프로덕션 검증까지 끝남(2026-07-21).** 커밋 `567b7fe`, `9d4298b`, `4496099`, `594e862`. **P0의 나머지는 전부 사업주 게이트**(faceswap 승인, 상품 20~30개 등재, E2E 완주, 셀카 보유기간 확정)라 **코드로 넘길 수 있는 P0 항목이 0건이다. 다음 세션은 P1(B-1~B-4 운영 안전망, D-2 OG 실이미지)로 넘어갈 차례.**
+**원본 셀카(합성 전 얼굴) 서버 영구 보관 제거 완료·커밋됨(`370ec63`) — push 대기(2026-07-21).** ① submit-diagnosis 아카이브 업로드 제거(셀카 미저장, 답변만 Sheets) ② hair-transform은 합성 직후 finally에서 pathname 기반 즉시삭제. Codex 6회 검수 반영. 계정 기반 결과이미지 영속화는 카카오 서버 OAuth 완성 이후 단계(현재 카카오 로그인은 클라 SDK뿐, 서버가 유저 식별 못 함). **남은 사업주 결정: 셀카 파기 durable 백스톱(주기적 `diagnosis/` 정리)을 둘지 + 기존 적재분 처리.**
+
+**(직전) ROADMAP P0 코드 잔여 3건(가독성 / 결과지 CTA / 개인정보 문구) 완료 — push·배포·프로덕션 검증까지 끝남(2026-07-21).** 커밋 `567b7fe`, `9d4298b`, `4496099`, `594e862`. **P0의 나머지는 전부 사업주 게이트**(faceswap 승인, 상품 20~30개 등재, E2E 완주, 셀카 보유기간 확정)라 **코드로 넘길 수 있는 P0 항목이 0건이다. 다음 세션은 P1(B-1~B-4 운영 안전망, D-2 OG 실이미지)로 넘어갈 차례.**
 
 **(직전) 퍼널 이벤트 `/hair-quiz` 확장 + `report_view` 분리 — push 완료(`ea0b8cf..f940ffb`).** C-1(이미지 미러링) + C-3(퍼널 대시보드) 포함 이전 커밋도 전부 origin/main 반영됨. 사업주 조치 2건 여전히 대기: ① `supabase/events_funnel_index_migration.sql` 실행 ② Vercel에 `BLOB_READ_WRITE_TOKEN` 등록 확인.
 
@@ -34,7 +36,41 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — 전부 커밋·**push 완료**. `f940ffb..594e862`)
+- (없음 — 전부 커밋 완료. **미push 1커밋**: `370ec63` 셀카 즉시삭제)
+
+## 이번 세션 (2026-07-21) — 원본 셀카 서버 영구 보관 제거 — `370ec63`
+
+목표(사업주 지시): 카카오 로그인 유저가 결과 이미지를 계정에 저장해 기기 바꿔도 보게 한다 + 원본 셀카는 서버 영구 보관 안 함. **단 카카오 서버 로그인 미완성이라 지금은 "구조 조사 + 원본 셀카 즉시삭제"까지만**, 계정 저장은 카카오 OAuth 이후로.
+
+### 조사 결론 (셀카 흐름)
+
+- **셀카 영구 저장 지점이 2곳이었다** — 둘 다 공개 Blob, 삭제 로직 없음:
+  1. `submit-diagnosis` → Blob 아카이브(Sheets에 URL만 기록, 아무도 재조회 안 함)
+  2. `hair-transform` → Blob(Replicate `input_image` URL 확보용, 기능 필수)
+- **카카오 로그인은 사실상 흉내** — `app/style/result/page.tsx` 인라인 클라 SDK뿐. 서버 OAuth 라우트 없음, 카카오 ID/토큰 안 받고 실패해도 통과, `profiles`/`users` 테이블 없음. → **서버가 유저 식별 불가 = 계정 저장 지금 불가능**(카카오 OAuth 선행 필요). 미루는 판단 근거.
+- **결과 이미지(합성물)는 localStorage에 Replicate CDN URL 원본으로만** 저장 → CDN 만료 시 깨지고 폰 바꾸면 소실. 서버 영구 저장 안 됨(미래 계정저장 대상). 즉시삭제 대상 아님.
+- dead route `app/api/analyze-face`(GPT-4o Vision)는 호출부 없음 + 우리 Blob 저장 안 함 → 범위 밖.
+
+### 구현
+
+1. **submit-diagnosis** — 아카이브 업로드 제거. 답변만 Sheets 기록(photoUrl=""). `photoDataUrl`은 구버전 호환 수신만·무시. 응답에서 `photoUrl` 제거(읽는 클라 없음 확인). 클라(`/style/loading`·dead `/upload`)도 셀카 미전송(데이터 최소화).
+2. **hair-transform** — 합성 직후 finally 즉시삭제.
+   - 예산: 요청 시작 기준 `hardDeadline≈52s`(업로드·초기fetch·폴링 공유) + `deleteDeadline≈59.5s` → `maxDuration=60s` 내 finally 보장(우리 타임아웃이 플랫폼 강제종료보다 먼저 터짐)
+   - **orphan 방지**: 호출부가 `randomUUID` pathname을 먼저 정하고 `addRandomSuffix:false`로 업로드 → finally에서 URL 아닌 **pathname으로 삭제**(업로드 abort로 URL 못 받아도 회수). 업로드+합성 전체를 단일 try/finally로 감쌈.
+   - `starting`도 폴링(워커 미시작 중 삭제로 합성 깨짐 방지)
+3. **lib/storage.ts** — `uploadPhotoToBlob`(pathname 지원, 정적 import) + `deletePhotoFromBlob`(재시도 2회·각 2.5s 상한·절대 reject 안 함).
+
+### Codex 검수 6회 (반복 지적 전부 반영)
+
+`starting` 폴링 누락 → finally 예산 미보장(maxDuration 초과) → try/finally 범위(업로드 직후부터) → **업로드-abort 후 URL 미확보 orphan**(가장 중요, pathname 삭제로 해결) → 예산 경계 캡처 → del 정적 import. 최종 남은 지적(삭제 최종실패·late-commit 경쟁조건 회수)은 **주기적 정리(cron)의 영역**으로, Codex도 "이번 범위 밖 사업주 결정, 지금 필수 아님"으로 확인.
+
+### ⚠️ 검증 공백
+
+- **실제 Replicate 합성 + 삭제 실동작 미확인** — 로컬에 `REPLICATE_API_TOKEN`·`BLOB_READ_WRITE_TOKEN` 없어 tsc·build·lint까지만. **배포 후 1회 확인 필요**: /style 합성 성공 후 Vercel Blob `diagnosis/`에 원본이 남지 않는지.
+
+### 🔴 사업주 결정 대기 (셀카 파기 durable 백스톱)
+
+즉시삭제는 정상 케이스를 덮지만, **삭제 최종실패(재시도 2회 후)** 와 **업로드-abort 후 서버가 del보다 늦게 커밋하는 극단 경쟁조건**은 원본이 잔존할 수 있다. 완전히 닫으려면 **주기적 `diagnosis/` prefix 정리(오래된 orphan을 list+del)**가 필요 — 이건 cron 자동화라 ROADMAP상 배포 전 유보 대상이자 "기존 적재분 파기"와 같은 결정 묶음. 선택: ① 지금 경량 sweep 도입 승인 ② 배포 후로 유보(현 즉시삭제로 tail 리스크 감수). **+ 기존에 쌓인 Blob 셀카·Sheets 행 파기 여부**(되돌릴 수 없어 직접 실행).
 
 ### ✅ 배포 검증 (2026-07-21, 프로덕션 실측)
 
