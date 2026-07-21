@@ -24,7 +24,10 @@
 
 ## 현재 상태 한 줄
 
-**원본 셀카(합성 전 얼굴) 서버 영구 보관 제거 완료·커밋됨(`370ec63`) — push 대기(2026-07-21).** ① submit-diagnosis 아카이브 업로드 제거(셀카 미저장, 답변만 Sheets) ② hair-transform은 합성 직후 finally에서 pathname 기반 즉시삭제. Codex 6회 검수 반영. 계정 기반 결과이미지 영속화는 카카오 서버 OAuth 완성 이후 단계(현재 카카오 로그인은 클라 SDK뿐, 서버가 유저 식별 못 함). **남은 사업주 결정: 셀카 파기 durable 백스톱(주기적 `diagnosis/` 정리)을 둘지 + 기존 적재분 처리.**
+**셀카 정책 문구 확정 + SEO·OG 정비 + Sentry(에러 모니터링) 도입 3종 완료 — 커밋됨, push 대기(2026-07-21).**
+① 셀카 즉시파기 문구 확정(`c21e63d`) ② SEO·공유 메타 정비(`425e9d6`) ③ @sentry/nextjs 설치·초기화(DSN 미설정 시 no-op, 커밋 예정). Codex 2회 검수 반영. **남은 사업주 결정: Sentry DSN 활성화 전 `/privacy`에 Sentry 수탁·국외이전 고지 추가(활성화=에러 데이터 국외이전 개시).** 상세는 아래 세션 기록.
+
+**(직전) 원본 셀카(합성 전 얼굴) 서버 영구 보관 제거 완료·커밋됨(`370ec63`) — push 대기(2026-07-21).** ① submit-diagnosis 아카이브 업로드 제거(셀카 미저장, 답변만 Sheets) ② hair-transform은 합성 직후 finally에서 pathname 기반 즉시삭제. Codex 6회 검수 반영. 계정 기반 결과이미지 영속화는 카카오 서버 OAuth 완성 이후 단계(현재 카카오 로그인은 클라 SDK뿐, 서버가 유저 식별 못 함). **남은 사업주 결정: 셀카 파기 durable 백스톱(주기적 `diagnosis/` 정리)을 둘지 + 기존 적재분 처리.**
 
 **(직전) ROADMAP P0 코드 잔여 3건(가독성 / 결과지 CTA / 개인정보 문구) 완료 — push·배포·프로덕션 검증까지 끝남(2026-07-21).** 커밋 `567b7fe`, `9d4298b`, `4496099`, `594e862`. **P0의 나머지는 전부 사업주 게이트**(faceswap 승인, 상품 20~30개 등재, E2E 완주, 셀카 보유기간 확정)라 **코드로 넘길 수 있는 P0 항목이 0건이다. 다음 세션은 P1(B-1~B-4 운영 안전망, D-2 OG 실이미지)로 넘어갈 차례.**
 
@@ -36,7 +39,46 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — 전부 커밋·**push·배포 완료**. `b690908..937e916`)
+- **push 대기**: 셀카 문구(`c21e63d`) + SEO·OG(`425e9d6`) + Sentry(커밋 예정). 전체 파트 종료 후 일괄 push 승인 요청 예정.
+
+## 이번 세션 (2026-07-21) — 셀카 문구 확정 + SEO·OG + Sentry 3파트
+
+### 파트 1. 셀카 즉시파기 정책 문구 확정 — `c21e63d`
+
+정책은 이미 코드로 확정·배포됨(submit-diagnosis 셀카 미저장 + hair-transform 합성 직후 즉시삭제). 이번엔 **문구를 실동작과 100% 대조·정정**:
+- `/privacy` 보유기간: 셀카 `[ 즉시파기/N일 — 확정 필요 ]` 플레이스홀더 → **"합성 완료 즉시 파기"** 확정. 진단답변·이벤트의 `확정 필요` TODO도 "목적 달성 시까지" 표준 문구로 교체(유저 노출 내부 TODO 제거). 국외이전 항목에 이전방법 명시 + 보유기간 즉시파기로 정합.
+- `/style/upload`: 안심 문구(따뜻·담담, 겁주기 없음) + **미국 Replicate 국외이전 고지 블록** 추가. stale 문구("업로드·보관"→"즉시 파기"), 동의 항목에 국외이전 포함.
+- `/style`·`/style/upload`의 stale 주석("업로드·보관"·"즉시파기 쓰지 말 것")을 즉시삭제 실동작 기준으로 정정.
+- 회사명·연락처·보호책임자·시행일은 `[사업주 기재 필요]` 유지. 법률 자문 아님.
+- 검증: `/privacy`·`/style/upload` 실렌더 대조(get_page_text) — `확정 필요` 0건, 즉시파기·국외이전 정상 노출.
+
+### 파트 2. SEO·공유 메타 정비 — `425e9d6`
+
+- **미커버 공개 페이지 3종 layout metadata 신설**: `/hair-quiz`·`/diagnosis`·`/consulting`(sitemap 공개 엔트리인데 root 기본값만 쓰던 페이지). title/desc/OG/twitter 부여.
+- **og:image 상속 안 됨 발견·픽스**: Next는 세그먼트별 `openGraph`를 통째로 교체(deep-merge 아님) → `/items`·`/style` 포함 상속 페이지들이 **og:image 누락 상태**였다(선재 버그). 모든 상속 페이지에 `og-default.png` 명시.
+- `/style`: bangs-og.png(앞머리 전용 아트) 재사용 제거 → 브랜드 기본 OG 상속.
+- **`public/og-default.png`(1200×630) 임시 플레이스홀더 추가** — 기존 404 참조 해소(순수 Node PNG 생성, 크림+골드 얼굴가이드 모티프). 최종 디자인은 **[사업주 승인]** 대상, 같은 파일명 덮어쓰면 코드 변경 없이 반영.
+- robots(`/admin`·`/api` 차단)·sitemap(7 공개 엔트리) 기존 구조 검증. 프론트 전용 → Codex 생략.
+
+### 파트 3. Sentry 에러 모니터링 도입 (B-1) — 커밋 예정
+
+- `@sentry/nextjs@10.67.0` 설치. `instrumentation.ts`(런타임별 init) + client/server/edge config + `global-error.tsx`(렌더 에러 경계). `next.config.mjs`를 `withSentryConfig`로 래핑, `experimental.instrumentationHook` 활성.
+- **DSN은 `[사업주 환경변수]`(NEXT_PUBLIC_SENTRY_DSN)** — 미설정 시 세 런타임 모두 `enabled:false` **완전 no-op**. 배포 후 Vercel에 DSN만 넣으면 동작. 알림(이메일)은 Sentry 대시보드에서 설정(코드 아님).
+- 테스트 발화기: `/admin/debug-sentry`(페이지·클라 캡처) + `POST /api/admin/debug-sentry`(서버 throw) — **둘 다 관리자 게이트 뒤**(공개 시 봇이 이벤트 할당량 소진 가능). 연동 확인 후 삭제 가능.
+- PII 최소화: `tracesSampleRate:0`, `sendDefaultPii:false`, `beforeSend=scrubEvent`(URL 쿼리·쿠키·인증헤더 제거, `lib/sentryScrub.ts`).
+- 검증: tsc·`next build` 통과, 서버 라우트가 `wrapRouteHandlerWithSentry`로 래핑됨을 dev 로그로 확인.
+
+**Codex 검수 2회(app/api·config 변경이라 필수) — 지적 전부 반영:**
+1차: lockfile 미스테이징 / 공개 테스트 라우트 남용 / 중복 캡처 / tracesSampleRate·beforeSend 부재 / 국외이전 고지.
+2차: 클라 테스트 페이지도 공개라 자동화 남용 가능 → `/admin/` 아래로 이동 / 서버 GET 부작용(SameSite=Lax CSRF) → **POST로 변경**. → 반영 완료.
+
+### 🔴 사업주 조치 대기 (Sentry — 켜기 전 필수)
+
+**Sentry DSN 활성화 = 에러 데이터(오류 메시지·stack·요청 경로·기기/브라우저 정보)의 국외이전 개시다.** DSN을 넣기 전에 반드시:
+1. `/privacy`에 **Sentry를 처리위탁 수탁자로 추가**(오류 모니터링) + **국외이전**(Sentry 프로젝트 리전) 고지 반영. Sentry는 지금 비활성이라 법적 문서에 미리 넣지 않았다 — 켜는 순간 함께 갱신할 것.
+2. Sentry 프로젝트 실제 리전(US/EU) 확인 + 필요 시 DPA.
+3. Sentry 대시보드에서 이메일 알림 채널 지정(`beclassyhairs@gmail.com`).
+4. (선택) 소스맵 업로드용 `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` — 없어도 에러 수집은 정상.
 
 ### ✅ 배포 검증 (2026-07-21, 프로덕션 실측)
 
