@@ -87,6 +87,23 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           className="flex-none border-t border-white/50 bg-[#FBF9F4]/92 px-5 pt-5 backdrop-blur-xl"
           style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
         >
+          {/* 안심 문구 + 국외이전 고지 — 톤: 따뜻·담담, 겁주기 금지.
+              ⚠️ 실동작과 반드시 일치해야 하는 문구다.
+                · submit-diagnosis: 셀카 미저장(답변만 Sheets)
+                · hair-transform: 합성 위해 잠깐 Blob 업로드 → 합성 직후 finally에서 즉시삭제
+                · 합성은 Replicate(미국)에서 처리 → 국외이전 함께 고지
+              "즉시 파기"가 이제 실동작이다. 되돌릴 땐 코드(위 두 라우트)부터 바꿀 것. */}
+          <div className="mb-4 rounded-2xl border border-[#E7DFC9] bg-white/70 px-4 py-3">
+            <p className="text-[13px] leading-relaxed text-[#6B6355]">
+              올려주신 사진은 <span className="font-semibold text-[#4A453B]">헤어스타일을 합성하는 데에만</span> 쓰이고,{" "}
+              <span className="font-semibold text-[#4A453B]">합성이 끝나면 곧바로 서버에서 삭제</span>돼요.
+              원본은 따로 보관하지 않으니 안심하고 진행하셔도 좋아요.
+            </p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-[#8A8474]">
+              합성은 해외(미국 Replicate) 서버에서 처리되며, 이 과정에서 사진이 국외로 이전됩니다.
+            </p>
+          </div>
+
           {/* 동의 체크박스 */}
           <button
             type="button"
@@ -106,20 +123,17 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             </span>
             <span>
               <span className="block text-[15px] font-medium leading-snug text-[#4A453B]">
-                AI 헤어 분석을 위한 사진 업로드 및 처리에 동의합니다.{" "}
+                AI 헤어 합성을 위한 사진 업로드·처리 및 국외이전에 동의합니다.{" "}
                 <span className="text-[#A8884A]">(필수)</span>
               </span>
-              {/* ⚠️ 실동작과 일치해야 하는 문구 — 사진은 /api/submit-diagnosis를 거쳐
-                  Vercel Blob에 업로드·보관된다. 자동 파기 로직이 도입되기 전까지
-                  "즉시 파기" 류의 표현을 쓰지 말 것. */}
               <span className="mt-1 block text-[13px] text-[#6B6355]">
-                사진은 결과 생성을 위해 서버에 업로드·보관됩니다.
+                합성이 끝나면 사진은 즉시 파기됩니다.
               </span>
             </span>
           </button>
 
           <p className="text-center text-[13px] text-[#6B6355]">
-            보관 기간과 처리 방식은{" "}
+            자세한 처리 방식은{" "}
             <Link href="/privacy" className="font-semibold text-[#8A7648] underline underline-offset-2">
               개인정보처리방침
             </Link>

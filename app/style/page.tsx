@@ -124,8 +124,9 @@ export default function StyleLandingPage() {
               나의 맞춤 스타일 분석하기
             </BlackCTAButton>
 
-            {/* ⚠️ 실동작과 일치해야 하는 문구 — /style 플로우는 셀카를 서버에 업로드·보관한다
-                (app/style/loading → /api/submit-diagnosis). "개인정보 미저장"으로 되돌리지 말 것. */}
+            {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 합성 직후 즉시 파기한다
+                (app/api/hair-transform finally 삭제, submit-diagnosis는 셀카 미저장).
+                "개인정보 미저장"으로 되돌리지 말 것 — 국외이전·즉시파기 고지는 /style/upload에 있다. */}
             <p className="text-center text-[13px] text-[#6B6355]">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요
             </p>

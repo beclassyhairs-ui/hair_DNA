@@ -1,7 +1,13 @@
 // ============================================================================
 // /privacy — 개인정보처리방침 (초안)
-// ⚠️ 초안이다. 보유기간·보호책임자 등 [ ] 표기는 사업주 확정 후 채운다.
+// ⚠️ 초안이다. 상호·보호책임자·연락처 등 [ ] 표기는 사업주 확정 후 채운다.
 //    플레이스홀더가 색인되지 않도록 noindex 처리.
+//
+// 📌 셀카 보유기간은 확정됨: "합성 완료 즉시 파기".
+//    실동작 근거 — app/api/submit-diagnosis(셀카 미저장, 답변만 Sheets) +
+//    app/api/hair-transform(합성 직후 finally에서 원본 즉시삭제). 이 문서 문구는
+//    반드시 그 실동작과 일치해야 하며, 되돌릴 때는 코드부터 바꿀 것.
+//    (법률 자문 아님 — 최종 문안은 사업주 검토 전제)
 // ============================================================================
 
 import type { Metadata } from "next";
@@ -26,7 +32,7 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
       <div className="rounded-xl border border-[#E4B84A]/40 bg-[#FBF3DC] px-4 py-3 text-[13px] font-semibold text-[#8A6D2F]">
-        초안 — 사업주 검토·확정 전입니다. 실제 값([ ] 표기)과 보유기간은 확정 후 반영됩니다.
+        초안 — 사업주 검토 전입니다. 상호·연락처·개인정보 보호책임자 등 [ ] 표기 항목은 확정 후 반영됩니다.
       </div>
 
       <h1 className="mt-6 text-[22px] font-bold tracking-tight text-[#2F2A22]">개인정보처리방침</h1>
@@ -53,8 +59,15 @@ export default function PrivacyPage() {
 
       <Section title="3. 보유 및 이용기간">
         <ul className="list-disc space-y-1 pl-5">
-          <li><b>셀카 이미지</b>: [ 합성 완료 즉시 파기 / N일 후 자동 삭제 — 확정 필요 ].</li>
-          <li><b>진단 답변·이벤트 로그</b>: [ 수집일로부터 N년 / 서비스 목적 달성 시까지 — 확정 필요 ].</li>
+          <li>
+            <b>셀카 이미지</b>: <b>합성 완료 즉시 파기</b>합니다. 업로드한 사진은 AI 헤어스타일
+            합성 처리에만 사용되며, 처리가 끝나는 즉시 서버에서 삭제되고 원본을 영구 보관하지
+            않습니다.
+          </li>
+          <li>
+            <b>진단 답변·이벤트 로그</b>: 수집·이용 목적을 달성할 때까지 보관하며, 목적 달성 후
+            지체 없이 파기합니다.
+          </li>
           <li>관련 법령이 별도 보존을 요구하는 경우 해당 기간 동안 보관합니다.</li>
         </ul>
       </Section>
@@ -87,7 +100,8 @@ export default function PrivacyPage() {
           <li>이전 항목: 셀카(얼굴) 이미지</li>
           <li>이전 국가/업체: 미국 / Replicate, Inc.</li>
           <li>이전 목적: AI 헤어스타일 합성</li>
-          <li>보유·이용기간: 위 3항의 셀카 보유기간에 따름</li>
+          <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
+          <li>보유·이용기간: 합성 완료 즉시 파기(위 3항과 동일 — 영구 보관하지 않음)</li>
         </ul>
         <p className="text-[13px] text-[#9A927F]">
           ※ Vercel·Supabase·Google 등 다른 수탁업체의 서버 소재지에 따라 추가 국외이전이 발생할 수 있으며,
