@@ -14,6 +14,7 @@ import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_PH
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
+import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 import AdBanner from "@/app/components/AdBanner";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
@@ -58,14 +59,37 @@ export default function StyleLoadingPage() {
     if (calledRef.current) return;
     calledRef.current = true;
 
-    async function analyze() {
+    async function run() {
+      // 입력·게이트 검증은 try/finally 밖에서 한다 — 여기서 다른 곳으로 라우팅하면
+      // 아래 합성 finally의 "/style/result" 이동과 경쟁하지 않도록 즉시 return한다.
+      const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
+      const raw   = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      let answers: StyleAnswers = {};
+      try { answers = raw ? (JSON.parse(raw) as StyleAnswers) : {}; } catch { answers = {}; }
+
+      // 셀카 없으면 업로드로(결과지로 진행하지 않음)
+      if (!photo) { router.replace("/style/upload"); return; }
+
+      // ── Phase B 로그인 게이트 ──────────────────────────────────────────────
+      // AI 합성(유료·결과 공개) 직전에 실제 카카오 로그인을 요구한다. 미로그인 시
+      // 카카오로 보냈다가 /style/loading으로 복귀 → sessionStorage의 셀카·답변이
+      // 그대로 남아 있어(같은 탭) 이어서 합성한다. 합성/횟수 차감은 로그인 이후에만.
+      // ★ 결과지로 진행하지 않고 return — 로그인 화면으로만 이동한다.
+      if (isLoginRequiredBeforeSynthesis()) {
+        let loggedIn = false;
+        try {
+          const me = await fetch("/api/auth/me", { cache: "no-store" }).then(r => r.json());
+          loggedIn = Boolean(me?.loggedIn);
+        } catch { loggedIn = false; }
+        if (!loggedIn) {
+          window.location.href =
+            `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
+          return;
+        }
+      }
+
+      // ── 합성 ── 이 경로를 시작한 뒤에만 결과지로 이동한다(finally).
       try {
-        const photo   = sessionStorage.getItem(STYLE_PHOTO_KEY);
-        const raw     = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-        const answers: StyleAnswers = raw ? JSON.parse(raw) : {};
-
-        if (!photo) { router.replace("/style/upload"); return; }
-
         // 이전 디버그 에러 초기화
         try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
 
@@ -82,8 +106,6 @@ export default function StyleLoadingPage() {
         });
 
         // ★ Replicate AI 합성 (62초 타임아웃) — 완료 즉시 결과지로 이동한다.
-        // (예전엔 "최소 15초 광고 강제 대기" 타이머가 있었으나 AdSense 정책 리스크 +
-        //  이탈 원인이라 제거했다. 광고는 합성이 걸리는 자연 대기 시간에만 노출한다.)
         try {
           incrementUsage(); // 실제 API 비용 발생 시점에 횟수 차감
           console.log("[AI] /api/hair-transform 호출 시작...");
@@ -95,7 +117,6 @@ export default function StyleLoadingPage() {
           });
           const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string; debugError?: string };
 
-          // ★ 콘솔 디버그 — 어떤 URL이 돌아오는지 확인
           console.log("[AI] 응답 전체:", data);
           if (data.ok && data.imageUrl) {
             console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
@@ -104,21 +125,20 @@ export default function StyleLoadingPage() {
           } else {
             const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
             console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
-            // 결과 페이지에서 붉은 글씨로 표시할 실제 에러 저장
             try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
           }
         } catch (e) {
           console.error("[AI] ❌ API 호출 예외:", e);
         }
-      } catch { /**/ } finally {
-        // API 완료(성공/실패/타임아웃 무관) → 즉시 결과지 이동 (결과지에서 이중 로딩 없음)
+      } finally {
+        // 합성 완료(성공/실패/타임아웃 무관) → 즉시 결과지 이동.
         // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
         // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
         router.replace("/style/result");
       }
     }
 
-    analyze();
+    run();
   }, [router]);
 
   return (

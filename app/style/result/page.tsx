@@ -10,12 +10,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  KAKAO_LOGGED_IN_KEY,
   STYLE_ANSWERS_KEY,
   STYLE_DEBUG_ERROR_KEY,
   STYLE_GENERATED_KEY,
   STYLE_PHOTO_KEY,
-  STYLE_UNLOCKED_KEY,
 } from "../constants";
 import {
   getStyleEntry,
@@ -30,7 +28,6 @@ import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
-import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 function buildHairTags(answers: StyleAnswers): string[] {
@@ -42,109 +39,17 @@ function buildHairTags(answers: StyleAnswers): string[] {
   return tags.length > 0 ? tags : ["#건강모"];
 }
 
-// ─── 카카오 세션 헬퍼 ─────────────────────────────────────────────────────────
-function isKakaoLoggedIn(): boolean {
-  try { return localStorage.getItem(KAKAO_LOGGED_IN_KEY) === "1"; } catch { return false; }
-}
-function markKakaoLoggedIn() {
-  try { localStorage.setItem(KAKAO_LOGGED_IN_KEY, "1"); } catch { /**/ }
-}
-
 // UUID 생성 (저장 시 고유 ID)
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-// ─── Kakao 타입 ───────────────────────────────────────────────────────────────
+// ─── 다이어리 저장 → 홈 라우팅 모달 ─────────────────────────────────────────
+// Phase B: 결과지 진입 전(=/style/loading 합성 직전)에 이미 실제 카카오 로그인을 마쳤으므로
+// 여기서 별도 로그인 절차는 없다. 저장은 곧바로 실행한다.
 
-type KakaoSDK = {
-  isInitialized: () => boolean;
-  init: (key: string) => void;
-  Share?: { sendDefault: (config: Record<string, unknown>) => void };
-  Auth?: { login: (opts: { success: (a: unknown) => void; fail: (e: unknown) => void }) => void };
-};
-declare const kakaoWin: Window & { Kakao?: KakaoSDK };
-
-const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_APP_KEY ?? "";
-const KAKAO_SDK = "https://t1.kakaocdn.net/kakaojs/2.7.2/kakao.min.js";
-
-function loadKakaoSDK(): Promise<void> {
-  return new Promise((resolve) => {
-    if (typeof window === "undefined") { resolve(); return; }
-    const w = window as typeof kakaoWin;
-    if (w.Kakao) { resolve(); return; }
-    if (document.querySelector(`script[src="${KAKAO_SDK}"]`)) {
-      const poll = setInterval(() => { if (w.Kakao) { clearInterval(poll); resolve(); } }, 80);
-      return;
-    }
-    const s = document.createElement("script");
-    s.src = KAKAO_SDK; s.onload = () => resolve(); s.onerror = () => resolve();
-    document.head.appendChild(s);
-  });
-}
-
-async function kakaoLogin(onSuccess: () => void) {
-  try {
-    await loadKakaoSDK();
-    const K = (window as typeof kakaoWin).Kakao;
-    if (K) {
-      if (!K.isInitialized() && KAKAO_KEY) K.init(KAKAO_KEY);
-      if (K.isInitialized() && K.Auth) {
-        K.Auth.login({ success: () => onSuccess(), fail: () => setTimeout(onSuccess, 800) });
-        return;
-      }
-    }
-  } catch { /**/ }
-  setTimeout(onSuccess, 1500);
-}
-
-// ─── 카카오 결과 잠금 모달 ────────────────────────────────────────────────────
-
-function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
-  const [loading, setLoading] = useState(false);
-
-  async function handleLogin() {
-    if (loading) return;
-    setLoading(true);
-    await kakaoLogin(() => {
-      markKakaoLoggedIn();
-      setLoading(false);
-      onUnlock();
-    });
-  }
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-40 flex items-center justify-center px-6">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-xl" />
-      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 280, damping: 24 }}
-        className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-xl backdrop-blur-xl">
-        <div className="px-7 py-8 text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#A8884A]">A-Beauty</p>
-          <h2 className="mt-3 font-serif text-2xl font-bold text-[#2F2A22]">결과지가 완성됐어요!</h2>
-          <p className="mt-2 text-[15px] text-[#6B6355]">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
-          <button onClick={handleLogin} disabled={loading}
-            className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
-            {loading
-              ? <motion.span
-                  className="inline-block h-4 w-4 rounded-full"
-                  style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(25,22,0,0.25)" }}
-                  animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                />
-              : "카카오 1초 로그인하고 결과 확인하기"}
-          </button>
-          <p className="mt-2.5 text-[13px] text-[#6B6355]">별도 가입 없이 카카오 계정으로 바로 확인</p>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// ─── 카카오 저장 → 다이어리 라우팅 모달 ─────────────────────────────────────
-
-function KakaoSaveModal({
+function SaveDiaryModal({
   answers, styleName, onClose,
 }: { answers: StyleAnswers; styleName: string; onClose: () => void }) {
   const router = useRouter();
@@ -189,11 +94,11 @@ function KakaoSaveModal({
     router.push("/home");
   }
 
-  async function handleSaveAndRoute() {
+  function handleSaveAndRoute() {
     if (loading) return;
-    if (isKakaoLoggedIn()) { executeSaveAndRoute(); return; }
+    // Phase B: 이미 로그인된 상태(합성 직전 게이트 통과) — 곧바로 저장·이동.
     setLoading(true);
-    await kakaoLogin(() => { markKakaoLoggedIn(); executeSaveAndRoute(); });
+    executeSaveAndRoute();
   }
 
   return (
@@ -218,14 +123,14 @@ function KakaoSaveModal({
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
-          className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-70">
+          className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98] disabled:opacity-70">
           {loading
             ? <motion.span
                 className="inline-block h-4 w-4 rounded-full"
-                style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(25,22,0,0.25)" }}
+                style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(255,255,255,0.25)" }}
                 animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               />
-            : "카카오 1초 로그인/가입으로 저장하기"}
+            : "다이어리에 저장하기"}
         </button>
         <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-[15px] text-[#6B6355] hover:text-[#2F2A22]">
           나중에 저장하기
@@ -237,14 +142,12 @@ function KakaoSaveModal({
 
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
 // ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시.
-// 잠금 오버레이(black/55)는 임의의 사용자 사진 위에서도 대비를 보장해야 하는
-// 기능적 요소라 리디자인 대상에서 제외하고 그대로 둔다.
+// Phase B: 잠금(blur) 오버레이 제거 — 결과지 진입 전 이미 로그인을 마쳤으므로 항상 공개한다.
 
 function BeforeAfterSection({
-  photo, locked, generatedUrl, debugError, onRetry,
+  photo, generatedUrl, debugError, onRetry,
 }: {
   photo:        string | null;
-  locked:       boolean;
   generatedUrl: string | null;
   debugError:   string | null;
   onRetry:      () => void;
@@ -252,7 +155,7 @@ function BeforeAfterSection({
   return (
     <div className="grid grid-cols-2 gap-3">
       {/* BEFORE */}
-      <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
         {photo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -267,17 +170,10 @@ function BeforeAfterSection({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10">
           <span className="text-[11px] font-bold uppercase tracking-widest text-cream/60">Before</span>
         </div>
-        {locked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-cream/40" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-            </svg>
-          </div>
-        )}
       </div>
 
       {/* AFTER */}
-      <div className={`relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700 ${locked ? "blur-sm" : ""}`}
+      <div className="relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
         {generatedUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -306,16 +202,9 @@ function BeforeAfterSection({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[11px] font-bold uppercase tracking-widest text-gold">After</span>
         </div>
-        {!locked && generatedUrl && (
+        {generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
             style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />
-        )}
-        {locked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 text-gold/40" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-            </svg>
-          </div>
         )}
       </div>
     </div>
@@ -504,7 +393,6 @@ export default function StyleResultPage() {
   const [generated,  setGenerated]  = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
   const [answers,    setAnswers]    = useState<StyleAnswers>({});
-  const [locked,     setLocked]     = useState(true);
   const [ready,      setReady]      = useState(false);
   const [showSave,   setShowSave]   = useState(false);
   const [completeTracked, setCompleteTracked] = useState(false);
@@ -517,7 +405,6 @@ export default function StyleResultPage() {
       if (p) setPhoto(p);
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) setAnswers(JSON.parse(a) as StyleAnswers);
-      if (sessionStorage.getItem(STYLE_UNLOCKED_KEY) === "1") setLocked(false);
       // ★ AI 이미지 — 한 번만 읽기 (loading 페이지가 완성 후 넘겨줌)
       const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
       console.log("[Result] sessionStorage STYLE_GENERATED_KEY 값:", g ?? "(없음)");
@@ -547,11 +434,6 @@ export default function StyleResultPage() {
     setCompleteTracked(true);
   }, [ready, answers, completeTracked]);
 
-  function handleUnlock() {
-    try { sessionStorage.setItem(STYLE_UNLOCKED_KEY, "1"); } catch { /**/ }
-    setLocked(false);
-  }
-
   function handleRetry() {
     try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
     router.push("/style/upload");
@@ -570,9 +452,8 @@ export default function StyleResultPage() {
     <SilkBackground>
       <main className="mx-auto min-h-screen max-w-[430px] text-[#2F2A22]" style={{ touchAction: "pan-y" }}>
 
-        <AnimatePresence>{locked && <KakaoLockModal onUnlock={handleUnlock} />}</AnimatePresence>
         <AnimatePresence>
-          {showSave && <KakaoSaveModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
+          {showSave && <SaveDiaryModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
         </AnimatePresence>
 
         <div className="mx-auto max-w-lg px-4 py-6 pb-32 sm:px-6">
@@ -592,7 +473,7 @@ export default function StyleResultPage() {
           {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
           <ResultHeroCard
             eyebrow="AI STYLE DIAGNOSIS"
-            visual={<BeforeAfterSection photo={photo} locked={locked} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
+            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
             badge={entry.name}
             badgeVariant="subtle"
             title={copy.painPointHeadline}
@@ -605,8 +486,8 @@ export default function StyleResultPage() {
             </div>
           </ResultHeroCard>
 
-          {/* 잠금 시 블러 */}
-          <div className={`mt-4 space-y-5 transition-all duration-700 ${locked ? "blur-sm pointer-events-none select-none" : ""}`}>
+          {/* Phase B: 로그인 후 진입이라 항상 공개(블러 없음) */}
+          <div className="mt-4 space-y-5 transition-all duration-700">
 
             {/* Tier 1 — 핵심 진단: 왜 불편한지 + 어떻게 하면 되는지 */}
             <div className="space-y-3">
@@ -657,21 +538,13 @@ export default function StyleResultPage() {
           report={report}
         />
 
-        {/* ★ 하단 고정 — 잠금 시 카카오 / 해제 시 결과지 저장 CTA */}
+        {/* ★ 하단 고정 — 결과지 저장 CTA (로그인은 결과 진입 전 이미 완료) */}
         <BottomStickyCTA>
-          {locked ? (
-            <button
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] text-base font-bold text-[#191600] hover:brightness-95 active:scale-[0.98]"
-              onClick={() => {/* 모달 자동 표시 */}}>
-              카카오 로그인하고 결과 보기
-            </button>
-          ) : (
-            <button
-              onClick={() => setShowSave(true)}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98]">
-              저장하고 홈에서 오늘 케어 보기
-            </button>
-          )}
+          <button
+            onClick={() => setShowSave(true)}
+            className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-[#1C1A17] text-base font-bold text-white transition-all hover:bg-[#2A2620] active:scale-[0.98]">
+            저장하고 홈에서 오늘 케어 보기
+          </button>
         </BottomStickyCTA>
 
       </main>
