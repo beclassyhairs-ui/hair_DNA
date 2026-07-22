@@ -43,7 +43,32 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- (없음 — Phase B **push·배포·라이브 검증 완료**. `2990e3e..1e8aa8c`)
+- **push 대기**: `/api/hair-transform` 서버측 남용 방지(step5 #1 로그인 + #2 일일제한 + #3 응답). 커밋됨, RPC용 SQL 실행 + push 승인 대기.
+
+## 이번 세션 (2026-07-21) — hair-transform 서버측 남용 방지 (step5 #1·#2·#3)
+
+로그인 게이트가 클라 흐름만 막고 `/api/hair-transform` 엔드포인트 자체는 무인증·무제한이던 구멍을 막음(로그인 우회 직접 호출 = 서버비 남용).
+
+### #1 서버 로그인 검사 — `cc78276`(커밋됨)
+POST 최상단에서 `abeauty_session` 쿠키를 `verifyUserToken`으로 검증, 미로그인 401 `login_required`. 본문 파싱·Blob·Replicate보다 먼저 차단. `isLoginRequiredBeforeSynthesis()`(앞문과 동일 `KAKAO_LOGIN_ENABLED` 기준)로 게이트. Codex 통과, 무인증 POST=401 실측.
+
+### #2 서버 일일 호출 제한 (사업주 승인·N=5)
+- `supabase/hair_usage_schema.sql`(**실행 금지 초안**): `hair_usage(user_id,day,count)` + 원자적 RPC `bump_hair_usage(user_id,max)`(한도 미만이면 +1, 아니면 -1). RLS anon deny-all + **RPC EXECUTE를 PUBLIC/anon/authenticated에서 회수하고 service_role만 GRANT** + `search_path=''`·`public.*` 스키마 한정(Codex 반영).
+- 라우트: 로그인 통과 후 `supabaseAdmin.rpc("bump_hair_usage",{userId,p_max:SERVER_DAILY_MAX=5})` → `-1`이면 **429 `daily_limit`**(message 포함). **RPC 오류 시 fail-open**(제한만 미적용, 로그인 게이트는 유지) — SQL 실행 전엔 제한 비활성, 실행하면 자동 활성.
+- `SERVER_DAILY_MAX=5`(클라 표시 3보다 여유). 상수 1개로 조정.
+
+### #3 클라 응답 처리
+- `/style/loading`: **401→재로그인 리다이렉트**(결과지 안 감, 즉시 return), **429→`STYLE_LIMIT_KEY` 저장 후 결과지**. 합성 시작 시 `STYLE_GENERATED_KEY`도 초기화(과거 이미지가 429/실패를 가리지 않게, Codex 반영). 결과지 이동은 각 분기 명시(finally 제거).
+- `/style/result`: `STYLE_LIMIT_KEY` 있으면 빨간 에러 대신 **친절 한도 카드**("오늘 무료 합성을 모두 사용했어요 / 내일 다시 만나요"). 실렌더로 한도카드 노출·빨간에러 미노출 확인.
+
+### 검증
+- Codex 2회(#1 별도 1회 통과 + #2·#3 1차 '수정 필요'→SECURITY DEFINER PUBLIC EXECUTE·과거이미지 가림 2건 반영→2차 통과). tsc·build 통과. 무인증 POST=401, 결과지 한도카드 실렌더 확인.
+- ⚠️ **실제 429(로그인+한도초과) 왕복은 미검증** — 로컬 supabase 미설정이라 RPC fail-open. 배포+SQL 실행 후 확인 필요.
+
+### 🔴 사업주 조치
+1. **`supabase/hair_usage_schema.sql` 실행**(SQL Editor) — 실행 전엔 일일제한 비활성(fail-open). 실행하면 자동 활성.
+2. **push 승인** = 서버 로그인 검사 라이브(#1·#3은 SQL 없이도 즉시 동작, #2는 SQL 실행 후 동작).
+3. (권장) Replicate 대시보드 spend limit도 병행(B-4).
 
 ## 이번 세션 (2026-07-21) — 카카오 로그인 Phase B (가짜 게이트 → 실제 로그인 교체)
 
