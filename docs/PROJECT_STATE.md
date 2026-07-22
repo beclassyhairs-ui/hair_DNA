@@ -43,7 +43,7 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- **push 대기**: `/api/hair-transform` 서버측 남용 방지(step5 #1 로그인 + #2 일일제한 + #3 응답). 커밋됨, RPC용 SQL 실행 + push 승인 대기.
+- (없음 — step5 #1·#2·#3 **push·배포·검증 완료**. `fabf600..39e3a36`) 라이브: 무인증 `POST /api/hair-transform` = **401 `login_required`**, 주요 경로 5종 200, auth/me·kakao/start 회귀 없음. **남은 사업주 조치: `hair_usage_schema.sql` 실행(전엔 #2 fail-open 비활성) + Replicate spend limit.**
 
 ## 이번 세션 (2026-07-21) — hair-transform 서버측 남용 방지 (step5 #1·#2·#3)
 
