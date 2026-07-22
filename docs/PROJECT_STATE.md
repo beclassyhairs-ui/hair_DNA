@@ -24,7 +24,9 @@
 
 ## 현재 상태 한 줄
 
-**카카오 서버사이드 OAuth "로그인 엔진"(Phase A) 구현 완료 — 커밋됨, push 대기(2026-07-21).** `lib/userAuth.ts`(유저 세션 쿠키, 관리자 인증과 완전분리) + `lib/kakaoAuth.ts`(인가코드→토큰교환→user/me→users upsert, access_token 미저장) + `/api/auth/{kakao/start,kakao/callback,me,logout}` + `lib/brand.ts`(서비스명 상수) + `lib/loginGate.ts`(로그인 요구지점 설정만). **Codex 검수 통과**(state CSRF·오픈리다이렉트·세션위조/만료·service_role·토큰로그 전부 확인). tsc·build 통과, userAuth 토큰 issue/verify/tamper 단위검증 통과, 라우트 스모크(me=loggedIn:false / start=503 / logout POST=ok·GET=405) 통과. **기존 가짜 게이트는 제거 안 하고 공존(Phase B 미착수 — 로그인 요구지점 ② 사업주 미정).** 남은 사업주 조치: 카카오 콘솔 설정 + users SQL 실행 + env 등록(아래 세션 기록).
+**카카오 로그인 Phase B(가짜 게이트 → 실제 로그인 교체) 구현 완료 — 커밋됨, push·배포 승인 대기(2026-07-21).** `KAKAO_LOGIN_ENABLED=true` + 로그인 요구지점 `before_ai_synthesis`(AI 합성 직전=결과 보기 직전). `/style/loading`이 합성 전 `/api/auth/me` 확인 → 미로그인 시 카카오로 보냈다가 복귀해 재개(셀카·답변 sessionStorage 유지). `/style/result`의 가짜 게이트(KakaoLockModal·kakaoLogin()·localStorage 플래그·blur) 전부 제거, `/privacy` 카카오 문구 스위치와 함께 노출. Codex 2회(경쟁조건 픽스 반영). tsc·build 통과, 결과지 실렌더(블러 0·잠금문구 0) 확인. **push 전 필수: ① 사업주가 RLS anon-차단 확인 쿼리 3종 결과 확인 ② push 승인.** ⚠️ 별도 발견: 서버비 안전장치 부재(아래).
+
+**(직전) 카카오 서버사이드 OAuth "로그인 엔진"(Phase A) 구현 완료 — push·배포·스모크까지 완료(2026-07-21).** 사업주가 콘솔·env·SQL 완료 후 실제 로그인 스모크 통과(`/api/auth/me`=loggedIn:true). 프로덕션 `/api/auth/kakao/start`가 카카오 인증으로 302, 전 체인 정상. `lib/userAuth.ts`(유저 세션 쿠키, 관리자 인증과 완전분리) + `lib/kakaoAuth.ts`(인가코드→토큰교환→user/me→users upsert, access_token 미저장) + `/api/auth/{kakao/start,kakao/callback,me,logout}` + `lib/brand.ts`(서비스명 상수) + `lib/loginGate.ts`(로그인 요구지점 설정만). **Codex 검수 통과**(state CSRF·오픈리다이렉트·세션위조/만료·service_role·토큰로그 전부 확인). tsc·build 통과, userAuth 토큰 issue/verify/tamper 단위검증 통과, 라우트 스모크(me=loggedIn:false / start=503 / logout POST=ok·GET=405) 통과. **기존 가짜 게이트는 제거 안 하고 공존(Phase B 미착수 — 로그인 요구지점 ② 사업주 미정).** 남은 사업주 조치: 카카오 콘솔 설정 + users SQL 실행 + env 등록(아래 세션 기록).
 
 **(직전) 셀카 정책 문구 확정 + SEO·OG 정비 + Sentry(에러 모니터링) 도입 3종 — push·배포·프로덕션 검증까지 완료(2026-07-21).**
 ① 셀카 즉시파기 문구 확정(`c21e63d`) ② SEO·공유 메타 정비(`425e9d6`) ③ @sentry/nextjs 설치·초기화(DSN 미설정 시 no-op, `55d1c9e`). Codex 2회 검수 반영. `f561eb6..b1263b9` push, Vercel 프로덕션 배포 확인. **라이브 검증**: `/privacy` `확정 필요` 0건·즉시파기 문구 노출, `/style/upload` 국외이전+안심문구, `/hair-quiz`·`/items` og:image=og-default.png(200), `POST /api/admin/debug-sentry` 무인증 401(관리자 게이트 정상), 주요 경로 7종 200. **남은 사업주 결정: Sentry DSN 활성화 전 `/privacy`에 Sentry 수탁·국외이전 고지 추가(활성화=에러 데이터 국외이전 개시).** 상세는 아래 세션 기록.
@@ -41,7 +43,30 @@
 
 ## 미커밋 변경 (커밋 대기)
 
-- **push 대기**: 카카오 OAuth 로그인 엔진(Phase A). 전 파트 커밋됨, push 승인 대기.
+- **push 대기**: 카카오 로그인 Phase B(게이트 교체). 커밋됨, RLS 확인 + push 승인 대기.
+
+## 이번 세션 (2026-07-21) — 카카오 로그인 Phase B (가짜 게이트 → 실제 로그인 교체)
+
+스모크 통과(사업주 실제 로그인 → `/api/auth/me`=loggedIn:true) 확인 후 착수. 확정안대로 로그인을 "결과(변환 이미지) 보기 직전 = AI 합성 시작 전"에 요구.
+
+### 만든 것
+- `lib/loginGate.ts`: `KAKAO_LOGIN_ENABLED=true`, `LOGIN_REQUIREMENT_POINT="before_ai_synthesis"`, `isLoginRequiredBeforeSynthesis()` 헬퍼. **로그인 on/off·요구지점은 이 파일 상수로만 제어.**
+- `app/style/loading`: 합성 시작 전 `/api/auth/me` 확인. 미로그인 → `/api/auth/kakao/start?return_to=/style/loading`로 이동, 로그인 후 복귀해 재개(셀카·답변 sessionStorage 유지). 입력·게이트 검증을 try/finally 밖으로 빼 결과지 이동과 경쟁 제거.
+- `app/style/result`: 가짜 게이트 완전 제거 — `KakaoLockModal`·`kakaoLogin()`·`isKakaoLoggedIn`/`markKakaoLoggedIn`·`locked` blur·하단 "카카오 로그인하고 결과 보기" CTA. 저장 모달은 `SaveDiaryModal`로 개칭(로그인 불필요, 즉시 저장). 미사용 import·SDK 정리.
+- `app/style/constants.ts`: `KAKAO_LOGGED_IN_KEY` 제거(실제 세션은 서버 쿠키 `abeauty_session`).
+- `/privacy`: `KAKAO_LOGIN_ENABLED=true`라 카카오 개인정보 문구가 이제 손님에게 노출(스위치 연동).
+
+### 검증
+- **Codex 2회**: 1차 '수정 필요' — loading의 `finally`가 로그인/업로드 리다이렉트와 **경쟁**해 미로그인 유저가 `/style/result`로 샐 수 있음(선재+신규 결함) → `analyze()`를 `run()`으로 재구성, 결과지 이동은 합성 경로 finally에서만. 2차 **통과**.
+- tsc·`next build` 통과. 결과지 실렌더(seed): before/after 노출, **blur 0·잠금문구 0**, 저장 CTA 정상. `/privacy` 카카오 문구 노출 확인.
+
+### Phase B 미구현 — 의도적 결정
+- **"로그인 도는 동안 백그라운드 합성" 미구현.** 풀페이지 OAuth 리다이렉트는 페이지를 떠나 클라 합성이 살아남지 못한다. 진짜 오버랩은 (a) 팝업 OAuth(모바일 30~50대 타깃에 UX 나쁨·차단 잦음) 또는 (b) 서버 잡 스토어(신규 인프라, 배포 전 지양) 필요 → **순차(로그인→합성)로 구현**. 첫 로그인만 1회 리다이렉트, 이후 재방문은 리다이렉트 없이 바로 합성. 필요 시 후속 검토.
+
+### 🔴 사업주 조치 / 결정 대기
+1. **RLS anon 차단 확인**(push 전) — users/profiles/diagnoses에 anon 정책 0개(deny-all)인지 확인 쿼리 3종 결과 확인. 스모크로 테이블·쓰기·세션은 검증됨, RLS만 남음.
+2. **push 승인** = 로그인 강제 라이브(배포 즉시 손님이 결과 보려면 카카오 로그인 필요).
+3. 🔴 **서버비 안전장치 부재(중요·별도 후속)** — `/api/hair-transform`는 **서버 인증·호출 제한이 전혀 없다**(maxDuration 60s 타임아웃뿐). `lib/dailyLimit.ts`(3회/일)는 **클라 localStorage뿐**이라 시크릿창/기기변경/직접 API 호출로 우회된다. **로그인 게이트는 클라 흐름(loading)만 막지 `/api/hair-transform` 엔드포인트 자체는 무인증 호출 가능** → Replicate 비용 남용 리스크. 서버측 대책 필요: ① Replicate 대시보드 spend limit(B-4, 사업주) ② hair-transform 라우트에 세션/IP 기반 서버 rate-limit(별도 구현). 이번 범위 밖이라 미구현·보고만.
 
 ## 이번 세션 (2026-07-21) — 카카오 서버사이드 OAuth "로그인 엔진"(Phase A)
 
