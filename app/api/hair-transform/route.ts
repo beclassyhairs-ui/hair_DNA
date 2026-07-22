@@ -30,6 +30,8 @@ import {
 } from "@/lib/styleReference";
 import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
+import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
+import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
 // /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
@@ -116,6 +118,22 @@ function buildReplicateInput(inputImage: string, prompt: string) {
 // ─── 라우트 핸들러 ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+
+  // ── 서버측 로그인 게이트 (앞문 /style/loading 게이트와 동일 기준) ──────────────
+  // 클라 흐름을 우회한 무인증 직접 호출을 서버에서 차단 → 로그인 없이 합성이 도는 것을 막아
+  // Replicate 서버비 남용을 방지한다. KAKAO_LOGIN_ENABLED를 끄면 이 검사도 함께 꺼진다.
+  // (session.userId는 다음 단계의 서버측 일일 호출 제한에서 카운트 키로 쓴다.)
+  if (isLoginRequiredBeforeSynthesis()) {
+    const sessionSecret = process.env.USER_SESSION_SECRET;
+    const sessionToken  = req.cookies.get(USER_COOKIE)?.value ?? "";
+    const session = sessionSecret ? await verifyUserToken(sessionSecret, sessionToken) : null;
+    if (!session) {
+      return NextResponse.json(
+        { ok: false, reason: "login_required", debugError: "로그인이 필요합니다." },
+        { status: 401 },
+      );
+    }
+  }
 
   // ── 실행 예산 ────────────────────────────────────────────────────────────────
   // 원본 셀카 즉시삭제(finally)가 maxDuration(60s) 안에서 반드시 돌도록, 요청 시작 시각
