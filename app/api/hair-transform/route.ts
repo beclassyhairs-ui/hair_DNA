@@ -32,6 +32,11 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
 import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+// 서버측 일일 호출 제한(유저당). 클라 표시(3회)보다 여유를 둬 정상 재시도를 막지 않는다.
+// 조정은 이 상수 하나로. 실제 강제는 Supabase RPC bump_hair_usage가 원자적으로 수행한다.
+const SERVER_DAILY_MAX = 5;
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
 // /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
@@ -119,10 +124,9 @@ function buildReplicateInput(inputImage: string, prompt: string) {
 
 export async function POST(req: NextRequest) {
 
-  // ── 서버측 로그인 게이트 (앞문 /style/loading 게이트와 동일 기준) ──────────────
-  // 클라 흐름을 우회한 무인증 직접 호출을 서버에서 차단 → 로그인 없이 합성이 도는 것을 막아
-  // Replicate 서버비 남용을 방지한다. KAKAO_LOGIN_ENABLED를 끄면 이 검사도 함께 꺼진다.
-  // (session.userId는 다음 단계의 서버측 일일 호출 제한에서 카운트 키로 쓴다.)
+  // ── 서버측 로그인 게이트 + 일일 호출 제한 (앞문 /style/loading 게이트와 동일 기준) ──
+  // 클라 흐름을 우회한 무인증/과다 직접 호출을 서버에서 차단 → 로그인 없이·무제한으로 합성이
+  // 도는 것을 막아 Replicate 서버비 남용을 방지한다. KAKAO_LOGIN_ENABLED를 끄면 함께 꺼진다.
   if (isLoginRequiredBeforeSynthesis()) {
     const sessionSecret = process.env.USER_SESSION_SECRET;
     const sessionToken  = req.cookies.get(USER_COOKIE)?.value ?? "";
@@ -132,6 +136,31 @@ export async function POST(req: NextRequest) {
         { ok: false, reason: "login_required", debugError: "로그인이 필요합니다." },
         { status: 401 },
       );
+    }
+
+    // 서버측 일일 호출 제한 — userId 기준, 원자적 RPC(bump_hair_usage). 클라 우회 불가.
+    // ⚠️ 함수 미생성/RPC 오류 시 fail-open(제한만 미적용, 로그인 게이트는 유지) — SQL 실행 전엔
+    //    제한이 비활성이고, 배포 후 사업주가 hair_usage_schema.sql을 실행하면 자동 활성화된다.
+    try {
+      const { data, error } = await supabaseAdmin.rpc("bump_hair_usage", {
+        p_user_id: session.userId,
+        p_max: SERVER_DAILY_MAX,
+      });
+      if (error) {
+        console.error("[hair-transform] 일일제한 RPC 오류(제한 미적용):", error.message);
+      } else if (data === -1) {
+        return NextResponse.json(
+          {
+            ok: false,
+            reason: "daily_limit",
+            message: `오늘 무료 ${SERVER_DAILY_MAX}회를 모두 사용했어요. 내일 다시 만나요.`,
+            debugError: "daily limit exceeded",
+          },
+          { status: 429 },
+        );
+      }
+    } catch (e) {
+      console.error("[hair-transform] 일일제한 예외(제한 미적용):", e instanceof Error ? e.message : String(e));
     }
   }
 

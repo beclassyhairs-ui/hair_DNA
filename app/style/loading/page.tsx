@@ -10,7 +10,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
@@ -88,54 +88,71 @@ export default function StyleLoadingPage() {
         }
       }
 
-      // ── 합성 ── 이 경로를 시작한 뒤에만 결과지로 이동한다(finally).
-      try {
-        // 이전 디버그 에러 초기화
-        try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+      // ── 합성 ──
+      // 이전 상태 초기화(직전 생성 이미지 + 디버그 에러 + 한도 안내).
+      // ★ STYLE_GENERATED_KEY도 반드시 지운다 — 안 지우면 이번 실패/429가 나도 결과지가
+      //   과거 생성 이미지를 먼저 읽어(한도 카드보다 우선) 낡은 결과를 보여준다.
+      try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
 
-        // 설문 답변만 Sheets에 기록 — fire-and-forget.
-        // 원본 셀카(photo)는 이 엔드포인트로 보내지 않는다(더 이상 저장하지 않으므로
-        // 얼굴 데이터를 불필요하게 전송하지 않는다). 셀카는 아래 hair-transform에만 전달.
-        void fetch("/api/submit-diagnosis", {
+      // 설문 답변만 Sheets에 기록 — fire-and-forget.
+      // 원본 셀카(photo)는 이 엔드포인트로 보내지 않는다(더 이상 저장하지 않으므로
+      // 얼굴 데이터를 불필요하게 전송하지 않는다). 셀카는 아래 hair-transform에만 전달.
+      void fetch("/api/submit-diagnosis", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          answers:      toSheetAnswers(answers),
+          treatmentCounts: {},
+        }),
+      });
+
+      // ★ Replicate AI 합성 (62초 타임아웃).
+      try {
+        incrementUsage(); // 클라 표시용 횟수(서버 제한이 실제 강제)
+        console.log("[AI] /api/hair-transform 호출 시작...");
+        const res  = await fetch("/api/hair-transform", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            answers:      toSheetAnswers(answers),
-            treatmentCounts: {},
-          }),
+          body:    JSON.stringify({ userPhoto: photo, answers }),
+          signal:  AbortSignal.timeout(62_000),
         });
 
-        // ★ Replicate AI 합성 (62초 타임아웃) — 완료 즉시 결과지로 이동한다.
-        try {
-          incrementUsage(); // 실제 API 비용 발생 시점에 횟수 차감
-          console.log("[AI] /api/hair-transform 호출 시작...");
-          const res  = await fetch("/api/hair-transform", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ userPhoto: photo, answers }),
-            signal:  AbortSignal.timeout(62_000),
-          });
-          const data = await res.json() as { ok: boolean; imageUrl?: string; reason?: string; debugError?: string };
-
-          console.log("[AI] 응답 전체:", data);
-          if (data.ok && data.imageUrl) {
-            console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
-            try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-            try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-          } else {
-            const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
-            console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
-            try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
-          }
-        } catch (e) {
-          console.error("[AI] ❌ API 호출 예외:", e);
+        // 서버 게이트 응답 우선 처리
+        // 401(세션 만료 등) → 재로그인. 결과지로 가지 않는다(즉시 return).
+        if (res.status === 401) {
+          window.location.href =
+            `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
+          return;
         }
-      } finally {
-        // 합성 완료(성공/실패/타임아웃 무관) → 즉시 결과지 이동.
-        // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
-        // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
-        router.replace("/style/result");
+
+        const data = await res.json() as {
+          ok: boolean; imageUrl?: string; reason?: string; message?: string; debugError?: string;
+        };
+        console.log("[AI] 응답 전체:", data);
+
+        if (res.status === 429 || data.reason === "daily_limit") {
+          // 일일 한도 초과 → 결과지에 친절한 안내 카드로(빨간 에러 아님)
+          const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
+          try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
+        } else if (data.ok && data.imageUrl) {
+          console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
+          try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+          try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+        } else {
+          const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
+          console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
+          try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
+        }
+      } catch (e) {
+        console.error("[AI] ❌ API 호출 예외:", e);
       }
+
+      // 합성 시도 완료(성공/실패/타임아웃/한도 무관) → 결과지 이동.
+      // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
+      // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
+      router.replace("/style/result");
     }
 
     run();

@@ -13,6 +13,7 @@ import {
   STYLE_ANSWERS_KEY,
   STYLE_DEBUG_ERROR_KEY,
   STYLE_GENERATED_KEY,
+  STYLE_LIMIT_KEY,
   STYLE_PHOTO_KEY,
 } from "../constants";
 import {
@@ -145,11 +146,12 @@ function SaveDiaryModal({
 // Phase B: 잠금(blur) 오버레이 제거 — 결과지 진입 전 이미 로그인을 마쳤으므로 항상 공개한다.
 
 function BeforeAfterSection({
-  photo, generatedUrl, debugError, onRetry,
+  photo, generatedUrl, debugError, limitMessage, onRetry,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
   debugError:   string | null;
+  limitMessage: string | null;
   onRetry:      () => void;
 }) {
   return (
@@ -181,6 +183,15 @@ function BeforeAfterSection({
             className="h-full w-full select-none object-cover"
             style={{ pointerEvents: "none", WebkitTouchCallout: "none" }}
             onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
+        ) : limitMessage ? (
+          // 일일 한도 초과 — 친절 안내(빨간 에러 아님)
+          <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center overflow-y-auto py-4">
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-gold/60" stroke="currentColor" strokeWidth={1.3}>
+              <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <p className="text-[13px] font-semibold leading-snug text-cream/90">오늘 무료 합성을<br />모두 사용했어요</p>
+            <p className="text-[11px] leading-relaxed text-cream/60">{limitMessage}</p>
+          </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-cream/25" stroke="currentColor" strokeWidth={1.2}>
@@ -392,6 +403,7 @@ export default function StyleResultPage() {
   const [photo,      setPhoto]      = useState<string | null>(null);
   const [generated,  setGenerated]  = useState<string | null>(null);
   const [debugError, setDebugError] = useState<string | null>(null);
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [answers,    setAnswers]    = useState<StyleAnswers>({});
   const [ready,      setReady]      = useState(false);
   const [showSave,   setShowSave]   = useState(false);
@@ -411,9 +423,15 @@ export default function StyleResultPage() {
       if (g) {
         setGenerated(g);
       } else {
-        const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
-        console.warn("[Result] ⚠️ AI 이미지 URL 없음. debugError:", dbgErr ?? "(없음)");
-        if (dbgErr) setDebugError(dbgErr);
+        // 일일 한도 초과 안내가 있으면 우선 표시(빨간 에러 대신 친절 카드)
+        const limit = sessionStorage.getItem(STYLE_LIMIT_KEY);
+        if (limit) {
+          setLimitMessage(limit);
+        } else {
+          const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
+          console.warn("[Result] ⚠️ AI 이미지 URL 없음. debugError:", dbgErr ?? "(없음)");
+          if (dbgErr) setDebugError(dbgErr);
+        }
       }
     } catch { /**/ }
     setReady(true);
@@ -473,7 +491,7 @@ export default function StyleResultPage() {
           {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
           <ResultHeroCard
             eyebrow="AI STYLE DIAGNOSIS"
-            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} debugError={debugError} onRetry={handleRetry} />}
+            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} debugError={debugError} limitMessage={limitMessage} onRetry={handleRetry} />}
             badge={entry.name}
             badgeVariant="subtle"
             title={copy.painPointHeadline}
