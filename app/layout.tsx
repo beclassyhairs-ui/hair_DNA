@@ -1,17 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR, Noto_Serif_KR } from "next/font/google";
+import { Noto_Serif_KR } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "./components/Analytics";
 import AttributionCapture from "./components/AttributionCapture";
 import Toaster from "./components/Toaster";
 import SiteFooter from "./components/SiteFooter";
 
-// 본문용: 가독성 높은 고딕
-const notoSans = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+// 본문·타이틀 공용: Pretendard (WORKORDER-02 — 가변폰트 로컬 로딩)
+// 굵기 위계는 타이포 토큰(tailwind.config)에서 400/600/700으로 관리. 굵기로 밀어붙이지 않는다.
+const pretendard = localFont({
+  src: "./fonts/PretendardVariable.woff2",
   variable: "--font-sans",
   display: "swap",
+  weight: "100 900",
 });
 
 // 타이틀용: 우아한 명조
@@ -67,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={`${notoSans.variable} ${notoSerif.variable}`}>
+    <html lang="ko" className={`${pretendard.variable} ${notoSerif.variable}`}>
       <head>
         <script
           async
