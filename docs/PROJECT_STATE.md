@@ -24,6 +24,16 @@
 
 ## 현재 상태 한 줄
 
+**WORKORDER-02(웜 그레이지 UI 시스템) 1·2단계 완료 + 3단계 진행 중 (2026-07-23).** 커밋 5개: `c7424dd`(1단계 토큰+Pretendard) → `9bb7180`(2단계 공용 컴포넌트) → `8e0e68c`(3단계-a 랜딩4종+공유데코) → `c465649`(3단계-b /home+AppShell) → `15b43ce`(3단계-c /items 계열). 전부 `next build` 통과, **미push**.
+- **토큰 SSOT**: `app/globals.css` `:root`(색10·형태5) ← `tailwind.config.ts`가 `var()`로 참조. 구 팔레트(cream/gold/champagne 등)는 **스윕 완료 전까지 병존** — 마지막에 제거할 것.
+- **타이포**: Noto Sans KR → **Pretendard**(`app/fonts/PretendardVariable.woff2`, next/font/local). 굵기 위계 `text-h1`(26/700)·`text-h2`(18/600)·`text-body`(16/400)·`text-emphasis`(16/600)·`text-aux`(13/400). 700은 화면당 1~2곳.
+- **공용 컴포넌트**: `app/components/ui/`(Button·Card·Pill·SectionTitle+배럴). BottomNav는 이모지→Lucide 단색(활성만 `--ink`). 구 데코 3종(SilkBackground·GlassCard·BlackCTAButton)도 토큰화해 전 랜딩 일괄 정리.
+- **3단계 남은 화면**: `/my-diary`(⚠️ 전체 다크테마, 인라인 style 60곳 — 라이트 전환은 별건 규모) · `/style/upload`(⚠️ 아래 결정 필요) · 결과지 3종(`/style/result`·`/bangs/result`·`/damage-check/result`) · `/privacy`·`/terms`. 이후 4단계(제거목록 8종 검증)·5단계(375px 스크린샷 6화면).
+- 🔴 **사업주 결정 대기**: `/style/upload`의 카메라 뷰파인더 블록은 코드 주석에 "리디자인 대상 아님"으로 명시돼 있으나 WORKORDER-02는 "순검정→웜차콜 #1A1714"를 요구 — 충돌. 안심문구는 **문구 불변·표현만 강화**로 해석함.
+- 참고: 워킹트리의 `public/references/**/.gitkeep` 삭제분은 **레퍼런스 폴더 42조합 병합**(별건 작업) 잔여분이며 UI 커밋에 미포함.
+
+## (이전) 현재 상태 한 줄
+
 **레퍼런스 파일럿 v6 생성 완료 — 검수 대기(2026-07-22).** `scripts/generate-references.mjs`(FLUX.2 Pro, black-forest-labs/flux-2-pro, 조합 파라미터화) 신규 작성·커밋(`8294056`). 3조합×5장=**15장 생성 성공(0 실패)**: ①숏컷 `group_2040/short/straight/soft` ②단발웨이브 `bob/wave/soft` ③가슴선C컬 `chest/c_curl/soft`(각 seed 3 + 시스루뱅 2). 리얼리즘 블록 v6(입체 염색·모공/필름 그레인·잔머리) 반영 → 위그/플라스틱 느낌 제거 확인. 이미지·preview.html은 `references_pilot_v6/`(untracked, 검수 통과 전 public/references 반입·커밋 안 함). 비용 ≈ $0.45(15×~$0.03, FLUX.2 pro=$0.015+MP당$0.015). **남은 것: 사업주 검수(조합·앞머리별 베스트/피드백) → 통과분만 `public/references/`로 승격.** ⚠️ FLUX.2 Pro엔 negative_prompt 입력이 없어 NEG는 프롬프트 내 `Avoid:` 절로 접음(스크립트 주석 참조).
 
 **(직전) 카카오 로그인 Phase B(가짜 게이트 → 실제 로그인 교체) — push·배포·라이브 검증 완료(2026-07-21).** `2990e3e..1e8aa8c` push, Vercel 배포. 라이브: `/privacy` 카카오 문구 노출·마커 0, `/api/auth/kakao/start`→307 카카오, 결과지 프로덕션 번들에 "카카오 로그인하고 결과 보기" 0건, 주요 경로 6종 200. **남은 것: ① 사업주 RLS anon-차단 확인 쿼리(권장) ② 로그인 게이트 전체 흐름 실기기 스모크 1회 ③ 서버비 안전장치(아래 3번).** `KAKAO_LOGIN_ENABLED=true` + 로그인 요구지점 `before_ai_synthesis`(AI 합성 직전=결과 보기 직전). `/style/loading`이 합성 전 `/api/auth/me` 확인 → 미로그인 시 카카오로 보냈다가 복귀해 재개(셀카·답변 sessionStorage 유지). `/style/result`의 가짜 게이트(KakaoLockModal·kakaoLogin()·localStorage 플래그·blur) 전부 제거, `/privacy` 카카오 문구 스위치와 함께 노출. Codex 2회(경쟁조건 픽스 반영). tsc·build 통과, 결과지 실렌더(블러 0·잠금문구 0) 확인. **push 전 필수: ① 사업주가 RLS anon-차단 확인 쿼리 3종 결과 확인 ② push 승인.** ⚠️ 별도 발견: 서버비 안전장치 부재(아래).
