@@ -166,16 +166,16 @@ function BeforeAfterSection({
             style={{ objectPosition: "50% 10%", pointerEvents: "none", WebkitTouchCallout: "none" }} />
         ) : (
           <div className="flex h-full items-center justify-center">
-            <p className="text-[9px] uppercase tracking-widest text-cream/20">Your Photo</p>
+            <p className="text-[9px] uppercase tracking-widest text-white/40">Your Photo</p>
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 to-transparent px-3 pb-3 pt-10">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-cream/60">Before</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-white/70">Before</span>
         </div>
       </div>
 
       {/* AFTER */}
-      <div className="relative overflow-hidden rounded-2xl border border-gold/25 bg-black/40 transition-all duration-700"
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
         {generatedUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -186,18 +186,18 @@ function BeforeAfterSection({
         ) : limitMessage ? (
           // 일일 한도 초과 — 친절 안내(빨간 에러 아님)
           <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center overflow-y-auto py-4">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-gold/60" stroke="currentColor" strokeWidth={1.3}>
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-[13px] font-semibold leading-snug text-cream/90">오늘 무료 합성을<br />모두 사용했어요</p>
-            <p className="text-[11px] leading-relaxed text-cream/60">{limitMessage}</p>
+            <p className="text-[13px] font-semibold leading-snug text-white/90">오늘 무료 합성을<br />모두 사용했어요</p>
+            <p className="text-[11px] leading-relaxed text-white/70">{limitMessage}</p>
           </div>
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-cream/25" stroke="currentColor" strokeWidth={1.2}>
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/40" stroke="currentColor" strokeWidth={1.2}>
               <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
             </svg>
-            <p className="text-[13px] leading-snug text-cream/80">AI 합성에<br />실패했어요</p>
+            <p className="text-[13px] leading-snug text-white/85">AI 합성에<br />실패했어요</p>
             {debugError && (
               <div className="w-full rounded-lg border border-red-500/40 bg-red-950/60 px-2 py-2 text-left">
                 <p className="text-[9px] font-bold uppercase tracking-wider text-red-400 mb-1">[개발자 디버그] 에러 원인:</p>
@@ -205,17 +205,17 @@ function BeforeAfterSection({
               </div>
             )}
             <button onClick={onRetry}
-              className="rounded-xl border border-gold/35 bg-gold/[0.08] px-3.5 py-1.5 text-[13px] font-bold text-gold transition-colors hover:bg-gold/15">
+              className="rounded-btn border border-white/35 bg-white/10 px-3.5 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/20">
               다시 시도
             </button>
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
-          <span className="text-[11px] font-bold uppercase tracking-widest text-gold">After</span>
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-white">After</span>
         </div>
         {generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
-            style={{ boxShadow: "inset 0 0 0 1.5px rgba(200,168,107,0.3)" }} />
+            style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,0.25)" }} />
         )}
       </div>
     </div>
