@@ -37,7 +37,8 @@
   }
 
   body {
-    @apply bg-cream text-brown antialiased;
+    /* WORKORDER-02: 크림 배경 폐지 → 흰 배경(--bg) + 본문 --ink */
+    @apply bg-bg text-ink antialiased;
     /* 부드러운 화면 전환을 위한 기본 색 명시 */
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
