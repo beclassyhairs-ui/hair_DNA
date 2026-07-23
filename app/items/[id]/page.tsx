@@ -22,7 +22,7 @@ export default async function ItemDetailPage({ params }: { params: { id: string 
   return (
     <AppShell>
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex aspect-square w-full items-center justify-center bg-gradient-to-br from-[#FBF6EA] to-[#E8D4A0]">
+        <div className="flex aspect-square w-full items-center justify-center bg-surface">
           {item.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -36,32 +36,32 @@ export default async function ItemDetailPage({ params }: { params: { id: string 
         </div>
 
         <div className="p-6">
-          <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">AI 헤어 분석 결과 기반</p>
-          <h1 className="mt-1 text-[19px] font-bold tracking-tight text-[#2F2F2F]">{item.product_name}</h1>
+          <p className="text-[11px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
+          <h1 className="mt-1 text-[19px] font-bold tracking-tight text-ink">{item.product_name}</h1>
           {item.category && (
-            <span className="mt-2 inline-block rounded-full bg-[#F9F4E8] px-2.5 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
+            <span className="mt-2 inline-block rounded-full bg-surface px-2.5 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
               {item.category}
             </span>
           )}
 
           {item.recommend_reason && (
             <section className="mt-5">
-              <h2 className="text-[15px] font-bold text-[#2F2F2F]">왜 나에게 맞을까요</h2>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B7280]">{item.recommend_reason}</p>
+              <h2 className="text-[15px] font-bold text-ink">왜 나에게 맞을까요</h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{item.recommend_reason}</p>
             </section>
           )}
 
           {item.usage_guide && (
             <section className="mt-4">
-              <h2 className="text-[15px] font-bold text-[#2F2F2F]">사용법</h2>
-              <p className="mt-1.5 text-[15px] leading-relaxed text-[#6B7280]">{item.usage_guide}</p>
+              <h2 className="text-[15px] font-bold text-ink">사용법</h2>
+              <p className="mt-1.5 text-[15px] leading-relaxed text-ink-2">{item.usage_guide}</p>
             </section>
           )}
 
           {item.caution_note && (
-            <section className="mt-4 rounded-xl bg-[#FBF7F0] p-3.5">
-              <h2 className="text-[14px] font-bold text-[#8A6D2F]">주의사항</h2>
-              <p className="mt-1 text-[14px] leading-relaxed text-[#7A5F2E]">{item.caution_note}</p>
+            <section className="mt-4 rounded-btn border border-line bg-surface p-3.5">
+              <h2 className="text-emphasis text-ink">주의사항</h2>
+              <p className="mt-1 text-body leading-relaxed text-ink-2">{item.caution_note}</p>
             </section>
           )}
 

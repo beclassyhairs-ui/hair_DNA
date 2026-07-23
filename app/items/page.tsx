@@ -32,10 +32,10 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
       }
       className="block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow active:shadow-md"
     >
-      <p className="text-[11px] font-semibold tracking-wide text-[#C8A96A]">AI 헤어 분석 결과 기반</p>
+      <p className="text-[11px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
 
       <div className="mt-3 flex gap-3.5">
-        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#FBF6EA] to-[#E8D4A0]">
+        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface">
           {item.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.image_url} alt={item.image_alt || item.product_name} className="h-full w-full object-cover" />
@@ -44,18 +44,18 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-[#2F2F2F]">{item.product_name}</p>
+          <p className="text-[15px] font-bold text-ink">{item.product_name}</p>
           {item.category && (
-            <span className="mt-1.5 inline-block rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
+            <span className="mt-1.5 inline-block rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-2">
               {item.category}
             </span>
           )}
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-2 text-[15px] leading-relaxed text-[#6B7280]">{reason}</p>
+      <p className="mt-4 line-clamp-2 text-[15px] leading-relaxed text-ink-2">{reason}</p>
 
-      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#F9F4E8] py-3 text-[15px] font-semibold text-[#8A6D2F]">
+      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-surface py-3 text-[15px] font-semibold text-ink-2">
         자세히 보기 →
       </span>
     </Link>
@@ -114,8 +114,8 @@ export default function ItemsPage() {
   return (
     <AppShell>
       <div>
-        <h1 className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">{name}님을 위한 맞춤 발견템</h1>
-        <p className="mt-1 text-[15px] text-[#6B7280]">
+        <h1 className="text-[19px] font-bold tracking-tight text-ink">{name}님을 위한 맞춤 발견템</h1>
+        <p className="mt-1 text-[15px] text-ink-2">
           {coreKey
             ? "진단에서 확인된 모발 타입과 매칭된 제품만 모았어요."
             : "먼저 헤어 진단을 하면 모발 타입에 맞춰 더 정확히 추천해드려요."}
@@ -123,7 +123,7 @@ export default function ItemsPage() {
       </div>
 
       {loading && (
-        <div className="flex min-h-[160px] items-center justify-center text-[15px] text-[#5F6368]">
+        <div className="flex min-h-[160px] items-center justify-center text-[15px] text-ink-2">
           발견템 불러오는 중…
         </div>
       )}
@@ -135,7 +135,7 @@ export default function ItemsPage() {
       )}
 
       {!loading && !error && matched.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-10 text-center text-[15px] text-[#5F6368]">
+        <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-10 text-center text-[15px] text-ink-2">
           {coreKey
             ? "지금 모발 타입에 딱 맞는 발견템을 준비하고 있어요. 곧 채워질 예정이에요."
             : "아직 공개된 발견템이 없어요. 곧 채워질 예정이에요."}
