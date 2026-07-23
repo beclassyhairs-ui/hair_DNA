@@ -196,23 +196,23 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
       className="overflow-hidden rounded-2xl"
-      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+      style={{ border: "1px solid var(--line)" }}
     >
       {/* 골드 라인 */}
-      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
+      <div className="h-px w-full" style={{ background: "var(--line)" }} />
 
-      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+      <div style={{ background: "var(--card)" }}>
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               Style {index + 1}
             </p>
-            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
               {entry.styleName}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {/* After 이미지 썸네일 */}
@@ -221,13 +221,13 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
             <button
               onClick={() => onOpenModal(entry.generatedImageUrl!)}
               className="mx-4 mb-2 block w-[calc(100%-2rem)] overflow-hidden rounded-xl active:scale-[0.98] transition-transform"
-              style={{ border: "1px solid rgba(200,168,107,0.2)" }}
+              style={{ border: "1px solid var(--line)" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={entry.generatedImageUrl} alt="AI 변신 결과"
                 className="h-48 w-full object-cover" />
-              <div className="px-3 py-1.5 text-center" style={{ background: "rgba(200,168,107,0.06)" }}>
-                <p className="text-[13px]" style={{ color: "rgba(200,168,107,0.7)" }}>탭하면 크게 볼 수 있어요</p>
+              <div className="px-3 py-1.5 text-center" style={{ background: "var(--surface)" }}>
+                <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>탭하면 크게 볼 수 있어요</p>
               </div>
             </button>
             <button
@@ -238,9 +238,9 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               }}
               disabled={downloading}
               className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-[13px] font-bold transition-all active:scale-[0.98] disabled:opacity-60"
-              style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}
+              style={{ background: "var(--btn)", color: "#fff" }}
             >
-              {downloading ? "저장 중..." : "📥 사진 갤러리에 저장하기"}
+              {downloading ? "저장 중..." : "사진 갤러리에 저장하기"}
             </button>
           </>
         )}
@@ -249,7 +249,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         <button
           onClick={() => setExpanded(v => !v)}
           className="flex w-full items-center justify-between px-4 pb-3 text-[13px] transition-colors"
-          style={{ color: "rgba(253,251,250,0.72)" }}
+          style={{ color: "var(--ink-2)" }}
         >
           <span>진단 데이터 {expanded ? "접기" : "보기"}</span>
           <svg viewBox="0 0 24 24" fill="none" className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} stroke="currentColor" strokeWidth={2}>
@@ -262,9 +262,9 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
             {Q_ORDER.map(qId => {
               const val = entry.answers[qId] ?? "";
               return (
-                <div key={qId} className="rounded-lg px-3 py-2" style={{ background: "rgba(255,255,255,0.03)" }}>
-                  <p className="text-[12px]" style={{ color: "rgba(253,251,250,0.68)" }}>{Q_LABELS[qId]}</p>
-                  <p className="text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.75)" }}>
+                <div key={qId} className="rounded-lg px-3 py-2" style={{ background: "var(--surface)" }}>
+                  <p className="text-[12px]" style={{ color: "var(--ink-2)" }}>{Q_LABELS[qId]}</p>
+                  <p className="text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
                     {A_LABELS[qId]?.[val] ?? "—"}
                   </p>
                 </div>
@@ -274,21 +274,20 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         )}
 
         {/* 카테고리 힌트 → 자체 커머스(발견템) 유도 — 외부 제휴 링크 없음 */}
-        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
           <div className="flex items-center gap-3 px-3 py-3">
-            <span className="text-2xl">{hint.emoji}</span>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold uppercase tracking-wider" style={{ color: "rgba(200,168,107,0.85)" }}>
+              <p className="text-[13px] font-bold uppercase tracking-wider" style={{ color: "var(--ink-2)" }}>
                 {hint.category}
               </p>
-              <p className="truncate text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
+              <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
                 이 진단에 맞는 제품 보기
               </p>
             </div>
           </div>
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
+            style={{ background: "var(--btn)", color: "#fff" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -308,23 +307,23 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
       className="overflow-hidden rounded-2xl"
-      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+      style={{ border: "1px solid var(--line)" }}
     >
-      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
-      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+      <div className="h-px w-full" style={{ background: "var(--line)" }} />
+      <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손상도 진단 · {entry.resultCode}
             </p>
-            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
               {entry.levelLabel} · {entry.typeLabel}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
+        <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.headline}
         </p>
 
@@ -332,21 +331,21 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           <div className="flex flex-wrap gap-1.5 px-4 pb-3">
             {entry.concernTags.map((tag) => (
               <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
-                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>
             ))}
           </div>
         )}
 
-        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
           <div className="flex items-center gap-3 px-3 py-3">
             <span className="text-2xl">{entry.product.emoji}</span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold" style={{ color: "rgba(253,251,250,0.8)" }}>
+              <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
                 {entry.product.name}
               </p>
-              <p className="truncate text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
+              <p className="truncate text-[13px]" style={{ color: "var(--ink-2)" }}>
                 {entry.product.description}
               </p>
             </div>
@@ -354,7 +353,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "linear-gradient(90deg,#E4D2A8,#C8A86B,#A8884A)", color: "#0C0B0A" }}>
+            style={{ background: "var(--btn)", color: "#fff" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -375,24 +374,24 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
       className="overflow-hidden rounded-2xl"
-      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+      style={{ border: "1px solid var(--line)" }}
     >
-      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
-      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+      <div className="h-px w-full" style={{ background: "var(--line)" }} />
+      <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
             </p>
-            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
               {entry.title}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {entry.diagnosisSummary && (
-          <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
+          <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "var(--ink)" }}>
             {entry.diagnosisSummary}
           </p>
         )}
@@ -401,7 +400,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {tags.map((tag) => (
               <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
-                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>
             ))}
@@ -418,12 +417,12 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
 function DiaryImageThumb({ label, url }: { label: string; url: string }) {
   const [imgOk, setImgOk] = useState(true);
   return (
-    <div className="relative aspect-[3/4] flex-1 overflow-hidden rounded-xl" style={{ border: "1px solid rgba(200,168,107,0.15)" }}>
+    <div className="relative aspect-[3/4] flex-1 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
       {imgOk ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt={label} className="h-full w-full object-cover" onError={() => setImgOk(false)} />
       ) : (
-        <div className="flex h-full flex-col items-center justify-center gap-1" style={{ background: "rgba(200,168,107,0.05)" }}>
+        <div className="flex h-full flex-col items-center justify-center gap-1" style={{ background: "var(--surface)" }}>
           <span className="text-xl">💇</span>
         </div>
       )}
@@ -444,29 +443,29 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
       className="overflow-hidden rounded-2xl"
-      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+      style={{ border: "1px solid var(--line)" }}
     >
-      <div className="h-px w-full" style={{ background: "linear-gradient(to right, transparent, rgba(200,168,107,0.35), transparent)" }} />
-      <div style={{ background: "rgba(255,255,255,0.02)" }}>
+      <div className="h-px w-full" style={{ background: "var(--line)" }} />
+      <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between px-4 py-3">
           <div>
-            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "rgba(200,168,107,0.85)" }}>
+            <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
-            <p className="mt-0.5 font-serif text-base font-bold" style={{ color: "#FDFBFA" }}>
+            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
               {entry.primaryBangLabel}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "rgba(253,251,250,0.68)" }}>{date}</p>
+          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-2 text-[13px] leading-relaxed" style={{ color: "rgba(253,251,250,0.82)" }}>
+        <p className="px-4 pb-2 text-[13px] leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.diagnosisSummary}
         </p>
-        <p className="px-4 pb-1 text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
+        <p className="px-4 pb-1 text-[13px]" style={{ color: "var(--ink-2)" }}>
           선택 얼굴형 기준: {entry.selectedFaceBangLabel} · 답변 신호 기준: {entry.signalBasedBangLabel}
         </p>
-        <p className="px-4 pb-3 text-[13px]" style={{ color: "rgba(253,251,250,0.72)" }}>
+        <p className="px-4 pb-3 text-[13px]" style={{ color: "var(--ink-2)" }}>
           함께 고려한 스타일: {entry.secondaryBangLabel}
         </p>
 
@@ -482,7 +481,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {[...entry.concernTags, entry.hairTextureTag].map((tag) => (
               <span key={tag} className="rounded-full px-2.5 py-1 text-[13px] font-semibold"
-                style={{ background: "rgba(200,168,107,0.1)", color: "rgba(200,168,107,0.85)" }}>
+                style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>
             ))}
@@ -519,23 +518,23 @@ export default function MyDiaryPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return <main className="min-h-screen bg-[#0C0B0A]" />;
+  if (!ready) return <main className="min-h-screen bg-bg" />;
 
   return (
-    <main className="min-h-screen bg-[#0C0B0A]" style={{ color: "#FDFBFA" }}>
+    <main className="min-h-screen bg-bg" style={{ color: "var(--ink)" }}>
 
       {/* 이미지 확대 모달 */}
       {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
 
       {/* 헤더 */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[0.07] bg-[#0C0B0A]/90 px-5 py-4 backdrop-blur-md">
-        <Link href="/" className="text-[15px] font-medium transition-colors" style={{ color: "rgba(253,251,250,0.72)" }}>
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-bg/95 px-page py-4 backdrop-blur-md">
+        <Link href="/" className="text-[15px] font-medium transition-colors" style={{ color: "var(--ink-2)" }}>
           ← 홈
         </Link>
-        <span className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "#C8A86B" }}>
+        <span className="text-aux font-medium uppercase tracking-[0.28em]" style={{ color: "var(--ink-2)" }}>
           내 다이어리
         </span>
-        <Link href="/style/survey" className="text-[13px] font-medium transition-colors" style={{ color: "rgba(200,168,107,0.85)" }}>
+        <Link href="/style/survey" className="text-[13px] font-medium transition-colors" style={{ color: "var(--ink-2)" }}>
           새 진단
         </Link>
       </header>
@@ -546,18 +545,18 @@ export default function MyDiaryPage() {
           /* 빈 상태 */
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ border: "1px solid rgba(200,168,107,0.2)", background: "rgba(200,168,107,0.05)" }}>
-              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" stroke="rgba(200,168,107,0.5)" strokeWidth={1.2}>
+              style={{ border: "1px solid var(--line)", background: "var(--surface)" }}>
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" stroke="var(--ink-3)" strokeWidth={1.2}>
                 <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="mb-6 text-[15px]" style={{ color: "rgba(253,251,250,0.72)" }}>
+            <p className="mb-6 text-[15px]" style={{ color: "var(--ink-2)" }}>
               저장된 진단 결과가 없어요.
             </p>
             <Link
               href="/style"
               className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold"
-              style={{ background: "linear-gradient(108deg,#E4D2A8 0%,#C8A86B 50%,#A8884A 100%)", color: "#0C0B0A" }}
+              style={{ background: "var(--btn)", color: "#fff" }}
             >
               AI 헤어 분석 시작하기 →
             </Link>
@@ -567,10 +566,10 @@ export default function MyDiaryPage() {
             {/* 진단 이력 헤더 */}
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.85)" }}>
+                <p className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "var(--ink-2)" }}>
                   A-Beauty Hair Diary
                 </p>
-                <p className="mt-0.5 text-[15px]" style={{ color: "rgba(253,251,250,0.76)" }}>
+                <p className="mt-0.5 text-[15px]" style={{ color: "var(--ink-2)" }}>
                   진단 이력 {entries.length}건
                 </p>
               </div>
