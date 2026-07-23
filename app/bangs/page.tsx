@@ -20,14 +20,14 @@ export default function BangsLandingPage() {
 
   return (
     <SilkBackground>
-      <main className="mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-between px-6 py-12 text-[#2F2A22]">
+      <main className="mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-between px-page py-12 text-ink">
 
         {/* ── 브랜드 ── */}
         <div className="w-full text-center">
-          <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.35em] text-[#A8884A]/70">
-            <span className="h-px w-8 bg-[#C8A86B]/40" />
+          <span className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.35em] text-ink-2">
+            <span className="h-px w-8 bg-line" />
             A-Beauty
-            <span className="h-px w-8 bg-[#C8A86B]/40" />
+            <span className="h-px w-8 bg-line" />
           </span>
         </div>
 
@@ -38,27 +38,27 @@ export default function BangsLandingPage() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-md flex-col items-center text-center"
         >
-          <GlassCard className="mb-9 flex h-28 w-28 items-center justify-center" accent>
-            <svg viewBox="0 0 48 48" className="h-12 w-12" fill="none">
-              <ellipse cx="24" cy="24" rx="10" ry="14" stroke="rgba(47,42,34,0.55)" strokeWidth="1.2" />
-              <line x1="24" y1="6" x2="24" y2="14" stroke="rgba(47,42,34,0.35)" strokeWidth="1" />
-              <line x1="24" y1="34" x2="24" y2="42" stroke="rgba(47,42,34,0.35)" strokeWidth="1" />
-              <line x1="4" y1="24" x2="11" y2="24" stroke="rgba(47,42,34,0.35)" strokeWidth="1" />
-              <line x1="37" y1="24" x2="44" y2="24" stroke="rgba(47,42,34,0.35)" strokeWidth="1" />
-              <circle cx="24" cy="24" r="1.5" fill="#C8A86B" />
+          <GlassCard className="mb-9 flex h-28 w-28 items-center justify-center">
+            <svg viewBox="0 0 48 48" className="h-12 w-12 text-ink-2" fill="none">
+              <ellipse cx="24" cy="24" rx="10" ry="14" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="24" y1="6" x2="24" y2="14" stroke="currentColor" strokeWidth="1" />
+              <line x1="24" y1="34" x2="24" y2="42" stroke="currentColor" strokeWidth="1" />
+              <line x1="4" y1="24" x2="11" y2="24" stroke="currentColor" strokeWidth="1" />
+              <line x1="37" y1="24" x2="44" y2="24" stroke="currentColor" strokeWidth="1" />
+              <circle cx="24" cy="24" r="1.5" fill="currentColor" />
             </svg>
           </GlassCard>
 
-          <span className="mb-4 inline-flex items-center rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
+          <span className="mb-4 inline-flex items-center rounded-pill border border-line bg-surface px-4 py-1.5 text-aux font-medium tracking-wide text-ink-2">
 5초 얼굴형 분석
           </span>
 
-          <h1 className="font-serif text-[2.1rem] font-bold leading-[1.25] tracking-tight text-[#2F2A22]">
+          <h1 className="text-h1 text-ink">
             AI가 찾아주는
             <br />
             내 인생 앞머리
           </h1>
-          <p className="mt-5 text-base leading-relaxed text-[#6B6355]">
+          <p className="mt-5 text-body leading-relaxed text-ink-2">
             나의 얼굴 윤곽과 콤플렉스를 분석하여<br />완벽한 앞머리를 처방받으세요.
           </p>
         </motion.div>
@@ -78,7 +78,7 @@ export default function BangsLandingPage() {
           </BlackCTAButton>
           {/* ⚠️ 실동작 — 사진은 받지 않지만 문항 답변은 이벤트로 서버에 적재된다.
               "개인정보 미저장"으로 되돌리지 말 것. */}
-          <p className="mt-3 text-center text-[13px] text-[#6B6355]">
+          <p className="mt-3 text-center text-aux text-ink-2">
             사진 촬영 없음 · 결과는 내 기기에 보관돼요
           </p>
         </motion.div>

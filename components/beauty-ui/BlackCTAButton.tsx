@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 // ============================================================================
-// BlackCTAButton — 골드 그라디언트 대신 쓰는 솔리드 블랙/딥브라운 CTA.
-// href가 있으면 Link로, 없으면 button으로 렌더링한다(호출부 로직은 그대로 둔다).
+// BlackCTAButton — WORKORDER-02: 순검정 폐지 → 소프트 차콜(--btn) 주 CTA.
+// rounded-full → rounded-btn, 타이포는 --emphasis(16/600). API·로직은 그대로.
+// href가 있으면 Link로, 없으면 button으로 렌더링한다.
 // ============================================================================
 
 type Props = {
@@ -19,8 +20,8 @@ export default function BlackCTAButton({
   children, onClick, href, disabled = false, type = "button", className = "",
 }: Props) {
   const classes =
-    "flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#1C1A17] text-base font-semibold text-white " +
-    "transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#2A2620] " +
+    "flex h-14 w-full items-center justify-center gap-2 rounded-btn bg-btn text-emphasis text-white " +
+    "transition-all active:scale-[0.98] disabled:bg-surface disabled:text-ink-3 disabled:cursor-not-allowed hover:opacity-90 " +
     className;
 
   if (href) {

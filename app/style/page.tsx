@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   STYLE_ANSWERS_KEY,
@@ -13,8 +12,8 @@ import {
 import { getRemainingUses, canUseToday, DAILY_MAX } from "@/lib/dailyLimit";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
-import GlassCard from "@/components/beauty-ui/GlassCard";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import { Button } from "@/app/components/ui";
 
 export default function StyleLandingPage() {
   const router = useRouter();
@@ -41,7 +40,7 @@ export default function StyleLandingPage() {
 
   return (
     <SilkBackground>
-      <main className="relative mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-6 text-[#2F2A22]">
+      <main className="relative mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-page text-ink">
 
         {/* ── 소진 모달 ── */}
         <AnimatePresence>
@@ -57,17 +56,17 @@ export default function StyleLandingPage() {
                 initial={{ scale: 0.9, y: 16 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 16 }}
-                className="w-full max-w-sm rounded-3xl border border-white/60 bg-white/90 p-7 text-center shadow-xl backdrop-blur-xl"
+                className="w-full max-w-sm rounded-card border border-line bg-card p-7 text-center shadow-soft"
                 onClick={e => e.stopPropagation()}
               >
-                <h2 className="font-serif text-lg font-bold text-[#2F2A22]">오늘의 무료 진단이 끝났어요</h2>
-                <p className="mt-3 text-[15px] leading-relaxed text-[#6B6355]">
+                <h2 className="text-h2 text-ink">오늘의 무료 진단이 끝났어요</h2>
+                <p className="mt-3 text-body leading-relaxed text-ink-2">
                   하루 무료 진단 횟수({DAILY_MAX}회)를 모두 사용하셨습니다.<br />
                   내일 다시 찾아와 주세요!
                 </p>
                 <button
                   onClick={() => setShowLimitModal(false)}
-                  className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#F3EEE3] text-[15px] font-semibold text-[#2F2A22] transition hover:bg-[#EDE7DA]"
+                  className="mt-6 flex h-12 w-full items-center justify-center rounded-btn bg-surface text-emphasis text-ink transition hover:bg-line"
                 >
                   확인
                 </button>
@@ -83,19 +82,19 @@ export default function StyleLandingPage() {
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
           {/* 브랜드 배지 */}
-          <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.38em] text-[#A8884A]/70">
-            <span className="h-px w-6 bg-[#C8A86B]/40" />
+          <span className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.38em] text-ink-2">
+            <span className="h-px w-6 bg-line" />
             A-Beauty
-            <span className="h-px w-6 bg-[#C8A86B]/40" />
+            <span className="h-px w-6 bg-line" />
           </span>
 
           {/* 메인 타이틀 */}
-          <h1 className="mt-8 font-serif text-[2rem] font-bold leading-[1.2] tracking-tight text-[#2F2A22] sm:text-4xl">
+          <h1 className="mt-8 text-h1 text-ink">
             AI가 분석해주는<br />
             내 인생 헤어스타일
           </h1>
 
-          <p className="mt-4 text-[15px] leading-relaxed text-[#6B6355] sm:text-base">
+          <p className="mt-4 text-body leading-relaxed text-ink-2">
             나의 모질과 희망 스타일을 분석해 최적의 헤어를 처방합니다.
           </p>
 
@@ -108,11 +107,7 @@ export default function StyleLandingPage() {
           >
             {/* 남은 횟수 뱃지 */}
             <div className="flex justify-center">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold ${
-                remaining === 0
-                  ? "bg-red-500/10 text-red-500/80"
-                  : "bg-[#F3EEE3] text-[#A8884A]"
-              }`}>
+              <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface px-3 py-1 text-aux text-ink-2">
                 {remaining === 0
                   ? "오늘 무료 진단 횟수를 모두 사용했어요"
                   : `오늘 남은 무료 진단 횟수: ${remaining}회`}
@@ -127,19 +122,14 @@ export default function StyleLandingPage() {
             {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 합성 직후 즉시 파기한다
                 (app/api/hair-transform finally 삭제, submit-diagnosis는 셀카 미저장).
                 "개인정보 미저장"으로 되돌리지 말 것 — 국외이전·즉시파기 고지는 /style/upload에 있다. */}
-            <p className="text-center text-[13px] text-[#6B6355]">
+            <p className="text-center text-aux text-ink-2">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요
             </p>
 
-            {/* 재방문 링크 — /my-diary(구 다크 UI) 대신 /home으로 안내 */}
-            <GlassCard>
-              <Link
-                href="/home"
-                className="flex h-14 w-full items-center justify-center text-base font-semibold text-[#6B6355] underline underline-offset-[5px] transition-all duration-200 hover:text-[#2F2A22] active:scale-[0.98]"
-              >
-                이미 분석받으셨나요? · 저장한 진단 보기
-              </Link>
-            </GlassCard>
+            {/* 재방문 링크 — 밑줄버튼 폐지 → Secondary 버튼. /home으로 안내 */}
+            <Button href="/home" variant="secondary" fullWidth>
+              이미 분석받으셨나요? · 저장한 진단 보기
+            </Button>
           </motion.div>
         </motion.div>
       </main>
