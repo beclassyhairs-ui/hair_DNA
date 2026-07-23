@@ -60,20 +60,20 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
 
   return (
     <SilkBackground>
-      <main className="flex h-[100dvh] flex-col text-[#2F2A22]">
+      <main className="flex h-[100dvh] flex-col text-ink">
 
         {/* 가이드 이미지 — 중앙 정렬 */}
         <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
           <div className="w-full max-w-sm">
-            <GlassCard className="overflow-hidden" accent>
+            <GlassCard className="overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={guideImg.src} alt="촬영 가이드" className="h-auto w-full" />
             </GlassCard>
-            <p className="mt-3 px-2 text-center text-[15px] text-[#6B6355]">
+            <p className="mt-3 px-2 text-center text-body text-ink-2">
               정확한 AI 분석을 위해 위 가이드대로 촬영해 주세요
             </p>
-            <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-50/80 px-4 py-3">
-              <p className="text-center text-[13px] leading-relaxed text-amber-700/90">
+            <div className="mt-3 rounded-card border border-line bg-surface px-4 py-3">
+              <p className="text-center text-aux leading-relaxed text-ink">
                 <span className="font-semibold">손·팔이 머리에 닿은 포즈는 피해 주세요</span><br />
                 손가락이 머리카락과 겹치면 AI가 손 모양을 변형할 수 있어요.<br />
                 손은 아래로 자연스럽게 내린 자세로 촬영해 주세요.
@@ -84,7 +84,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
 
         {/* ── Sticky Bottom: 체크박스 + 버튼 ── */}
         <div
-          className="flex-none border-t border-white/50 bg-[#FBF9F4]/92 px-5 pt-5 backdrop-blur-xl"
+          className="flex-none border-t border-line bg-bg px-page pt-5"
           style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
         >
           {/* 안심 문구 + 국외이전 고지 — 톤: 따뜻·담담, 겁주기 금지.
@@ -93,13 +93,14 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
                 · hair-transform: 합성 위해 잠깐 Blob 업로드 → 합성 직후 finally에서 즉시삭제
                 · 합성은 Replicate(미국)에서 처리 → 국외이전 함께 고지
               "즉시 파기"가 이제 실동작이다. 되돌릴 땐 코드(위 두 라우트)부터 바꿀 것. */}
-          <div className="mb-4 rounded-2xl border border-[#E7DFC9] bg-white/70 px-4 py-3">
-            <p className="text-[13px] leading-relaxed text-[#6B6355]">
-              올려주신 사진은 <span className="font-semibold text-[#4A453B]">헤어스타일을 합성하는 데에만</span> 쓰이고,{" "}
-              <span className="font-semibold text-[#4A453B]">합성이 끝나면 곧바로 서버에서 삭제</span>돼요.
+          {/* WORKORDER-02: 문구는 그대로, 크기(13→16px)·대비(--ink)만 강화해 앞에 크게 노출 */}
+          <div className="mb-4 rounded-card border border-line bg-surface px-4 py-4">
+            <p className="text-body leading-relaxed text-ink">
+              올려주신 사진은 <span className="font-semibold">헤어스타일을 합성하는 데에만</span> 쓰이고,{" "}
+              <span className="font-semibold">합성이 끝나면 곧바로 서버에서 삭제</span>돼요.
               원본은 따로 보관하지 않으니 안심하고 진행하셔도 좋아요.
             </p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-[#8A8474]">
+            <p className="mt-2 text-aux leading-relaxed text-ink-2">
               합성은 해외(미국 Replicate) 서버에서 처리되며, 이 과정에서 사진이 국외로 이전됩니다.
             </p>
           </div>
@@ -112,7 +113,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           >
             {/* 커스텀 체크박스 */}
             <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
-              agreed ? "border-[#2F2A22] bg-[#2F2A22]" : "border-[#D8CDB8] bg-transparent"
+              agreed ? "border-ink bg-ink" : "border-btn-line bg-transparent"
             }`}>
               {agreed && (
                 <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
@@ -122,19 +123,19 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
               )}
             </span>
             <span>
-              <span className="block text-[15px] font-medium leading-snug text-[#4A453B]">
+              <span className="block text-body font-medium leading-snug text-ink">
                 AI 헤어 합성을 위한 사진 업로드·처리 및 국외이전에 동의합니다.{" "}
-                <span className="text-[#A8884A]">(필수)</span>
+                <span className="text-ink-2">(필수)</span>
               </span>
-              <span className="mt-1 block text-[13px] text-[#6B6355]">
+              <span className="mt-1 block text-aux text-ink-2">
                 합성이 끝나면 사진은 즉시 파기됩니다.
               </span>
             </span>
           </button>
 
-          <p className="text-center text-[13px] text-[#6B6355]">
+          <p className="text-center text-aux text-ink-2">
             자세한 처리 방식은{" "}
-            <Link href="/privacy" className="font-semibold text-[#8A7648] underline underline-offset-2">
+            <Link href="/privacy" className="font-medium text-ink underline underline-offset-2">
               개인정보처리방침
             </Link>
             에서 확인하실 수 있어요
@@ -410,7 +411,7 @@ export default function StyleUploadPage() {
   return (
     // [요구사항 3] h-[100dvh] flex-col — 모바일 브라우저 하단 바 포함 전체 높이
     <SilkBackground>
-      <main className="flex h-[100dvh] w-full flex-col overflow-hidden text-[#2F2A22]">
+      <main className="flex h-[100dvh] w-full flex-col overflow-hidden text-ink">
 
         {/* [요구사항 2] 셔터 플래시 — 흰 화면 번쩍임 (0.15초) */}
         <AnimatePresence>
@@ -427,22 +428,24 @@ export default function StyleUploadPage() {
         </AnimatePresence>
 
         {/* ── 헤더 (flex-none) ── */}
-        <header className="flex flex-none items-center justify-between border-b border-white/50 bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-xl">
+        <header className="flex flex-none items-center justify-between border-b border-line bg-bg px-page py-3.5">
           <button onClick={() => router.push("/style/survey")}
-            className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
+            className="text-body font-medium text-ink-2 transition-colors hover:text-ink">
             ← 질문으로
           </button>
-          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">사진 등록</span>
+          <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink-2">사진 등록</span>
           <div className="w-16" />
         </header>
 
         {/* ── [요구사항 3] 카메라/이미지 뷰 (flex-1 relative overflow-hidden) ──
              비디오·이미지·가이드 SVG 모두 이 안에서 absolute로 존재.
              버튼 영역과 물리적으로 분리되어 절대 겹치지 않음.
-             ★ 이 블록(bg-black) 내부는 카메라 뷰파인더 — 리디자인 대상 아님. */}
+             ★ 이 블록 내부는 카메라 뷰파인더 — 리디자인 대상 아님.
+             WORKORDER-02(사업주 결정 a): 순검정 → 웜 차콜(--upload-bg) 배경색만 교체.
+             카메라 로직·오버레이 좌표·포인터 핸들러는 일절 변경하지 않는다. */}
         <div
           ref={frameRef}
-          className="relative flex-1 overflow-hidden bg-black"
+          className="relative flex-1 overflow-hidden bg-upload-bg"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -559,14 +562,14 @@ export default function StyleUploadPage() {
 
         {/* ── [요구사항 3] 액션 버튼 영역 (shrink-0 — 카메라 뷰와 물리적 분리) ── */}
         <div
-          className="shrink-0 border-t border-white/50 bg-[#FBF9F4]/92 px-6 pt-5 backdrop-blur-xl"
+          className="shrink-0 border-t border-line bg-bg px-page pt-5"
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           {camera ? (
             /* 카메라 촬영 모드 */
             <div className="flex gap-3">
               <button onClick={stopCamera}
-                className="flex h-14 items-center justify-center rounded-full border border-[#EDE7DA] bg-white px-6 text-base font-medium text-[#6B6355] hover:text-[#2F2A22] active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 닫기
               </button>
               <div className="flex-1">
@@ -584,7 +587,7 @@ export default function StyleUploadPage() {
                   setSavedPhoto(null);
                   try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
                 }}
-                className="flex h-14 items-center justify-center rounded-full border border-[#EDE7DA] bg-white px-6 text-base font-medium text-[#6B6355] hover:text-[#2F2A22] active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 등록
               </button>
               <div className="flex-1">
@@ -598,7 +601,7 @@ export default function StyleUploadPage() {
             /* 이미지 크롭/확인 모드 */
             <div className="flex gap-3">
               <button onClick={resetSrc}
-                className="flex h-14 items-center justify-center rounded-full border border-[#EDE7DA] bg-white px-6 text-base font-medium text-[#6B6355] hover:text-[#2F2A22] active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 선택
               </button>
               <div className="flex-1">
@@ -611,7 +614,7 @@ export default function StyleUploadPage() {
           ) : (
             /* 초기 선택 화면 — 뒤로가기 */
             <button onClick={() => router.push("/style/survey")}
-              className="flex h-14 w-full items-center justify-center rounded-full border border-[#EDE7DA] bg-white text-base font-medium text-[#6B6355] hover:text-[#2F2A22]">
+              className="flex h-14 w-full items-center justify-center rounded-btn border border-btn-line bg-transparent text-emphasis text-ink hover:bg-surface">
               ← 설문으로 돌아가기
             </button>
           )}
