@@ -154,19 +154,19 @@ export default function DamageCheckResultPage() {
     });
   }
 
-  if (!ready) return <main className="min-h-screen bg-[#FBF9F4]" />;
+  if (!ready) return <main className="min-h-screen bg-surface" />;
 
   return (
     <SilkBackground>
-      <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-[#2F2A22]" style={{ touchAction: "pan-y" }}>
+      <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-ink" style={{ touchAction: "pan-y" }}>
 
         {/* ── 헤더 ── */}
-        <header className="sticky top-0 z-20 flex items-center justify-between bg-[#FBF9F4]/92 px-5 py-3.5 backdrop-blur-md">
-          <Link href="/damage-check/survey" className="text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-surface/92 px-5 py-3.5 backdrop-blur-md">
+          <Link href="/damage-check/survey" className="text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">
             ← 다시 하기
           </Link>
-          <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">진단 결과지</span>
-          <button onClick={handleKakaoShare} className="text-[15px] font-medium text-[#6B6355] hover:text-[#2F2A22] transition-colors">
+          <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">진단 결과지</span>
+          <button onClick={handleKakaoShare} className="text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">
             {kakaoSent ? "전송됨 ✓" : "공유"}
           </button>
         </header>
@@ -183,11 +183,11 @@ export default function DamageCheckResultPage() {
 
             {/* 진단 요약 */}
             <GlassCard className="px-5 py-5">
-              <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">진단 요약</p>
-              <p className="text-[15px] leading-relaxed text-[#4A453B]">{result.level.summary}</p>
-              <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-white/60 px-4 py-2.5">
-                <p className="text-[13px] font-semibold text-[#6B6355]">
-                  권장 관리 강도: <span className="text-[#2F2A22]">{result.level.careIntensity}</span>
+              <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">진단 요약</p>
+              <p className="text-[15px] leading-relaxed text-ink">{result.level.summary}</p>
+              <div className="mt-3 rounded-xl border border-line bg-white/60 px-4 py-2.5">
+                <p className="text-[13px] font-semibold text-ink-2">
+                  권장 관리 강도: <span className="text-ink">{result.level.careIntensity}</span>
                 </p>
               </div>
             </GlassCard>
@@ -195,11 +195,11 @@ export default function DamageCheckResultPage() {
             {/* Lv4(극손상모) 전용 정직 처방 — 담담한 전문가 톤, 공포 조장 없음 */}
             {result.level.cutAdvice && (
               <GlassCard tone="soft" className="px-5 py-5">
-                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.25em] text-[#A8884A]">전문가 처방</p>
-                <p className="text-[15px] leading-relaxed text-[#4A453B]">{result.level.cutAdvice}</p>
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">전문가 처방</p>
+                <p className="text-[15px] leading-relaxed text-ink">{result.level.cutAdvice}</p>
                 {result.level.keratinCaution && (
-                  <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
-                    <p className="text-[15px] font-medium text-[#6B5B3A]">{result.level.keratinCaution}</p>
+                  <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-3">
+                    <p className="text-[15px] font-medium text-ink-2">{result.level.keratinCaution}</p>
                   </div>
                 )}
               </GlassCard>
@@ -207,12 +207,12 @@ export default function DamageCheckResultPage() {
 
             {/* 원인 분석 — 차분한 톤(경고색 제거) */}
             <GlassCard accent className="px-5 py-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">
+              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">
                 주된 원인 — {result.typeInfo.label}
               </p>
-              <p className="mt-3 text-[15px] leading-relaxed text-[#4A453B]">{result.typeInfo.causeExplain} 상태예요.</p>
-              <div className="mt-3 rounded-xl border border-[#EDE7DA] bg-[#F6F1E6] px-4 py-3">
-                <p className="text-[15px] font-medium text-[#6B5B3A]">이런 습관은 피해보세요 — {result.typeInfo.avoid}</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-ink">{result.typeInfo.causeExplain} 상태예요.</p>
+              <div className="mt-3 rounded-xl border border-line bg-surface px-4 py-3">
+                <p className="text-[15px] font-medium text-ink-2">이런 습관은 피해보세요 — {result.typeInfo.avoid}</p>
               </div>
             </GlassCard>
 
@@ -220,33 +220,33 @@ export default function DamageCheckResultPage() {
             <GlassCard className="space-y-3 px-5 py-4">
               <Link
                 href="/items"
-                className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+                className="flex items-center justify-between gap-3 text-[15px] font-medium text-ink hover:text-ink"
               >
                 발견템에서 손상도 단계에 맞는 홈케어 제품을 볼 수 있어요
-                <span className="flex-none text-[#A8884A]">→</span>
+                <span className="flex-none text-ink-2">→</span>
               </Link>
-              <div className="h-px bg-[#EDE7DA]" />
+              <div className="h-px bg-surface" />
               <Link
                 href="/hair-quiz"
-                className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+                className="flex items-center justify-between gap-3 text-[15px] font-medium text-ink hover:text-ink"
               >
                 평소 손질 습관 진단
-                <span className="flex-none text-[#A8884A]">→</span>
+                <span className="flex-none text-ink-2">→</span>
               </Link>
-              <div className="h-px bg-[#EDE7DA]" />
+              <div className="h-px bg-surface" />
               <Link
                 href="/style"
-                className="flex items-center justify-between gap-3 text-[15px] font-medium text-[#4A453B] hover:text-[#2F2A22]"
+                className="flex items-center justify-between gap-3 text-[15px] font-medium text-ink hover:text-ink"
               >
                 AI 헤어 분석으로 내 스타일도 찾기
-                <span className="flex-none text-[#A8884A]">→</span>
+                <span className="flex-none text-ink-2">→</span>
               </Link>
             </GlassCard>
 
             {/* 저장 + 홈 이동 */}
             <GlassCard className="px-5 py-5">
-              <p className="text-center text-base font-semibold text-[#2F2A22]">이 결과, 계속 보관하고 싶다면?</p>
-              <p className="mt-1 text-center text-[15px] text-[#6B6355]">내 홈 화면과 다이어리에 저장해서 관리를 이어가 보세요</p>
+              <p className="text-center text-base font-semibold text-ink">이 결과, 계속 보관하고 싶다면?</p>
+              <p className="mt-1 text-center text-[15px] text-ink-2">내 홈 화면과 다이어리에 저장해서 관리를 이어가 보세요</p>
               <div className="mt-4">
                 <BlackCTAButton onClick={handleSaveAndGoHome} disabled={saved}>
                   {saved ? "저장 완료 ✓ 이동 중..." : "내 홈에 저장하고 관리 시작하기"}
@@ -256,21 +256,21 @@ export default function DamageCheckResultPage() {
 
             {/* 공유 */}
             <GlassCard className="px-5 py-5">
-              <p className="text-center text-base font-semibold text-[#2F2A22]">친구도 손상도 확인해볼까요?</p>
-              <p className="mt-1 text-center text-[15px] text-[#6B6355]">결과를 공유하고 서로 비교해 보세요</p>
+              <p className="text-center text-base font-semibold text-ink">친구도 손상도 확인해볼까요?</p>
+              <p className="mt-1 text-center text-[15px] text-ink-2">결과를 공유하고 서로 비교해 보세요</p>
               <button
                 onClick={handleKakaoShare}
                 className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full bg-[#FEE500] py-3.5 text-base font-bold text-[#191600] transition-all hover:brightness-95 active:scale-[0.98]"
               >
                 {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
               </button>
-              {copied && <p className="mt-2 text-center text-[13px] text-[#6B6355]">✓ 링크가 복사됐어요</p>}
+              {copied && <p className="mt-2 text-center text-[13px] text-ink-2">✓ 링크가 복사됐어요</p>}
             </GlassCard>
 
             {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
             <div className="flex justify-center pb-2">
               <Link href="/damage-check"
-                className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
+                className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">
                 ↺ 처음부터 다시 하기
               </Link>
             </div>
