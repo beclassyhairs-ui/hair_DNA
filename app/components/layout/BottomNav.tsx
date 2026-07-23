@@ -1,39 +1,57 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 — 밝은 웰니스앱 홈 계열 페이지 공용 하단 탭바.
+// 어뷰티 공용 하단 탭바 (WORKORDER-02 토큰화).
 // AI진단(/diagnosis) · 고민상담소(/consulting) · 오늘케어(/home) · 발견템(/items) ·
-// 마이헤어(/myhair) 5대 메뉴를 라우팅한다.
+// 마이헤어(/myhair) 5대 메뉴. 라우트·라벨은 기존과 동일(기능 회귀 없음).
+// 변경: 이모지 → Lucide 단색 1세트(stroke 1.8), 무지개·골드 폐지 →
+//       비활성 --ink-2 / 활성만 --ink(색이 아니라 명도로 구분).
 // ============================================================================
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Sparkles,
+  MessageCircle,
+  Home,
+  ShoppingBag,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
-const NAV_ITEMS = [
-  { href: "/diagnosis", icon: "🔍", label: "AI진단" },
-  { href: "/consulting", icon: "💬", label: "고민상담소" },
-  { href: "/home", icon: "🏠", label: "오늘케어" },
-  { href: "/items", icon: "🎁", label: "발견템" },
-  { href: "/myhair", icon: "👤", label: "마이헤어" },
-] as const;
+const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
+  { href: "/diagnosis", icon: Sparkles, label: "AI진단" },
+  { href: "/consulting", icon: MessageCircle, label: "고민상담소" },
+  { href: "/home", icon: Home, label: "오늘케어" },
+  { href: "/items", icon: ShoppingBag, label: "발견템" },
+  { href: "/myhair", icon: User, label: "마이헤어" },
+];
 
 export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-black/5 bg-white/90 shadow-[0_-12px_32px_-14px_rgba(0,0,0,0.16)] backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-line bg-bg/95 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[430px] items-stretch justify-between px-2 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2.5">
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active =
+            pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-center"
+              aria-current={active ? "page" : undefined}
+              className="flex flex-1 flex-col items-center gap-1 rounded-btn px-1 py-1.5 text-center"
             >
-              <span className="text-xl leading-none">{item.icon}</span>
+              <Icon
+                size={22}
+                strokeWidth={1.8}
+                className={active ? "text-ink" : "text-ink-2"}
+                aria-hidden
+              />
               <span
-                className={`text-[12px] font-medium ${active ? "text-[#C8A96A]" : "text-gray-500"}`}
+                className={`text-[12px] ${active ? "font-medium text-ink" : "font-normal text-ink-2"}`}
               >
                 {item.label}
               </span>
