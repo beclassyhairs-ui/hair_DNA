@@ -10,10 +10,10 @@ import BottomNav from "./BottomNav";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+    <div className="min-h-screen bg-bg">
       <div className="mx-auto min-h-screen max-w-[430px] pb-28">
         <Header />
-        <main className="space-y-5 px-5 py-6">{children}</main>
+        <main className="space-y-5 px-page py-6">{children}</main>
       </div>
       <BottomNav />
     </div>

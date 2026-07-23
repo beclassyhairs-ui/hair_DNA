@@ -57,26 +57,24 @@ const PERSONALIZED_ROUTINE: { id: RoutineStepId; label: string }[] = [
 function HairProfileWidget() {
   const userProfile = useUserProfile();
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-[#EADFC5] bg-gradient-to-br from-[#FBF6EA] via-[#F8F1E1] to-[#EFD9AE] p-6 shadow-[0_12px_28px_-16px_rgba(200,169,106,0.55)]">
-      <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-white/40 blur-2xl" />
-
-      <p className="relative text-[11px] font-semibold tracking-wide text-[#8A6D2F]">최근 진단 기준</p>
-      <h2 className="relative mt-1 text-[17px] font-bold tracking-tight text-[#2F2F2F]">
+    <section className="relative overflow-hidden rounded-card border border-line bg-surface p-6 shadow-soft">
+      <p className="text-aux text-ink-2">최근 진단 기준</p>
+      <h2 className="mt-1 text-h2 text-ink">
         {userProfile.name}님의 헤어 프로필
       </h2>
 
-      <div className="relative mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {userProfile.hairTags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-white/70 px-2.5 py-1 text-[13px] font-semibold text-[#8A6D2F] backdrop-blur"
+            className="rounded-pill border border-line bg-card px-2.5 py-1 text-aux text-ink-2"
           >
             {tag.startsWith("#") ? tag : `#${tag}`}
           </span>
         ))}
       </div>
 
-      <p className="relative mt-4 text-[15px] leading-relaxed text-[#2F2F2F]">
+      <p className="mt-4 text-body leading-relaxed text-ink">
         진단으로 확인된 {userProfile.name}님의 모발 특성에 맞춘 데일리 루틴이에요.
         <br />
         무거운 오일보다는 가벼운 픽싱 미스트와 뿌리 볼륨 케어를 추천해요.
@@ -84,7 +82,7 @@ function HairProfileWidget() {
 
       <button
         onClick={() => trackEvent("profile_result_view", { source: "home_profile_card" })}
-        className="relative mt-5 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-[15px] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(47,47,47,0.6)] transition-opacity active:opacity-80"
+        className="mt-5 w-full rounded-btn bg-btn py-3.5 text-emphasis text-white transition-opacity active:opacity-80"
       >
         내 진단 결과 다시보기
       </button>
@@ -116,31 +114,31 @@ function PersonalizedRoutineWidget() {
   };
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <section className="rounded-card border border-line bg-card p-6 shadow-soft">
       <div className="flex items-center justify-between">
-        <h2 className="text-[17px] font-bold tracking-tight text-[#2F2F2F]">
+        <h2 className="text-h2 text-ink">
           오늘 {userProfile.name}님에게 맞는 루틴
         </h2>
-        <span className="text-[13px] font-semibold text-[#C8A96A]">
+        <span className="text-aux text-ink-2">
           {total}개 중 {completedCount}개 완료
         </span>
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100 shadow-inner">
+        <div className="h-2.5 flex-1 overflow-hidden rounded-pill bg-surface">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#C8A96A] to-[#E8D4A0] shadow-[0_1px_6px_rgba(200,169,106,0.5)] transition-all duration-500 ease-out"
+            className="h-full rounded-pill bg-ink transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="w-9 shrink-0 text-right text-[13px] font-semibold tabular-nums text-[#C8A96A]">
+        <span className="w-9 shrink-0 text-right text-aux tabular-nums text-ink-2">
           {Math.round(progress)}%
         </span>
       </div>
 
       {/* 포인트 리워드 UI 뼈대 — 실 백엔드 포인트 연동 전, 체크 개수 기반으로 미리 계산해 보여줌 */}
       <div className="mt-2 flex justify-end">
-        <span className="inline-flex items-center gap-1 rounded-full bg-[#FBF0DA] px-2.5 py-1 text-[11px] font-bold text-[#8A6D2F]">
+        <span className="inline-flex items-center gap-1 rounded-pill bg-surface px-2.5 py-1 text-aux font-medium text-ink-2">
           오늘 획득 {earnedPoints}P
         </span>
       </div>
@@ -156,7 +154,7 @@ function PersonalizedRoutineWidget() {
               >
                 <span
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                    isChecked ? "border-[#C8A96A] bg-[#C8A96A]" : "border-gray-300 bg-white"
+                    isChecked ? "border-ink bg-ink" : "border-line bg-card"
                   }`}
                 >
                   {isChecked && (
@@ -166,14 +164,14 @@ function PersonalizedRoutineWidget() {
                   )}
                 </span>
                 <span
-                  className={`flex-1 text-[15px] leading-snug transition-opacity ${
-                    isChecked ? "text-gray-500 line-through opacity-75" : "text-[#2F2F2F]"
+                  className={`flex-1 text-body leading-snug transition-opacity ${
+                    isChecked ? "text-ink-3 line-through" : "text-ink"
                   }`}
                 >
                   {step.label}
                 </span>
                 {isChecked && (
-                  <span className="shrink-0 rounded-full bg-[#FBF0DA] px-2 py-0.5 text-[10px] font-bold text-[#8A6D2F]">
+                  <span className="shrink-0 rounded-pill bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-2">
                     +{POINTS_PER_STEP}P
                   </span>
                 )}
@@ -195,15 +193,15 @@ function QuickDiagnosisBanner() {
       onClick={() =>
         trackEvent("quick_diagnosis_start", { diagnosisType: "salon_only", source: "home_quick_banner" })
       }
-      className="flex items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm"
+      className="flex items-center justify-between gap-3 rounded-card border border-line bg-card px-5 py-4 shadow-soft"
     >
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-[#C8A96A]">아직 안 해본 진단이 있어요</p>
-        <p className="mt-0.5 text-[15px] font-semibold leading-snug text-[#2F2F2F]">
+        <p className="text-aux text-ink-2">아직 안 해본 진단이 있어요</p>
+        <p className="mt-0.5 text-body font-medium leading-snug text-ink">
           내 머리가 미용실에서만 예쁜 이유, 3문항으로 확인하기
         </p>
       </div>
-      <span className="shrink-0 rounded-lg bg-[#2F2F2F] px-3.5 py-2.5 text-[15px] font-semibold text-white">
+      <span className="shrink-0 rounded-btn border border-btn-line px-3.5 py-2.5 text-emphasis text-ink">
         퀵 진단 시작
       </span>
     </Link>
