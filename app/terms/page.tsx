@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 function Article({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-[15px] font-bold text-[#2F2A22]">{title}</h2>
-      <div className="mt-2 space-y-2 text-[14px] leading-relaxed text-[#4A443A]">{children}</div>
+      <h2 className="text-h2 text-ink">{title}</h2>
+      <div className="mt-2 space-y-2 text-body leading-relaxed text-ink">{children}</div>
     </section>
   );
 }
@@ -24,11 +24,11 @@ function Article({ title, children }: { title: string; children: React.ReactNode
 export default function TermsPage() {
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
-      <div className="rounded-xl border border-[#E4B84A]/40 bg-[#FBF3DC] px-4 py-3 text-[13px] font-semibold text-[#8A6D2F]">
+      <div className="rounded-btn border border-line bg-surface px-4 py-3 text-aux font-medium text-ink-2">
         초안 — 사업주 검토·확정 전입니다.
       </div>
 
-      <h1 className="mt-6 text-[22px] font-bold tracking-tight text-[#2F2A22]">이용약관</h1>
+      <h1 className="mt-6 text-h1 text-ink">이용약관</h1>
 
       <Article title="제1조 (목적)">
         <p>
@@ -78,7 +78,7 @@ export default function TermsPage() {
       <Article title="제7조 (개인정보 보호)">
         <p>
           회사는 이용자의 개인정보를 관련 법령과{" "}
-          <Link href="/privacy" className="font-semibold text-[#8A6D2F] underline underline-offset-2">개인정보처리방침</Link>
+          <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">개인정보처리방침</Link>
           에 따라 보호합니다.
         </p>
       </Article>
@@ -98,7 +98,7 @@ export default function TermsPage() {
       </Article>
 
       <p className="mt-10 text-[13px]">
-        <Link href="/privacy" className="font-semibold text-[#8A6D2F] underline underline-offset-2">개인정보처리방침 보기 →</Link>
+        <Link href="/privacy" className="font-semibold text-ink underline underline-offset-2">개인정보처리방침 보기 →</Link>
       </p>
     </main>
   );

@@ -23,8 +23,8 @@ export const metadata: Metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-[15px] font-bold text-[#2F2A22]">{title}</h2>
-      <div className="mt-2 space-y-2 text-[14px] leading-relaxed text-[#4A443A]">{children}</div>
+      <h2 className="text-h2 text-ink">{title}</h2>
+      <div className="mt-2 space-y-2 text-body leading-relaxed text-ink">{children}</div>
     </section>
   );
 }
@@ -32,12 +32,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
-      <div className="rounded-xl border border-[#E4B84A]/40 bg-[#FBF3DC] px-4 py-3 text-[13px] font-semibold text-[#8A6D2F]">
+      <div className="rounded-btn border border-line bg-surface px-4 py-3 text-aux font-medium text-ink-2">
         초안 — 사업주 검토 전입니다. 상호·연락처·개인정보 보호책임자 등 [ ] 표기 항목은 확정 후 반영됩니다.
       </div>
 
-      <h1 className="mt-6 text-[22px] font-bold tracking-tight text-[#2F2A22]">개인정보처리방침</h1>
-      <p className="mt-2 text-[13px] text-[#9A927F]">
+      <h1 className="mt-6 text-h1 text-ink">개인정보처리방침</h1>
+      <p className="mt-2 text-[13px] text-ink-2">
         어뷰티(A-Beauty)(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 중요하게 생각하며,
         「개인정보 보호법」 등 관련 법령을 준수합니다.
       </p>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         <div className="overflow-x-auto">
           <table className="mt-2 w-full min-w-[420px] border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-black/10 text-left text-[#9A927F]">
+              <tr className="border-b border-line text-left text-ink-2">
                 <th className="py-2 pr-4 font-semibold">수탁업체</th>
                 <th className="py-2 font-semibold">위탁 업무</th>
               </tr>
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
           <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
           <li>보유·이용기간: 합성 완료 즉시 파기(위 3항과 동일 — 영구 보관하지 않음)</li>
         </ul>
-        <p className="text-[13px] text-[#9A927F]">
+        <p className="text-[13px] text-ink-2">
           ※ Vercel·Supabase·Google 등 다른 수탁업체의 서버 소재지에 따라 추가 국외이전이 발생할 수 있으며,
           구체적 리전은 확정 후 반영합니다.
         </p>
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
       </Section>
 
       <p className="mt-10 text-[13px]">
-        <Link href="/terms" className="font-semibold text-[#8A6D2F] underline underline-offset-2">이용약관 보기 →</Link>
+        <Link href="/terms" className="font-semibold text-ink underline underline-offset-2">이용약관 보기 →</Link>
       </p>
     </main>
   );
