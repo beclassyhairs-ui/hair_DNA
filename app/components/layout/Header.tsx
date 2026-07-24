@@ -5,15 +5,15 @@
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-20 border-b border-gray-100 bg-[#F9FAFB]/90 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-line bg-bg/90 backdrop-blur">
       <div className="flex items-center justify-between px-6 py-5">
         <div>
-          <p className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">어뷰티</p>
-          <p className="mt-1 text-[11px] font-medium tracking-wide text-[#6B7280]">오늘의 헤어 케어</p>
+          <p className="text-[19px] font-bold tracking-tight text-ink">어뷰티</p>
+          <p className="mt-1 text-[11px] font-medium tracking-wide text-ink-2">오늘의 헤어 케어</p>
         </div>
         <button
           aria-label="알림"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#2F2F2F] shadow-sm"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-ink shadow-soft"
         >
           <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
             <path
