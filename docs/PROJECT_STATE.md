@@ -29,7 +29,7 @@
 - ✅ **호칭 통일 반영**(`87b26e2` 직전 커밋): 로그인 전 전부 "고객님". `/home`·`/myhair` name "지환"→"고객", `/consulting` 더미 닉네임 "지환님"→"수진님". 실명 개인화는 WORKORDER-01에서 연결.
 - ✅ **AdBanner 제거 반영**(`87b26e2`): `/style/loading` AdSense 슬롯·import 제거(광고 완전 제거 정책). 헤어 꿀팁만 유지.
 - 총 11커밋(`5b3d864`→`e491521`), **main 머지·프로덕션 배포 완료(2026-07-24)**. 라이브 검증: `hair-dna.vercel.app/myhair`에 "고객" 노출·"지환" 0건·골드 헥스 0건.
-- 🔴 **미해결 광고 잔재(신규 발견, 이번 범위 밖)**: `app/layout.tsx:76`에 **전역 AdSense 로더 스크립트**(`adsbygoogle.js`, `ca-pub-3733126974731035`)가 전 페이지에 살아 있음 + `app/components/AdBanner.tsx` 컴포넌트 존치 + dead `/ai-loading`·`/result`에 AdSense 잔재. ROADMAP "광고 완전 제거(AdSense 폐기)" 정책과 정면 충돌. AdBanner 슬롯 1곳만 뗐지 전역 로더는 그대로라 **여전히 모든 화면에서 AdSense JS가 로드됨.** → 별건 커밋으로 전역 스크립트+컴포넌트+dead 잔재 일괄 제거 필요(사업주 승인 후).
+- ✅ **전역 AdSense 완전 제거(2026-07-24, 사업주 승인)**: `app/layout.tsx` `<head>` 전역 `adsbygoogle.js` 로더 스크립트 삭제 + `app/components/AdBanner.tsx` 컴포넌트 파일 삭제 + dead `/ai-loading`·`/result` 광고 플레이스홀더 제거. 코드베이스 내 `adsbygoogle`/`AdBanner`/`ca-pub`/`googlesyndication` 참조 **0건**. 이유: 광고 완전 제거 정책 준수 + **셀카 다루는 앱에 제3자(구글) 추적 스크립트 상주 = 개인정보 리스크 제거**. `next build` 통과.
 - dead code(/mbti 방치·/result·/upload·/ai-loading·/diagnosis/quick 리다이렉트·admin·dev debug 패널)는 스윕 제외.
 
 ## (이전) 현재 상태 한 줄
