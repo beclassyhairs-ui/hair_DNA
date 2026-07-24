@@ -160,27 +160,27 @@ export default function StyleLoadingPage() {
 
   return (
     <SilkBackground>
-      <main className="flex h-[100dvh] flex-col overflow-hidden text-[#2F2A22]">
+      <main className="flex h-[100dvh] flex-col overflow-hidden text-ink">
 
         {/* ── 상단 40% — 브랜드 배지 + 스피너 + 텍스트 ── */}
         <div className="flex flex-none flex-col items-center justify-center gap-5 px-6 pb-4 pt-10"
           style={{ flex: "0 0 40%" }}>
 
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EDE7DA] bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-[#A8884A]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white/60 px-4 py-1.5 text-[13px] font-bold tracking-wide text-ink-2">
             AI 스타일 합성 중
           </span>
 
-          {/* 소형 골드 링 스피너 */}
+          {/* 소형 링 스피너 (WORKORDER-02.1: 골드→무채색 차콜) */}
           <div className="relative flex h-20 w-20 items-center justify-center">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 rounded-full"
-              style={{ border: "2px solid transparent", borderTopColor: "rgba(200,168,107,0.95)", borderRightColor: "rgba(200,168,107,0.2)" }} />
+              style={{ border: "2px solid transparent", borderTopColor: "rgba(51,48,44,0.85)", borderRightColor: "rgba(51,48,44,0.18)" }} />
             <motion.div animate={{ rotate: -360 }} transition={{ duration: 3.4, repeat: Infinity, ease: "linear" }}
               className="absolute inset-4 rounded-full"
-              style={{ border: "1.5px solid transparent", borderTopColor: "rgba(200,168,107,0.5)", borderLeftColor: "rgba(200,168,107,0.15)" }} />
+              style={{ border: "1.5px solid transparent", borderTopColor: "rgba(51,48,44,0.45)", borderLeftColor: "rgba(51,48,44,0.12)" }} />
             <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              className="h-2 w-2 rounded-full bg-[#C8A86B]" />
+              className="h-2 w-2 rounded-full bg-ink" />
           </div>
 
           <AnimatePresence mode="wait">
@@ -190,7 +190,7 @@ export default function StyleLoadingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.4 }}
-              className="max-w-[260px] text-center text-[15px] font-medium leading-relaxed text-[#4A453B]"
+              className="max-w-[260px] text-center text-[15px] font-medium leading-relaxed text-ink"
             >
               {STEPS[stepIdx]}
             </motion.p>
@@ -202,7 +202,7 @@ export default function StyleLoadingPage() {
 
           {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
           <div className="flex-none">
-            <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-[#A8884A]">
+            <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-ink-2">
               기다리는 동안 읽는 헤어 꿀팁
             </p>
 
@@ -217,8 +217,8 @@ export default function StyleLoadingPage() {
                   transition={{ duration: 0.4 }}
                   className="flex items-start gap-3"
                 >
-                  <span className="mt-1 flex-none h-1 w-1 rounded-full bg-[#A8884A]" />
-                  <p className="text-[12px] leading-relaxed text-[#4A453B]">{HAIR_TIPS[tipIdx]}</p>
+                  <span className="mt-1 flex-none h-1 w-1 rounded-full bg-ink-2" />
+                  <p className="text-[12px] leading-relaxed text-ink-2">{HAIR_TIPS[tipIdx]}</p>
                 </motion.div>
               </AnimatePresence>
             </GlassCard>
@@ -227,7 +227,7 @@ export default function StyleLoadingPage() {
             <div className="mt-2.5 flex justify-center gap-1.5">
               {HAIR_TIPS.map((_, i) => (
                 <span key={i}
-                  className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-[#C8A86B]/70" : "w-1 bg-[#EDE7DA]"}`}
+                  className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-ink/70" : "w-1 bg-line"}`}
                 />
               ))}
             </div>

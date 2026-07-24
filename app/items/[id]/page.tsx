@@ -39,7 +39,7 @@ export default async function ItemDetailPage({ params }: { params: { id: string 
           <p className="text-[11px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
           <h1 className="mt-1 text-[19px] font-bold tracking-tight text-ink">{item.product_name}</h1>
           {item.category && (
-            <span className="mt-2 inline-block rounded-full bg-surface px-2.5 py-0.5 text-[11px] font-medium text-[#8A6D2F]">
+            <span className="mt-2 inline-block rounded-full bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-2">
               {item.category}
             </span>
           )}

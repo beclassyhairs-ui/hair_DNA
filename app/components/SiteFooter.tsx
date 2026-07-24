@@ -15,11 +15,11 @@ export default function SiteFooter() {
   if (pathname?.startsWith("/admin")) return null; // 관리자 화면엔 푸터 불필요
 
   return (
-    <footer className="border-t border-black/[0.06] bg-[#F4F1EA] px-5 pb-28 pt-8 text-[#6B6355]">
+    <footer className="border-t border-line bg-surface px-5 pb-28 pt-8 text-ink-2">
       <div className="mx-auto max-w-[560px]">
-        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-semibold text-[#4A443A]">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] font-semibold text-ink">
           <Link href="/privacy" className="underline-offset-2 hover:underline">개인정보처리방침</Link>
-          <span className="text-black/15" aria-hidden>|</span>
+          <span className="text-ink-3" aria-hidden>|</span>
           <Link href="/terms" className="underline-offset-2 hover:underline">이용약관</Link>
         </nav>
 
@@ -28,14 +28,14 @@ export default function SiteFooter() {
           <dl className="mt-4 grid grid-cols-1 gap-x-6 gap-y-1.5 text-[12px] leading-relaxed sm:grid-cols-2">
             {BUSINESS_INFO_FIELDS.map((f) => (
               <div key={f.label} className="flex gap-1.5">
-                <dt className="shrink-0 text-[#9A927F]">{f.label}</dt>
-                <dd className="min-w-0 break-words text-[#6B6355]">{f.value}</dd>
+                <dt className="shrink-0 text-ink-3">{f.label}</dt>
+                <dd className="min-w-0 break-words text-ink-2">{f.value}</dd>
               </div>
             ))}
           </dl>
         )}
 
-        <p className="mt-5 text-[12px] text-[#8A8171]">
+        <p className="mt-5 text-[12px] text-ink-2">
           © {new Date().getFullYear()} 어뷰티(A-Beauty). All rights reserved.
         </p>
       </div>

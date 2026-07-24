@@ -106,7 +106,7 @@ export default function DamageCheckSurveyPage() {
 
   return (
     <SilkBackground>
-      <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-[#2F2A22]">
+      <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-ink">
 
         <TestHeader stepLabel={`손상도 진단 · ${q.stepTag}`} current={qIdx + 1} total={TOTAL}>
           <ProgressBar value={((qIdx + 1) / TOTAL) * 100} />
@@ -126,14 +126,14 @@ export default function DamageCheckSurveyPage() {
               className="flex flex-1 flex-col justify-center py-6"
             >
               <div className="mb-6">
-                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-[#A8884A]">
+                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">
                   {q.no}
                 </p>
-                <h2 className="font-serif text-xl font-bold leading-snug text-[#2F2A22] whitespace-pre-line">
+                <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">
                   {q.title}
                 </h2>
                 {q.hint && (
-                  <p className="mt-2 text-[13px] leading-relaxed text-[#6B6355]">{q.hint}</p>
+                  <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{q.hint}</p>
                 )}
               </div>
 
@@ -168,12 +168,12 @@ export default function DamageCheckSurveyPage() {
               <button
                 onClick={goBack}
                 disabled={pending}
-                className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22] disabled:opacity-40"
+                className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
               >
                 ← 이전
               </button>
             ) : (
-              <a href="/damage-check" className="text-[15px] font-medium text-[#6B6355] transition-colors hover:text-[#2F2A22]">
+              <a href="/damage-check" className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">
                 나가기
               </a>
             )}
@@ -187,7 +187,7 @@ export default function DamageCheckSurveyPage() {
             )}
           </div>
           {!isMultiQuestion && (
-            <p className="mt-2 text-center text-[13px] text-[#6B6355]">선택하면 자동으로 넘어가요</p>
+            <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
           )}
         </div>
       </main>
