@@ -24,6 +24,22 @@
 
 ## 현재 상태 한 줄
 
+**A(코드 4종) — A-1·A-2·A-3 완료, A-4 부분완료(2026-07-24).** 커밋 5개(`2de5416`→`934ba3f`), 미push. tsc·`next build` 통과.
+- **A-1 완성도 게이지**(`components/CompletionGauge.tsx`): 진단 4종 중 서로 다른 kind 완료 수 ÷ 4, 4칸 진행바. kind 판별은 기존 `classifyKind` 재사용(누락=style). 삽입 8곳(결과지 4 + /home + 랜딩 3). **실측 AC 충족**: 1개=25%(1칸·뱃지 없음), 4개=100%(4칸·"프로필 완성" 뱃지).
+- **A-2 잠금 미리보기**(`components/LockedPreviewCard.tsx`): /bangs·/damage-check·/hair-quiz 결과지 하단. 블러 예시 이미지(`public/references/default_style.jpg`, git 추적됨·200 서빙)+자물쇠+"예시" 뱃지+/style CTA. **세 랜딩 사진 수집 0건 코드 재확인**(getUserMedia/file input/photo 키 전무).
+- **A-3 시술 이력**: `TreatmentRecord` 타입 + `treatmentHistory` 필드 + `TreatmentHistoryField`(입력칸 1개, /my-diary). **AC 충족**: 저장→새로고침 회수 정상, 진단 재합산 후에도 보존(순수함수 단위검증 PASS — `buildBeautyUserProfileFromDiary`가 previousProfile로 이어받게 처리). ※ 시술주기 알림·경고·재구매 트리거 **미구현(의도)**.
+- **A-4 공유 카드 — 부분완료**: damage-check가 앞머리 아트(bangs-og.png 2MB)를 잘못 쓰던 것 → 브랜드 OG로 교체, /style/result 공유가 title+url뿐이던 것 → 타입 별명+주소+utm 포함으로 통일. 🔴 **미완 2건**: ① "얼굴 포함 여부 선택"은 **셀카 즉시파기 정책과 충돌**(공유 카드에 얼굴을 넣으려면 얼굴 이미지를 공개 URL로 상주시켜야 함) + 동적 OG 생성 필요(과거 `@vercel/og` 빌드 실패 이력) → 사업주 결정 대기 ② AC(카톡 왕복)는 `NEXT_PUBLIC_KAKAO_APP_KEY` 등록 + 실기기 확인이라 사업주 조치.
+- 겸사: WORKORDER-03에서 놓친 `/my-diary` 인라인 `background:var(--btn)` 차콜 버튼 4곳 → 연한필 토큰(클래스가 아닌 인라인이라 스캔에서 누락됐었음).
+
+### 🔴 B 착수 전 정정 — 브리핑 전제가 실제 코드와 다름
+
+"현 카카오 로그인은 localStorage 플래그뿐" 은 **옛 상태다.** 실제:
+- **B-1 Phase B는 이미 구현·배포 완료**(2026-07-21). `lib/loginGate.ts`가 `KAKAO_LOGIN_ENABLED=true`·`LOGIN_REQUIREMENT_POINT="before_ai_synthesis"`, 서버 OAuth 라우트 4종(`/api/auth/kakao/start`·`callback`·`me`·`logout`) 존재, 가짜 게이트 제거됨. **남은 건 코드가 아니라 사업주 조치**(카카오 콘솔·env 3종·users SQL). → 착수할 코드 거의 없음.
+- **B-3 서버측 일일 제한도 이미 구현됨.** `/api/hair-transform`에 서버 로그인 검사(401 `login_required`) + 원자적 RPC `bump_hair_usage`(429 `daily_limit`), `SERVER_DAILY_MAX=5`. **`supabase/hair_usage_schema.sql` 실행 전엔 fail-open(제한 비활성)** — SQL만 실행하면 활성.
+- **B에서 실제로 남은 코드 작업은 B-2(profiles/diagnoses 서버 저장·데이터 통합)뿐.** `users_auth_schema.sql`은 초안만 있고 저장/회수 코드는 없음.
+
+## (이전) 현재 상태 한 줄
+
 **WORKORDER-03 검은 버튼 폐지 + 완전 무채색(연한 필) — 배포 진행(2026-07-24).** 커밋 3개(`34365a7`→`be26fca`): ① 토큰 신설 `--btn-bg #F1EEE8`·`--btn-border #E3DED5`·`--btn-text #33302C` + 공용버튼(BlackCTAButton·ui/Button primary)을 연한 회색 필(1px 테두리·ink텍스트·700·min48)로, ui/Button secondary·ResultHeroCard 배지·RoundedOptionButton 선택 accent → bg-ink ② 페이지 버튼 위계: 인라인 주CTA 연한필, 보조액션(공유·복사·재진단·닫기·댓글등록) 고스트(텍스트만), 활성탭·전문가배지 bg-ink, myhair 배지 틴트→ink ③ /style 랜딩 수직리듬(mt-11/5/14·space-y-4)로 히어로 이미지 없이 차분하게. **라이브 검증(dev)**: /style 주CTA computed = bg `rgb(241,238,232)`·border `rgb(227,222,213)`·text `rgb(51,48,44)`·weight 700·min-h 48px 정확. 소스 전수 스캔: 유채색·골드·순검정(#3B3733)·구 bg-btn 채움 **0건**(dead/mbti/admin/dev-debug 제외). `next build` 통과. 프론트 전용이라 Codex 생략. → main push 배포 예정.
 
 ## (이전) 현재 상태 한 줄
