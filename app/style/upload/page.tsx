@@ -31,7 +31,14 @@ type Transform = { scale: number; x: number; y: number };
 
 // ─── 얼굴 가이드 SVG ─────────────────────────────────────────────────────────
 
-function FaceGuide() {
+// tone="dark": 카메라/사진 위(어두운 프레임) — 흰 실루엣 라인으로 대비 확보.
+// tone="light": 촬영/갤러리 선택 화면(흰 배경) — 부드러운 무채색 실루엣.
+// ⚠️ 좌표(cx/cy/rx/ry·path·line)는 절대 변경하지 않는다 — 색만 톤별로 교체.
+function FaceGuide({ tone = "dark" }: { tone?: "dark" | "light" }) {
+  const dim    = tone === "light" ? "rgba(51,48,44,0.05)"  : "rgba(0,0,0,0.35)";
+  const ring   = tone === "light" ? "rgba(51,48,44,0.30)"  : "rgba(255,255,255,0.85)";
+  const jaw    = tone === "light" ? "rgba(51,48,44,0.20)"  : "rgba(255,255,255,0.45)";
+  const center = tone === "light" ? "rgba(51,48,44,0.12)"  : "rgba(255,255,255,0.22)";
   return (
     <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet"
       className="pointer-events-none absolute inset-0 z-20 h-full w-full">
@@ -41,13 +48,13 @@ function FaceGuide() {
           <ellipse cx="150" cy="185" rx="92" ry="120" fill="black" />
         </mask>
       </defs>
-      <rect width="300" height="400" fill="rgba(0,0,0,0.35)" mask="url(#styleFaceMask)" />
+      <rect width="300" height="400" fill={dim} mask="url(#styleFaceMask)" />
       <ellipse cx="150" cy="185" rx="92" ry="120" fill="none"
-        stroke="rgba(200,168,107,0.9)" strokeWidth="2" strokeDasharray="7 8" />
+        stroke={ring} strokeWidth="2" strokeDasharray="7 8" />
       <path d="M40 400 C70 330 110 312 150 312 C190 312 230 330 260 400"
-        fill="none" stroke="rgba(200,168,107,0.5)" strokeWidth="2" strokeDasharray="7 8" />
+        fill="none" stroke={jaw} strokeWidth="2" strokeDasharray="7 8" />
       <line x1="150" y1="78" x2="150" y2="292"
-        stroke="rgba(255,255,255,0.22)" strokeWidth="1" strokeDasharray="3 7" />
+        stroke={center} strokeWidth="1" strokeDasharray="3 7" />
     </svg>
   );
 }
@@ -442,10 +449,12 @@ export default function StyleUploadPage() {
              버튼 영역과 물리적으로 분리되어 절대 겹치지 않음.
              ★ 이 블록 내부는 카메라 뷰파인더 — 리디자인 대상 아님.
              WORKORDER-02(사업주 결정 a): 순검정 → 웜 차콜(--upload-bg) 배경색만 교체.
+             WORKORDER-02.1: 촬영/갤러리 선택 화면(showChooser)일 때만 흰 배경(--bg)으로.
+             카메라·사진 표시 중에는 대비 위해 웜 차콜 유지.
              카메라 로직·오버레이 좌표·포인터 핸들러는 일절 변경하지 않는다. */}
         <div
           ref={frameRef}
-          className="relative flex-1 overflow-hidden bg-upload-bg"
+          className={`relative flex-1 overflow-hidden ${showChooser ? "bg-bg" : "bg-upload-bg"}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -492,15 +501,15 @@ export default function StyleUploadPage() {
             <>
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
                 {/* 카메라 권한 안내 문구 */}
-                <p className="mb-1 max-w-xs text-center text-[13px] leading-relaxed text-white/50">
+                <p className="mb-1 max-w-xs text-center text-[13px] leading-relaxed text-ink-2">
                   정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
-                  className="flex w-56 items-center justify-center gap-2 rounded-full bg-white py-3.5 text-base font-bold text-[#1C1A17] shadow-lg transition-all hover:brightness-95 active:scale-[0.98]">
+                  className="flex w-56 items-center justify-center gap-2 rounded-full bg-btn py-3.5 text-base font-bold text-white shadow-soft transition-all hover:opacity-90 active:scale-[0.98]">
                   카메라로 촬영
                 </button>
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="flex w-56 items-center justify-center gap-2 rounded-full border border-white/25 bg-black/60 py-3.5 text-base font-medium text-white/85 backdrop-blur-sm transition-colors hover:border-white/45 active:scale-[0.98]">
+                  className="flex w-56 items-center justify-center gap-2 rounded-full border border-btn-line bg-white py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
                   갤러리에서 선택
                 </button>
               </div>
@@ -509,7 +518,7 @@ export default function StyleUploadPage() {
 
           {/* ★ FaceGuide — 저장사진 미리보기 외 모든 상태에서 항상 표시
                다시하기 클릭 시에도 showChooser=true로 복귀하므로 자동 유지됨 */}
-          {(camera || showChooser || showImageCrop) && <FaceGuide />}
+          {(camera || showChooser || showImageCrop) && <FaceGuide tone={showChooser ? "light" : "dark"} />}
 
           {/* 전/후면 전환 버튼 (카메라 활성 시만) */}
           {camera && (
@@ -542,7 +551,7 @@ export default function StyleUploadPage() {
                 <input
                   type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
                   value={transform.scale} onChange={onSlide}
-                  className="w-36 cursor-pointer accent-gold sm:w-48"
+                  className="w-36 cursor-pointer accent-[#3b3733] sm:w-48"
                   aria-label="확대/축소"
                 />
                 <span className="text-[15px] text-white/45">＋</span>
