@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { LENGTH_LABEL_MAP } from "../style/surveyData";
+import TreatmentHistoryField from "@/components/TreatmentHistoryField";
 import { toast } from "../../lib/toast";
 
 // ─── 레이블 매핑 ─────────────────────────────────────────────────────────────
@@ -238,7 +239,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               }}
               disabled={downloading}
               className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-[13px] font-bold transition-all active:scale-[0.98] disabled:opacity-60"
-              style={{ background: "var(--btn)", color: "#fff" }}
+              style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}
             >
               {downloading ? "저장 중..." : "사진 갤러리에 저장하기"}
             </button>
@@ -287,7 +288,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
           </div>
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "var(--btn)", color: "#fff" }}>
+            style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -353,7 +354,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "var(--btn)", color: "#fff" }}>
+            style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -541,6 +542,9 @@ export default function MyDiaryPage() {
 
       <div className="mx-auto max-w-lg px-4 pb-20 pt-6">
 
+        {/* A-3 시술 이력 — 저장·회수만(알림·경고·재구매 트리거 없음) */}
+        <TreatmentHistoryField className="mb-5" />
+
         {entries.length === 0 ? (
           /* 빈 상태 */
           <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -556,7 +560,7 @@ export default function MyDiaryPage() {
             <Link
               href="/style"
               className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold"
-              style={{ background: "var(--btn)", color: "#fff" }}
+              style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}
             >
               AI 헤어 분석 시작하기 →
             </Link>
