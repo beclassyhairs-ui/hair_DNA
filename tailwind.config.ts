@@ -19,8 +19,11 @@ const config: Config = {
           3: "var(--ink-3)", // 힌트
         },
         btn: {
-          DEFAULT: "var(--btn)", // 주 CTA 채움 (소프트 차콜)
+          DEFAULT: "var(--btn)", // (구) 소프트 차콜 — 미사용
           line: "var(--btn-line)", // 아웃라인 버튼 테두리
+          bg: "var(--btn-bg)", // WORKORDER-03 주 CTA 연한 배경
+          border: "var(--btn-border)", // WORKORDER-03 주 CTA 테두리
+          text: "var(--btn-text)", // WORKORDER-03 주 CTA 텍스트(ink)
         },
         "upload-bg": "var(--upload-bg)", // 업로드 화면 웜 차콜
 

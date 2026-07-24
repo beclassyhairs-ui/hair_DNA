@@ -39,7 +39,7 @@ export default function ResultHeroCard({
             className={
               badgeVariant === "subtle"
                 ? "inline-flex flex-col items-center gap-0.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold text-ink"
-                : "inline-flex flex-col items-center gap-0.5 rounded-full bg-btn px-6 py-2.5 text-base font-bold text-white"
+                : "inline-flex flex-col items-center gap-0.5 rounded-full bg-ink px-6 py-2.5 text-base font-bold text-white"
             }
           >
             {badge}

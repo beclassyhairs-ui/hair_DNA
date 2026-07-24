@@ -1,9 +1,9 @@
 // ============================================================================
 // WORKORDER-02 공용 Button — 웜 그레이지 토큰 기반 3종.
-//   primary   : 소프트 차콜 채움(--btn) + 흰 텍스트. 화면당 주 CTA 1개만.
-//   secondary : 투명 + --btn-line 테두리 + --ink 텍스트. (밑줄 텍스트버튼 폐지)
+//   primary   : WORKORDER-03 아주 연한 회색 필(--btn-bg) + 1px 테두리 + ink 텍스트(700). 화면당 1개.
+//   secondary : 고스트(텍스트만) — 보조 액션은 채움/테두리 없이 낮춘다.
 //   ghost     : 텍스트만.
-//   disabled  : --surface 배경 + --ink-3 텍스트로 명확히 구분.
+//   disabled  : opacity로 흐리게.
 // href를 주면 <Link>, 아니면 <button>. 색은 토큰만 사용(유채색 액센트 없음).
 // ============================================================================
 
@@ -13,17 +13,17 @@ import type { ComponentProps, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost";
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 rounded-btn text-emphasis " +
+  "inline-flex items-center justify-center gap-2 rounded-btn text-base " +
   "transition-colors select-none min-h-[48px] px-5 " +
   "disabled:cursor-not-allowed";
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    "bg-btn text-white hover:opacity-90 active:opacity-80 " +
-    "disabled:bg-surface disabled:text-ink-3 disabled:opacity-100",
+    "bg-btn-bg border border-btn-border text-btn-text font-bold hover:brightness-95 active:scale-[0.99] " +
+    "disabled:opacity-50",
   secondary:
-    "bg-transparent border border-btn-line text-ink hover:bg-surface " +
-    "disabled:bg-surface disabled:text-ink-3 disabled:border-line",
+    "bg-transparent font-semibold text-ink hover:bg-surface " +
+    "disabled:text-ink-3",
   ghost:
     "bg-transparent text-ink hover:bg-surface " +
     "disabled:bg-transparent disabled:text-ink-3",
