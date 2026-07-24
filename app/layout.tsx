@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Analytics } from "./components/Analytics";
 import AttributionCapture from "./components/AttributionCapture";
+import ProfileSync from "./components/ProfileSync";
 import Toaster from "./components/Toaster";
 import SiteFooter from "./components/SiteFooter";
 
@@ -73,6 +74,8 @@ export default function RootLayout({
       <body className="font-sans">
         <Analytics />
         <AttributionCapture />
+        {/* B-2: 로그인 유저의 진단·프로필을 서버와 동기화(미로그인이면 무동작) */}
+        <ProfileSync />
         {children}
         <SiteFooter />
         <Toaster />

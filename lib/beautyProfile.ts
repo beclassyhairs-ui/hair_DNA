@@ -215,6 +215,38 @@ export function readBeautyUserProfile(): Partial<BeautyUserProfile> | null {
   }
 }
 
+/**
+ * 로컬 캐시(진단 이력 + 통합 프로필)를 통째로 비운다.
+ * 공용 기기에서 계정이 바뀌었을 때, 이전 사용자의 데이터가 새 계정으로 섞여
+ * 올라가는 것을 막기 위해 사용한다(lib/profileSync 참고).
+ */
+export function clearLocalUserData(): boolean {
+  try {
+    localStorage.removeItem(DIARY_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    // 지워졌는지 다시 읽어 확인한다 — 부분 실패한 채로 새 계정 소유로 표시되면
+    // 이전 사용자의 데이터가 새 계정 것으로 둔갑한다.
+    return localStorage.getItem(DIARY_KEY) === null && localStorage.getItem(PROFILE_KEY) === null;
+  } catch {
+    return false;
+  }
+}
+
+/** diaryEntries 배열을 통째로 덮어쓴다(서버 동기화 병합 결과 반영용). */
+export function writeDiaryEntries(entries: DiaryEntryLike[]): void {
+  try {
+    localStorage.setItem(DIARY_KEY, JSON.stringify(entries));
+  } catch { /**/ }
+}
+
+/** 시술 이력을 통째로 교체한다(서버 병합 결과 반영용). 프로필의 나머지 필드는 보존. */
+export function setTreatmentHistory(list: TreatmentRecord[]): void {
+  const previous = readBeautyUserProfile();
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ ...(previous ?? {}), treatmentHistory: list }));
+  } catch { /**/ }
+}
+
 /** diaryEntries 배열 맨 앞에 entry를 추가(같은 id가 있으면 교체)하고 그대로 저장한다. */
 export function appendDiaryEntry(entry: DiaryEntryLike): DiaryEntryLike[] {
   const current = readDiaryEntries();
