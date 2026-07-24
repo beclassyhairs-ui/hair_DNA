@@ -46,10 +46,10 @@ function DiagnosisCard({ item }: { item: (typeof DIAGNOSIS_HUB_ITEMS)[number] })
     <Link
       href={item.href}
       onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: item.type, source: "diagnosis_hub_page" })}
-      className="block rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors active:bg-[#F9F4E8]"
+      className="block rounded-2xl border border-line bg-card p-5 shadow-soft transition-colors active:bg-surface"
     >
-      <p className="text-[15px] font-bold text-[#2F2F2F]">{item.label}</p>
-      <p className="mt-1 text-[13px] text-[#6B7280]">{item.desc}</p>
+      <p className="text-[15px] font-bold text-ink">{item.label}</p>
+      <p className="mt-1 text-[13px] text-ink-2">{item.desc}</p>
     </Link>
   );
 }
@@ -58,8 +58,8 @@ export default function DiagnosisHubPage() {
   return (
     <AppShell>
       <div>
-        <h1 className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">AI 진단 허브</h1>
-        <p className="mt-1 text-[13px] text-[#6B7280]">진단이 쌓일수록 발견템 추천이 더 정확해져요.</p>
+        <h1 className="text-[19px] font-bold tracking-tight text-ink">AI 진단 허브</h1>
+        <p className="mt-1 text-[13px] text-ink-2">진단이 쌓일수록 발견템 추천이 더 정확해져요.</p>
       </div>
 
       <div className="space-y-3">

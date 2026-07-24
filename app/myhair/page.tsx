@@ -21,14 +21,14 @@ const DIAGNOSIS_HISTORY = [
 
 function HistoryCard({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-line bg-card p-5 shadow-soft">
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-[#F9F4E8] px-2.5 py-1 text-[11px] font-semibold text-[#8A6D2F]">
+        <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink-2">
           {item.type}
         </span>
-        <span className="text-[11px] text-[#6B7280]">{item.date}</span>
+        <span className="text-[11px] text-ink-2">{item.date}</span>
       </div>
-      <p className="mt-3 text-[15px] leading-relaxed text-[#2F2F2F]">{item.summary}</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-ink">{item.summary}</p>
     </div>
   );
 }
@@ -36,13 +36,13 @@ function HistoryCard({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
 export default function MyHairPage() {
   return (
     <AppShell>
-      <div className="rounded-2xl border border-[#EADFC5] bg-gradient-to-br from-[#FBF6EA] via-[#F8F1E1] to-[#EFD9AE] p-6 shadow-[0_12px_28px_-16px_rgba(200,169,106,0.55)]">
-        <p className="text-[11px] font-semibold tracking-wide text-[#8A6D2F]">마이헤어 다이어리</p>
-        <h1 className="mt-1 text-[19px] font-bold tracking-tight text-[#2F2F2F]">{userName}님의 헤어 기록</h1>
+      <div className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
+        <p className="text-[11px] font-semibold tracking-wide text-ink-2">마이헤어 다이어리</p>
+        <h1 className="mt-1 text-[19px] font-bold tracking-tight text-ink">{userName}님의 헤어 기록</h1>
       </div>
 
       <div>
-        <h2 className="text-[15px] font-bold tracking-tight text-[#2F2F2F]">나의 지난 진단 기록</h2>
+        <h2 className="text-[15px] font-bold tracking-tight text-ink">나의 지난 진단 기록</h2>
         <div className="mt-3 space-y-3">
           {DIAGNOSIS_HISTORY.map((item) => (
             <HistoryCard key={item.id} item={item} />

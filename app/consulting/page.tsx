@@ -144,12 +144,13 @@ const INITIAL_POSTS: Post[] = [
 
 // ─── 유틸: 카테고리별 뱃지 색상 ───────────────────────────────────────────────
 
+// WORKORDER-02.1: 카테고리별 유채색(파랑/핑크/골드/보라) 폐지 → 무채색 단일 톤.
 const CATEGORY_BADGE_STYLE: Record<PostCategory, string> = {
-  습도지옥: "bg-[#E7F1FB] text-[#3E7BB6]",
-  "펌/염색": "bg-[#FBEAF1] text-[#B6467E]",
-  두피고민: "bg-[#F9F4E8] text-[#8A6D2F]",
-  탈모케어: "bg-[#EDEBFB] text-[#6B54C4]",
-  기타: "bg-gray-100 text-[#6B7280]",
+  습도지옥: "bg-surface text-ink-2",
+  "펌/염색": "bg-surface text-ink-2",
+  두피고민: "bg-surface text-ink-2",
+  탈모케어: "bg-surface text-ink-2",
+  기타: "bg-surface text-ink-2",
 };
 
 // ─── 위젯 1: 주간 인기 고민 랭킹 (가로 스크롤) ─────────────────────────────────
@@ -159,7 +160,7 @@ function WeeklyHotTopics({ topics }: { topics: HotTopic[] }) {
     <section>
       <div className="flex items-center gap-1.5 px-0.5">
         <span className="text-[15px]">🔥</span>
-        <h2 className="text-[15px] font-bold tracking-tight text-[#2F2F2F]">주간 인기 고민</h2>
+        <h2 className="text-[15px] font-bold tracking-tight text-ink">주간 인기 고민</h2>
       </div>
 
       <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
@@ -167,12 +168,12 @@ function WeeklyHotTopics({ topics }: { topics: HotTopic[] }) {
           <button
             key={topic.id}
             onClick={() => trackEvent("consult_hot_topic_click", { postId: topic.id, rank: topic.rank })}
-            className="flex w-[220px] shrink-0 flex-col rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm active:bg-[#F9F4E8]"
+            className="flex w-[220px] shrink-0 flex-col rounded-2xl border border-line bg-white p-4 text-left shadow-sm active:bg-surface"
           >
             <div className="flex items-center gap-2">
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold text-white ${
-                  topic.rank === 1 ? "bg-[#C8A96A]" : topic.rank === 2 ? "bg-[#B7B7B7]" : "bg-[#D8B48A]"
+                  topic.rank === 1 ? "bg-ink" : topic.rank === 2 ? "bg-ink-2" : "bg-ink-3"
                 }`}
               >
                 {topic.rank}
@@ -181,10 +182,10 @@ function WeeklyHotTopics({ topics }: { topics: HotTopic[] }) {
                 #{topic.category}
               </span>
             </div>
-            <p className="mt-2.5 line-clamp-2 text-[13px] font-semibold leading-snug text-[#2F2F2F]">
+            <p className="mt-2.5 line-clamp-2 text-[13px] font-semibold leading-snug text-ink">
               {topic.title}
             </p>
-            <div className="mt-3 flex items-center gap-2.5 text-[11px] text-[#6B7280]">
+            <div className="mt-3 flex items-center gap-2.5 text-[11px] text-ink-2">
               <span>👁️ {topic.viewCount.toLocaleString()}</span>
               <span>👍 {topic.likeCount.toLocaleString()}</span>
             </div>
@@ -211,7 +212,7 @@ function CategoryFilterTabs({
           key={tab}
           onClick={() => onChange(tab)}
           className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-            active === tab ? "bg-[#2F2F2F] text-white" : "bg-white text-[#6B7280] border border-gray-100"
+            active === tab ? "bg-btn text-white" : "bg-white text-ink-2 border border-line"
           }`}
         >
           {tab === "전체" ? tab : `#${tab}`}
@@ -255,33 +256,33 @@ function ConsultFeedCard({
   };
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
       <button className="block w-full text-left" onClick={onToggleOpen}>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${CATEGORY_BADGE_STYLE[post.category]}`}>
             #{post.category}
           </span>
           {hasExpertAnswer && (
-            <span className="rounded-full bg-[#2F2F2F] px-2.5 py-1 text-[10px] font-bold text-white">
+            <span className="rounded-full bg-btn px-2.5 py-1 text-[10px] font-bold text-white">
               전문가 답변 완료
             </span>
           )}
-          <span className="ml-auto text-[11px] text-[#6B7280]">{post.nickname}</span>
+          <span className="ml-auto text-[11px] text-ink-2">{post.nickname}</span>
         </div>
 
-        <p className="mt-2.5 text-[15px] font-bold leading-snug text-[#2F2F2F]">{post.title}</p>
-        <p className={`mt-1.5 text-[13px] leading-relaxed text-[#6B7280] ${isOpen ? "" : "line-clamp-2"}`}>
+        <p className="mt-2.5 text-[15px] font-bold leading-snug text-ink">{post.title}</p>
+        <p className={`mt-1.5 text-[13px] leading-relaxed text-ink-2 ${isOpen ? "" : "line-clamp-2"}`}>
           {post.body}
         </p>
       </button>
 
-      <div className="mt-3.5 flex items-center gap-3 text-[13px] text-[#6B7280]">
+      <div className="mt-3.5 flex items-center gap-3 text-[13px] text-ink-2">
         <span>👁️ {post.viewCount.toLocaleString()}</span>
         <span>💬 {post.commentCount}</span>
         <button
           onClick={handleLike}
           className={`ml-auto flex items-center gap-1 rounded-full border px-3 py-1.5 font-semibold transition-colors ${
-            post.liked ? "border-[#C8A96A] bg-[#F3E9D2] text-[#8A6D2F]" : "border-gray-200 text-[#6B7280]"
+            post.liked ? "border-ink bg-surface text-ink" : "border-line text-ink-2"
           }`}
         >
           👍 나도 그래요 {post.likeCount}
@@ -289,21 +290,21 @@ function ConsultFeedCard({
       </div>
 
       {isOpen && (
-        <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+        <div className="mt-4 space-y-3 border-t border-line pt-4">
           {post.comments.length === 0 ? (
-            <p className="text-[13px] text-[#6B7280]">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
+            <p className="text-[13px] text-ink-2">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</p>
           ) : (
             post.comments.map((comment) => (
-              <div key={comment.id} className="rounded-xl bg-[#F9FAFB] px-4 py-3">
+              <div key={comment.id} className="rounded-xl bg-surface px-4 py-3">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-semibold text-[#2F2F2F]">{comment.nickname}</span>
+                  <span className="text-[13px] font-semibold text-ink">{comment.nickname}</span>
                   {comment.isExpert && (
-                    <span className="rounded-full bg-[#F9F4E8] px-2 py-0.5 text-[10px] font-bold text-[#8A6D2F]">
+                    <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-bold text-ink">
                       전문가 답변
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-[13px] leading-relaxed text-[#2F2F2F]">{comment.body}</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-ink">{comment.body}</p>
               </div>
             ))
           )}
@@ -313,11 +314,11 @@ function ConsultFeedCard({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="댓글을 남겨보세요"
-              className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[15px] outline-none focus:border-[#C8A96A]"
+              className="flex-1 rounded-xl border border-line px-3.5 py-2.5 text-[15px] outline-none focus:border-ink"
             />
             <button
               onClick={handleSubmitComment}
-              className="shrink-0 rounded-xl bg-[#2F2F2F] px-4 py-2.5 text-[13px] font-semibold text-white active:opacity-80"
+              className="shrink-0 rounded-xl bg-btn px-4 py-2.5 text-[13px] font-semibold text-white active:opacity-80"
             >
               등록
             </button>
@@ -336,7 +337,7 @@ function WriteFab({ onClick }: { onClick: () => void }) {
       <div className="mx-auto flex max-w-[430px] justify-end px-5">
         <button
           onClick={onClick}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-[#2F2F2F] px-5 py-3.5 text-[15px] font-semibold text-white shadow-[0_12px_24px_-10px_rgba(47,47,47,0.55)] active:opacity-80"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-btn px-5 py-3.5 text-[15px] font-semibold text-white shadow-soft active:opacity-80"
         >
           ✍️ 내 고민 등록하기
         </button>
@@ -377,9 +378,9 @@ function WriteConsultSheet({
       <button aria-label="닫기" className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       <div className="relative w-full max-w-[430px] rounded-t-3xl bg-white px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-5 shadow-[0_-16px_40px_-16px_rgba(0,0,0,0.25)]">
-        <div className="mx-auto h-1 w-10 rounded-full bg-gray-200" />
+        <div className="mx-auto h-1 w-10 rounded-full bg-line" />
 
-        <h2 className="mt-4 text-[17px] font-bold tracking-tight text-[#2F2F2F]">내 고민 등록하기</h2>
+        <h2 className="mt-4 text-[17px] font-bold tracking-tight text-ink">내 고민 등록하기</h2>
 
         <div className="mt-4 flex gap-1.5 overflow-x-auto">
           {POST_CATEGORIES.map((c) => (
@@ -387,7 +388,7 @@ function WriteConsultSheet({
               key={c}
               onClick={() => setCategory(c)}
               className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-                category === c ? "bg-[#2F2F2F] text-white" : "bg-[#F9FAFB] text-[#6B7280] border border-gray-100"
+                category === c ? "bg-btn text-white" : "bg-surface text-ink-2 border border-line"
               }`}
             >
               #{c}
@@ -399,20 +400,20 @@ function WriteConsultSheet({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="제목을 입력해주세요"
-          className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-[15px] outline-none focus:border-[#C8A96A]"
+          className="mt-4 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-ink"
         />
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="어떤 고민인지 편하게 적어주세요"
           rows={4}
-          className="mt-2.5 w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-[15px] outline-none focus:border-[#C8A96A]"
+          className="mt-2.5 w-full resize-none rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-ink"
         />
 
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="mt-4 w-full rounded-xl bg-[#2F2F2F] py-3.5 text-[15px] font-semibold text-white transition-opacity disabled:opacity-30 active:opacity-80"
+          className="mt-4 w-full rounded-xl bg-btn py-3.5 text-[15px] font-semibold text-white transition-opacity disabled:opacity-30 active:opacity-80"
         >
           등록 완료
         </button>
@@ -480,8 +481,8 @@ export default function ConsultingPage() {
   return (
     <AppShell>
       <div>
-        <h1 className="text-[19px] font-bold tracking-tight text-[#2F2F2F]">고민상담소</h1>
-        <p className="mt-1 text-[13px] text-[#6B7280]">나와 비슷한 고민을 나누고, 전문가 답변도 받아보세요.</p>
+        <h1 className="text-[19px] font-bold tracking-tight text-ink">고민상담소</h1>
+        <p className="mt-1 text-[13px] text-ink-2">나와 비슷한 고민을 나누고, 전문가 답변도 받아보세요.</p>
       </div>
 
       <WeeklyHotTopics topics={HOT_TOPICS} />
@@ -489,7 +490,7 @@ export default function ConsultingPage() {
       <section>
         <div className="flex items-center gap-1.5 px-0.5">
           <span className="text-[15px]">📋</span>
-          <h2 className="text-[15px] font-bold tracking-tight text-[#2F2F2F]">실시간 고민 피드</h2>
+          <h2 className="text-[15px] font-bold tracking-tight text-ink">실시간 고민 피드</h2>
         </div>
 
         <div className="mt-3">
