@@ -20,7 +20,7 @@ export default function ItemBuyButton({ id, buyLink }: { id: number; buyLink: st
       target="_blank"
       rel="noreferrer"
       onClick={() => trackEvent(EVENT_NAMES.PURCHASE_CLICK, { product_id_clicked: String(id), cta_clicked: "구매하러 가기", ui: "item_detail" })}
-      className="flex w-full items-center justify-center gap-1.5 rounded-btn bg-btn py-3.5 text-emphasis text-white transition-opacity active:opacity-80"
+      className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-btn bg-btn-bg border border-btn-border py-3.5 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.99]"
     >
       구매하러 가기 →
     </a>

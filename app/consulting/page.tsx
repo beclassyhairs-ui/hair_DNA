@@ -212,7 +212,7 @@ function CategoryFilterTabs({
           key={tab}
           onClick={() => onChange(tab)}
           className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-            active === tab ? "bg-btn text-white" : "bg-white text-ink-2 border border-line"
+            active === tab ? "bg-ink text-white" : "bg-white text-ink-2 border border-line"
           }`}
         >
           {tab === "전체" ? tab : `#${tab}`}
@@ -263,7 +263,7 @@ function ConsultFeedCard({
             #{post.category}
           </span>
           {hasExpertAnswer && (
-            <span className="rounded-full bg-btn px-2.5 py-1 text-[10px] font-bold text-white">
+            <span className="rounded-full bg-ink px-2.5 py-1 text-[10px] font-bold text-white">
               전문가 답변 완료
             </span>
           )}
@@ -318,7 +318,7 @@ function ConsultFeedCard({
             />
             <button
               onClick={handleSubmitComment}
-              className="shrink-0 rounded-xl bg-btn px-4 py-2.5 text-[13px] font-semibold text-white active:opacity-80"
+              className="shrink-0 px-3 py-2.5 text-[13px] font-bold text-ink active:opacity-70"
             >
               등록
             </button>
@@ -337,7 +337,7 @@ function WriteFab({ onClick }: { onClick: () => void }) {
       <div className="mx-auto flex max-w-[430px] justify-end px-5">
         <button
           onClick={onClick}
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-btn px-5 py-3.5 text-[15px] font-semibold text-white shadow-soft active:opacity-80"
+          className="pointer-events-auto flex min-h-[48px] items-center gap-1.5 rounded-full bg-btn-bg border border-btn-border px-5 py-3.5 text-[15px] font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]"
         >
           ✍️ 내 고민 등록하기
         </button>
@@ -388,7 +388,7 @@ function WriteConsultSheet({
               key={c}
               onClick={() => setCategory(c)}
               className={`shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${
-                category === c ? "bg-btn text-white" : "bg-surface text-ink-2 border border-line"
+                category === c ? "bg-ink text-white" : "bg-surface text-ink-2 border border-line"
               }`}
             >
               #{c}
@@ -413,7 +413,7 @@ function WriteConsultSheet({
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="mt-4 w-full rounded-xl bg-btn py-3.5 text-[15px] font-semibold text-white transition-opacity disabled:opacity-30 active:opacity-80"
+          className="mt-4 min-h-[48px] w-full rounded-xl bg-btn-bg border border-btn-border py-3.5 text-[15px] font-bold text-btn-text transition-all hover:brightness-95 disabled:opacity-40 active:scale-[0.99]"
         >
           등록 완료
         </button>

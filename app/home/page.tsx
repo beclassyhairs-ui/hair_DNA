@@ -82,7 +82,7 @@ function HairProfileWidget() {
 
       <button
         onClick={() => trackEvent("profile_result_view", { source: "home_profile_card" })}
-        className="mt-5 w-full rounded-btn bg-btn py-3.5 text-emphasis text-white transition-opacity active:opacity-80"
+        className="mt-5 min-h-[48px] w-full rounded-btn bg-btn-bg border border-btn-border py-3.5 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.99]"
       >
         내 진단 결과 다시보기
       </button>

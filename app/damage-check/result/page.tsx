@@ -260,7 +260,7 @@ export default function DamageCheckResultPage() {
               <p className="mt-1 text-center text-[15px] text-ink-2">결과를 공유하고 서로 비교해 보세요</p>
               <button
                 onClick={handleKakaoShare}
-                className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full border border-btn-line bg-white py-3.5 text-base font-semibold text-ink transition-all hover:bg-surface active:scale-[0.98]"
+                className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-base font-semibold text-ink transition-all hover:bg-surface active:scale-[0.98]"
               >
                 {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
               </button>

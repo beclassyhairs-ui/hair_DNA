@@ -505,11 +505,11 @@ export default function StyleUploadPage() {
                   정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
-                  className="flex w-56 items-center justify-center gap-2 rounded-full bg-btn py-3.5 text-base font-bold text-white shadow-soft transition-all hover:opacity-90 active:scale-[0.98]">
+                  className="flex min-h-[48px] w-56 items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border py-3.5 text-base font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]">
                   카메라로 촬영
                 </button>
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="flex w-56 items-center justify-center gap-2 rounded-full border border-btn-line bg-white py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
+                  className="flex min-h-[48px] w-56 items-center justify-center gap-2 rounded-full py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
                   갤러리에서 선택
                 </button>
               </div>
@@ -551,7 +551,7 @@ export default function StyleUploadPage() {
                 <input
                   type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
                   value={transform.scale} onChange={onSlide}
-                  className="w-36 cursor-pointer accent-[#3b3733] sm:w-48"
+                  className="w-36 cursor-pointer accent-[#33302c] sm:w-48"
                   aria-label="확대/축소"
                 />
                 <span className="text-[15px] text-white/45">＋</span>
@@ -578,7 +578,7 @@ export default function StyleUploadPage() {
             /* 카메라 촬영 모드 */
             <div className="flex gap-3">
               <button onClick={stopCamera}
-                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 닫기
               </button>
               <div className="flex-1">
@@ -596,7 +596,7 @@ export default function StyleUploadPage() {
                   setSavedPhoto(null);
                   try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
                 }}
-                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 등록
               </button>
               <div className="flex-1">
@@ -610,7 +610,7 @@ export default function StyleUploadPage() {
             /* 이미지 크롭/확인 모드 */
             <div className="flex gap-3">
               <button onClick={resetSrc}
-                className="flex h-14 items-center justify-center rounded-btn border border-btn-line bg-transparent px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 선택
               </button>
               <div className="flex-1">
@@ -623,7 +623,7 @@ export default function StyleUploadPage() {
           ) : (
             /* 초기 선택 화면 — 뒤로가기 */
             <button onClick={() => router.push("/style/survey")}
-              className="flex h-14 w-full items-center justify-center rounded-btn border border-btn-line bg-transparent text-emphasis text-ink hover:bg-surface">
+              className="flex h-14 w-full items-center justify-center rounded-btn text-emphasis text-ink hover:bg-surface">
               ← 설문으로 돌아가기
             </button>
           )}

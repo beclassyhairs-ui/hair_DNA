@@ -23,7 +23,7 @@ function HistoryCard({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
   return (
     <div className="rounded-2xl border border-line bg-card p-5 shadow-soft">
       <div className="flex items-center justify-between">
-        <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink-2">
+        <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink">
           {item.type}
         </span>
         <span className="text-[11px] text-ink-2">{item.date}</span>

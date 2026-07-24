@@ -574,13 +574,13 @@ export default function BangsResultPage() {
                 <p className="mt-1 text-center text-[15px] text-ink-2">결과를 공유하고 서로 비교해 보세요</p>
                 <button
                   onClick={handleKakaoShare}
-                  className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full border border-btn-line bg-white py-3.5 text-base font-semibold text-ink transition-all hover:bg-surface active:scale-[0.98]"
+                  className="mt-4 flex h-13 w-full items-center justify-center gap-2.5 rounded-full py-3.5 text-base font-semibold text-ink transition-all hover:bg-surface active:scale-[0.98]"
                 >
                   {kakaoSent ? "카카오톡 전송 완료 ✓" : "카카오톡으로 공유하기"}
                 </button>
                 <button
                   onClick={handleCopyLink}
-                  className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:border-btn-line hover:text-ink active:scale-[0.98]"
+                  className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full text-[15px] font-medium text-ink-2 transition-all hover:text-ink active:scale-[0.98]"
                 >
                   {copied ? "✓ 복사됨" : "링크 복사"}
                 </button>

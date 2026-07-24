@@ -124,7 +124,7 @@ function SaveDiaryModal({
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
-          className="mt-6 flex h-14 w-full items-center justify-center gap-3 rounded-full bg-btn text-base font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-70">
+          className="mt-6 flex h-14 min-h-[48px] w-full items-center justify-center gap-3 rounded-full bg-btn-bg border border-btn-border text-base font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-50">
           {loading
             ? <motion.span
                 className="inline-block h-4 w-4 rounded-full"
@@ -523,7 +523,7 @@ export default function StyleResultPage() {
             {/* 저장 + 공유 */}
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
-                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-line bg-white text-base font-bold text-ink transition-all hover:bg-surface active:scale-[0.98]">
+                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-base font-bold text-ink transition-all hover:bg-surface active:scale-[0.98]">
                 사진 다운받기 (다이어리 저장 후 가능)
               </button>
               <p className="text-center text-[13px] text-ink-2 -mt-1">
@@ -537,11 +537,11 @@ export default function StyleResultPage() {
                     if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line bg-surface text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface">
                   공유하기
                 </button>
                 <Link href="/style/survey"
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:border-btn-line hover:text-ink">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full text-[15px] font-medium text-ink-2 transition-all hover:text-ink">
                   다시 진단하기
                 </Link>
               </div>
@@ -560,7 +560,7 @@ export default function StyleResultPage() {
         <BottomStickyCTA>
           <button
             onClick={() => setShowSave(true)}
-            className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full bg-btn text-base font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]">
+            className="flex h-14 min-h-[48px] w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-base font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
             저장하고 홈에서 오늘 케어 보기
           </button>
         </BottomStickyCTA>
