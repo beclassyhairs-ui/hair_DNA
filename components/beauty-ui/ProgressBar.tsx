@@ -9,9 +9,9 @@ import { motion } from "framer-motion";
 
 export default function ProgressBar({ value }: { value: number }) {
   return (
-    <div className="h-1 w-full overflow-hidden rounded-full bg-[#EEE8DA]">
+    <div className="h-1 w-full overflow-hidden rounded-full bg-surface">
       <motion.div
-        className="h-full rounded-full bg-[#2F2A22]"
+        className="h-full rounded-full bg-ink"
         animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         transition={{ duration: 0.35, ease: "easeOut" }}
       />
