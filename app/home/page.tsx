@@ -19,7 +19,7 @@ import { trackEvent } from "../../lib/trackEvent";
 // ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
 
 const DEFAULT_PROFILE = {
-  name: "지환",
+  name: "고객", // 로그인 전 기본 호칭 통일("고객님"). 실명 연결은 WORKORDER-01.
   hairTags: ["곱슬모", "정수리 부스스함", "앞머리 갈라짐", "볼륨 처짐"],
   lastDiagnosis: "AI 헤어 분석",
   lastDiagnosisDate: "오늘",

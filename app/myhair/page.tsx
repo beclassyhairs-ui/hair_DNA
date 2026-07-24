@@ -12,7 +12,7 @@
 
 import AppShell from "../components/layout/AppShell";
 
-const userName = "지환";
+const userName = "고객"; // 로그인 전 기본 호칭 통일("고객님"). 실명 연결은 WORKORDER-01.
 
 const DIAGNOSIS_HISTORY = [
   { id: "1", date: "2026-07-05", type: "AI 헤어 분석", summary: "곱슬모 · 정수리 부스스함 · 앞머리 갈라짐" },

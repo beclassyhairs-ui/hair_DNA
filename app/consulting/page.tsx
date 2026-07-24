@@ -99,7 +99,7 @@ const INITIAL_POSTS: Post[] = [
     liked: false,
     comments: [
       { id: "c1", nickname: "전문 헤어디자이너", body: "습도엔 가벼운 픽싱 미스트 + 뿌리 드라이가 정답이에요.", isExpert: true },
-      { id: "c2", nickname: "지환님", body: "저도 똑같은 고민이었는데 공감돼요 ㅠㅠ", isExpert: false },
+      { id: "c2", nickname: "수진님", body: "저도 똑같은 고민이었는데 공감돼요 ㅠㅠ", isExpert: false },
     ],
   },
   {
