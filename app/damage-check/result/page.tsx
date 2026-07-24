@@ -135,7 +135,9 @@ export default function DamageCheckResultPage() {
             content: {
               title: "어뷰티 | 내 모발 손상도 자가진단 결과",
               description: `AI 진단 결과, 나는 [${result.level.label} · ${result.typeInfo.label}]입니다.`,
-              imageUrl: `${SITE_URL}/images/bangs-og.png`,
+              // 브랜드 기본 OG(로고+주소). 예전엔 앞머리 전용 아트(bangs-og.png)를
+              // 잘못 재사용하고 있었다 — 손상도 결과와 그림이 어긋나고 2MB로 무거웠음.
+              imageUrl: `${SITE_URL}/og-default.png`,
               link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
             },
             buttons: [{ title: "나도 손상도 확인하기", link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
