@@ -11,6 +11,7 @@ import {
 } from "./constants";
 import { getRemainingUses, canUseToday, DAILY_MAX } from "@/lib/dailyLimit";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
+import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
 import { Button } from "@/app/components/ui";
@@ -105,6 +106,9 @@ export default function StyleLandingPage() {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="mt-14 w-full space-y-4"
           >
+            {/* A-1 완성도 게이지 — 랜딩 진입부 */}
+            <CompletionGauge />
+
             {/* 남은 횟수 뱃지 */}
             <div className="flex justify-center">
               <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface px-3 py-1 text-aux text-ink-2">

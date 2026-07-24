@@ -7,6 +7,7 @@ import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import CompletionGauge from "@/components/CompletionGauge";
 
 const LANDING_ID = "damage_check";
 
@@ -59,6 +60,11 @@ export default function DamageCheckLandingPage() {
             비싼 케어 무작정 받기 전에 먼저 확인해보세요.
           </p>
         </motion.div>
+
+        {/* A-1 완성도 게이지 — 랜딩 진입부 */}
+        <div className="mb-5 w-full max-w-md">
+          <CompletionGauge />
+        </div>
 
         {/* ── CTA ── */}
         <motion.div

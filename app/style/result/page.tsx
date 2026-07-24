@@ -26,6 +26,7 @@ import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 import { toast } from "../../../lib/toast";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
@@ -487,6 +488,9 @@ export default function StyleResultPage() {
             <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">스타일 결과지</span>
             <Link href="/style" className="text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
           </div>
+
+          {/* A-1 완성도 게이지 — 결과지 상단 */}
+          <CompletionGauge className="mb-4" />
 
           {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
           <ResultHeroCard

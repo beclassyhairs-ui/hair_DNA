@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
+import CompletionGauge from "@/components/CompletionGauge";
 import { trackEvent } from "../../lib/trackEvent";
 
 // ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
@@ -213,6 +214,8 @@ function QuickDiagnosisBanner() {
 export default function HomePage() {
   return (
     <AppShell>
+      {/* A-1 완성도 게이지 */}
+      <CompletionGauge />
       <HairProfileWidget />
       <PersonalizedRoutineWidget />
       <QuickDiagnosisBanner />
