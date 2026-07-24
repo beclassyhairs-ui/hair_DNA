@@ -26,8 +26,9 @@
 
 **WORKORDER-02.1 무채색 완전 통일 정리 패스 완료 — 브랜치 `workorder-02-1-achromatic`, 미push, Vercel 프리뷰 대기(2026-07-24).** 커밋 8개(`5b3d864`→`7b5a239`): A 토큰·ResultHeroCard(h1 26→22, eyebrow 골드→ink-2, badge 순검정#1C1A17→--btn#3B3733, 히어로 타이틀 한 단계↓) · B 결과지 카카오 노란(#FEE500) 공유버튼→무채색 아웃라인 · E /style/upload 촬영/갤러리 선택화면 다크→라이트(FaceGuide tone prop, 카메라 로직·좌표 무변경) · F1 /diagnosis·/consulting·/myhair·/style/survey 페이지 스윕(카테고리 유채색·랭킹 골드/실버/브론즈→ink 명도, 헤어기록 골드 그라데이션→평면 surface) · F2 설문 데코 공용(RoundedOptionButton 선택표시 골드→ink, ProgressBar·TestHeader·BottomStickyCTA) · F3 공용 Header · F4 /bangs·/damage-check survey·/style/loading 골드 스피너·SiteFooter·/items/[id]. **17개 유저 화면 전수 스캔 0 잔재**(유채색·골드·순검정 클래스/헥스), `next build` 통과. 프론트 전용이라 Codex 생략.
 - ⚠️ **로컬 스샷 불가**(Browser pane 미표시 → 프레임 미컴포짓, 기존 환경 한계). 시각 검증은 Vercel 프리뷰 필요 → **브랜치 push 승인 대기**(프로덕션 아님, main만 프로덕션).
-- 🟡 **호칭 불일치(보고만, 카피 무변경 원칙 준수)**: `/style/loading`·dead `/result`는 "고객님"(범용), `/home`·`/myhair`는 하드코딩 데모명 "지환"→"지환님". 로그인 개인화 붙기 전 임시 플레이스홀더. 통일=카피/데이터 결정이라 사업주 판단 대기.
-- 🟡 **별건 발견**: `/style/loading`에 `AdBanner`(AdSense 슬롯) 잔존 — ROADMAP "광고 완전 제거" 정책과 충돌. 이번 색 스윕 범위 밖이라 미제거·보고만.
+- ✅ **호칭 통일 반영**(`87b26e2` 직전 커밋): 로그인 전 전부 "고객님". `/home`·`/myhair` name "지환"→"고객", `/consulting` 더미 닉네임 "지환님"→"수진님". 실명 개인화는 WORKORDER-01에서 연결.
+- ✅ **AdBanner 제거 반영**(`87b26e2`): `/style/loading` AdSense 슬롯·import 제거(광고 완전 제거 정책). 헤어 꿀팁만 유지.
+- 총 10커밋(`5b3d864`→`87b26e2`), 브랜치 push 완료 → Vercel 프리뷰 재빌드 중.
 - dead code(/mbti 방치·/result·/upload·/ai-loading·/diagnosis/quick 리다이렉트·admin·dev debug 패널)는 스윕 제외.
 
 ## (이전) 현재 상태 한 줄
