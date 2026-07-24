@@ -31,15 +31,15 @@ export default function ResultHeroCard({
     <div className="rounded-[32px] border border-white/60 bg-white/55 px-6 py-8 text-center shadow-[0_12px_40px_-16px_rgba(120,110,90,0.3)] backdrop-blur-xl sm:px-7 sm:py-10">
       {visual && <div className="mb-6">{visual}</div>}
       {eyebrow && (
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#A8884A]">{eyebrow}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-ink-2">{eyebrow}</p>
       )}
       {badge && (
         <div className="mt-4 flex justify-center">
           <span
             className={
               badgeVariant === "subtle"
-                ? "inline-flex flex-col items-center gap-0.5 rounded-full border border-[#EDE7DA] bg-white/70 px-4 py-1.5 text-xs font-semibold text-[#A8884A]"
-                : "inline-flex flex-col items-center gap-0.5 rounded-full bg-[#1C1A17] px-6 py-2.5 font-serif text-base font-bold text-white"
+                ? "inline-flex flex-col items-center gap-0.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs font-semibold text-ink"
+                : "inline-flex flex-col items-center gap-0.5 rounded-full bg-btn px-6 py-2.5 text-base font-bold text-white"
             }
           >
             {badge}
@@ -48,15 +48,15 @@ export default function ResultHeroCard({
       )}
       {title && (
         <h1
-          className={`font-serif font-bold leading-snug text-[#2F2A22] ${
-            badgeVariant === "subtle" ? "mt-3 text-[1.85rem]" : "mt-4 text-[1.65rem]"
+          className={`font-bold leading-snug text-ink ${
+            badgeVariant === "subtle" ? "mt-3 text-[1.6rem]" : "mt-4 text-[1.45rem]"
           }`}
         >
           {title}
         </h1>
       )}
       {description && (
-        <p className="mt-3 text-sm leading-relaxed text-[#6B6355]">{description}</p>
+        <p className="mt-3 text-sm leading-relaxed text-ink-2">{description}</p>
       )}
       {children}
     </div>
