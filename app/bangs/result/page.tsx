@@ -21,6 +21,8 @@ import type { BangsSurveyAnswers } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+import CompletionGauge from "@/components/CompletionGauge";
+import LockedPreviewCard from "@/components/LockedPreviewCard";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
@@ -423,6 +425,11 @@ export default function BangsResultPage() {
         <div className="mx-auto w-full max-w-lg px-5">
           <motion.div variants={STAGGER} initial="hidden" animate="show" className="space-y-4 pt-6">
 
+            {/* A-1 완성도 게이지 — 결과지 상단 */}
+            <motion.div variants={FADE_UP}>
+              <CompletionGauge />
+            </motion.div>
+
             {/* 1. 결과 히어로 — 이미지 2장 + 최종 1순위 + 이유 */}
             <motion.div variants={FADE_UP}>
               <ResultHeroCard
@@ -585,6 +592,13 @@ export default function BangsResultPage() {
                   {copied ? "✓ 복사됨" : "링크 복사"}
                 </button>
               </GlassCard>
+            </motion.div>
+
+            {/* A-2 잠금 미리보기 — /style(AI 합성)로 넘기는 카드 */}
+            <motion.div variants={FADE_UP}>
+              <LockedPreviewCard
+                onCtaClick={() => trackEvent("locked_preview_cta_click", { landing_id: "bangs" })}
+              />
             </motion.div>
 
             {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}

@@ -7,6 +7,8 @@ import { trackEvent, EVENT_NAMES } from "../../lib/eventTracking";
 import { motion, AnimatePresence } from "framer-motion";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../lib/beautyProfile";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import CompletionGauge from "@/components/CompletionGauge";
+import LockedPreviewCard from "@/components/LockedPreviewCard";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
@@ -284,7 +286,12 @@ function IntroView({ onStart }: { onStart: () => void }) {
         청담동 수석 원장급 팩트 폭격이 기다리고 있습니다.
       </p>
 
-      <div className="mt-10 w-full max-w-sm">
+      {/* A-1 완성도 게이지 — 랜딩 진입부 */}
+      <div className="mt-8 w-full max-w-sm">
+        <CompletionGauge />
+      </div>
+
+      <div className="mt-6 w-full max-w-sm">
         <BlackCTAButton onClick={onStart}>진단 시작하기</BlackCTAButton>
       </div>
       <p className="mt-3 text-[13px] text-ink-2">약 1분 소요 · 총 6문항</p>
@@ -403,6 +410,9 @@ function ResultView({
     >
       <div className="mx-auto max-w-[430px] px-4 pt-8 pb-6 sm:px-6 space-y-4">
 
+        {/* A-1 완성도 게이지 — 결과지 상단 */}
+        <CompletionGauge />
+
         <ResultHeroCard
           eyebrow="청담동 헤어 클리닉 진단 완료"
           badge={result.badge}
@@ -490,6 +500,11 @@ function ResultView({
             <span className="flex-none text-ink-2">→</span>
           </Link>
         </GlassCard>
+
+        {/* A-2 잠금 미리보기 — /style(AI 합성)로 넘기는 카드 */}
+        <LockedPreviewCard
+          onCtaClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "hair_quiz", cta_clicked: "locked_preview" })}
+        />
 
         {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
         <div className="flex justify-center pb-2">
