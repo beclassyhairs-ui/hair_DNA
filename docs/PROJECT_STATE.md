@@ -24,6 +24,14 @@
 
 ## 현재 상태 한 줄
 
+**WORKORDER-02.1 무채색 완전 통일 정리 패스 완료 — 브랜치 `workorder-02-1-achromatic`, 미push, Vercel 프리뷰 대기(2026-07-24).** 커밋 8개(`5b3d864`→`7b5a239`): A 토큰·ResultHeroCard(h1 26→22, eyebrow 골드→ink-2, badge 순검정#1C1A17→--btn#3B3733, 히어로 타이틀 한 단계↓) · B 결과지 카카오 노란(#FEE500) 공유버튼→무채색 아웃라인 · E /style/upload 촬영/갤러리 선택화면 다크→라이트(FaceGuide tone prop, 카메라 로직·좌표 무변경) · F1 /diagnosis·/consulting·/myhair·/style/survey 페이지 스윕(카테고리 유채색·랭킹 골드/실버/브론즈→ink 명도, 헤어기록 골드 그라데이션→평면 surface) · F2 설문 데코 공용(RoundedOptionButton 선택표시 골드→ink, ProgressBar·TestHeader·BottomStickyCTA) · F3 공용 Header · F4 /bangs·/damage-check survey·/style/loading 골드 스피너·SiteFooter·/items/[id]. **17개 유저 화면 전수 스캔 0 잔재**(유채색·골드·순검정 클래스/헥스), `next build` 통과. 프론트 전용이라 Codex 생략.
+- ⚠️ **로컬 스샷 불가**(Browser pane 미표시 → 프레임 미컴포짓, 기존 환경 한계). 시각 검증은 Vercel 프리뷰 필요 → **브랜치 push 승인 대기**(프로덕션 아님, main만 프로덕션).
+- 🟡 **호칭 불일치(보고만, 카피 무변경 원칙 준수)**: `/style/loading`·dead `/result`는 "고객님"(범용), `/home`·`/myhair`는 하드코딩 데모명 "지환"→"지환님". 로그인 개인화 붙기 전 임시 플레이스홀더. 통일=카피/데이터 결정이라 사업주 판단 대기.
+- 🟡 **별건 발견**: `/style/loading`에 `AdBanner`(AdSense 슬롯) 잔존 — ROADMAP "광고 완전 제거" 정책과 충돌. 이번 색 스윕 범위 밖이라 미제거·보고만.
+- dead code(/mbti 방치·/result·/upload·/ai-loading·/diagnosis/quick 리다이렉트·admin·dev debug 패널)는 스윕 제외.
+
+## (이전) 현재 상태 한 줄
+
 **WORKORDER-02(웜 그레이지 UI 시스템) 1·2단계 완료 + 3단계 진행 중 (2026-07-23).** 커밋 5개: `c7424dd`(1단계 토큰+Pretendard) → `9bb7180`(2단계 공용 컴포넌트) → `8e0e68c`(3단계-a 랜딩4종+공유데코) → `c465649`(3단계-b /home+AppShell) → `15b43ce`(3단계-c /items 계열). 전부 `next build` 통과, **미push**.
 - **토큰 SSOT**: `app/globals.css` `:root`(색10·형태5) ← `tailwind.config.ts`가 `var()`로 참조. 구 팔레트(cream/gold/champagne 등)는 **스윕 완료 전까지 병존** — 마지막에 제거할 것.
 - **타이포**: Noto Sans KR → **Pretendard**(`app/fonts/PretendardVariable.woff2`, next/font/local). 굵기 위계 `text-h1`(26/700)·`text-h2`(18/600)·`text-body`(16/400)·`text-emphasis`(16/600)·`text-aux`(13/400). 700은 화면당 1~2곳.
