@@ -88,22 +88,22 @@ export default function StyleLandingPage() {
             <span className="h-px w-6 bg-line" />
           </span>
 
-          {/* 메인 타이틀 */}
-          <h1 className="mt-8 text-h1 text-ink">
+          {/* 메인 타이틀 — 히어로 이미지 없이 여백·수직 리듬으로 차분하게 */}
+          <h1 className="mt-11 text-h1 leading-[1.35] text-ink">
             AI가 분석해주는<br />
             내 인생 헤어스타일
           </h1>
 
-          <p className="mt-4 text-body leading-relaxed text-ink-2">
+          <p className="mt-5 text-body leading-relaxed text-ink-2">
             나의 모질과 희망 스타일을 분석해 최적의 헤어를 처방합니다.
           </p>
 
-          {/* CTA */}
+          {/* CTA — 위 타이틀과 넉넉한 간격을 둬 빈 공간이 '미완성' 아닌 '여백'으로 읽히게 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="mt-8 w-full space-y-3"
+            className="mt-14 w-full space-y-4"
           >
             {/* 남은 횟수 뱃지 */}
             <div className="flex justify-center">
