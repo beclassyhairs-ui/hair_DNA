@@ -24,6 +24,15 @@
 
 ## 현재 상태 한 줄
 
+**🟢 사업주 조치 완료(SQL 2종 실행 + Vercel env 등록) — B 전체가 실제 동작 상태로 전환됨(2026-07-24).** 프로덕션 실측으로 배선 확인:
+- `/api/auth/kakao/start` → **307 `https://kauth.kakao.com/oauth/authorize`**, `client_id` 주입됨(32자), `redirect_uri=https://hair-dna.vercel.app/api/auth/kakao/callback`(콜백 라우트와 일치), CSRF `state` 발급 — **카카오 로그인 배선 정상**.
+- `NEXT_PUBLIC_KAKAO_APP_KEY`(공유용 JS키)가 클라 번들에 인라인됨 — 카톡 공유도 동작 가능(`NEXT_PUBLIC_*`는 빌드 타임 주입이라 env 추가 후 재배포가 필요한데, 현 빌드엔 이미 들어가 있음).
+- `/api/me/data`·`/api/me/sync`·`/api/hair-transform` 무인증 **401** 정상.
+- ⚠️ **이제부터 라이브 동작이 바뀐다**: ① AI 합성 전 **카카오 로그인이 실제로 강제**된다(전엔 env 미설정 시 503으로 막혔을 수 있음) ② `hair_usage` 실행으로 **서버 일일 제한이 활성**됐다(fail-open 해제, `SERVER_DAILY_MAX=5`/일·계정 기준, 시크릿창·기기변경으로 우회 불가).
+- 🔴 **남은 것은 사업주 실기기 스모크 1회뿐** — 로그인 왕복 1회를 하면 B-1(자동로그인)·B-2(기기 간 동기화)·B-3(일일제한) AC가 한 번에 검증된다. 코드로 할 수 있는 일은 없음.
+
+## (이전) 현재 상태 한 줄
+
 **B-2(서버 저장·기기 간 동기화) 코드 완료 + 사업주 안내서 작성 — push·배포 완료(2026-07-24).** 커밋 3개(`a3728fb`·`c153b8b`·`e24cf12`). **Codex 검수 8회 끝에 통과.** 라이브: `/api/me/data`·`/api/me/sync` 무인증 401, 주요 경로 8종 정상(회귀 없음).
 - **서버**: `GET /api/me/data`(프로필+진단 최신 200건) · `POST /api/me/sync`(멱등 upsert). userId는 **오직 쿠키 세션**에서만(`lib/userSession.ts`). 계정 일관성 assertion(`expectedUserId`)을 **DB 접근 전에** 강제, 본문 바이트 상한·client_id 길이·계정당 행 상한(best-effort)·요청 내 중복 id 제거.
 - **스키마**: `users_auth_schema.sql`에 `profiles.profile`(jsonb)·`diagnoses.client_id` 추가. `create table if not exists`가 기존 테이블에 컬럼을 안 붙이는 함정 때문에 **alter add column if not exists + backfill + not null + 유니크 인덱스**를 마이그레이션 구간으로 분리(신규/기존 DB 모두 안전, 재실행 멱등).
