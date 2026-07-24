@@ -70,13 +70,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" className={`${pretendard.variable} ${notoSerif.variable}`}>
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3733126974731035"
-          crossOrigin="anonymous"
-        />
-      </head>
       <body className="font-sans">
         <Analytics />
         <AttributionCapture />

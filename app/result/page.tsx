@@ -396,15 +396,6 @@ function AnalyzingOverlay() {
         </div>
       </div>
 
-      {/* 하단 광고 배너 (구글 애드센스 플레이스홀더) */}
-      <div className="w-full max-w-sm">
-        <p className="mb-2 text-center text-xs text-cream/30">광고</p>
-        <div className="flex h-[100px] w-full items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-          {/* TODO: 실제 구글 애드센스 스크립트 삽입 위치 */}
-          {/* <ins className="adsbygoogle" data-ad-client="ca-pub-XXXXXXXX" data-ad-slot="XXXXXXXX" /> */}
-          <span className="text-sm text-cream/25">[ Google AdSense 320×100 ]</span>
-        </div>
-      </div>
     </motion.div>
   );
 }

@@ -161,21 +161,6 @@ export default function AiLoadingPage() {
                 transition={{ duration: 0.5 }}
                 className="mt-10"
               >
-                {/* 광고 플레이스홀더 */}
-                <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/5">
-                  <div className="flex items-center justify-between border-b border-white/8 px-4 py-2">
-                    <span className="text-[13px] text-cream/30">광고</span>
-                    <span className="rounded bg-white/5 px-2 py-0.5 text-[13px] text-cream/25">AD</span>
-                  </div>
-                  <div className="flex aspect-[5/2] w-full items-center justify-center bg-gradient-to-br from-white/5 to-transparent">
-                    <div className="text-center">
-                      <p className="text-2xl">💄</p>
-                      <p className="mt-2 text-[15px] font-medium text-cream/40">광고 영역</p>
-                      <p className="text-[13px] text-cream/25">Google AdSense · 네이버 GFA</p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* 헤어 팁 카드 */}
                 <div className="mt-5">
                   <p className="mb-3 text-[13px] font-semibold uppercase tracking-widest text-gold/60">
