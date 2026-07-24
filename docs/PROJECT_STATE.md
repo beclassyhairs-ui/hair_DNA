@@ -24,6 +24,10 @@
 
 ## 현재 상태 한 줄
 
+**WORKORDER-03 검은 버튼 폐지 + 완전 무채색(연한 필) — 배포 진행(2026-07-24).** 커밋 3개(`34365a7`→`be26fca`): ① 토큰 신설 `--btn-bg #F1EEE8`·`--btn-border #E3DED5`·`--btn-text #33302C` + 공용버튼(BlackCTAButton·ui/Button primary)을 연한 회색 필(1px 테두리·ink텍스트·700·min48)로, ui/Button secondary·ResultHeroCard 배지·RoundedOptionButton 선택 accent → bg-ink ② 페이지 버튼 위계: 인라인 주CTA 연한필, 보조액션(공유·복사·재진단·닫기·댓글등록) 고스트(텍스트만), 활성탭·전문가배지 bg-ink, myhair 배지 틴트→ink ③ /style 랜딩 수직리듬(mt-11/5/14·space-y-4)로 히어로 이미지 없이 차분하게. **라이브 검증(dev)**: /style 주CTA computed = bg `rgb(241,238,232)`·border `rgb(227,222,213)`·text `rgb(51,48,44)`·weight 700·min-h 48px 정확. 소스 전수 스캔: 유채색·골드·순검정(#3B3733)·구 bg-btn 채움 **0건**(dead/mbti/admin/dev-debug 제외). `next build` 통과. 프론트 전용이라 Codex 생략. → main push 배포 예정.
+
+## (이전) 현재 상태 한 줄
+
 **WORKORDER-02.1 무채색 완전 통일 정리 패스 완료 — 브랜치 `workorder-02-1-achromatic`, 미push, Vercel 프리뷰 대기(2026-07-24).** 커밋 8개(`5b3d864`→`7b5a239`): A 토큰·ResultHeroCard(h1 26→22, eyebrow 골드→ink-2, badge 순검정#1C1A17→--btn#3B3733, 히어로 타이틀 한 단계↓) · B 결과지 카카오 노란(#FEE500) 공유버튼→무채색 아웃라인 · E /style/upload 촬영/갤러리 선택화면 다크→라이트(FaceGuide tone prop, 카메라 로직·좌표 무변경) · F1 /diagnosis·/consulting·/myhair·/style/survey 페이지 스윕(카테고리 유채색·랭킹 골드/실버/브론즈→ink 명도, 헤어기록 골드 그라데이션→평면 surface) · F2 설문 데코 공용(RoundedOptionButton 선택표시 골드→ink, ProgressBar·TestHeader·BottomStickyCTA) · F3 공용 Header · F4 /bangs·/damage-check survey·/style/loading 골드 스피너·SiteFooter·/items/[id]. **17개 유저 화면 전수 스캔 0 잔재**(유채색·골드·순검정 클래스/헥스), `next build` 통과. 프론트 전용이라 Codex 생략.
 - ⚠️ **로컬 스샷 불가**(Browser pane 미표시 → 프레임 미컴포짓, 기존 환경 한계). 시각 검증은 Vercel 프리뷰 필요 → **브랜치 push 승인 대기**(프로덕션 아님, main만 프로덕션).
 - ✅ **호칭 통일 반영**(`87b26e2` 직전 커밋): 로그인 전 전부 "고객님". `/home`·`/myhair` name "지환"→"고객", `/consulting` 더미 닉네임 "지환님"→"수진님". 실명 개인화는 WORKORDER-01에서 연결.
