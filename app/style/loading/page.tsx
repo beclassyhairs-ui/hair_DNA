@@ -4,7 +4,7 @@
 // /style/loading — 비동기 AI 헤어 합성 로딩 페이지
 // - 마운트 즉시 /api/hair-transform 호출 (가짜 타이머 없음)
 // - API 응답 완료 즉시 /style/result 로 라우팅
-// - 대기 중 구글 AdSense 플레이스홀더 노출
+// - 대기 중 헤어 꿀팁 콘텐츠 노출 (광고 없음 — AdSense 폐기, ROADMAP 광고 완전 제거 정책)
 // ============================================================================
 
 import { useEffect, useRef, useState } from "react";
@@ -15,7 +15,6 @@ import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
-import AdBanner from "@/app/components/AdBanner";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
@@ -197,10 +196,10 @@ export default function StyleLoadingPage() {
           </AnimatePresence>
         </div>
 
-        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 + AdSense 광고 ── */}
+        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 (광고 제거됨) ── */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
 
-          {/* 헤어 꿀팁 — 롤링 애니메이션 (구글 게시자 콘텐츠 영역) */}
+          {/* 헤어 꿀팁 — 롤링 애니메이션 */}
           <div className="flex-none">
             <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-ink-2">
               기다리는 동안 읽는 헤어 꿀팁
@@ -230,13 +229,6 @@ export default function StyleLoadingPage() {
                   className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-ink/70" : "w-1 bg-line"}`}
                 />
               ))}
-            </div>
-          </div>
-
-          {/* 구글 AdSense — 슬롯 ID는 AdSense 대시보드에서 발급 후 입력 */}
-          <div className="flex flex-1 items-center justify-center">
-            <div className="w-full max-w-sm" style={{ minHeight: "250px" }}>
-              <AdBanner slot="4013466421" />
             </div>
           </div>
 
