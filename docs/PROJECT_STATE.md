@@ -28,7 +28,8 @@
 - ⚠️ **로컬 스샷 불가**(Browser pane 미표시 → 프레임 미컴포짓, 기존 환경 한계). 시각 검증은 Vercel 프리뷰 필요 → **브랜치 push 승인 대기**(프로덕션 아님, main만 프로덕션).
 - ✅ **호칭 통일 반영**(`87b26e2` 직전 커밋): 로그인 전 전부 "고객님". `/home`·`/myhair` name "지환"→"고객", `/consulting` 더미 닉네임 "지환님"→"수진님". 실명 개인화는 WORKORDER-01에서 연결.
 - ✅ **AdBanner 제거 반영**(`87b26e2`): `/style/loading` AdSense 슬롯·import 제거(광고 완전 제거 정책). 헤어 꿀팁만 유지.
-- 총 10커밋(`5b3d864`→`87b26e2`), 브랜치 push 완료 → Vercel 프리뷰 재빌드 중.
+- 총 11커밋(`5b3d864`→`e491521`), **main 머지·프로덕션 배포 완료(2026-07-24)**. 라이브 검증: `hair-dna.vercel.app/myhair`에 "고객" 노출·"지환" 0건·골드 헥스 0건.
+- 🔴 **미해결 광고 잔재(신규 발견, 이번 범위 밖)**: `app/layout.tsx:76`에 **전역 AdSense 로더 스크립트**(`adsbygoogle.js`, `ca-pub-3733126974731035`)가 전 페이지에 살아 있음 + `app/components/AdBanner.tsx` 컴포넌트 존치 + dead `/ai-loading`·`/result`에 AdSense 잔재. ROADMAP "광고 완전 제거(AdSense 폐기)" 정책과 정면 충돌. AdBanner 슬롯 1곳만 뗐지 전역 로더는 그대로라 **여전히 모든 화면에서 AdSense JS가 로드됨.** → 별건 커밋으로 전역 스크립트+컴포넌트+dead 잔재 일괄 제거 필요(사업주 승인 후).
 - dead code(/mbti 방치·/result·/upload·/ai-loading·/diagnosis/quick 리다이렉트·admin·dev debug 패널)는 스윕 제외.
 
 ## (이전) 현재 상태 한 줄
