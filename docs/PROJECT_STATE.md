@@ -24,6 +24,17 @@
 
 ## 현재 상태 한 줄
 
+**B-2(서버 저장·기기 간 동기화) 코드 완료 + 사업주 안내서 작성 — push·배포 완료(2026-07-24).** 커밋 3개(`a3728fb`·`c153b8b`·`e24cf12`). **Codex 검수 8회 끝에 통과.** 라이브: `/api/me/data`·`/api/me/sync` 무인증 401, 주요 경로 8종 정상(회귀 없음).
+- **서버**: `GET /api/me/data`(프로필+진단 최신 200건) · `POST /api/me/sync`(멱등 upsert). userId는 **오직 쿠키 세션**에서만(`lib/userSession.ts`). 계정 일관성 assertion(`expectedUserId`)을 **DB 접근 전에** 강제, 본문 바이트 상한·client_id 길이·계정당 행 상한(best-effort)·요청 내 중복 id 제거.
+- **스키마**: `users_auth_schema.sql`에 `profiles.profile`(jsonb)·`diagnoses.client_id` 추가. `create table if not exists`가 기존 테이블에 컬럼을 안 붙이는 함정 때문에 **alter add column if not exists + backfill + not null + 유니크 인덱스**를 마이그레이션 구간으로 분리(신규/기존 DB 모두 안전, 재실행 멱등).
+- **클라**: 루트 레이아웃에 `ProfileSync` 1개만 마운트 → 라우트 변경마다 동기화(결과지 4종 미수정. 저장 후 /home 이동 흐름 활용). 미로그인이면 즉시 종료해 **기존 localStorage 동작 그대로**.
+- **교차 계정 오염 방지(공용 기기)**: 로컬 캐시 소유자(`abeauty:syncedUserId`) 기록 + 불변식 "**서버 데이터를 내려받기 전에 소유자가 현재 계정으로 확정돼 있어야 한다**". 다른 계정 캐시면 비우고 확정, 익명이면 먼저 올려 성공해야 확정. 삭제·기록은 재읽기 검증, 실패 시 중단.
+- 그 외: push 실패를 성공으로 보고 안 함, 100건 청크(프로필은 첫 청크 동승), 전 요청 10초 타임아웃, 실행 중 라우트 변경 시 1회 재실행 예약.
+- 🟡 **알려진 한계(문서화됨)**: ① id 없는 과거 엔트리는 멱등키가 없어 서버 동기화 대상 아님(로컬엔 계속 보임) ② GET 200건 상한 초과분은 새 기기에서 안 보임(데이터는 보존) ③ 계정당 500행 상한은 트랜잭션이 아니라 best-effort.
+- 🔴 **AC 검증은 사업주 조치 후 가능** — `users_auth_schema.sql` 실행 전에는 API가 "컬럼 없음"으로 실패한다(단, 로그인 env가 없으면 ProfileSync가 애초에 호출조차 안 해 무해). 안내서: **`docs/OWNER_SETUP_GUIDE.md`**(511줄, 카카오 콘솔·Vercel env·Supabase SQL 클릭 단위).
+
+## (이전) 현재 상태 한 줄
+
 **A(코드 4종) — A-1·A-2·A-3 완료, A-4 부분완료(2026-07-24).** 커밋 5개(`2de5416`→`934ba3f`), 미push. tsc·`next build` 통과.
 - **A-1 완성도 게이지**(`components/CompletionGauge.tsx`): 진단 4종 중 서로 다른 kind 완료 수 ÷ 4, 4칸 진행바. kind 판별은 기존 `classifyKind` 재사용(누락=style). 삽입 8곳(결과지 4 + /home + 랜딩 3). **실측 AC 충족**: 1개=25%(1칸·뱃지 없음), 4개=100%(4칸·"프로필 완성" 뱃지).
 - **A-2 잠금 미리보기**(`components/LockedPreviewCard.tsx`): /bangs·/damage-check·/hair-quiz 결과지 하단. 블러 예시 이미지(`public/references/default_style.jpg`, git 추적됨·200 서빙)+자물쇠+"예시" 뱃지+/style CTA. **세 랜딩 사진 수집 0건 코드 재확인**(getUserMedia/file input/photo 키 전무).
