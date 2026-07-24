@@ -41,6 +41,13 @@ export interface DiaryEntryLike {
   [key: string]: unknown;
 }
 
+/** A-3: 시술 이력 — "칸만" 심는 단계. 주기 알림·경고·재구매 트리거는 만들지 않는다. */
+export interface TreatmentRecord {
+  date?: string;
+  type?: string;
+  memo?: string;
+}
+
 export interface BeautyUserProfile {
   name: string;
   hairTags: string[];
@@ -48,6 +55,8 @@ export interface BeautyUserProfile {
   lastDiagnosisDate: string;
   mainConcern: string;
   latestResultSummary: string;
+  /** 유저가 직접 입력하는 값이라 진단 재합산으로 지워지면 안 된다(아래에서 previousProfile로 보존). */
+  treatmentHistory?: TreatmentRecord[];
 }
 
 const DEFAULT_NAME = "고객";
@@ -146,7 +155,42 @@ export function buildBeautyUserProfileFromDiary(
     lastDiagnosisDate:   latest ? "오늘" : (previousProfile?.lastDiagnosisDate ?? ""),
     mainConcern:         topPriorityEntry ? entrySummary(topPriorityEntry, topPriorityKind) : (previousProfile?.mainConcern ?? ""),
     latestResultSummary: latest ? entrySummary(latest, latestKind) : (previousProfile?.latestResultSummary ?? ""),
+    // A-3: 진단에서 파생되지 않는 유저 입력값이므로 재합산 시 항상 그대로 넘긴다.
+    treatmentHistory:    previousProfile?.treatmentHistory ?? [],
   };
+}
+
+// ─── A-1 완성도 계산 ──────────────────────────────────────────────────────────
+// 4종 진단(style/damage/bangs/hairquiz) 중 "서로 다른 kind를 몇 개 완료했는지".
+// kind 판별은 classifyKind를 그대로 재사용한다(kind 누락 = style).
+
+export const ALL_DIAGNOSIS_KINDS: DiagnosisKind[] = PRIORITY_ORDER;
+export const DIAGNOSIS_KIND_LABEL: Record<DiagnosisKind, string> = KIND_LABEL;
+
+/** 완료한 진단 kind 목록(중복 제거, 우선순위 순). 완성도 = 길이 / ALL_DIAGNOSIS_KINDS.length */
+export function getCompletedKinds(entries: DiaryEntryLike[]): DiagnosisKind[] {
+  const done = new Set<DiagnosisKind>();
+  for (const entry of entries) done.add(classifyKind(entry));
+  return PRIORITY_ORDER.filter((kind) => done.has(kind));
+}
+
+// ─── A-3 시술 이력 I/O ────────────────────────────────────────────────────────
+// 프로필(abeauty_user_profile)에 얹어 저장한다. 별도 키를 만들지 않는 이유:
+// 재합산(refreshBeautyUserProfileFromDiary)이 previousProfile을 통해 보존해 주기 때문.
+
+export function readTreatmentHistory(): TreatmentRecord[] {
+  const profile = readBeautyUserProfile();
+  return Array.isArray(profile?.treatmentHistory) ? profile!.treatmentHistory! : [];
+}
+
+/** 시술 이력 1건 추가 후 저장. 알림/경고/재구매 트리거 없음 — 저장·회수만 한다. */
+export function addTreatmentRecord(record: TreatmentRecord): TreatmentRecord[] {
+  const previous = readBeautyUserProfile();
+  const next = [record, ...(Array.isArray(previous?.treatmentHistory) ? previous!.treatmentHistory! : [])];
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ ...(previous ?? {}), treatmentHistory: next }));
+  } catch { /**/ }
+  return next;
 }
 
 // ─── localStorage I/O ─────────────────────────────────────────────────────────
