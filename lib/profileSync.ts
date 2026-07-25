@@ -20,6 +20,7 @@ import {
   type DiaryEntryLike,
   type TreatmentRecord,
 } from "./beautyProfile";
+import { setAccountId, clearAccountId } from "./eventTracking";
 
 // 네트워크가 응답하지 않을 때 동기화가 영원히 끝나지 않는 것을 막는다
 // (끝나지 않으면 호출부의 실행 잠금도 영영 안 풀린다).
@@ -113,15 +114,26 @@ function writeSyncedUserId(userId: string): boolean {
   }
 }
 
-/** 로그인 상태 확인 — httpOnly 쿠키라 서버에 물어봐야 한다. userId까지 받아온다. */
-async function getLoggedInUserId(): Promise<string | null> {
+// 로그인 상태를 3-상태로 구분한다. "명시적 미로그인"과 "일시적 장애(알 수 없음)"를
+// 섞으면(둘 다 null) 네트워크 blip마다 account_id를 지워 로그인 유저 이벤트가 익명화된다.
+type AuthState =
+  | { status: "authed"; userId: string } // 서버가 loggedIn:true + userId 확정
+  | { status: "unauth" }                 // 서버가 명시적으로 loggedIn:false
+  | { status: "indeterminate" };         // HTTP 오류·타임아웃·파싱 실패 — 판단 보류
+
+/** 로그인 상태 확인 — httpOnly 쿠키라 서버에 물어봐야 한다. */
+async function getAuthState(): Promise<AuthState> {
   try {
     const res = await fetch("/api/auth/me", { cache: "no-store", signal: timeoutSignal() });
-    if (!res.ok) return null;
+    if (!res.ok) return { status: "indeterminate" };
     const json = await res.json();
-    return json?.loggedIn === true && typeof json.userId === "string" ? json.userId : null;
+    if (json?.loggedIn === true && typeof json.userId === "string") {
+      return { status: "authed", userId: json.userId };
+    }
+    if (json?.loggedIn === false) return { status: "unauth" };
+    return { status: "indeterminate" }; // 예상 밖 형태 → 함부로 지우지 않는다
   } catch {
-    return null;
+    return { status: "indeterminate" };
   }
 }
 
@@ -177,8 +189,21 @@ const PUSH_CHUNK_SIZE = 100; // 서버 상한(200)보다 여유 있게
 export async function syncWithServer(): Promise<boolean> {
   if (typeof window === "undefined") return false;
 
-  const userId = await getLoggedInUserId();
-  if (!userId) return false;
+  const auth = await getAuthState();
+  if (auth.status === "unauth") {
+    // 서버가 명시적으로 미로그인이라고 응답 → 이벤트를 다시 익명으로 기록하도록 계정 id를 비운다.
+    // (익명→로그인 소급연결은 하지 않는다 — 기존 정책 유지)
+    clearAccountId();
+    return false;
+  }
+  if (auth.status === "indeterminate") {
+    // 네트워크/HTTP/파싱 실패로 로그인 여부를 알 수 없음 → account_id를 건드리지 않고
+    // 그냥 스킵한다(로그인 유저를 일시 장애로 익명화하지 않기 위해).
+    return false;
+  }
+  const userId = auth.userId;
+  // 로그인 확인 즉시 계정 id를 트래킹에 주입 → 이후 이벤트 user_id가 이 계정에 연결된다.
+  setAccountId(userId);
 
   // 🔒 계정 전환 보호: 이 기기의 로컬 캐시가 "다른 계정" 것이면, 그 데이터를 새 계정에
   // 합치지 않고 먼저 비운다. (기록이 없으면 = 로그인 전 익명 데이터이므로 편입 허용)

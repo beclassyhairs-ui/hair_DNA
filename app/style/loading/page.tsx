@@ -15,6 +15,7 @@ import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
+import { clearAccountId } from "@/lib/eventTracking";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
@@ -81,6 +82,9 @@ export default function StyleLoadingPage() {
           loggedIn = Boolean(me?.loggedIn);
         } catch { loggedIn = false; }
         if (!loggedIn) {
+          // (재)로그인 개시 전 계정 id를 비운다 — 다른 계정으로 로그인해도 이전 계정으로
+          // 이벤트가 오귀속되지 않게(전환 창 차단). 로그인 확정 후 ProfileSync가 다시 심는다.
+          clearAccountId();
           window.location.href =
             `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
           return;
@@ -121,6 +125,9 @@ export default function StyleLoadingPage() {
         // 서버 게이트 응답 우선 처리
         // 401(세션 만료 등) → 재로그인. 결과지로 가지 않는다(즉시 return).
         if (res.status === 401) {
+          // 세션 만료(로그아웃 상태) → 재로그인. 만료된 계정 id를 즉시 비워 그 사이
+          // 발생하는 이벤트가 옛 계정에 붙지 않게 한다(Codex 지적 창 차단).
+          clearAccountId();
           window.location.href =
             `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
           return;

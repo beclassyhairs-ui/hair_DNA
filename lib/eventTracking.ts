@@ -16,7 +16,7 @@ import { supabase } from "./supabaseClient";
 
 const ANONYMOUS_ID_KEY  = "abeauty:anonymous_id";
 const SESSION_ID_KEY    = "abeauty:session_id";
-const KAKAO_USER_ID_KEY = "abeauty:kakao_user_id";
+const ACCOUNT_ID_KEY    = "abeauty:account_id"; // 로그인 계정 내부 uuid(/api/auth/me). 카카오 번호 아님.
 const ATTRIBUTION_KEY   = "abeauty:attribution";
 
 /** 핵심 퍼널 이벤트 — 조회수→유입→진단완료→상품클릭→구매전환 */
@@ -71,9 +71,9 @@ const COLUMN_KEYS = new Set<string>([
 
 /** Supabase에 insert되는 최종 이벤트 레코드 — created_at은 DB default now()가 채우므로 클라이언트에서 보내지 않는다 */
 export interface TrackedEvent {
-  user_id: string;          // kakao_user_id가 있으면 그 값, 없으면 anonymous_id
+  user_id: string;          // 로그인 시 계정 uuid, 아니면 anonymous_id (계정 조인 키)
   anonymous_id: string;
-  kakao_user_id: string | null;
+  kakao_user_id: string | null; // 카카오 회원번호 전용(현재 미수집 → 항상 null)
   session_id: string;
   event_name: string;
   event_time: string;       // ISO 타임스탬프 (이벤트 발생 시각)
@@ -138,15 +138,22 @@ export function getOrCreateSessionId(): string {
   return id;
 }
 
-/** 카카오 로그인 완료 시 호출 — 익명 ID에 카카오 유저 ID를 매핑 */
-export function setKakaoUserId(kakaoUserId: string): void {
+/** 로그인 완료 후 호출 — 계정 내부 uuid(/api/auth/me의 userId)를 저장한다.
+ *  이후 이벤트의 user_id가 이 계정으로 연결된다. **카카오 회원번호가 아니다.** */
+export function setAccountId(accountId: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KAKAO_USER_ID_KEY, kakaoUserId);
+  localStorage.setItem(ACCOUNT_ID_KEY, accountId);
 }
 
-export function getKakaoUserId(): string | null {
+export function getAccountId(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(KAKAO_USER_ID_KEY);
+  return localStorage.getItem(ACCOUNT_ID_KEY);
+}
+
+/** 로그아웃/미로그인 시 호출 — 이후 이벤트가 다시 익명(anonymous_id)으로 기록되게 한다. */
+export function clearAccountId(): void {
+  if (typeof window === "undefined") return;
+  try { localStorage.removeItem(ACCOUNT_ID_KEY); } catch { /* 접근 불가 — 무시 */ }
 }
 
 // ─── UTM 어트리뷰션 (first-touch) ────────────────────────────────────────────
@@ -255,7 +262,7 @@ export async function trackEvent(
   payload: EventPayload = {},
 ): Promise<void> {
   const anonymousId = getOrCreateAnonymousId();
-  const kakaoUserId = getKakaoUserId();
+  const accountId = getAccountId(); // 로그인 시 계정 uuid, 아니면 null
   const attribution = getAttribution();
 
   // 페이로드를 컬럼 vs meta로 분리
@@ -269,9 +276,12 @@ export async function trackEvent(
 
   const event: TrackedEvent = {
     ...columns,
-    user_id:       kakaoUserId ?? anonymousId,
+    // 로그인하면 user_id = 계정 uuid(조인 키), 아니면 익명 id. 계정 조인은 user_id로만 한다.
+    user_id:       accountId ?? anonymousId,
     anonymous_id:  anonymousId,
-    kakao_user_id: kakaoUserId,
+    // kakao_user_id 컬럼은 "카카오 회원번호" 전용 계약이므로 다른 값(내부 uuid)을 넣지 않고
+    // 계속 null로 둔다. (카카오 번호가 필요해지면 그때 별도로 채운다.)
+    kakao_user_id: null,
     session_id:    getOrCreateSessionId(),
     event_name:    eventName,
     event_time:    new Date().toISOString(),
