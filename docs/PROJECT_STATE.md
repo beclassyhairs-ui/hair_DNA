@@ -24,6 +24,15 @@
 
 ## 현재 상태 한 줄
 
+**프로덕션 DB 3건 중 ①③ 코드 수정 완료 + housekeeping — 커밋 완료·push 대기, ②는 별도 커밋으로 보류(2026-07-25).**
+- **① core_key null 해소**(`19de662`): `/api/me/sync`가 이 계정의 kind=style 진단 전체에서 `deriveCoreKeyFromEntries`로 core_key 재계산 후 저장. 파생값 non-null일 때만 넣어(=null이면 제외) 랜딩 단독 sync가 기존값을 지우지 않음. Codex 통과(PostgREST가 payload 없는 컬럼을 UPDATE 시 보존함을 소스로 확인).
+- **③ 이벤트 계정 연결**(`29257cf`): 서버 OAuth 전환 후 끊겼던 로그인↔트래킹 다리 복구. `setKakaoUserId→setAccountId` 개명(키 `abeauty:account_id`), **events.user_id에만 계정 uuid**, `kakao_user_id`는 카카오번호 전용이라 **null 유지**(사업주 지시로 제안 변경). `getAuthState` 3-상태(authed/unauth/indeterminate)로 일시장애 시 익명화 방지, 전환·401 지점 clear로 교차계정 오귀속 차단. Codex 3회 통과.
+- **housekeeping**(`80845d6`): `sourcing/inbox/.gitkeep` 커밋 + 소싱 TSV/CSV 데이터 gitignore(폴더 구조만 유지, 새 클론 스크립트 입력 폴더 보장).
+- 🔴 **② last_login_at**(쿠키 자동로그인이 DB 미갱신 → 첫 OAuth에 고정): (b) `/api/auth/me`에서 24h 스로틀 UPDATE로 확정했으나 **이번엔 미착수**(인증 경로 커밋은 하나씩 — ①③ 후 별도 커밋).
+- 🟡 **백필 SQL 초안**(`supabase/backfill_profiles_core_key.sql`, **실행 금지**): 기존 profiles.core_key를 diagnoses에서 재계산해 채우는 미리보기 SELECT + UPDATE. 실행은 사업주.
+
+## (이전) 현재 상태 한 줄
+
 **소싱 파이프라인 2종 정리 + Codex 검수 통과 — 커밋 완료, push 대기(2026-07-25).**
 - **(A) `/admin/sourcing` 링크 UI 개선**(`d94f22b`): 상품 링크를 도메인만 표시(전체 URL은 hover 툴팁) + 열어본 링크 표시(✓·onAuxClick 휠클릭 포함) + **위험 스킴 XSS 가드**(http/https만 링크, `javascript:`/`data:`는 텍스트로만). Codex 2회 후 통과(XSS 우회 없음 확인). 프론트+보안이라 검수 실행.
 - **(B) 소싱 후보 실존검증 CLI `scripts/verify-sourcing-tsv.mjs` + 테스트**(`f3b21ef`): AI가 지어낸 소싱 URL·가격을 실제 HTTP로 대조해 거르는 **할루시네이션 방어의 본체**. Codex 3회 검수 통과. 로컬 1회성 CLI(DB·cron 없음, 순수 파일 in/out). 통과분만 `.verified.tsv`, 저장은 사람이 `/admin/sourcing`에서.
