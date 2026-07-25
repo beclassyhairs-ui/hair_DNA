@@ -41,3 +41,8 @@ test-faces-landmarks.json
 memory/
 
 .vercel
+
+# 소싱 데이터 (연구 에이전트 TSV 후보 + verify 산출물) — 폴더 구조(.gitkeep)만 커밋하고
+# 데이터 파일 자체는 커밋하지 않는다. 스크립트 입출력 폴더는 새 클론에서도 존재해야 한다.
+/sourcing/**/*.tsv
+/sourcing/**/*.csv
