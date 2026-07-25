@@ -24,6 +24,13 @@
 
 ## 현재 상태 한 줄
 
+**커머스 검증 작전 착수 — 게이트 규칙 교체 완료(2026-07-25, 0단계).** 「커머스 검증 작전 — 자동등록 먼저, 내가 사서 받기」 결정 반영:
+- **게이트 교체**: 기존 "상품 1개 수동 엔드투엔드 완주 [게이트]" → **"자동/반자동 등록 상품 실물 수령 검증 [게이트]"**. 통과 기준 = 자동/반자동 등록 상품 **최소 1개(권장 2개) 실물 도착 + 수령 체크리스트 통과**. 통과 전까지 **`sourcing_candidates` 자동 투입·정기 스케줄(cron) 착수 절대 금지.** `CLAUDE.md` §4 + `PROJECT_STATE.md`(완료이력 16·P0 경고문) 반영.
+- 기존 금지 규칙 5종(keep 즉시저장 / status 자동 approved / image_url 없는 상품 노출 / uncertain 자동등록 / AI 상품사진 생성)은 **그대로 유지**.
+- 🔴 **1단계(등록 파이프라인 점검) 및 이후는 사업주 승인 후 착수.** `sourcing_candidates` 자동 투입은 게이트 통과 전까지 손대지 않음.
+
+## (이전) 현재 상태 한 줄
+
 **🟢 사업주 조치 완료(SQL 2종 실행 + Vercel env 등록) — B 전체가 실제 동작 상태로 전환됨(2026-07-24).** 프로덕션 실측으로 배선 확인:
 - `/api/auth/kakao/start` → **307 `https://kauth.kakao.com/oauth/authorize`**, `client_id` 주입됨(32자), `redirect_uri=https://hair-dna.vercel.app/api/auth/kakao/callback`(콜백 라우트와 일치), CSRF `state` 발급 — **카카오 로그인 배선 정상**.
 - `NEXT_PUBLIC_KAKAO_APP_KEY`(공유용 JS키)가 클라 번들에 인라인됨 — 카톡 공유도 동작 가능(`NEXT_PUBLIC_*`는 빌드 타임 주입이라 env 추가 후 재배포가 필요한데, 현 빌드엔 이미 들어가 있음).
@@ -474,7 +481,7 @@ Browser pane 탭이 `visibilityState: hidden`(requestAnimationFrame 0프레임)�
 2. [ ] **상품 20~30개 엄선 등재(반자동)** — 소싱→draft→관리자 승인 흐름으로 20~30개 상품 엄선 등재. 완전 자동화 아님(반자동, 사람 검수 유지).
 3. [ ] **셀카 파기 로직** — 위 사업주 조치 1번 결정 후 착수. 결정만 나면 코드 작업 자체는 작다.
 
-> ⚠️ **P0에서 코드로 넘길 수 있는 항목은 현재 0건이다.** 가독성 정비·결과지 CTA·개인정보 문구 3건을 마지막으로, 남은 P0는 전부 사업주 승인/수동 작업(faceswap 품질 승인, 상품 등재, E2E 완주, 셀카 파기 정책)에 막혀 있다. 다음 세션에서 "이어서 진행해"가 오면 **P1(운영 안전망 B-1~B-4, D-2 OG 이미지)**로 넘어가는 것이 순서다.
+> ⚠️ **P0에서 코드로 넘길 수 있는 항목은 현재 0건이다.** 가독성 정비·결과지 CTA·개인정보 문구 3건을 마지막으로, 남은 P0는 전부 사업주 승인/수동 작업(faceswap 품질 승인, 상품 등재, **실물 수령 검증 게이트**, 셀카 파기 정책)에 막혀 있다. 다음 세션에서 "이어서 진행해"가 오면 **P1(운영 안전망 B-1~B-4, D-2 OG 이미지)**로 넘어가는 것이 순서다.
 
 > ~~이벤트 5종 + UTM 태깅~~ → **완료**. 1차 2026-07-19(완료 이력 17번, `/style`+`/items`), 2차 2026-07-20에 `/hair-quiz` 확장 + `report_view` 분리로 전 구간 마감(`58fc2a0`). 배포 순서: migration SQL 먼저 → 코드 push. (2차는 SQL 불필요)
 
@@ -502,7 +509,7 @@ Browser pane 탭이 `visibilityState: hidden`(requestAnimationFrame 0프레임)�
 13. [x] `/items` DB 연동 + 매칭 — 하드코딩 제거, `/api/items` 연동. 매칭은 유저 coreKey(최신 /style answers의 curl__thickness__density) ↔ 상품 fit/avoid_hair_types(무작위 아님). 구매 링크(buy_link) 연결. 매칭 로직 유닛테스트 9/9. (hairTags는 한글 고민어휘라 미사용) — 같은 커밋
 14. [x] `/admin/products` 매칭/추천 입력 UI — fit/avoid_hair_types를 curl/thickness/density 선택 조합으로 추가·삭제(자유입력 금지, 오타 방지), solves_concern·recommend_reason·usage_guide·caution_note 입력. 빈 값 undefined. 프론트 전용(API는 기존에 이미 수용) — `feat: add matching + copy fields to admin product form` (091367d)
 15. [x] `/items/[id]` 상세페이지 + 공개 상세 API — `lib/publicProducts.ts`(서버전용 공용 조회), `GET /api/items/[id]`(approved만·allowlist만·없는id 404), `/items/[id]` 서버컴포넌트(notFound 실제 404) + 구매버튼 trackEvent, 카드→상세 이동. Codex 통과 — `feat: /items/[id] detail page + public detail API` (730d74b)
-16. [ ] **수동 E2E 완주**: 상품 1건 소싱→draft 저장→관리자 approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저의 /items 노출→상세→buy_link 확인 ← **남은 단계(사용자 수동)**
+16. [ ] **[게이트] 자동/반자동 등록 상품 실물 수령 검증** (2026-07-25 결정으로 기존 "상품 1개 수동 엔드투엔드 완주" 게이트를 대체) — 자동/반자동으로 등록한 상품 **최소 1개(권장 2개)** 를 사업주가 **실제로 사서 받고** 수령 체크리스트를 통과해야 함. 통과 전까지 **`sourcing_candidates` 자동 투입 및 정기 스케줄(cron) 착수 절대 금지.** 코드 흐름(소싱→draft→approve(status+image_status=approved, fit_hair_types 설정)→매칭 유저 /items 노출→상세→buy_link)은 검증 대상이되, 게이트 통과 기준은 **실물 도착 + 체크리스트**다. ← **남은 단계(사업주 실물 구매·수령)**
 18. [~] **faceswap 복원 초안 (브랜치, 2026-07-19)** — `feature/faceswap-restore`(미push). route.ts를 flux→codeplugtech/face-swap 복원(히스토리 9e6eb04 기반), `getReferenceCandidateDirs`(84-밖 폴백 규칙 초안), 144조합 폴더 매핑 매니페스트·개인정보 문구 초안·복원 노트 작성. Codex 검수: 1차 '수정 필요'(SSRF·셀카URL 로그노출)→반영→재검수 통과. tsc 통과. **배포 안 함 — 승인 게이트 대기.** 커밋 `1403a30`(브랜치).
 17. [x] **이벤트 5종 + UTM 태깅 전 구간 (2026-07-19 완료)** — trackEvent 단일 코어 통합, 5종 퍼널(landing_view/diagnosis_start·complete/product_clicked/purchase_click) + 보조(answer_selected/product_viewed) 계측, /style·/items 전 구간 채움, first-touch UTM 3종 모든 이벤트 동승, meta jsonb 분리+가드. Codex 2회 검수(1차 수정필요→반영→통과). **push·Vercel 배포·Supabase `events_attribution_migration.sql` 실행까지 전부 완료 → events insert 정상.**
 
