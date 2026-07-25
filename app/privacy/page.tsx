@@ -14,6 +14,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
 
+// Sentry(오류 모니터링) 고지는 실제 활성 상태에만 노출한다 — DSN 미설정 시 Sentry는 완전
+// no-op(enabled:false)이라 오류 데이터가 어디로도 전송되지 않으므로, 그때 고지를 띄우면
+// 실동작과 어긋난다. DSN이 설정되면(사업주가 Vercel env 등록 후 재배포) 수탁·국외이전 고지가
+// 함께 노출된다. (KAKAO_LOGIN_ENABLED로 카카오 문구를 게이팅하는 것과 동일한 패턴.)
+const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
 export const metadata: Metadata = {
   title: "개인정보처리방침 | 어뷰티(A-Beauty)",
   description: "어뷰티(A-Beauty)의 개인정보 수집·이용·처리위탁·국외이전 및 이용자 권리 안내(초안).",
@@ -106,6 +112,9 @@ export default function PrivacyPage() {
               <tr><td>Vercel</td><td>서비스 호스팅 및 이미지(셀카) 임시 저장</td></tr>
               <tr><td>Replicate</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
               <tr><td>Google</td><td>이용 통계·분석</td></tr>
+              {SENTRY_ENABLED && (
+                <tr><td>Sentry</td><td>오류 모니터링(에러 로그·요청 경로·기기/브라우저 정보)</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -126,6 +135,19 @@ export default function PrivacyPage() {
           ※ Vercel·Supabase·Google 등 다른 수탁업체의 서버 소재지에 따라 추가 국외이전이 발생할 수 있으며,
           구체적 리전은 확정 후 반영합니다.
         </p>
+        {SENTRY_ENABLED && (
+          <>
+            <p className="text-[13px] text-ink-2">
+              ※ 서비스 안정화를 위한 오류 모니터링 과정에서 <b>오류 정보</b>(오류 메시지·요청 경로·기기/브라우저
+              정보)가 <b>Sentry</b>로 이전되어 처리됩니다. 이전 지역은 Sentry 프로젝트 리전(미국 또는 EU)에 따르며,
+              구체적 리전은 확정 후 반영합니다.
+            </p>
+            <p className="text-[13px] text-ink-2">
+              <b>얼굴 이미지는 Sentry로 전송하지 않습니다.</b> 전송 전 요청 쿼리·쿠키·인증 정보는 제거되나,
+              오류 메시지·스택에 포함된 내용까지 완전한 제거를 보장하지는 않습니다.
+            </p>
+          </>
+        )}
       </Section>
 
       <Section title="6. 이용자의 권리와 행사 방법">
