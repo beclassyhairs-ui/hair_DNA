@@ -24,6 +24,14 @@
 
 ## 현재 상태 한 줄
 
+**소싱 파이프라인 2종 정리 + Codex 검수 통과 — 커밋 완료, push 대기(2026-07-25).**
+- **(A) `/admin/sourcing` 링크 UI 개선**(`d94f22b`): 상품 링크를 도메인만 표시(전체 URL은 hover 툴팁) + 열어본 링크 표시(✓·onAuxClick 휠클릭 포함) + **위험 스킴 XSS 가드**(http/https만 링크, `javascript:`/`data:`는 텍스트로만). Codex 2회 후 통과(XSS 우회 없음 확인). 프론트+보안이라 검수 실행.
+- **(B) 소싱 후보 실존검증 CLI `scripts/verify-sourcing-tsv.mjs` + 테스트**(`f3b21ef`): AI가 지어낸 소싱 URL·가격을 실제 HTTP로 대조해 거르는 **할루시네이션 방어의 본체**. Codex 3회 검수 통과. 로컬 1회성 CLI(DB·cron 없음, 순수 파일 in/out). 통과분만 `.verified.tsv`, 저장은 사람이 `/admin/sourcing`에서.
+  - **보안 하드닝(Codex 반영)**: SSRF는 IP를 16바이트로 파싱 후 CIDR 판정(fe80::/10 전체·hex-word IPv4-mapped·NAT64·대괄호·특수대역), 리다이렉트 매 hop 재검사. 본문은 타임아웃이 읽기 끝까지 유지+미완료시 미검증(skip). robots는 선형 glob matcher(ReDoS 원천 제거)·빈 UA 무시·접두 매칭. 가격은 숫자경계 대조+미확인시 비움. **회귀 테스트 53개**(`verify-sourcing-tsv.test.mjs`, SSRF 우회/ReDoS 타이밍 포함).
+  - ⚠️ **[실물 수령 검증 게이트]는 그대로 유효** — 이 CLI는 후보를 "거르기"만 하고 DB 투입·자동등록은 안 한다. 게이트 통과 전까지 `sourcing_candidates` 자동 투입·cron 금지 규칙 불변.
+
+## (이전) 현재 상태 한 줄
+
 **커머스 검증 작전 착수 — 게이트 규칙 교체 완료(2026-07-25, 0단계).** 「커머스 검증 작전 — 자동등록 먼저, 내가 사서 받기」 결정 반영:
 - **게이트 교체**: 기존 "상품 1개 수동 엔드투엔드 완주 [게이트]" → **"자동/반자동 등록 상품 실물 수령 검증 [게이트]"**. 통과 기준 = 자동/반자동 등록 상품 **최소 1개(권장 2개) 실물 도착 + 수령 체크리스트 통과**. 통과 전까지 **`sourcing_candidates` 자동 투입·정기 스케줄(cron) 착수 절대 금지.** `CLAUDE.md` §4 + `PROJECT_STATE.md`(완료이력 16·P0 경고문) 반영.
 - 기존 금지 규칙 5종(keep 즉시저장 / status 자동 approved / image_url 없는 상품 노출 / uncertain 자동등록 / AI 상품사진 생성)은 **그대로 유지**.
