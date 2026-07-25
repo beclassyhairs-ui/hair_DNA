@@ -18,6 +18,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getSessionUserId } from "@/lib/userSession";
+import { deriveCoreKeyFromEntries } from "@/lib/itemsMatch";
+import type { DiaryEntryLike } from "@/lib/beautyProfile";
 
 const MAX_ENTRIES = 200;           // 한 번에 올릴 수 있는 진단 수
 const MAX_BODY_BYTES = 512 * 1024; // 512KB — 진단 답변 JSON 기준 넉넉한 상한
@@ -134,18 +136,49 @@ export async function POST(req: NextRequest) {
       if (error) throw error;
     }
 
-    if (body.profile && typeof body.profile === "object") {
-      const profile = body.profile as Record<string, unknown>;
-      const hairTags = Array.isArray(profile.hairTags) ? profile.hairTags : null;
-      const { error } = await supabaseAdmin.from("profiles").upsert(
-        {
-          user_id: userId,
-          profile,
-          hair_tags: hairTags,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" },
-      );
+    // ① core_key 재계산 — 상품 매칭 키(productMatchesCoreKey)를 채운다.
+    // 클라가 이번에 보낸 entries가 아니라 **서버가 가진 이 계정의 전체 style 진단**에서
+    // 최신 coreKey를 도출한다(다른 기기에서 올린 진단까지 반영, 부분 sync로 손실 방지).
+    const wantProfile = !!body.profile && typeof body.profile === "object";
+    let coreKey: string | null = null;
+    if (wantProfile || rows.length > 0) {
+      const { data: styleDiag, error: diagErr } = await supabaseAdmin
+        .from("diagnoses")
+        .select("answers, result")
+        .eq("user_id", userId)
+        .eq("kind", "style");
+      if (diagErr) throw diagErr;
+      const entries: DiaryEntryLike[] = (styleDiag ?? []).map((d) => {
+        const rest =
+          d.result && typeof d.result === "object" && !Array.isArray(d.result)
+            ? (d.result as Record<string, unknown>)
+            : {};
+        return { ...rest, answers: d.answers } as DiaryEntryLike;
+      });
+      coreKey = deriveCoreKeyFromEntries(entries);
+    }
+
+    // profiles upsert — profile(jsonb)·hair_tags는 있을 때만, core_key는 파생값이
+    // non-null일 때만 payload에 넣는다.
+    //  · 가드: coreKey가 null이면(코어 3답 없는 bangs/hairquiz 단독 sync 등) core_key를
+    //    payload에서 빼 기존 값을 보존한다(PostgREST upsert는 payload에 없는 컬럼을 SET하지
+    //    않으므로 UPDATE 시 유지된다). → 랜딩 단독 sync가 core_key를 지우지 못한다.
+    if (wantProfile || coreKey !== null) {
+      const profile = wantProfile ? (body.profile as Record<string, unknown>) : null;
+      const hairTags = profile && Array.isArray(profile.hairTags) ? profile.hairTags : null;
+      const payload: Record<string, unknown> = {
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      };
+      if (wantProfile) {
+        payload.profile = profile;
+        payload.hair_tags = hairTags;
+      }
+      if (coreKey !== null) payload.core_key = coreKey;
+
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .upsert(payload, { onConflict: "user_id" });
       if (error) throw error;
     }
 
