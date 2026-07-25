@@ -35,6 +35,28 @@ const DECISION_ACTIVE_CLASS: Record<Decision, string> = {
 
 const SAMPLE_HEADER = RAW_CANDIDATE_COLUMNS.join("\t");
 
+/** 링크를 전체 URL 대신 도메인만 짧게 보여준다(전체 URL은 title 툴팁). 파싱 실패 시 원본. */
+function shortLinkLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+/**
+ * 관리자가 붙여넣은 임의 문자열을 href로 그대로 쓰므로, http/https만 링크로 허용한다.
+ * `javascript:`·`data:` 등 위험 스킴이 클릭 시 실행되는 XSS를 막는다.
+ */
+function isSafeHttpUrl(url: string): boolean {
+  try {
+    const p = new URL(url).protocol;
+    return p === "http:" || p === "https:";
+  } catch {
+    return false;
+  }
+}
+
 /** image_url이 있을 때만 작은 섬네일을 그린다. 로드 실패 시 조용히 숨긴다. */
 function Thumbnail({ src, alt }: { src?: string | null; alt: string }) {
   const url = src?.trim();
@@ -126,6 +148,8 @@ type SaveResult = { inserted: number; skipped: number };
 export default function SourcingReview() {
   const [raw, setRaw] = useState("");
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
+  // 이미 열어본 상품 URL — 30개를 검수할 때 같은 링크를 두 번 여는 것을 막는 표시용.
+  const [visitedUrls, setVisitedUrls] = useState<Set<string>>(() => new Set());
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -141,6 +165,7 @@ export default function SourcingReview() {
     setSaveResult(null);
     setSaveError(null);
     setSavedKeys(new Set());
+    setVisitedUrls(new Set());
   }, [raw]);
 
   const parsed = useMemo(() => {
@@ -312,16 +337,48 @@ export default function SourcingReview() {
                     </td>
                     <td className="px-3 py-2.5 text-cream/70">{candidate.raw.source_platform || "—"}</td>
                     <td className="max-w-[220px] px-3 py-2.5 text-cream/50">
-                      {candidate.raw.product_url ? (
-                        <a
-                          href={candidate.raw.product_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={candidate.raw.product_url}
-                          className="block truncate text-gold-light/80 underline decoration-dotted underline-offset-2 hover:text-gold-light"
-                        >
-                          {candidate.raw.product_url}
-                        </a>
+                      {candidate.raw.product_url && isSafeHttpUrl(candidate.raw.product_url) ? (
+                        (() => {
+                          const url = candidate.raw.product_url;
+                          const visited = visitedUrls.has(url);
+                          const markVisited = () =>
+                            setVisitedUrls((prev) => {
+                              if (prev.has(url)) return prev;
+                              const next = new Set(prev);
+                              next.add(url);
+                              return next;
+                            });
+                          return (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              // 라벨은 도메인만, 전체 URL은 hover 툴팁으로. 관리자가 직접 붙여넣은
+                              // 상품 URL이라 전체 확인이 검수에 필요하다(민감정보 아님).
+                              title={url}
+                              // 좌클릭·Enter는 onClick, 휠클릭(새 탭)은 onAuxClick으로 '열어봄' 기록.
+                              // 우클릭 메뉴에서 실제로 새 탭 열기를 선택했는지는 감지할 수 없다(허용).
+                              onClick={markVisited}
+                              onAuxClick={(e) => {
+                                if (e.button === 1) markVisited();
+                              }}
+                              className={`flex items-center gap-1.5 truncate underline decoration-dotted underline-offset-2 ${
+                                visited
+                                  ? "text-cream/35 hover:text-cream/55"
+                                  : "text-gold-light/80 hover:text-gold-light"
+                              }`}
+                            >
+                              <span className="shrink-0" aria-hidden>{visited ? "✓" : "↗"}</span>
+                              <span className="truncate">{shortLinkLabel(url)}</span>
+                              {visited && <span className="shrink-0 text-[10px] text-cream/30">열어봄</span>}
+                            </a>
+                          );
+                        })()
+                      ) : candidate.raw.product_url ? (
+                        // http/https가 아닌 URL은 링크로 만들지 않고(위험 스킴 차단) 텍스트로만 보여준다.
+                        <span title={candidate.raw.product_url} className="block truncate text-red-300/70">
+                          ⚠ {candidate.raw.product_url}
+                        </span>
                       ) : (
                         "—"
                       )}
