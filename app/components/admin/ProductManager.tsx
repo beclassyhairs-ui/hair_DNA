@@ -275,6 +275,15 @@ export default function ProductManager() {
       return;
     }
 
+    // fit(맞는 모발 타입)이 비어 있는 상품을 '승인'하면 전 사용자에게 노출된다 — 실수 방지 확인.
+    // (fit 빈 배열/미지정 = 범용 노출. "안 뜨는 건 손해지만 잘못 뜨는 건 사고"라 명시 확인을 받는다.)
+    if (form.status === "approved" && fitHairTypes.length === 0) {
+      const ok = window.confirm(
+        "이 상품은 '맞는 모발 타입(fit)'이 비어 있어 모든 사용자에게 노출됩니다.\n그대로 승인할까요?",
+      );
+      if (!ok) return;
+    }
+
     setSaving(true);
     setFormError(null);
 
