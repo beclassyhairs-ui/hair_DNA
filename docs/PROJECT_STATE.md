@@ -24,6 +24,14 @@
 
 ## 현재 상태 한 줄
 
+**컬럼 연결 전수 감사 완료 + 소싱 fit 노출 예방 3종 — 커밋 완료·push 대기(2026-07-26).**
+- **전수 감사(6테이블 69컬럼)**: "데이터면이 둘(클라 localStorage 주도 / 서버 DB는 write-only 거울)" 구조 확인. ①core_key·③events.user_id는 값은 채우나 소비처 없음(죽은칸) — **리버트 안 함**(서버 이전 대비). 서버→로컬 pull 확정(profileSync:236→249). hair_usage RPC 배포·작동 확인.
+- **예방 3종(커밋 `60a35b2`·`a1fecd2`·`dd65bff`)**: ① 소싱 fit 자동 태깅 중단(`AUTO_TAG_ENABLED=false`, MAP 휴면·재가동조건 주석) — 소싱 상품은 fit 없이 draft 저장. ② 3토막 coreKey 검증 가드(`isValidCoreKey`, import 위반 시 배치 400+행·값 노출). ③ fit 빈 상품 승인 시 전체노출 확인창. + CLAUDE.md §8 "새 컬럼 기록자·소비자 동시 배선" 규칙. Codex 2회 통과, 단위검증 12/12.
+- 🔴 **미노출 오염 1건**(`fit=damaged_hair_high_history`, draft): 소유자가 관리자 화면에서 직접 삭제(터미널 데이터 정리 금지).
+- 🟡 **보류(실물 수령+15항목 후)**: GROUP_ID 재작성 / 고민 매칭 / coreKey 정확일치→랭킹. **보류(첫 손님 후)**: events.user_id·users.nickname/marketing_consent 소비자 배선.
+
+## (이전) 현재 상태 한 줄
+
 **프로덕션 DB 3건 중 ①③ 코드 수정 완료 + housekeeping — 커밋 완료·push 대기, ②는 별도 커밋으로 보류(2026-07-25).**
 - **① core_key null 해소**(`19de662`): `/api/me/sync`가 이 계정의 kind=style 진단 전체에서 `deriveCoreKeyFromEntries`로 core_key 재계산 후 저장. 파생값 non-null일 때만 넣어(=null이면 제외) 랜딩 단독 sync가 기존값을 지우지 않음. Codex 통과(PostgREST가 payload 없는 컬럼을 UPDATE 시 보존함을 소스로 확인).
 - **③ 이벤트 계정 연결**(`29257cf`): 서버 OAuth 전환 후 끊겼던 로그인↔트래킹 다리 복구. `setKakaoUserId→setAccountId` 개명(키 `abeauty:account_id`), **events.user_id에만 계정 uuid**, `kakao_user_id`는 카카오번호 전용이라 **null 유지**(사업주 지시로 제안 변경). `getAuthState` 3-상태(authed/unauth/indeterminate)로 일시장애 시 익명화 방지, 전환·401 지점 clear로 교차계정 오귀속 차단. Codex 3회 통과.
