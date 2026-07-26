@@ -11,6 +11,23 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
 import { ADMIN_PRODUCT_FIELDS, type ProductInput } from "../../../../lib/products";
+import { validateCoreKeyList, type CoreKeyViolation } from "../../../../lib/hairTypeOptions";
+
+/** fit/avoid coreKey 위반 목록을 400 응답으로 변환한다(sourcing import와 동일한 형식·문구). */
+function coreKeyErrorResponse(invalid: CoreKeyViolation[]) {
+  const preview = invalid
+    .slice(0, 10)
+    .map((v) => `${v.field}=${v.value}`)
+    .join(" / ");
+  return NextResponse.json(
+    {
+      ok: false,
+      error: `모발 타입 형식 오류 ${invalid.length}건 — 반드시 3토막(curl__thickness__density)이어야 합니다: ${preview}`,
+      invalid,
+    },
+    { status: 400 },
+  );
+}
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -36,6 +53,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "product_name은 필수입니다." }, { status: 400 });
   }
 
+  // ── 3토막 형식 검증 가드 ──
+  // fit/avoid의 각 값은 반드시 `curl__thickness__density`(3토막)여야 한다. 정상 UI(CoreKeyBuilder)는
+  // 셀렉트뿐이라 사고가 안 나지만, API 직접 호출로 아무 문자열이나 들어오는 것을 막는다.
+  // (sourcing import 라우트와 동일한 공용 검증 함수·응답 형식을 공유한다.)
+  const fitCheck = validateCoreKeyList(body.fit_hair_types, "fit_hair_types");
+  const avoidCheck = validateCoreKeyList(body.avoid_hair_types, "avoid_hair_types");
+  const invalid = [...fitCheck.invalid, ...avoidCheck.invalid];
+  if (invalid.length > 0) return coreKeyErrorResponse(invalid);
+
   const { data, error } = await supabaseAdmin
     .from("products")
     .insert({
@@ -47,8 +73,8 @@ export async function POST(req: Request) {
 
       status: body.status,
       sales_type: body.sales_type,
-      fit_hair_types: body.fit_hair_types?.length ? body.fit_hair_types : null,
-      avoid_hair_types: body.avoid_hair_types?.length ? body.avoid_hair_types : null,
+      fit_hair_types: fitCheck.valid.length ? fitCheck.valid : null,
+      avoid_hair_types: avoidCheck.valid.length ? avoidCheck.valid : null,
       solves_concern: body.solves_concern?.length ? body.solves_concern : null,
       recommend_reason: body.recommend_reason?.trim() || null,
       usage_guide: body.usage_guide?.trim() || null,

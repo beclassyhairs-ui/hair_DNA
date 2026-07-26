@@ -10,6 +10,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../../lib/supabaseAdmin";
 import { ADMIN_PRODUCT_FIELDS, type ProductInput } from "../../../../../lib/products";
+import { validateCoreKeyList } from "../../../../../lib/hairTypeOptions";
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   const id = Number(params.id);
@@ -33,13 +34,33 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     buy_link: body.buy_link?.trim() || null,
   };
 
+  // ── 3토막 형식 검증 가드 ──
+  // 전송된 필드만 검증한다(부분 업데이트 의미 보존 — 안 보낸 필드는 건드리지 않는다).
+  // sourcing import 라우트와 동일한 공용 검증 함수를 공유한다.
+  const fitCheck =
+    body.fit_hair_types !== undefined ? validateCoreKeyList(body.fit_hair_types, "fit_hair_types") : null;
+  const avoidCheck =
+    body.avoid_hair_types !== undefined ? validateCoreKeyList(body.avoid_hair_types, "avoid_hair_types") : null;
+  const invalid = [...(fitCheck?.invalid ?? []), ...(avoidCheck?.invalid ?? [])];
+  if (invalid.length > 0) {
+    const preview = invalid.slice(0, 10).map((v) => `${v.field}=${v.value}`).join(" / ");
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `모발 타입 형식 오류 ${invalid.length}건 — 반드시 3토막(curl__thickness__density)이어야 합니다: ${preview}`,
+        invalid,
+      },
+      { status: 400 },
+    );
+  }
+
   if (body.status !== undefined) updatePayload.status = body.status;
   if (body.sales_type !== undefined) updatePayload.sales_type = body.sales_type;
-  if (body.fit_hair_types !== undefined) {
-    updatePayload.fit_hair_types = body.fit_hair_types?.length ? body.fit_hair_types : null;
+  if (fitCheck) {
+    updatePayload.fit_hair_types = fitCheck.valid.length ? fitCheck.valid : null;
   }
-  if (body.avoid_hair_types !== undefined) {
-    updatePayload.avoid_hair_types = body.avoid_hair_types?.length ? body.avoid_hair_types : null;
+  if (avoidCheck) {
+    updatePayload.avoid_hair_types = avoidCheck.valid.length ? avoidCheck.valid : null;
   }
   if (body.solves_concern !== undefined) {
     updatePayload.solves_concern = body.solves_concern?.length ? body.solves_concern : null;

@@ -14,7 +14,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../../lib/supabaseAdmin";
 import type { ProductSalesType } from "../../../../../lib/products";
-import { isValidCoreKey } from "../../../../../lib/hairTypeOptions";
+import { validateCoreKeyList } from "../../../../../lib/hairTypeOptions";
 
 const MAX_BATCH = 200;
 
@@ -28,12 +28,9 @@ const SALES_TYPES: ProductSalesType[] = [
 ];
 
 /**
- * fit/avoid 배열을 **검증하면서** 정제한다. 조용히 버리지 않는다:
- *  - 필드 없음/null → 빈 배열(허용, 미지정)
- *  - 배열이 아님 → 위반 기록(400 유발)
- *  - 원소가 비문자열이거나 3토막 coreKey가 아니면(빈 문자열·1토막·오타 포함) → 위반 기록
- * 위반이 있으면 invalid에 {row,field,value}를 쌓고, 통과한 값만 trim해 반환한다.
- * (호출부는 invalid가 하나라도 있으면 배치 전체를 400으로 거부하므로 정제 결과는 버려진다.)
+ * import 배치용 래퍼 — 공용 validateCoreKeyList(lib/hairTypeOptions)로 검증하고,
+ * 배치 리포트에 필요한 row·product_name 맥락을 위반 기록에 덧붙인다.
+ * (검증 로직 자체는 공용 함수 한 벌만 존재 — products 라우트와 공유한다.)
  */
 function validateCoreKeys(
   raw: unknown,
@@ -42,20 +39,11 @@ function validateCoreKeys(
   productName: string,
   invalid: { row: number; product_name: string; field: string; value: string }[],
 ): string[] {
-  if (raw === undefined || raw === null) return [];
-  if (!Array.isArray(raw)) {
-    invalid.push({ row, product_name: productName, field, value: `<비배열: ${typeof raw}>` });
-    return [];
+  const { valid, invalid: violations } = validateCoreKeyList(raw, field);
+  for (const v of violations) {
+    invalid.push({ row, product_name: productName, field: v.field, value: v.value });
   }
-  const out: string[] = [];
-  for (const el of raw) {
-    if (typeof el !== "string" || !isValidCoreKey(el.trim())) {
-      invalid.push({ row, product_name: productName, field, value: typeof el === "string" ? el : `<${typeof el}>` });
-      continue;
-    }
-    out.push(el.trim());
-  }
-  return out;
+  return valid;
 }
 
 /** 클라이언트가 보낸 한 건에서 허용 필드만 뽑아 products insert 레코드를 만든다.

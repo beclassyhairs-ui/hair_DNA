@@ -42,6 +42,45 @@ export function isValidCoreKey(code: unknown): boolean {
   return CURL_VALUES.has(curl) && THICKNESS_VALUES.has(thickness) && DENSITY_VALUES.has(density);
 }
 
+/** validateCoreKeyList가 돌려주는 위반 1건 — 어느 필드의 어떤 값이 문제인지. */
+export interface CoreKeyViolation {
+  field: string;
+  value: string;
+}
+
+/**
+ * fit/avoid 같은 coreKey 배열 하나를 **검증하면서** 정제한다. 조용히 버리지 않는다:
+ *  - undefined/null → 빈 valid(허용, 미지정). 위반 아님.
+ *  - 배열이 아님(문자열·숫자·객체 등) → 위반 1건, valid는 빈 배열.
+ *  - 원소가 비문자열(숫자·null·객체·중첩배열) → 위반.
+ *  - 빈 문자열/공백만 → isValidCoreKey가 false → 위반.
+ *  - 3토막(curl__thickness__density) 아님(1·2·4토막·오타) → 위반.
+ * 통과한 값만 trim해 valid에 담는다. 호출부는 invalid가 하나라도 있으면 배치/요청을
+ * 거부하는 책임을 진다(이 함수는 판단하지 않고 분류만 한다).
+ *
+ * ⚠️ 소싱 import 라우트와 products 라우트가 이 한 벌을 공유한다 — 로직을 복사하지 말 것.
+ */
+export function validateCoreKeyList(
+  raw: unknown,
+  field: string,
+): { valid: string[]; invalid: CoreKeyViolation[] } {
+  const invalid: CoreKeyViolation[] = [];
+  if (raw === undefined || raw === null) return { valid: [], invalid };
+  if (!Array.isArray(raw)) {
+    invalid.push({ field, value: `<비배열: ${typeof raw}>` });
+    return { valid: [], invalid };
+  }
+  const valid: string[] = [];
+  for (const el of raw) {
+    if (typeof el !== "string" || !isValidCoreKey(el.trim())) {
+      invalid.push({ field, value: typeof el === "string" ? el : `<${typeof el}>` });
+      continue;
+    }
+    valid.push(el.trim());
+  }
+  return { valid, invalid };
+}
+
 /** coreKey 코드를 사람이 읽는 라벨로 변환 (예: "곱슬·가는모·숱 적음"). */
 export function coreKeyLabel(code: string): string {
   const [curl, thickness, density] = code.split("__");
