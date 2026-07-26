@@ -24,6 +24,14 @@
 
 ## 현재 상태 한 줄
 
+**products API에 fit/avoid 3토막 coreKey 검증 추가(비대칭 제거) — 커밋 완료·push 대기(2026-07-26, `b69eb65`).**
+- import 라우트에만 있던 검증을 공용 함수 `validateCoreKeyList`(lib/hairTypeOptions.ts)로 추출, POST/PUT `/api/admin/products`에서 재사용. API 직접 호출로 비3토막 값이 저장되던 구멍 차단. **로직 1벌만 존재**(복사 안 함).
+- 검증 결과 15/15 실제 실행 통과: 거부 12(비배열·비문자열원소·빈문자열/공백·1·2·4토막), 통과 3(유효 단일/복수/빈배열→null 저장). 대문자=거부(대소문자 구분), 앞뒤공백=trim 후 통과·**저장값은 trim된 값**. import와 동일 동작(같은 함수 공유).
+- **null vs [] 비대칭은 사고 아님**: `productMatchesCoreKey`(itemsMatch.ts:62)가 `!fitHairTypes || length===0`으로 둘을 완전히 같게 처리(범용 노출). avoid도 동일(null falsy / []는 includes false). 어드민 fit 삭제 상품 = 소싱 fit 없는 상품, 손님에게 동일하게 보임. **커밋 범위 밖, 조치 불필요.**
+- 무회귀: 정상 UI(CoreKeyBuilder)는 유효 3토막만 생성→검증 통과, 저장 경로 기존과 동일(빈 값→null). fit 빈 상품 승인 확인창은 클라(ProductManager.tsx)에 있고 이번 커밋 미변경(마지막 변경 `a1fecd2`).
+
+## (이전) 현재 상태 한 줄
+
 **컬럼 연결 전수 감사 완료 + 소싱 fit 노출 예방 3종 — 커밋 완료·push 대기(2026-07-26).**
 - **전수 감사(6테이블 69컬럼)**: "데이터면이 둘(클라 localStorage 주도 / 서버 DB는 write-only 거울)" 구조 확인. ①core_key·③events.user_id는 값은 채우나 소비처 없음(죽은칸) — **리버트 안 함**(서버 이전 대비). 서버→로컬 pull 확정(profileSync:236→249). hair_usage RPC 배포·작동 확인.
 - **예방 3종(커밋 `60a35b2`·`a1fecd2`·`dd65bff`)**: ① 소싱 fit 자동 태깅 중단(`AUTO_TAG_ENABLED=false`, MAP 휴면·재가동조건 주석) — 소싱 상품은 fit 없이 draft 저장. ② 3토막 coreKey 검증 가드(`isValidCoreKey`, import 위반 시 배치 400+행·값 노출). ③ fit 빈 상품 승인 시 전체노출 확인창. + CLAUDE.md §8 "새 컬럼 기록자·소비자 동시 배선" 규칙. Codex 2회 통과, 단위검증 12/12.
