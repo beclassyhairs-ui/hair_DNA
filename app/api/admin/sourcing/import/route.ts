@@ -14,6 +14,7 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../../lib/supabaseAdmin";
 import type { ProductSalesType } from "../../../../../lib/products";
+import { isValidCoreKey } from "../../../../../lib/hairTypeOptions";
 
 const MAX_BATCH = 200;
 
@@ -26,8 +27,40 @@ const SALES_TYPES: ProductSalesType[] = [
   "own",
 ];
 
-/** 클라이언트가 보낸 한 건에서 허용 필드만 뽑아 products insert 레코드를 만든다. */
-function toDraftRecord(item: unknown): Record<string, unknown> | null {
+/**
+ * fit/avoid 배열을 **검증하면서** 정제한다. 조용히 버리지 않는다:
+ *  - 필드 없음/null → 빈 배열(허용, 미지정)
+ *  - 배열이 아님 → 위반 기록(400 유발)
+ *  - 원소가 비문자열이거나 3토막 coreKey가 아니면(빈 문자열·1토막·오타 포함) → 위반 기록
+ * 위반이 있으면 invalid에 {row,field,value}를 쌓고, 통과한 값만 trim해 반환한다.
+ * (호출부는 invalid가 하나라도 있으면 배치 전체를 400으로 거부하므로 정제 결과는 버려진다.)
+ */
+function validateCoreKeys(
+  raw: unknown,
+  field: string,
+  row: number,
+  productName: string,
+  invalid: { row: number; product_name: string; field: string; value: string }[],
+): string[] {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    invalid.push({ row, product_name: productName, field, value: `<비배열: ${typeof raw}>` });
+    return [];
+  }
+  const out: string[] = [];
+  for (const el of raw) {
+    if (typeof el !== "string" || !isValidCoreKey(el.trim())) {
+      invalid.push({ row, product_name: productName, field, value: typeof el === "string" ? el : `<${typeof el}>` });
+      continue;
+    }
+    out.push(el.trim());
+  }
+  return out;
+}
+
+/** 클라이언트가 보낸 한 건에서 허용 필드만 뽑아 products insert 레코드를 만든다.
+ *  fit/avoid는 이미 검증·정제된 배열을 받아 그대로 넣는다(빈 배열도 그대로 저장). */
+function toDraftRecord(item: unknown, fit: string[], avoid: string[]): Record<string, unknown> | null {
   if (!item || typeof item !== "object") return null;
   const it = item as Record<string, unknown>;
 
@@ -42,17 +75,16 @@ function toDraftRecord(item: unknown): Record<string, unknown> | null {
       ? (salesTypeRaw as ProductSalesType)
       : null;
 
-  const fitHairTypes = Array.isArray(it.fit_hair_types)
-    ? it.fit_hair_types.filter((t): t is string => typeof t === "string" && t.trim() !== "")
-    : [];
-
   return {
     product_name: productName,
     category: str(it.category),
     image_url: str(it.image_url),
     buy_link: str(it.buy_link),
     sales_type: salesType,
-    fit_hair_types: fitHairTypes.length ? fitHairTypes : null,
+    // 자동 태깅 중단 상태라 소싱 상품은 fit/avoid가 빈 배열로 들어온다(사람이 손 태깅).
+    // ⚠️ fit 빈 배열 = 전 사용자 노출 — 단 status='draft'라 승인 전엔 공개되지 않는다.
+    fit_hair_types: fit,
+    avoid_hair_types: avoid,
     sourcing_note: str(it.sourcing_note),
     // ── 서버 강제값 (클라이언트 입력 무시) ──
     status: "draft",
@@ -74,12 +106,43 @@ export async function POST(req: Request) {
     );
   }
 
+  // ── 3토막 형식 검증 가드 (영구) ──
+  // fit_hair_types / avoid_hair_types의 각 값은 반드시 `curl__thickness__density`(3토막,
+  // hairTypeOptions 허용값)여야 한다. 위반이 하나라도 있으면 **조용히 통과시키지 않고**
+  // 배치 전체를 거부하고, 문제가 된 행·필드·값을 응답에 담아 화면에서 크게 실패시킨다.
+  // (지금은 자동 태깅이 꺼져 fit/avoid가 비어 발동할 일이 적지만, 나중에 GROUP_ID 맵을
+  //  다시 켤 때 1토막·오타 값이 DB에 박혀 상품이 영구 미노출되는 사고를 막는 안전망이다.)
   const records: Record<string, unknown>[] = [];
+  const invalid: { row: number; product_name: string; field: string; value: string }[] = [];
   let skipped = 0;
-  for (const item of items) {
-    const record = toDraftRecord(item);
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const itObj = item && typeof item === "object" ? (item as Record<string, unknown>) : null;
+    const pname = typeof itObj?.product_name === "string" ? String(itObj.product_name) : "";
+
+    // 원본 원소를 먼저 검증(비문자열·빈토막·1토막·비배열 전부 위반으로 기록) → 통과분만 정제.
+    const fit = validateCoreKeys(itObj?.fit_hair_types, "fit_hair_types", i + 1, pname, invalid);
+    const avoid = validateCoreKeys(itObj?.avoid_hair_types, "avoid_hair_types", i + 1, pname, invalid);
+
+    const record = toDraftRecord(item, fit, avoid);
     if (record) records.push(record);
     else skipped++;
+  }
+
+  if (invalid.length > 0) {
+    const preview = invalid
+      .slice(0, 10)
+      .map((v) => `${v.row}행 "${v.product_name}" ${v.field}=${v.value}`)
+      .join(" / ");
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `모발 타입 형식 오류 ${invalid.length}건 — 반드시 3토막(curl__thickness__density)이어야 합니다: ${preview}`,
+        invalid,
+      },
+      { status: 400 },
+    );
   }
 
   if (records.length === 0) {

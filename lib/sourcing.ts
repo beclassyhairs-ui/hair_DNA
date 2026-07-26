@@ -270,7 +270,19 @@ function mapSalesType(platform: string | undefined): ProductSalesType | null {
   return null;
 }
 
-// group_id → fit_hair_types 자동 매핑 (Gemini가 그룹 단위로 넘긴 값을 코드값으로 변환)
+// ⚠️ 자동 태깅 중단 (2026-07-26, 사업주 결정). 아래 MAP은 **삭제하지 않고 휴면** 상태로 둔다.
+// 왜 껐나:
+//   - fit_hair_types를 group_id로 자동 채우면 두 사고가 난다.
+//     (a) 형식 위반: G001/G003=bangs_babyhair, G005=damaged_hair_high_history 는 1토막이라
+//         3토막 coreKey 매칭(productMatchesCoreKey 정확일치)에 **절대 안 걸려** 상품이 영구 미노출.
+//     (b) 오분류 노출: 실물을 안 만져보고 group→타입을 단정하면 엉뚱한 타입에 노출된다.
+//   - 원칙: "안 뜨는 건 손해지만 잘못 뜨는 건 사고다." 파일럿은 상품을 실제로 사서 만져본 뒤
+//     분류를 확정하고, 그전까지는 사람이 /admin/products에서 손으로 태깅한다.
+// 재가동 조건: 실물 수령 + 15항목 체크리스트 통과 + 분류 설계 확정 후, AUTO_TAG_ENABLED를 true로
+//   되돌리고 MAP 값이 전부 3토막(hairTypeOptions.isValidCoreKey)인지 확인할 것. (import 라우트에
+//   3토막 검증 가드가 상시 켜져 있어, 위반 값은 저장되지 않고 화면에서 크게 실패한다.)
+const AUTO_TAG_ENABLED: boolean = false;
+
 const GROUP_ID_FIT_HAIR_TYPE_MAP: Record<string, string> = {
   G001: "bangs_babyhair",
   G002: "straight_hair__fine__thin_density",
@@ -279,7 +291,10 @@ const GROUP_ID_FIT_HAIR_TYPE_MAP: Record<string, string> = {
   G005: "damaged_hair_high_history",
 };
 
+/** group_id → fit_hair_types 자동 매핑. **현재 휴면**(AUTO_TAG_ENABLED=false)이라 항상 빈 배열.
+ *  → 소싱 상품은 fit 없이 draft로 들어오고 사람이 손으로 태깅·승인한다. */
 function mapFitHairTypes(groupId: string | undefined): string[] {
+  if (!AUTO_TAG_ENABLED) return [];
   const key = (groupId ?? "").trim().toUpperCase();
   const mapped = GROUP_ID_FIT_HAIR_TYPE_MAP[key];
   return mapped ? [mapped] : [];
@@ -326,6 +341,8 @@ export function buildAdminImportPreview(candidate: ParsedCandidate): AdminImport
     buy_link: row.product_url?.trim() || null,
     status: "draft",
     sales_type: mapSalesType(row.source_platform),
+    // 자동 태깅 중단 상태라 항상 빈 배열. ⚠️ fit_hair_types가 비면 = **전 사용자 노출**이므로,
+    // 이 상품을 나중에 '승인'하기 전에 사람이 fit을 손으로 채우거나 범용 노출을 의도적으로 승인해야 한다.
     fit_hair_types: mapFitHairTypes(row.group_id),
     sourcing_note: buildSourcingNote(row),
   };

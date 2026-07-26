@@ -23,6 +23,25 @@ export const DENSITY_OPTIONS: { value: string; label: string }[] = [
   { value: "thin_density", label: "숱 적음" },
 ];
 
+const CURL_VALUES = new Set(CURL_OPTIONS.map((o) => o.value));
+const THICKNESS_VALUES = new Set(THICKNESS_OPTIONS.map((o) => o.value));
+const DENSITY_VALUES = new Set(DENSITY_OPTIONS.map((o) => o.value));
+
+/**
+ * coreKey가 정확히 `curl__thickness__density` 형식인지 검증한다.
+ *  - 이중밑줄(`__`) 정확히 2개 → 3토막
+ *  - 각 토막이 허용값(위 OPTIONS)에 속함
+ * 하나라도 어긋나면 false. 매칭(productMatchesCoreKey는 정확 문자열 일치)이 조용히
+ * 깨지는 것을 막는 안전망 — 1토막(bangs_babyhair 등)·오타·빈 토막을 전부 거른다.
+ */
+export function isValidCoreKey(code: unknown): boolean {
+  if (typeof code !== "string") return false;
+  const parts = code.split("__");
+  if (parts.length !== 3) return false;
+  const [curl, thickness, density] = parts;
+  return CURL_VALUES.has(curl) && THICKNESS_VALUES.has(thickness) && DENSITY_VALUES.has(density);
+}
+
 /** coreKey 코드를 사람이 읽는 라벨로 변환 (예: "곱슬·가는모·숱 적음"). */
 export function coreKeyLabel(code: string): string {
   const [curl, thickness, density] = code.split("__");
