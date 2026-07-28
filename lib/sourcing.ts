@@ -177,7 +177,7 @@ export interface ReviewFlags {
   isDuplicateUrl: boolean;
   /** url_confidence === "uncertain" */
   urlConfidenceUncertain: boolean;
-  /** source_platform이 AliExpress/Temu/eBay — 해외수입 리스크 배지 트리거 */
+  /** source_platform이 AliExpress/Temu/eBay/1688/Alibaba — 해외수입 리스크 배지 트리거 */
   overseasRisk: boolean;
 }
 
@@ -192,9 +192,11 @@ export interface ParsedCandidate {
   recommendedDecision: Decision | null;
 }
 
-// AliExpress/Temu/eBay의 실제 표기 변형(예: "AliExpress US", "eBay.com",
-// "Temu Global")까지 감지하기 위해 정확 일치 대신 부분 문자열 포함으로 판정한다.
-const OVERSEAS_RISK_KEYWORDS = ["aliexpress", "temu", "ebay"];
+// AliExpress/Temu/eBay/1688/Alibaba의 실제 표기 변형(예: "AliExpress US",
+// "eBay.com", "Temu Global", "1688.com", "Alibaba.com")까지 감지하기 위해 정확
+// 일치 대신 부분 문자열 포함으로 판정한다. (소싱 대상이 1688.com/alibaba.com으로
+// 바뀌어 두 키워드를 추가함 — 2026-07-28)
+const OVERSEAS_RISK_KEYWORDS = ["aliexpress", "temu", "ebay", "1688", "alibaba"];
 
 function isOverseasRiskPlatform(platform: string | undefined): boolean {
   const p = (platform ?? "").trim().toLowerCase();
