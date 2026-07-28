@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-07-22
+> 최종 갱신: 2026-07-28
 
 ## ✅ 배포 완료 (2026-07-20)
 
@@ -23,6 +23,12 @@
 > ⚠️ **`/result` 페이지는 도달 불가 코드다.** `next.config.mjs`가 `/result`를 통째로 리다이렉트하므로 `app/result/page.tsx`는 렌더되지 않는다. 과거 이 페이지의 제휴 링크를 제거했지만(f0c4eb8) 실효는 없었고 dead code 정리였다. 이 페이지를 되살리려면 리다이렉트부터 걷어내야 한다.
 
 ## 현재 상태 한 줄
+
+**해외 리스크 키워드 1688/alibaba 추가 완료 — 커밋 대기(2026-07-28). + 주간 자동 DB 백업은 레포 public이라 착수 중단.**
+- **② 해외 리스크 키워드**(`lib/sourcing.ts`): 소싱 대상이 1688.com/alibaba.com으로 바뀌어 `OVERSEAS_RISK_KEYWORDS`에 `1688`·`alibaba` 추가(기존 aliexpress/temu/ebay 유지). 판정 로직·응답 형식 불변, 부분문자열 매칭 유지(overseasRisk는 차단 아닌 사람검수용 'maybe' 힌트 → 과잉주의 방향이라 안전). `ReviewFlags.overseasRisk` 주석도 갱신. tsc 통과, Codex 재검수 통과(53/53 테스트·eslint 통과). 오늘 밤 들어올 1688/alibaba 후보 TSV에 해외 배지 정상 표시.
+- 🔴 **① 주간 자동 DB 백업(GitHub Actions) — 착수 중단**: 선행 게이트(레포 private 여부) **실패**. `beclassyhairs-ui/hair_DNA`가 **public**(인증 없는 API 200 확인). public 레포는 인증 없이 Actions artifact 다운로드 가능 → 백업 덤프의 `kakao_user_id` 등 고객 개인정보 유출 위험. 워크플로 파일 미생성. **재개 조건: 레포를 private로 전환.**
+
+## (이전) 현재 상태 한 줄
 
 **products API에 fit/avoid 3토막 coreKey 검증 추가(비대칭 제거) — 커밋·push 완료(2026-07-26, `b69eb65` 코드 + `2247336` 문서). 배포본 무회귀 확인(공개 3종 200 / 관리자 2종 307→로그인 / health 신선). 라이브 인증 스모크는 소유자 직접 진행 대기.**
 - import 라우트에만 있던 검증을 공용 함수 `validateCoreKeyList`(lib/hairTypeOptions.ts)로 추출, POST/PUT `/api/admin/products`에서 재사용. API 직접 호출로 비3토막 값이 저장되던 구멍 차단. **로직 1벌만 존재**(복사 안 함).
