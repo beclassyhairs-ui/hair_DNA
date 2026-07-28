@@ -24,9 +24,20 @@
 
 ## 현재 상태 한 줄
 
-**해외 리스크 키워드 1688/alibaba 추가 완료 — 커밋 대기(2026-07-28). + 주간 자동 DB 백업은 레포 public이라 착수 중단.**
+**소싱을 크롤링 → 도매꾹/도매매 정식 OpenAPI로 전환 결정. 조사 완료·설계 문서 기록(2026-07-28). 코드·커밋·SQL·스케줄 없음(조사·기록만).**
+- **설계 문서**: [docs/SOURCING_API_DOMEGGOOK.md](SOURCING_API_DOMEGGOOK.md) 신규. getItemList(검색)/getItemView(상세) 호출법, `market=supply`(도매매=위탁, 우리 채널)/`market=dome`(도매꾹=사입) 구분법, 14컬럼 매핑 대조표(파생 3칸 규칙 포함), rate limit(분당 180·일 15,000·키 5개·초과 429), 확인 못 한 4가지 기록.
+- **컬럼 확장 3개(게이트 후 구현)**: `stock_qty`(재고→품절 자동숨김+판매자 지속성), `kc_cert`(KC인증→상세페이지 표시), `origin_country`(원산지→법정표시+shipping_region 파생). CLAUDE.md §8대로 각 소비처 문서에 못박음(writer+consumer 동시 배선). 보류: 사업자번호·평점·차등단가(소비처 없음).
+- **게이트 불변**: API 설계≠자동수집 켜기. 실물 수령+15항목 통과 전 `sourcing_candidates` 자동투입·cron 금지. 수집 결과도 사람이 /admin/sourcing 승인 후 draft 저장, status='approved' 자동승인 금지.
+- 크롤링이 막힌 이유(전환 근거): 오너클랜 Cloudflare 429 / 도매토피아 JS렌더 / 알리바바 캡차. 도매꾹만 크롤링 통과(2차 TSV 검증 10/30 통과, 전부 도매꾹).
+
+## (이전) 현재 상태 한 줄
+
+**해외 리스크 키워드 1688/alibaba 추가 — 커밋·push·배포 완료(2026-07-28, `8793a50` 코드 / `9f10cc4` 문서, push `671a7c8..9f10cc4`). 유출 감사 클린. + 주간 자동 DB 백업은 레포 public이라 착수 중단.**
 - **② 해외 리스크 키워드**(`lib/sourcing.ts`): 소싱 대상이 1688.com/alibaba.com으로 바뀌어 `OVERSEAS_RISK_KEYWORDS`에 `1688`·`alibaba` 추가(기존 aliexpress/temu/ebay 유지). 판정 로직·응답 형식 불변, 부분문자열 매칭 유지(overseasRisk는 차단 아닌 사람검수용 'maybe' 힌트 → 과잉주의 방향이라 안전). `ReviewFlags.overseasRisk` 주석도 갱신. tsc 통과, Codex 재검수 통과(53/53 테스트·eslint 통과). 오늘 밤 들어올 1688/alibaba 후보 TSV에 해외 배지 정상 표시.
 - 🔴 **① 주간 자동 DB 백업(GitHub Actions) — 착수 중단**: 선행 게이트(레포 private 여부) **실패**. `beclassyhairs-ui/hair_DNA`가 **public**(인증 없는 API 200 확인). public 레포는 인증 없이 Actions artifact 다운로드 가능 → 백업 덤프의 `kakao_user_id` 등 고객 개인정보 유출 위험. 워크플로 파일 미생성. **재개 조건: 레포를 private로 전환.**
+- **③ 비밀키 유출 감사 완료 — 전 항목 노출 안 됨**: 265커밋 전체(삭제분 포함) JWT·토큰프리픽스·DB문자열·변수대입·서비스계정JSON 스캔 0건. `.env.local.example`은 placeholder만. **재발급 불필요.** 🟡 갭 1건: `.gitignore`가 `.env*.local`만 막아 bare `.env`/`.env.production` 미차단(유출 아님, 예방 강화 제안 — 미커밋).
+- **⑥ .gitkeep 삭제분 복원 완료**(git restore, 작업트리 정리).
+- 🟡 **④ private 후 Vercel 배포 정상 확인 / ⑤ weekly-backup.yml 구현 — 레포 private 전환 대기 중**(사업주 전환 후 착수).
 
 ## (이전) 현재 상태 한 줄
 
