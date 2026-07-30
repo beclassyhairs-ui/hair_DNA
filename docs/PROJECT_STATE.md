@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-07-28
+> 최종 갱신: 2026-07-30
 
 ## ✅ 배포 완료 (2026-07-20)
 
@@ -23,6 +23,35 @@
 > ⚠️ **`/result` 페이지는 도달 불가 코드다.** `next.config.mjs`가 `/result`를 통째로 리다이렉트하므로 `app/result/page.tsx`는 렌더되지 않는다. 과거 이 페이지의 제휴 링크를 제거했지만(f0c4eb8) 실효는 없었고 dead code 정리였다. 이 페이지를 되살리려면 리다이렉트부터 걷어내야 한다.
 
 ## 현재 상태 한 줄
+
+**아이보리 리뱀프 3단계 진행 중 — task0/1/2 + /home 완료(커밋만, 미push), 실기기 확인 대기(2026-07-31).** SSOT: `docs/ui-spec.html` v3. 브랜치 `feat/ui-ivory-revamp`. 2단계(토큰)는 이미 프로덕션 배포됨(`origin/main` = `e39fe25`).
+- **task0 자산 정리(`d7be9cd`)**: 모델 사진 6장 `public/textures/1~6.jpg` → `public/landing/`(사진 확인 후 재매핑: 1→damage 2→bangs 3→home 4→style 5→spare 6→quiz). 텍스처 채택 6장(-03 우선/flat -02)만 유지, 탈락 11장은 `public/textures/_rejected/`(미커밋). `public/references/` 무손상.
+- **task1 27타입 매핑(`d7be9cd`)**: `lib/textures.ts`에 `TYPE_SWATCH`(coreKey→스와치 primary/secondary) 1단계 확정본 상수화 + "임의 수정 금지" 주석. ratio 50 고정. `swatchForCoreKey()` 헬퍼(폴백 straight). 검증: 27건·flat+care 0·단일 3(#2·#5·#23)·#7~9 secondary=straight 통과. `TextureSwatch.tsx`(clip-path 경계선) 커밋.
+- **task2 --tone 폐기(`bdc04a9`)**: 2톤 원칙. `--tone`(globals.css)·`tone` 색(tailwind) 제거. 실사용처 0(정의 2곳뿐)이라 교체 대상 없었음.
+- **task3 /home(다음 커밋 예정)**: 스펙 §5/§7대로 전면 재구성. 흰 카드 1장(프로필: 텍스처 스와치 + 최근 진단 기준·날짜 + 타입명 명조 + 태그 ≤4)만, 완성도 게이지·루틴·퀵배너는 카드 벗겨 플랫. 0P·진행률% 제거. coreKey는 기존 `deriveCoreKeyFromEntries` 재사용(매칭 로직 무변경). **AppShell `bg-bg` 제거**(공용 셸 → 아이보리 그라데이션 노출, 5개 AppShell 페이지 공통·무회귀). dev 검증: 흰 카드 1개, 스와치 200, 명조 2곳, body 그라데이션·셸 투명 확인.
+- 🟡 **다음**: 사업주 실기기로 /home 색·배경·스와치 확인 → 통과 시 나머지 페이지(미끼 결과지 3종 → 진단 랜딩 4종 → 설문 → /my-diary) 순서 진행. **관문**: /home 확인 후 진행(기존 유지).
+- 🔴 **미해결 입력**: 태그 "얼굴형 제외/damage 최신 1건만" 세부 필터는 태그 카테고리 메타데이터 부재로 미적용(표시상 slice(0,4)만). 필요 시 태그 분류 소스 필요.
+- 🔴 **결정 1(텍스처 WebP opt/)**: 여전히 미배치, 계속 대기(3단계와 별개 트랙).
+
+## (이전) 현재 상태 한 줄
+
+**아이보리 리뱀프 2단계(토큰 SSOT) 커밋·push 완료 — `feat/ui-ivory-revamp` 브랜치 `e39fe25`, Vercel 프리뷰 대기(2026-07-31, 사업주 승인).** 프론트 전용 2파일(`app/globals.css`·`tailwind.config.ts`).
+- **globals.css :root**: 확정 색 토큰 7종(--bg #F5F2EC 아이보리 / --card #FFFFFF / --ink #2A261F 차콜 / --sub #948D82 / --line #E9E3D8 / --soft #EFEAE0 / --tone #7A8B99 "타입명 강조" 전용). 구 토큰명(--surface→--soft, --ink-2→--sub, --btn-* )은 **3단계 마이그레이션 중 별칭으로 병존**. 전역 아이보리 3중 radial 그라데이션(CSS만, 이미지 금지) + `word-break:keep-all`. @layer components에 버튼 3단(.btn-primary 차콜채움·아이보리텍스트 / .btn-secondary 흰배경 / .btn-textlink) + .card-soft(옅은그림자·radius18) — **정의만, 적용은 3단계**.
+- **tailwind.config**: sub/soft/tone 색 + sec-1/2/3(12/20/32px) 간격 var 배선. 구 팔레트(cream/gold/champagne/brown)는 **미제거**(라이브 유저 페이지엔 0건, 남은 사용처는 dead/admin/mbti뿐 — 지금 지우면 그 페이지 빌드 깨짐. 3단계 페이지 마이그레이션 때 처리).
+- **폰트**: 이미 배선됨(Noto Serif KR 500/600/700 = --font-serif, Pretendard 본문 = --font-sans, 둘 다 `<html>`). 크기 현행 유지. 명조 실적용(헤드라인/타입명)은 3단계.
+- **검증**: dev computed style — body bg=rgb(245,242,236) #F5F2EC ✓, color=rgb(42,38,31) #2A261F ✓, word-break keep-all ✓, --tone/--soft/--sub resolve ✓, 컴파일 에러 0. (로컬 스샷 불가 — Browser pane 미표시, 기존 환경 한계.)
+- 🔴 **결정 1(텍스처 opt/) 계속 대기**: `public/textures/opt/`에 640px WebP 6장(tex_curl-03.webp 등) 미배치. 원본 JPG 17장만 존재. 배치 확인 전엔 `lib/textures.ts` 매핑·스테이징 안 함(지시대로 생성 금지·대기).
+- 🟡 **다음**: 사업주 실기기로 프리뷰 색·배경 확인 → 3단계(페이지 적용: 명조 헤드라인/타입명, 버튼·카드 클래스 배선, 구 토큰명·구 팔레트 제거) 진행 여부 판정. + WebP 배치되면 결정 1 즉시 처리.
+
+## (이전) 현재 상태 한 줄
+
+**`feat/admin-bulk-tag` 브랜치 push + bulk-tag API Codex 검수 통과·하드닝(2026-07-30, 사용자 승인).** origin 커밋 3개: `c3398a0`(클릭추적·제휴 subid 설계 문서) → `7a65cd5`(/admin 일괄 태깅 화면 + bulk-tag API) → `d322370`(Codex 반영 하드닝). 브랜치 업스트림 추적 설정 완료. **아직 main 미머지·배포 안 됨**(브랜치만 올림, PR 생성 링크: github.com/beclassyhairs-ui/hair_DNA/pull/new/feat/admin-bulk-tag).
+- **일괄 태깅 도구(`7a65cd5`)**: `app/admin/bulk-tag/page.tsx` + `app/components/admin/BulkTagger.tsx`(383줄) + `POST /api/admin/products/bulk-tag`(80줄, 관리자 게이트 뒤) + `AdminSidebar` 진입 링크 + `lib/hairTypeOptions.ts` 헬퍼 확장. 여러 상품에 fit/avoid 태그를 한 번에 배선하는 관리자 화면.
+  - **✅ Codex 검수 통과 + 하드닝 `d322370`**: 1차 '수정 필요'(태그 배열 크기 상한 없음·중복 미제거·오류 응답 `invalid` 전체 노출) → 반영(fit/avoid 각 배열 **최대 27개 초과 400 거부** + 저장 전 **Set 중복제거** + `invalid` **slice(0,10)** 제한) → 2차 통과. tsc 통과. 나머지(관리자 인증·service_role·coreKey 3토막 검증·200개 id 상한·무회귀)는 1차부터 통과.
+- **설계 문서(`c3398a0`)**: `docs/DESIGN_click_tracking.md`(109줄) — 상품 클릭 추적 + 제휴 subid 설계 기록(코드 없음).
+- 🟡 **미추적 파일은 그대로 로컬에만**: `docs/DESIGN_bulk_tagging.md`, `references_pilot_*` 다수 폴더, `public/references/**` 신규 이미지, `scripts/gen_references.py`·README, `_export_for_pm.md`, `sourcing/inbox/새 텍스트 문서.txt` — push에 미포함(커밋 안 됨).
+
+## (이전) 현재 상태 한 줄
 
 **소싱을 크롤링 → 도매꾹/도매매 정식 OpenAPI로 전환 결정. 조사 완료·설계 문서 기록(2026-07-28). 코드·커밋·SQL·스케줄 없음(조사·기록만).**
 - **설계 문서**: [docs/SOURCING_API_DOMEGGOOK.md](SOURCING_API_DOMEGGOOK.md) 신규. getItemList(검색)/getItemView(상세) 호출법, `market=supply`(도매매=위탁, 우리 채널)/`market=dome`(도매꾹=사입) 구분법, 14컬럼 매핑 대조표(파생 3칸 규칙 포함), rate limit(분당 180·일 15,000·키 5개·초과 429), 확인 못 한 4가지 기록.
@@ -164,6 +193,7 @@
 
 ## 미커밋 변경 (커밋 대기)
 
+- **미추적(커밋·push 안 됨, 로컬만)**: `docs/DESIGN_bulk_tagging.md`(일괄 태깅 설계), `references_pilot_*`(v1~v6·modelcmp 등 파일럿 폴더 다수) + `public/references/**` 신규 이미지, `scripts/gen_references.py`·`scripts/README_생성기_사용법.md`, `_export_for_pm.md`, `sourcing/inbox/새 텍스트 문서.txt`, `scripts/__pycache__/`. — 필요 시 커밋 대상 선별 필요.
 - `references_pilot_v6/`(untracked): v6 파일럿 15장 + preview.html + _pilot_report.json — **검수 대기**(통과분만 `public/references/` 승격, 그 전엔 커밋 안 함). 생성 스크립트 `scripts/generate-references.mjs`는 커밋됨(`8294056`).
 - (직전) step5 #1·#2·#3 **push·배포·검증 완료**(`fabf600..39e3a36`). 라이브: 무인증 `POST /api/hair-transform` = **401 `login_required`**, 주요 경로 5종 200. **남은 사업주 조치: `hair_usage_schema.sql` 실행(전엔 #2 fail-open 비활성) + Replicate spend limit.**
 
