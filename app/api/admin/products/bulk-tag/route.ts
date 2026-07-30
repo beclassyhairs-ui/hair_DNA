@@ -19,9 +19,12 @@ export const revalidate = 0;
 
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "../../../../../lib/supabaseAdmin";
-import { validateCoreKeyList } from "../../../../../lib/hairTypeOptions";
+import { validateCoreKeyList, TOTAL_CORE_KEY_COUNT } from "../../../../../lib/hairTypeOptions";
 
 const MAX_IDS = 200;
+// 유효 coreKey 조합은 27개(curl 3 × thickness 3 × density 3)뿐이라, 그 이상은
+// 중복이거나 비정상 입력이다. 원소 수를 여기서 막아 대용량 배열 저장을 차단한다.
+const MAX_TAGS = TOTAL_CORE_KEY_COUNT;
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as
@@ -44,6 +47,19 @@ export async function POST(req: Request) {
   // 같은 요청 안 중복 id 제거(멱등)
   const uniqueIds = Array.from(new Set(ids as number[]));
 
+  // fit/avoid 배열 크기 상한 — 유효 조합은 27개뿐이라 그 이상은 중복·비정상 입력.
+  for (const [field, raw] of [
+    ["fit_hair_types", body?.fit_hair_types],
+    ["avoid_hair_types", body?.avoid_hair_types],
+  ] as const) {
+    if (Array.isArray(raw) && raw.length > MAX_TAGS) {
+      return NextResponse.json(
+        { ok: false, error: `${field}는 최대 ${MAX_TAGS}개까지만 지정할 수 있습니다.` },
+        { status: 400 },
+      );
+    }
+  }
+
   // ── 3토막 형식 검증 (기존 공용 함수 재사용 — 우회 없음) ──
   // fit/avoid 미전송 시 []로 간주(= 해당 필드를 비운다 = 덮어쓰기의 일부).
   const fitCheck = validateCoreKeyList(body?.fit_hair_types ?? [], "fit_hair_types");
@@ -55,18 +71,22 @@ export async function POST(req: Request) {
       {
         ok: false,
         error: `모발 타입 형식 오류 ${invalid.length}건 — 반드시 3토막(curl__thickness__density)이어야 합니다: ${preview}`,
-        invalid,
+        invalid: invalid.slice(0, 10),
       },
       { status: 400 },
     );
   }
 
+  // 저장 전 중복 제거(같은 coreKey 반복 전송 방어).
+  const fitValid = Array.from(new Set(fitCheck.valid));
+  const avoidValid = Array.from(new Set(avoidCheck.valid));
+
   // 덮어쓰기 — 빈 배열은 null로 저장(fit null = 전체 노출, avoid null = 제외 없음).
   const { data, error } = await supabaseAdmin
     .from("products")
     .update({
-      fit_hair_types: fitCheck.valid.length ? fitCheck.valid : null,
-      avoid_hair_types: avoidCheck.valid.length ? avoidCheck.valid : null,
+      fit_hair_types: fitValid.length ? fitValid : null,
+      avoid_hair_types: avoidValid.length ? avoidValid : null,
     })
     .in("id", uniqueIds)
     .select("id");
