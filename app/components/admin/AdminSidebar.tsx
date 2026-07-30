@@ -45,6 +45,16 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: "/admin/bulk-tag",
+    label: "일괄 태깅",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
+        <path d="M9 5H5v4M15 5h4v4M9 19H5v-4M15 19h4v-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9 12h6M12 9v6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/matching-preview",
     label: "매칭 미리보기",
     icon: (

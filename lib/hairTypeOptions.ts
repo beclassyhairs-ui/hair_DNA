@@ -89,3 +89,31 @@ export function coreKeyLabel(code: string): string {
   const d = DENSITY_OPTIONS.find((o) => o.value === density)?.label ?? density;
   return `${c}·${t}·${d}`;
 }
+
+/** 전체 coreKey 조합 수 (curl 3 × thickness 3 × density 3 = 27). 일괄 태깅 화면의 "27개 중 N개" 표시용. */
+export const TOTAL_CORE_KEY_COUNT =
+  CURL_OPTIONS.length * THICKNESS_OPTIONS.length * DENSITY_OPTIONS.length;
+
+/**
+ * 축별 선택값의 카테시안 곱을 coreKey(`curl__thickness__density`) 배열로 전개한다.
+ * (일괄 태깅 화면 전용 순수 함수 — 매칭 로직/검증은 건드리지 않는다.)
+ *
+ * 규칙:
+ *  - 세 축이 **모두 비면** `[]`(조건 없음). fit이면 "전체 노출", avoid면 "제외 없음"을 뜻한다.
+ *  - 하나라도 선택돼 있으면, 비어 있는 축은 그 축의 **전체 값**으로 채워(= "상관없음") 전개한다.
+ *    예) curl=[직모]만 → 직모 × 굵기 3 × 숱 3 = 9개.
+ * 반환값은 전부 hairTypeOptions의 유효 value 조합이라 validateCoreKeyList를 그대로 통과한다.
+ */
+export function expandCoreKeyCombos(
+  curls: string[],
+  thicknesses: string[],
+  densities: string[],
+): string[] {
+  if (curls.length === 0 && thicknesses.length === 0 && densities.length === 0) return [];
+  const cs = curls.length ? curls : CURL_OPTIONS.map((o) => o.value);
+  const ts = thicknesses.length ? thicknesses : THICKNESS_OPTIONS.map((o) => o.value);
+  const ds = densities.length ? densities : DENSITY_OPTIONS.map((o) => o.value);
+  const out: string[] = [];
+  for (const c of cs) for (const t of ts) for (const d of ds) out.push(`${c}__${t}__${d}`);
+  return out;
+}
