@@ -8,14 +8,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ── WORKORDER-02 웜 그레이지 토큰 (SSOT = app/globals.css :root, 여기선 var 참조) ──
-        bg: "var(--bg)", // 페이지 배경 (흰색)
-        surface: "var(--surface)", // 연한 웜그레이 면
-        card: "var(--card)", // 카드
-        line: "var(--line)", // 경계선
+        // ── IVORY REVAMP 토큰 (SSOT = app/globals.css :root, 여기선 var 참조) ──
+        bg: "var(--bg)", // 페이지 배경 (아이보리)
+        card: "var(--card)", // 카드 (흰색)
+        line: "var(--line)", // 구분선/테두리
+        sub: "var(--sub)", // 보조 텍스트
+        soft: "var(--soft)", // 태그·뱃지 바탕
+        tone: "var(--tone)", // 뮤트 블루그레이 (타입명 강조 전용)
+        surface: "var(--surface)", // (구) 연한 면 — --soft 별칭, 3단계 후 제거
         ink: {
-          DEFAULT: "var(--ink)", // 본문
-          2: "var(--ink-2)", // 보조
+          DEFAULT: "var(--ink)", // 본문/제목 (차콜)
+          2: "var(--ink-2)", // (구) 보조 — --sub 별칭
           3: "var(--ink-3)", // 힌트
         },
         btn: {
@@ -65,6 +68,10 @@ const config: Config = {
       },
       spacing: {
         page: "var(--pad-x)", // 화면 좌우 패딩 (px-page)
+        // ── IVORY REVAMP 섹션 여백 3단 (8px 배수, html 18px 기준 rem 왜곡 회피 위해 px 고정) ──
+        "sec-1": "var(--sec-1)", // 12px
+        "sec-2": "var(--sec-2)", // 20px
+        "sec-3": "var(--sec-3)", // 32px
       },
       boxShadow: {
         // ── WORKORDER-02: 그림자는 1단계만 ──
