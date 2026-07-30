@@ -16,6 +16,11 @@ import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
 import CompletionGauge from "@/components/CompletionGauge";
 import { trackEvent } from "../../lib/trackEvent";
+import {
+  readDiaryEntries,
+  readBeautyUserProfile,
+  buildBeautyUserProfileFromDiary,
+} from "@/lib/beautyProfile";
 
 // ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
 
@@ -25,16 +30,26 @@ const DEFAULT_PROFILE = {
   lastDiagnosis: "AI 헤어 분석",
   lastDiagnosisDate: "오늘",
   mainConcern: "습도 높은 날 정수리와 앞머리 라인이 쉽게 무너짐",
+  // 재합산 프로필(lib/beautyProfile)이 진단 저장 후 채우는 최신 진단 요약.
+  // 비어 있으면 "아직 진단 전" 신호 — 최신 진단 카드/프로필 1줄을 숨기는 기준으로 쓴다.
+  latestResultSummary: "",
 };
 
-// 결과지 페이지가 abeauty_user_profile 키로 저장한 진단 데이터를 읽어와 병합한다.
+// 홈은 abeauty_user_profile 캐시를 그대로 믿지 않고, 진단 이력(diaryEntries)이 있으면
+// lib 설계대로 매번 재합산한 요약본을 쓴다 — 구버전에 저장돼 latestResultSummary 등
+// 새 필드가 빠진 캐시도 여기서 교정된다(진입 시 회귀 방지). 이력이 없으면 캐시를 그대로 병합.
 function useUserProfile() {
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("abeauty_user_profile");
-      if (raw) setProfile((prev) => ({ ...prev, ...JSON.parse(raw) }));
+      const entries = readDiaryEntries();
+      const stored = readBeautyUserProfile();
+      const derived =
+        entries.length > 0
+          ? buildBeautyUserProfileFromDiary(entries, stored)
+          : stored;
+      if (derived) setProfile((prev) => ({ ...prev, ...derived }));
     } catch { /**/ }
   }, []);
 
@@ -57,6 +72,14 @@ const PERSONALIZED_ROUTINE: { id: RoutineStepId; label: string }[] = [
 
 function HairProfileWidget() {
   const userProfile = useUserProfile();
+  const hasDiagnosis = Boolean(userProfile.latestResultSummary);
+  // style만 한 사용자는 mainConcern이 최신 진단 요약(styleName)과 같아진다 —
+  // 바로 아래 최신 진단 카드와 문구가 겹치므로, 같을 땐 프로필 1줄을 생략한다.
+  const showConcern =
+    hasDiagnosis &&
+    !!userProfile.mainConcern &&
+    userProfile.mainConcern !== userProfile.latestResultSummary;
+
   return (
     <section className="relative overflow-hidden rounded-card border border-line bg-surface p-6 shadow-soft">
       <p className="text-aux text-ink-2">최근 진단 기준</p>
@@ -75,19 +98,35 @@ function HairProfileWidget() {
         ))}
       </div>
 
-      <p className="mt-4 text-body leading-relaxed text-ink">
-        진단으로 확인된 {userProfile.name}님의 모발 특성에 맞춘 데일리 루틴이에요.
-        <br />
-        무거운 오일보다는 가벼운 픽싱 미스트와 뿌리 볼륨 케어를 추천해요.
-      </p>
-
-      <button
-        onClick={() => trackEvent("profile_result_view", { source: "home_profile_card" })}
-        className="mt-5 min-h-[48px] w-full rounded-btn bg-btn-bg border border-btn-border py-3.5 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.99]"
-      >
-        내 진단 결과 다시보기
-      </button>
+      {showConcern && (
+        <p className="mt-4 text-body leading-relaxed text-ink">
+          {userProfile.mainConcern}
+        </p>
+      )}
     </section>
+  );
+}
+
+// ─── 위젯 1-b: 최신 진단 1건 요약 카드 (→ /my-diary 상세) ────────────────────────
+// 진단이 없으면(latestResultSummary 빈 값) 렌더하지 않는다 — 빈 카드 방지.
+
+function LatestDiagnosisWidget() {
+  const userProfile = useUserProfile();
+  if (!userProfile.latestResultSummary) return null;
+
+  return (
+    <Link
+      href="/my-diary"
+      className="block rounded-card border border-line bg-card p-6 shadow-soft transition-colors active:bg-surface"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-aux text-ink-2">최근 진단 · {userProfile.lastDiagnosis}</p>
+        <span className="shrink-0 text-aux text-ink-2">자세히 →</span>
+      </div>
+      <p className="mt-1.5 text-body leading-snug text-ink">
+        {userProfile.latestResultSummary}
+      </p>
+    </Link>
   );
 }
 
@@ -217,8 +256,17 @@ export default function HomePage() {
       {/* A-1 완성도 게이지 */}
       <CompletionGauge />
       <HairProfileWidget />
+      <LatestDiagnosisWidget />
       <PersonalizedRoutineWidget />
       <QuickDiagnosisBanner />
+
+      {/* 지난 진단 이력 전체 보기 */}
+      <Link
+        href="/my-diary"
+        className="block py-2 text-center text-aux text-ink-2 transition-colors active:text-ink"
+      >
+        지난 진단 기록 보기 →
+      </Link>
     </AppShell>
   );
 }
