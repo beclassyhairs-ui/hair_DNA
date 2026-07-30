@@ -14,7 +14,6 @@ const config: Config = {
         line: "var(--line)", // 구분선/테두리
         sub: "var(--sub)", // 보조 텍스트
         soft: "var(--soft)", // 태그·뱃지 바탕
-        tone: "var(--tone)", // 뮤트 블루그레이 (타입명 강조 전용)
         surface: "var(--surface)", // (구) 연한 면 — --soft 별칭, 3단계 후 제거
         ink: {
           DEFAULT: "var(--ink)", // 본문/제목 (차콜)
