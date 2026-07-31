@@ -98,8 +98,8 @@ function HairProfileCard({
 
   return (
     <section className="card-soft flex items-center gap-3.5 p-4">
-      {/* 곱슬축 이미지 — public/hairtype/*.jpg 배치 전까지 렌더 안 됨(텍스트만) */}
-      <HairTypeImage coreKey={coreKey} className="h-[100px] w-[84px] shrink-0 rounded-[14px] object-cover" />
+      {/* 곱슬축 이미지 (4:5) — coreKey 없거나 로드 실패면 렌더 안 됨(텍스트만) */}
+      <HairTypeImage coreKey={coreKey} />
       <div className="min-w-0">
         <p className="text-aux text-sub">
           최근 진단 기준{profile.lastDiagnosisDate ? ` · ${profile.lastDiagnosisDate}` : ""}

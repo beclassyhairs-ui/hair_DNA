@@ -1,37 +1,34 @@
 "use client";
 
 // ============================================================================
-// HairTypeImage — 곱슬축 3장 이미지(straight/wavy/curly) 표시용 (인라인 썸네일).
-// coreKey의 곱슬축만 보고 이미지를 고른다(lib/hairType). 파일이 없거나 로드 실패면
-// 아무것도 렌더하지 않는다(공간도 차지하지 않음) — 깨진 이미지·빈 박스 금지.
-// /home 프로필 카드처럼 "이미지 있으면 보이고 없으면 텍스트만" 자리에 쓴다.
+// HairTypeImage — 곱슬축 3장 이미지(straight/wavy/curly) 인라인 썸네일.
+// coreKey의 곱슬축만 보고 이미지를 고른다(lib/hairType). next/image, 세로 4:5.
+// 이미지가 없거나 로드 실패면 아무것도 렌더하지 않는다(공간도 안 차지) —
+// 깨진 이미지·빈 박스 금지. /home 프로필 카드처럼 "있으면 보이고 없으면 텍스트만".
 // ============================================================================
 
 import { useState } from "react";
+import Image from "next/image";
 import { hairTypeImage } from "@/lib/hairType";
 
-export default function HairTypeImage({
-  coreKey,
-  className = "",
-}: {
-  coreKey: string | null;
-  className?: string;
-}) {
+export default function HairTypeImage({ coreKey }: { coreKey: string | null }) {
   const src = hairTypeImage(coreKey);
-  const [status, setStatus] = useState<"loading" | "ok" | "fail">("loading");
+  const [failed, setFailed] = useState(false);
 
-  if (!src || status === "fail") return null;
+  if (!src || failed) return null;
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt=""
-      aria-hidden
-      onLoad={() => setStatus("ok")}
-      onError={() => setStatus("fail")}
-      // 로드 확정 전에는 hidden(display:none) → 깨진 이미지/빈 공간 없음
-      className={status === "ok" ? className : "hidden"}
-    />
+    <div className="relative aspect-[4/5] w-[84px] shrink-0 overflow-hidden rounded-[14px]">
+      <Image
+        src={src}
+        alt=""
+        aria-hidden
+        fill
+        sizes="84px"
+        priority
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }
