@@ -2,9 +2,10 @@
 
 // ============================================================================
 // 어뷰티 셀프 손상도 자가진단 — 결과지  [아이보리 리뱀프 3단계 · 미끼 결과지]
-// 디자인 SSOT: docs/ui-spec.html §6/§7 — 스와치 히어로 + 본문 흰 카드 ≤2.
-//   · 히어로 = 유저 모발 결 스와치(coreKey 파생, /home과 동일) + 하단 그라데이션
-//     + 타입명(명조·흰색). 나머지는 카드 벗겨 배경 위에 플랫.
+// 디자인 SSOT: docs/ui-spec.html §6/§7 — 히어로 + 본문 흰 카드 ≤2.
+//   · 히어로 = 곱슬축 3장 이미지(coreKey 곱슬축, /home과 동일 규칙) + 하단
+//     그라데이션 + 타입명(명조·흰색). 파일 없으면 soft 패널 폴백. (텍스처 사선
+//     스와치는 판독 불가로 폐기 — 참조만 제거, 코드는 남겨둠.) 나머지는 플랫.
 //   · 주 CTA = 차콜 채움(.btn-primary). 저장/공유/이벤트/A-2 잠금카드 로직 불변.
 // 저장 시 abeauty_user_profile(홈 호환) + abeauty:diaryEntries(kind:"damage")에 기록.
 // ============================================================================
@@ -27,7 +28,7 @@ import {
 import { deriveCoreKeyFromEntries } from "../../../lib/itemsMatch";
 import InlineCompletion from "@/components/InlineCompletion";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
-import SwatchHero from "../../components/SwatchHero";
+import HairTypeHero from "../../components/HairTypeHero";
 
 const LANDING_ID = "damage_check";
 
@@ -178,8 +179,8 @@ export default function DamageCheckResultPage() {
       <div className="mx-auto w-full max-w-lg px-page pt-5">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
 
-          {/* ── 스와치 히어로 (명조·흰색 타입명) ── */}
-          <SwatchHero
+          {/* ── 히어로 (곱슬축 이미지 · 명조 흰색 타입명, 파일 없으면 soft 패널) ── */}
+          <HairTypeHero
             coreKey={coreKey}
             eyebrow={`LEVEL ${result.level.level} · ${result.level.label}`}
             title={result.headline}

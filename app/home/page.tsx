@@ -15,8 +15,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
-import TextureSwatch from "../components/TextureSwatch";
-import { swatchForCoreKey } from "@/lib/textures";
+import HairTypeImage from "../components/HairTypeImage";
 import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
 import { trackEvent } from "../../lib/trackEvent";
 import {
@@ -32,12 +31,13 @@ import {
 
 // ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
 
+// 가짜 기본 태그·범용 제목은 두지 않는다 — 진단 0건이면 빈 상태 블록을 보여준다.
 const DEFAULT_PROFILE = {
   name: "고객",
-  hairTags: ["곱슬모", "정수리 부스스함", "앞머리 갈라짐", "볼륨 처짐"],
-  lastDiagnosis: "AI 헤어 분석",
-  lastDiagnosisDate: "오늘",
-  mainConcern: "습도 높은 날 정수리와 앞머리 라인이 쉽게 무너짐",
+  hairTags: [] as string[],
+  lastDiagnosis: "",
+  lastDiagnosisDate: "",
+  mainConcern: "",
   latestResultSummary: "",
 };
 
@@ -47,8 +47,8 @@ function useHomeData() {
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [coreKey, setCoreKey] = useState<string | null>(null);
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
-  // 진단 이력이 있으면 kind 출처 규칙(selectHomeTags)으로 교체. 없으면 mock 기본값 유지.
-  const [tags, setTags] = useState<string[]>(DEFAULT_PROFILE.hairTags.slice(0, 4));
+  // 홈 노출 태그(kind 출처 규칙). 진단 0건이면 빈 배열 유지(가짜 태그 없음).
+  const [tags, setTags] = useState<string[]>([]);
 
   useEffect(() => {
     try {
@@ -79,24 +79,33 @@ function HairProfileCard({
   coreKey: string | null;
   tags: string[];
 }) {
-  const swatch = swatchForCoreKey(coreKey);
   const hasDiagnosis = Boolean(profile.latestResultSummary);
-  // 타입명 = 최신 진단 요약(없으면 프로필 기본 문구). 태그는 selectHomeTags(kind 출처 규칙).
-  const typeName = hasDiagnosis ? profile.latestResultSummary : `${profile.name}님의 헤어 프로필`;
+
+  // 진단 0건 — 가짜 태그·범용 제목 없이 빈 상태 전용 블록.
+  if (!hasDiagnosis) {
+    return (
+      <section className="card-soft p-6 text-center">
+        <p className="font-serif text-h2 font-semibold text-ink">아직 진단 전이에요</p>
+        <p className="mt-2 text-body leading-relaxed text-sub">
+          첫 진단을 마치면 내 모발 타입과 오늘의 관리 포인트가 여기에 정리돼요.
+        </p>
+        <Link href="/diagnosis" className="btn-primary mt-4 inline-flex">
+          진단 시작하기
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="card-soft flex items-center gap-3.5 p-4">
-      <TextureSwatch
-        primary={swatch.primary}
-        secondary={swatch.secondary}
-        className="h-[100px] w-[84px] shrink-0 rounded-[14px]"
-      />
+      {/* 곱슬축 이미지 — public/hairtype/*.jpg 배치 전까지 렌더 안 됨(텍스트만) */}
+      <HairTypeImage coreKey={coreKey} className="h-[100px] w-[84px] shrink-0 rounded-[14px] object-cover" />
       <div className="min-w-0">
         <p className="text-aux text-sub">
-          최근 진단 기준{hasDiagnosis && profile.lastDiagnosisDate ? ` · ${profile.lastDiagnosisDate}` : ""}
+          최근 진단 기준{profile.lastDiagnosisDate ? ` · ${profile.lastDiagnosisDate}` : ""}
         </p>
         <h2 className="mt-1 font-serif text-h2 font-semibold leading-snug text-ink">
-          {typeName}
+          {profile.latestResultSummary}
         </h2>
         {tags.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
