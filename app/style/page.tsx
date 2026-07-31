@@ -11,9 +11,8 @@ import {
 } from "./constants";
 import { getRemainingUses, canUseToday, DAILY_MAX } from "@/lib/dailyLimit";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
-import CompletionGauge from "@/components/CompletionGauge";
-import SilkBackground from "@/components/beauty-ui/SilkBackground";
-import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
+import InlineCompletion from "@/components/InlineCompletion";
+import LandingFrameHero from "@/app/components/LandingFrameHero";
 import { Button } from "@/app/components/ui";
 
 export default function StyleLandingPage() {
@@ -40,8 +39,8 @@ export default function StyleLandingPage() {
   }
 
   return (
-    <SilkBackground>
-      <main className="relative mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-page text-ink">
+    <div className="relative min-h-screen">
+      <main className="relative mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-page py-10 text-ink">
 
         {/* ── 소진 모달 ── */}
         <AnimatePresence>
@@ -82,61 +81,64 @@ export default function StyleLandingPage() {
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
-          {/* 브랜드 배지 */}
-          <span className="inline-flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.38em] text-ink-2">
-            <span className="h-px w-6 bg-line" />
-            A-Beauty
-            <span className="h-px w-6 bg-line" />
-          </span>
+          {/* 브랜드 배지 (명조) */}
+          <span className="font-serif text-[13px] tracking-[0.3em] text-sub">A-BEAUTY</span>
 
-          {/* 메인 타이틀 — 히어로 이미지 없이 여백·수직 리듬으로 차분하게 */}
-          <h1 className="mt-11 text-h1 leading-[1.35] text-ink">
+          {/* 액자 히어로 — 흰 매트 + 기울임 + EXAMPLE 라벨 (유일한 흰 카드) */}
+          <div className="mt-5 w-full">
+            <LandingFrameHero src="/landing/style-hero.jpg" caption="EXAMPLE · AI 스타일 미리보기" />
+          </div>
+
+          {/* 명조 헤드라인 */}
+          <h1 className="mt-7 font-serif text-h1 font-semibold leading-[1.4] text-ink">
             AI가 분석해주는<br />
             내 인생 헤어스타일
           </h1>
 
-          <p className="mt-5 text-body leading-relaxed text-ink-2">
+          <p className="mt-4 text-body leading-relaxed text-sub">
             나의 모질과 희망 스타일을 분석해 최적의 헤어를 처방합니다.
           </p>
 
-          {/* CTA — 위 타이틀과 넉넉한 간격을 둬 빈 공간이 '미완성' 아닌 '여백'으로 읽히게 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="mt-14 w-full space-y-4"
+            className="mt-8 w-full space-y-4"
           >
-            {/* A-1 완성도 게이지 — 랜딩 진입부 */}
-            <CompletionGauge />
+            {/* 완성도 게이지 — 인라인(카드 아님) */}
+            <InlineCompletion className="justify-center" />
 
             {/* 남은 횟수 뱃지 */}
             <div className="flex justify-center">
-              <span className="inline-flex items-center gap-1.5 rounded-pill bg-surface px-3 py-1 text-aux text-ink-2">
+              <span className="inline-flex items-center gap-1.5 rounded-pill bg-soft px-3 py-1 text-aux text-sub">
                 {remaining === 0
                   ? "오늘 무료 진단 횟수를 모두 사용했어요"
                   : `오늘 남은 무료 진단 횟수: ${remaining}회`}
               </span>
             </div>
 
-            {/* CTA 버튼 — 횟수 차단 게이트(handleStart)를 그대로 태워야 해서 button 모드로 사용 */}
-            <BlackCTAButton onClick={handleStart} className={remaining === 0 ? "opacity-45" : ""}>
+            {/* 주 CTA — 차콜 채움. 횟수 차단 게이트(handleStart) 유지 */}
+            <button
+              onClick={handleStart}
+              className={`btn-primary w-full ${remaining === 0 ? "opacity-45" : ""}`}
+            >
               나의 맞춤 스타일 분석하기
-            </BlackCTAButton>
+            </button>
 
             {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 합성 직후 즉시 파기한다
                 (app/api/hair-transform finally 삭제, submit-diagnosis는 셀카 미저장).
                 "개인정보 미저장"으로 되돌리지 말 것 — 국외이전·즉시파기 고지는 /style/upload에 있다. */}
-            <p className="text-center text-aux text-ink-2">
+            <p className="text-center text-aux text-sub">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요
             </p>
 
-            {/* 재방문 링크 — 밑줄버튼 폐지 → Secondary 버튼. /home으로 안내 */}
+            {/* 재방문 링크 — Secondary 버튼. /home으로 안내 */}
             <Button href="/home" variant="secondary" fullWidth>
               이미 분석받으셨나요? · 저장한 진단 보기
             </Button>
           </motion.div>
         </motion.div>
       </main>
-    </SilkBackground>
+    </div>
   );
 }

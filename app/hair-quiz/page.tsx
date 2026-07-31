@@ -7,14 +7,13 @@ import { trackEvent, EVENT_NAMES } from "../../lib/eventTracking";
 import { motion, AnimatePresence } from "framer-motion";
 import { appendDiaryEntry, refreshBeautyUserProfileFromDiary, readDiaryEntries } from "../../lib/beautyProfile";
 import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
-import CompletionGauge from "@/components/CompletionGauge";
 import InlineCompletion from "@/components/InlineCompletion";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
 import HairTypeHero from "../components/HairTypeHero";
+import LandingFrameHero from "../components/LandingFrameHero";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
-import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -267,33 +266,32 @@ function IntroView({ onStart }: { onStart: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.45 }}
-      className="flex min-h-screen flex-col items-center justify-center px-6 text-center"
+      className="flex min-h-screen flex-col items-center justify-center px-page py-10 text-center"
     >
-      <span className="mb-5 inline-flex items-center gap-1.5 rounded-pill border border-line bg-surface px-4 py-1.5 text-aux font-medium tracking-wide text-ink-2">
-청담동 헤어 클리닉 전문가 진단
+      <span className="font-serif text-[13px] tracking-[0.3em] text-sub">A-BEAUTY</span>
+
+      {/* 액자 히어로 (유일한 흰 카드) */}
+      <div className="mt-5 w-full max-w-sm">
+        <LandingFrameHero src="/landing/quiz-hero.jpg" caption="EXAMPLE · 습관 진단" />
+      </div>
+
+      <span className="mt-6 inline-flex items-center rounded-pill bg-soft px-4 py-1.5 text-aux font-medium tracking-wide text-sub">
+        청담동 헤어 클리닉 전문가 진단
       </span>
 
-      <h1 className="text-h1 text-ink">
+      <h1 className="mt-4 font-serif text-h1 font-semibold leading-[1.4] text-ink">
         내 머리가<br />미용실에서만<br />예쁜 진짜 이유
       </h1>
-      <p className="mt-2 text-[15px] font-semibold text-ink-2">feat. 미용실 100% 활용법</p>
-
-      <div className="my-7 h-px w-16 bg-line" />
-
-      <p className="max-w-[270px] text-[15px] leading-relaxed text-ink-2">
-        6문항으로 당신의 헤어 홈케어 습관을 분석합니다.<br />
-        청담동 수석 원장급 팩트 폭격이 기다리고 있습니다.
+      <p className="mt-3 max-w-[280px] text-[15px] leading-relaxed text-sub">
+        6문항으로 당신의 헤어 홈케어 습관을 분석합니다. 청담동 수석 원장급 팩트 폭격이 기다리고 있습니다.
       </p>
 
-      {/* A-1 완성도 게이지 — 랜딩 진입부 */}
-      <div className="mt-8 w-full max-w-sm">
-        <CompletionGauge />
+      <div className="mt-8 w-full max-w-sm space-y-4">
+        {/* 완성도 게이지 — 인라인(카드 아님) */}
+        <InlineCompletion className="justify-center" />
+        <button onClick={onStart} className="btn-primary w-full">진단 시작하기</button>
+        <p className="text-center text-[13px] text-sub">약 1분 소요 · 총 6문항</p>
       </div>
-
-      <div className="mt-6 w-full max-w-sm">
-        <BlackCTAButton onClick={onStart}>진단 시작하기</BlackCTAButton>
-      </div>
-      <p className="mt-3 text-[13px] text-ink-2">약 1분 소요 · 총 6문항</p>
     </motion.div>
   );
 }
