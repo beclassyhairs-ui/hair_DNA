@@ -24,6 +24,7 @@ import {
   readBeautyUserProfile,
   buildBeautyUserProfileFromDiary,
   getCompletedKinds,
+  selectHomeTags,
   ALL_DIAGNOSIS_KINDS,
   DIAGNOSIS_KIND_LABEL,
   type DiagnosisKind,
@@ -46,6 +47,8 @@ function useHomeData() {
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [coreKey, setCoreKey] = useState<string | null>(null);
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
+  // 진단 이력이 있으면 kind 출처 규칙(selectHomeTags)으로 교체. 없으면 mock 기본값 유지.
+  const [tags, setTags] = useState<string[]>(DEFAULT_PROFILE.hairTags.slice(0, 4));
 
   useEffect(() => {
     try {
@@ -56,12 +59,13 @@ function useHomeData() {
       if (derived) setProfile((prev) => ({ ...prev, ...derived }));
       setCoreKey(deriveCoreKeyFromEntries(entries));
       setCompleted(getCompletedKinds(entries));
+      if (entries.length > 0) setTags(selectHomeTags(entries));
     } catch {
       /**/
     }
   }, []);
 
-  return { profile, coreKey, completed };
+  return { profile, coreKey, completed, tags };
 }
 
 // ─── 위젯 1: 헤어 프로필 카드 (화면의 유일한 흰 카드) ────────────────────────────
@@ -69,15 +73,16 @@ function useHomeData() {
 function HairProfileCard({
   profile,
   coreKey,
+  tags,
 }: {
   profile: typeof DEFAULT_PROFILE;
   coreKey: string | null;
+  tags: string[];
 }) {
   const swatch = swatchForCoreKey(coreKey);
   const hasDiagnosis = Boolean(profile.latestResultSummary);
-  // 타입명 = 최신 진단 요약(없으면 프로필 기본 문구). 태그는 화면 표시상 최대 4개.
+  // 타입명 = 최신 진단 요약(없으면 프로필 기본 문구). 태그는 selectHomeTags(kind 출처 규칙).
   const typeName = hasDiagnosis ? profile.latestResultSummary : `${profile.name}님의 헤어 프로필`;
-  const tags = profile.hairTags.slice(0, 4);
 
   return (
     <section className="card-soft flex items-center gap-3.5 p-4">
@@ -232,11 +237,11 @@ function QuickDiagnosisBanner() {
 // ─── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { profile, coreKey, completed } = useHomeData();
+  const { profile, coreKey, completed, tags } = useHomeData();
 
   return (
     <AppShell>
-      <HairProfileCard profile={profile} coreKey={coreKey} />
+      <HairProfileCard profile={profile} coreKey={coreKey} tags={tags} />
       <InlineCompletion completed={completed} />
       <RoutineList />
       <QuickDiagnosisBanner />

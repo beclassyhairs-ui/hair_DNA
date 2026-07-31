@@ -174,6 +174,41 @@ export function getCompletedKinds(entries: DiaryEntryLike[]): DiagnosisKind[] {
   return PRIORITY_ORDER.filter((kind) => done.has(kind));
 }
 
+// ─── 홈 노출 태그 선정 (kind 출처 기준 — 태그 충돌 P0 방지) ──────────────────────
+// 규칙(사업주 확정 2026-07-31):
+//  a. kind별 "최신 엔트리 1건"의 태그만 합산 → 같은 kind의 과거 엔트리 태그는 버린다.
+//     (옛 #건강모 + 새 #극손상모가 공존하는 충돌이 구조적으로 사라진다)
+//  b. bangs(앞머리) kind의 태그는 홈에서 전부 제외 — 얼굴형 태그는 앞머리 결과지 전용.
+//  c. 4개 초과 시 우선순위 damage 최신 > style 최신 > hairquiz 최신 순으로 채우고 4에서 컷.
+// ⚠️ buildBeautyUserProfileFromDiary.hairTags(전체 합산·10개)와 별개다. 홈 카드 표시 전용.
+const HOME_TAG_KINDS: DiagnosisKind[] = ["damage", "style", "hairquiz"]; // bangs 제외 · 우선순위 순
+const HOME_TAG_LIMIT = 4;
+
+export function selectHomeTags(entries: DiaryEntryLike[]): string[] {
+  // kind별 최신 엔트리 1건만 남긴다.
+  const latestByKind: Partial<Record<DiagnosisKind, DiaryEntryLike>> = {};
+  for (const entry of entries) {
+    const kind = classifyKind(entry);
+    const cur = latestByKind[kind];
+    if (!cur || entrySortTime(entry) > entrySortTime(cur)) latestByKind[kind] = entry;
+  }
+  // 우선순위(damage>style>hairquiz) 순으로 태그를 채우고 4개에서 컷. bangs는 애초에 순회 안 함.
+  const result: string[] = [];
+  for (const kind of HOME_TAG_KINDS) {
+    const entry = latestByKind[kind];
+    if (!entry || !Array.isArray(entry.hairTags)) continue;
+    for (const tag of entry.hairTags) {
+      if (typeof tag !== "string") continue;
+      const t = tag.trim();
+      if (t && !result.includes(t)) {
+        result.push(t);
+        if (result.length >= HOME_TAG_LIMIT) return result;
+      }
+    }
+  }
+  return result;
+}
+
 // ─── A-3 시술 이력 I/O ────────────────────────────────────────────────────────
 // 프로필(abeauty_user_profile)에 얹어 저장한다. 별도 키를 만들지 않는 이유:
 // 재합산(refreshBeautyUserProfileFromDiary)이 previousProfile을 통해 보존해 주기 때문.
