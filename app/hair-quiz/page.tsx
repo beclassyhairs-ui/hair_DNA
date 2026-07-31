@@ -5,17 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackEvent, EVENT_NAMES } from "../../lib/eventTracking";
 import { motion, AnimatePresence } from "framer-motion";
-import { appendDiaryEntry, refreshBeautyUserProfileFromDiary } from "../../lib/beautyProfile";
-import SilkBackground from "@/components/beauty-ui/SilkBackground";
+import { appendDiaryEntry, refreshBeautyUserProfileFromDiary, readDiaryEntries } from "../../lib/beautyProfile";
+import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
 import CompletionGauge from "@/components/CompletionGauge";
+import InlineCompletion from "@/components/InlineCompletion";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
-import GlassCard from "@/components/beauty-ui/GlassCard";
+import HairTypeHero from "../components/HairTypeHero";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
-import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
-import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 // ── 타입 ──────────────────────────────────────────────────────────────────────
 
@@ -393,9 +392,10 @@ function AnalyzingView() {
 // ── 결과 화면 ─────────────────────────────────────────────────────────────────
 
 function ResultView({
-  result, onCta, onRetry, onSave, saved,
+  result, coreKey, onCta, onRetry, onSave, saved,
 }: {
   result: ResultData;
+  coreKey: string | null;
   onCta: () => void;
   onRetry: () => void;
   onSave: () => void;
@@ -408,121 +408,92 @@ function ResultView({
       exit={{ opacity: 0 }}
       className="min-h-screen pb-36"
     >
-      <div className="mx-auto max-w-[430px] px-4 pt-8 pb-6 sm:px-6 space-y-4">
+      <div className="mx-auto max-w-[430px] space-y-5 px-page pt-5 pb-6">
 
-        {/* A-1 완성도 게이지 — 결과지 상단 */}
-        <CompletionGauge />
+        {/* ── 히어로 (곱슬축 이미지 · 명조 흰색 타입명) ── */}
+        <HairTypeHero coreKey={coreKey} eyebrow="청담동 헤어 클리닉 진단 완료" title={result.title} />
 
-        <ResultHeroCard
-          eyebrow="청담동 헤어 클리닉 진단 완료"
-          badge={result.badge}
-          title={result.title}
-          description={result.summary}
-        />
+        {/* 완성도 게이지 — 인라인 */}
+        <InlineCompletion />
 
-        {/* ① 원인 분석 */}
-        <GlassCard accent className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">
-            원인 분석 — 팩트 폭격
-          </p>
-          <div className="space-y-3">
+        {/* 요약 — 플랫 (badge + summary) */}
+        <div>
+          <p className="text-aux font-bold tracking-[0.14em] text-sub">{result.badge}</p>
+          <p className="mt-2 text-body leading-relaxed text-ink">{result.summary}</p>
+        </div>
+
+        {/* 원인 분석 — 플랫 불릿 */}
+        <div className="border-t border-line pt-4">
+          <p className="text-aux font-bold tracking-[0.14em] text-sub">원인 분석 — 팩트 폭격</p>
+          <div className="mt-3 space-y-3">
             {result.causes.map((c, i) => (
               <div key={i} className="flex items-start gap-3">
-                <span className="mt-2 h-1 w-1 flex-none rounded-full bg-ink-2" />
-                <p className="text-[15px] leading-relaxed text-ink-2">{c}</p>
+                <span className="mt-2 h-1 w-1 flex-none rounded-full bg-sub" />
+                <p className="text-[15px] leading-relaxed text-sub">{c}</p>
               </div>
             ))}
           </div>
-        </GlassCard>
+        </div>
 
-        {/* ② 전문가 데일리 처방전 */}
-        <GlassCard className="px-5 py-4">
-          <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">
-            전문가 데일리 처방전
-          </p>
-          <div className="space-y-2.5">
+        {/* ── 흰 카드 1 : 전문가 데일리 처방전 ── */}
+        <section className="card-soft p-5">
+          <p className="text-aux font-bold tracking-[0.14em] text-sub">전문가 데일리 처방전</p>
+          <div className="mt-3 space-y-2.5">
             {result.prescriptions.map((p, i) => (
-              <div key={i} className="rounded-xl border border-line bg-surface px-4 py-3">
+              <div key={i} className="rounded-xl bg-soft px-4 py-3">
                 <p className="mb-1 text-[13px] font-bold text-ink">{p.title}</p>
-                <p className="text-[13px] leading-relaxed text-ink-2">{p.detail}</p>
+                <p className="text-[13px] leading-relaxed text-sub">{p.detail}</p>
               </div>
             ))}
           </div>
-        </GlassCard>
+        </section>
 
-        {/* ③ 미용실 소통 팁 */}
-        <GlassCard className="px-5 py-4">
-          <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">
-            Feat. 미용실 소통 팁
-          </p>
-          <p className="mb-3 text-[13px] text-ink-2">
-            다음 미용실 갈 때 이 대본을 그대로 읽으세요
-          </p>
-          <div className="rounded-xl border border-line bg-surface px-4 py-3">
-            <p className="text-[15px] italic leading-relaxed text-ink-2">{result.salonScript}</p>
+        {/* 미용실 소통 팁 — 플랫 (대본은 soft 인용 블록) */}
+        <div className="border-t border-line pt-4">
+          <p className="text-aux font-bold tracking-[0.14em] text-sub">Feat. 미용실 소통 팁</p>
+          <p className="mt-1 text-[13px] text-sub">다음 미용실 갈 때 이 대본을 그대로 읽으세요</p>
+          <div className="mt-3 rounded-xl bg-soft px-4 py-3">
+            <p className="text-[15px] italic leading-relaxed text-sub">{result.salonScript}</p>
           </div>
-        </GlassCard>
+        </div>
 
-        {/* 저장 CTA */}
-        <GlassCard className="px-5 py-5">
-          <p className="text-center text-base font-semibold text-ink">이 결과, 계속 보관하고 싶다면?</p>
-          <p className="mt-1 text-center text-[15px] text-ink-2">저장하면 홈 화면과 다이어리에서 다시 확인할 수 있어요</p>
-          <div className="mt-4">
-            <BlackCTAButton onClick={onSave} disabled={saved}>
-              {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
-            </BlackCTAButton>
-          </div>
-        </GlassCard>
-
-        {/* 교차 진단 — 발견템·다른 진단 연결 */}
-        <GlassCard className="space-y-3 px-5 py-4">
-          <Link
-            href="/items"
-            className="flex items-center justify-between gap-3 text-[15px] font-medium text-ink hover:text-ink"
-          >
+        {/* 교차 진단 — 플랫 링크 */}
+        <nav>
+          <Link href="/items" className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body font-medium text-ink active:opacity-70">
             내 모발에 맞는 홈케어 제품 보기
-            <span className="flex-none text-ink-2">→</span>
+            <span className="flex-none text-sub">→</span>
           </Link>
-          <div className="h-px bg-line" />
-          <button
-            onClick={onCta}
-            className="flex w-full items-center justify-between gap-3 text-left text-[15px] font-medium text-ink hover:text-ink"
-          >
+          <button onClick={onCta} className="flex w-full items-center justify-between gap-3 border-b border-line py-3.5 text-left text-body font-medium text-ink active:opacity-70">
             AI 헤어 분석으로 내 스타일 찾기
-            <span className="flex-none text-ink-2">→</span>
+            <span className="flex-none text-sub">→</span>
           </button>
-          <div className="h-px bg-line" />
-          <Link
-            href="/damage-check"
-            className="flex items-center justify-between gap-3 text-[15px] font-medium text-ink hover:text-ink"
-          >
+          <Link href="/damage-check" className="flex items-center justify-between gap-3 py-3.5 text-body font-medium text-ink active:opacity-70">
             내 손상도도 확인해보기
-            <span className="flex-none text-ink-2">→</span>
+            <span className="flex-none text-sub">→</span>
           </Link>
-        </GlassCard>
+        </nav>
 
-        {/* A-2 잠금 미리보기 — /style(AI 합성)로 넘기는 카드 */}
+        {/* ── 흰 카드 2 : A-2 잠금 미리보기(→ /style) ── */}
         <LockedPreviewCard
           onCtaClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "hair_quiz", cta_clicked: "locked_preview" })}
         />
 
-        {/* 재진단 — 우선순위 최하위라 본문 끝 텍스트 링크로만 둔다 */}
+        {/* 재진단 — 플랫 */}
         <div className="flex justify-center pb-2">
-          <button
-            onClick={onRetry}
-            className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink"
-          >
+          <button onClick={onRetry} className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
             ↺ 다시 진단받기
           </button>
         </div>
       </div>
 
-      {/* CTA 고정 하단 — 최우선 행동은 '저장·프로필 누적' */}
-      <BottomStickyCTA>
-        <BlackCTAButton onClick={onSave} disabled={saved}>
-          {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
-        </BlackCTAButton>
-      </BottomStickyCTA>
+      {/* ── 하단 고정 CTA — 최우선 행동 = 저장·프로필 누적 ── */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-5 py-4 backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-lg">
+          <button onClick={onSave} disabled={saved} className="btn-primary w-full disabled:opacity-50">
+            {saved ? "저장 완료 ✓ 이동 중..." : "저장하고 홈에서 케어 시작하기"}
+          </button>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -540,6 +511,12 @@ export default function HairQuizPage() {
   const [answers,   setAnswers]   = useState<string[]>([]);
   const [resultKey, setResultKey] = useState("A");
   const [saved,     setSaved]     = useState(false);
+  // 결과지 히어로 곱슬축 이미지용 — 앞서 한 진단(주로 /style)에서 coreKey 파생(매칭 로직 재사용).
+  const [coreKey,   setCoreKey]   = useState<string | null>(null);
+
+  useEffect(() => {
+    try { setCoreKey(deriveCoreKeyFromEntries(readDiaryEntries())); } catch { /**/ }
+  }, []);
 
   // 연타 잠금 — 다른 설문(style/bangs/damage-check)의 `pending` 가드에 대응한다.
   // state가 아니라 ref인 이유: 같은 렌더 사이클 안에서 들어온 두 번째 클릭을 동기적으로 막아야
@@ -658,7 +635,7 @@ export default function HairQuizPage() {
   }
 
   return (
-    <SilkBackground>
+    <div className="relative min-h-screen">
       <main className="mx-auto max-w-[430px] min-h-screen text-ink">
         <AnimatePresence mode="wait">
           {phase === "intro" && (
@@ -679,6 +656,7 @@ export default function HairQuizPage() {
             <ResultView
               key="result"
               result={RESULTS[resultKey]}
+              coreKey={coreKey}
               onCta={() => router.push("/style")}
               onRetry={handleRetry}
               onSave={handleSave}
@@ -687,6 +665,6 @@ export default function HairQuizPage() {
           )}
         </AnimatePresence>
       </main>
-    </SilkBackground>
+    </div>
   );
 }

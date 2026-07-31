@@ -47,7 +47,7 @@ export default function HairTypeHero({
       />
       <div className="absolute inset-x-0 bottom-0 p-5">
         {eyebrow && <p className="text-[11px] font-bold tracking-[0.14em] text-white/80">{eyebrow}</p>}
-        <h1 className="mt-1 font-serif text-h1 font-semibold leading-snug text-white">{title}</h1>
+        <h1 className="mt-1 whitespace-pre-line font-serif text-h1 font-semibold leading-snug text-white">{title}</h1>
       </div>
     </div>
   );
