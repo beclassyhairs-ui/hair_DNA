@@ -196,7 +196,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
-      className="overflow-hidden rounded-2xl"
+      className="overflow-hidden rounded-2xl shadow-soft"
       style={{ border: "1px solid var(--line)" }}
     >
       {/* 골드 라인 */}
@@ -209,7 +209,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               Style {index + 1}
             </p>
-            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
+            <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.styleName}
             </p>
           </div>
@@ -239,7 +239,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               }}
               disabled={downloading}
               className="mx-4 mb-3 flex h-10 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-[13px] font-bold transition-all active:scale-[0.98] disabled:opacity-60"
-              style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}
+              style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}
             >
               {downloading ? "저장 중..." : "사진 갤러리에 저장하기"}
             </button>
@@ -288,7 +288,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
           </div>
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}>
+            style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -307,7 +307,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
-      className="overflow-hidden rounded-2xl"
+      className="overflow-hidden rounded-2xl shadow-soft"
       style={{ border: "1px solid var(--line)" }}
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
@@ -317,7 +317,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손상도 진단 · {entry.resultCode}
             </p>
-            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
+            <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.levelLabel} · {entry.typeLabel}
             </p>
           </div>
@@ -354,7 +354,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
           <Link href="/items"
             className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}>
+            style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
             발견템에서 보기 →
           </Link>
         </div>
@@ -374,7 +374,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
-      className="overflow-hidden rounded-2xl"
+      className="overflow-hidden rounded-2xl shadow-soft"
       style={{ border: "1px solid var(--line)" }}
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
@@ -384,7 +384,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
             </p>
-            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
+            <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.title}
             </p>
           </div>
@@ -443,7 +443,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: index * 0.07 }}
-      className="overflow-hidden rounded-2xl"
+      className="overflow-hidden rounded-2xl shadow-soft"
       style={{ border: "1px solid var(--line)" }}
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
@@ -453,7 +453,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
-            <p className="mt-0.5 text-h2" style={{ color: "var(--ink)" }}>
+            <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.primaryBangLabel}
             </p>
           </div>
@@ -519,10 +519,10 @@ export default function MyDiaryPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return <main className="min-h-screen bg-bg" />;
+  if (!ready) return <main className="relative min-h-screen" />;
 
   return (
-    <main className="min-h-screen bg-bg" style={{ color: "var(--ink)" }}>
+    <main className="relative min-h-screen" style={{ color: "var(--ink)" }}>
 
       {/* 이미지 확대 모달 */}
       {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
@@ -560,7 +560,7 @@ export default function MyDiaryPage() {
             <Link
               href="/style"
               className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold"
-              style={{ background: "var(--btn-bg)", color: "var(--btn-text)", border: "1px solid var(--btn-border)" }}
+              style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}
             >
               AI 헤어 분석 시작하기 →
             </Link>
