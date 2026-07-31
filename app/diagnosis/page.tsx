@@ -80,24 +80,22 @@ function HubThumb({ src }: { src?: string }) {
 }
 
 function DiagnosisCard({ item }: { item: HubItem }) {
-  const feat = item.feat;
   return (
     <Link
       href={item.href}
       onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: item.type, source: "diagnosis_hub_page" })}
-      className={`flex items-center gap-3.5 rounded-2xl p-3.5 transition-colors ${
-        feat ? "bg-ink active:opacity-90" : "bg-card shadow-soft active:bg-soft"
-      }`}
+      className="relative flex items-center gap-3.5 rounded-2xl bg-card p-3.5 shadow-soft transition-colors active:bg-soft"
     >
+      {/* 대표 진단 강조 — 좌상단 BEST 뱃지 하나만(상단 걸침) */}
+      {item.feat && (
+        <span className="absolute -top-2 left-3 z-10 rounded-pill bg-ink px-2 py-0.5 text-[10px] font-bold tracking-wide text-bg">
+          BEST
+        </span>
+      )}
       <HubThumb src={item.image} />
       <div className="min-w-0">
-        <p className={`text-[15px] font-bold ${feat ? "text-bg" : "text-ink"}`}>{item.label}</p>
-        <p className={`mt-1 text-[13px] ${feat ? "text-bg/70" : "text-sub"}`}>{item.desc}</p>
-        {feat && (
-          <span className="mt-2 inline-block rounded-pill bg-bg px-2 py-0.5 text-[10px] font-bold text-ink">
-            대표 진단 · 약 2분
-          </span>
-        )}
+        <p className="text-[15px] font-bold text-ink">{item.label}</p>
+        <p className="mt-1 text-[13px] text-sub">{item.desc}</p>
       </div>
     </Link>
   );
