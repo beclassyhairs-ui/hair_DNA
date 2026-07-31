@@ -17,7 +17,6 @@ import {
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
-import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
@@ -115,7 +114,7 @@ export default function StyleSurveyPage() {
   if (!q) return null;
 
   return (
-    <SilkBackground>
+    <div className="relative min-h-screen">
       <main className="mx-auto flex min-h-screen max-w-lg flex-col text-ink">
 
         <TestHeader stepLabel={STEP_LABEL_BY_QID[q.id] ?? ""} current={qIdx + 1} total={visibleTotal}>
@@ -178,6 +177,6 @@ export default function StyleSurveyPage() {
           <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
         </div>
       </main>
-    </SilkBackground>
+    </div>
   );
 }

@@ -16,7 +16,6 @@ import {
   type SurveyOption,
 } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
-import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
@@ -75,7 +74,7 @@ export default function BangsSurveyPage() {
   }
 
   return (
-    <SilkBackground>
+    <div className="relative min-h-screen">
       <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-ink">
 
         <TestHeader stepLabel={`인생뱅 · ${q.stepTag}`} current={qIdx + 1} total={TOTAL}>
@@ -146,6 +145,6 @@ export default function BangsSurveyPage() {
           <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
         </div>
       </main>
-    </SilkBackground>
+    </div>
   );
 }

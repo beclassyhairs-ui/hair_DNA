@@ -11,11 +11,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { DAMAGE_SURVEY_KEY } from "../constants";
 import { SURVEY_QUESTIONS, type DamageSurveyAnswers, type HabitFlag } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
-import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
 import RoundedOptionButton from "@/components/beauty-ui/RoundedOptionButton";
-import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
 
 const LANDING_ID = "damage_check";
 const TOTAL = SURVEY_QUESTIONS.length; // 4
@@ -105,7 +103,7 @@ export default function DamageCheckSurveyPage() {
   const canConfirmMulti = isMultiQuestion && answers.q4_habits.length > 0;
 
   return (
-    <SilkBackground>
+    <div className="relative min-h-screen">
       <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-ink">
 
         <TestHeader stepLabel={`손상도 진단 · ${q.stepTag}`} current={qIdx + 1} total={TOTAL}>
@@ -180,9 +178,13 @@ export default function DamageCheckSurveyPage() {
 
             {isMultiQuestion && (
               <div className="flex-1">
-                <BlackCTAButton onClick={handleConfirmMulti} disabled={!canConfirmMulti} className="h-11">
+                <button
+                  onClick={handleConfirmMulti}
+                  disabled={!canConfirmMulti}
+                  className="btn-primary h-11 w-full disabled:opacity-50"
+                >
                   진단 결과 보기 →
-                </BlackCTAButton>
+                </button>
               </div>
             )}
           </div>
@@ -191,6 +193,6 @@ export default function DamageCheckSurveyPage() {
           )}
         </div>
       </main>
-    </SilkBackground>
+    </div>
   );
 }

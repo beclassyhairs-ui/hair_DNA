@@ -333,7 +333,7 @@ function SurveyView({
             <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.3em] text-ink-2">
               Q{currentQ + 1}
             </p>
-            <h2 className="mb-8 whitespace-pre-line text-2xl font-semibold leading-snug text-ink">
+            <h2 className="mb-8 whitespace-pre-line font-serif text-2xl font-semibold leading-snug text-ink">
               {q.question}
             </h2>
             <div className="space-y-3">
