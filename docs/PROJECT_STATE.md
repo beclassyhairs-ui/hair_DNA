@@ -24,6 +24,16 @@
 
 ## 현재 상태 한 줄
 
+**아이보리 리뱀프 3단계 전 페이지 완료 — 커밋·프리뷰 push 완료, 프로덕션(main) 머지 대기(2026-07-31).** 브랜치 `feat/ui-ivory-revamp`. 2단계(토큰)는 이미 프로덕션(`origin/main`=e39fe25). 3단계는 프리뷰에만 있고 **사업주 실기기 확인 후 main 머지 예정**.
+- **완료 페이지(전부 dev 검증)**: /home(카드 다이어트+kind태그규칙+0건 빈상태) · 미끼 결과지 3종(손상도·앞머리·퀵진단) · 진단 랜딩 4종(액자 히어로) · 설문 3종+퀵진단설문(명조 질문+알약) · /my-diary(셸 투명+명조+차콜 CTA).
+- **핵심 방향**: 텍스처 사선 스와치 **폐기**(판독불가) → 곱슬축 3장 이미지(`public/hairtypes/hairtype_{straight,wavy,curly}-01.jpg`, next/image, coreKey 곱슬축 1:1). 스와치 코드(TextureSwatch/TYPE_SWATCH/SwatchHero)는 미참조 dead code로 보존. 앞머리 결과지만 추천 앞머리 사진 히어로.
+- **공용 신설 컴포넌트**: `components/InlineCompletion`(플랫 게이지) · `app/components/HairTypeImage`(홈 썸네일 4:5) · `HairTypeHero`(미끼 히어로) · `LandingFrameHero`(랜딩 액자). `lib/hairType.ts`(곱슬축 매핑) · `lib/beautyProfile.selectHomeTags`(kind 출처 태그 규칙, P0 해소).
+- **불변 유지**: /style 흐름, 진단·매칭 로직(coreKey는 deriveCoreKeyFromEntries 재사용), 저장/이벤트/일일한도/카카오공유/푸터, 폰트 크기.
+- 🟡 **다음**: 사업주 실기기(프리뷰)로 전 페이지 확인 → OK 시 **main 머지(프로덕션 배포)** 승인 요청. 구 팔레트(cream/gold 등, dead/admin/mbti 전용)·구 토큰 별칭(--surface/--ink-2/--btn-*) 정리는 후속.
+- ⚠️ **환경 이슈**: OneDrive가 `.next` 빌드캐시를 잠가 EBUSY 간헐 발생 → `.next` 삭제 후 재빌드로 우회함. 상시 방지엔 `.next`를 OneDrive 동기화 제외 권장.
+
+## (이전) 현재 상태 한 줄
+
 **아이보리 리뱀프 3단계 진행 중 — task0/1/2 + /home 완료(커밋만, 미push), 실기기 확인 대기(2026-07-31).** SSOT: `docs/ui-spec.html` v3. 브랜치 `feat/ui-ivory-revamp`. 2단계(토큰)는 이미 프로덕션 배포됨(`origin/main` = `e39fe25`).
 - **task0 자산 정리(`d7be9cd`)**: 모델 사진 6장 `public/textures/1~6.jpg` → `public/landing/`(사진 확인 후 재매핑: 1→damage 2→bangs 3→home 4→style 5→spare 6→quiz). 텍스처 채택 6장(-03 우선/flat -02)만 유지, 탈락 11장은 `public/textures/_rejected/`(미커밋). `public/references/` 무손상.
 - **task1 27타입 매핑(`d7be9cd`)**: `lib/textures.ts`에 `TYPE_SWATCH`(coreKey→스와치 primary/secondary) 1단계 확정본 상수화 + "임의 수정 금지" 주석. ratio 50 고정. `swatchForCoreKey()` 헬퍼(폴백 straight). 검증: 27건·flat+care 0·단일 3(#2·#5·#23)·#7~9 secondary=straight 통과. `TextureSwatch.tsx`(clip-path 경계선) 커밋.
