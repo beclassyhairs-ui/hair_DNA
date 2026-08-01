@@ -2,12 +2,17 @@
 
 // ============================================================================
 // 어뷰티 — 고민상담소 (`/consulting`)
-// 정적 텍스트 카드 나열 → 실제 작동하는 모던 웰니스 커뮤니티 게시판으로 전면 개편.
 // [주간 인기 고민 랭킹] → [글쓰기 FAB/모달] → [실시간 고민 피드 + 상세 아코디언] 구조.
-// 지금은 더미 데이터 기반 — 실 연동 시 Supabase posts/comments 테이블로 대체.
+//
+// ⚠️ 현재는 "준비중(곧 오픈)" 예고 화면만 노출한다(5-C, B안). 게시글·인기랭킹·
+//    글쓰기/답글/좋아요는 전부 더미(in-memory)라 가짜 콘텐츠 노출을 중단했다.
+//    아래 BOARD_LIVE 플래그가 false인 동안 예고 화면만 렌더된다.
+//    카카오 인증 라운드에서 Supabase posts/comments 실데이터로 배선하며
+//    BOARD_LIVE=true로 되살릴 자산이므로 더미 데이터·컴포넌트·핸들러는
+//    삭제하지 않고 그대로 보존한다(숨김만).
 // ============================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppShell from "../components/layout/AppShell";
 import { trackEvent } from "../../lib/trackEvent";
 
@@ -422,9 +427,45 @@ function WriteConsultSheet({
   );
 }
 
+// ─── 준비중(곧 오픈) 예고 화면 ────────────────────────────────────────────────
+// 미완성 느낌이 아니라 "기대되는 예고"로. 아이보리 배경(AppShell) + 명조 제목 +
+// 절제된 차콜 라인 아이콘. 검정 뱃지·🔥·원색 이모지 없음. 진입 이벤트만 계측(수요 측정).
+
+function ComingSoonConsulting() {
+  useEffect(() => {
+    trackEvent("consult_coming_soon_view", { source: "consulting_tab" });
+  }, []);
+
+  return (
+    <section className="flex min-h-[62vh] flex-col items-center justify-center px-2 text-center">
+      <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-line">
+        <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" stroke="var(--ink)" strokeWidth={1.4}>
+          <path
+            d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.7 8.7 0 0 1-3.9-.9L3 21l1.9-5.1a8.7 8.7 0 0 1-.9-3.9A8.38 8.38 0 0 1 12.5 3a8.38 8.38 0 0 1 8.5 8.5z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      <h1 className="font-serif text-h1 text-ink">고민상담소, 곧 열려요</h1>
+      <p className="mt-3 max-w-[19rem] text-body leading-relaxed text-sub">
+        비슷한 고민을 나누고, 현직 디자이너의 답을 받는 공간이에요.
+        카카오 로그인과 함께 곧 문을 엽니다.
+      </p>
+    </section>
+  );
+}
+
 // ─── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function ConsultingPage() {
+  // 게시판 실데이터(카카오 인증) 라운드에서 true로 되살릴 플래그.
+  // false인 동안 더미 게시글·인기랭킹·글쓰기/답글/좋아요는 렌더하지 않고
+  // "준비중" 예고 화면만 노출한다. (: boolean 명시 → 아래 게시판 코드가
+  //  타입상 도달 가능하게 유지되어 unused/unreachable 경고 없이 보존됨)
+  const BOARD_LIVE: boolean = false;
+
   const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
   const [activeTab, setActiveTab] = useState<(typeof FILTER_TABS)[number]>("전체");
   const [openPostId, setOpenPostId] = useState<string | null>(null);
@@ -477,6 +518,15 @@ export default function ConsultingPage() {
     setPosts((prev) => [newPost, ...prev]);
     setActiveTab("전체");
   };
+
+  // 준비중 예고만 노출(5-C, B안). BOARD_LIVE=true가 되면 아래 실게시판이 렌더된다.
+  if (!BOARD_LIVE) {
+    return (
+      <AppShell>
+        <ComingSoonConsulting />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
