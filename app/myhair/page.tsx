@@ -19,36 +19,36 @@ const DIAGNOSIS_HISTORY = [
   { id: "2", date: "2026-06-20", type: "헤어 MBTI", summary: "볼륨 처짐 · 손상모 경향" },
 ];
 
-function HistoryCard({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
+// 진단 기록 한 줄 — 흰 카드/그림자 없이 선 구분 리스트(5-B).
+// 한 줄 = [뱃지(--soft 톤)] + [요약] + [날짜]. 항목 사이 얇은 선(--line).
+function HistoryRow({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
   return (
-    <div className="rounded-2xl border border-line bg-card p-5 shadow-soft">
-      <div className="flex items-center justify-between">
-        <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] font-semibold text-ink">
+    <li className="flex items-start justify-between gap-3 border-b border-line py-4 first:border-t last:border-b-0">
+      <div className="min-w-0">
+        <span className="inline-flex rounded-pill bg-soft px-2.5 py-1 text-aux font-medium text-sub">
           {item.type}
         </span>
-        <span className="text-[11px] text-ink-2">{item.date}</span>
+        <p className="mt-2 text-body leading-relaxed text-ink">{item.summary}</p>
       </div>
-      <p className="mt-3 text-[15px] leading-relaxed text-ink">{item.summary}</p>
-    </div>
+      <span className="shrink-0 pt-1 text-aux text-sub">{item.date}</span>
+    </li>
   );
 }
 
 export default function MyHairPage() {
   return (
     <AppShell>
-      <div className="rounded-2xl border border-line bg-surface p-6 shadow-soft">
-        <p className="text-[11px] font-semibold tracking-wide text-ink-2">마이헤어 다이어리</p>
-        <h1 className="mt-1 text-[19px] font-bold tracking-tight text-ink">{userName}님의 헤어 기록</h1>
-      </div>
+      {/* 배너 카드 제거 → 명조 제목만(5-B). 히어로 이미지는 다음 라운드. */}
+      <header>
+        <h1 className="font-serif text-h1 text-ink">{userName}님의 헤어 기록</h1>
+        <p className="mt-1 text-aux text-sub">지난 진단 기록 {DIAGNOSIS_HISTORY.length}건</p>
+      </header>
 
-      <div>
-        <h2 className="text-[15px] font-bold tracking-tight text-ink">나의 지난 진단 기록</h2>
-        <div className="mt-3 space-y-3">
-          {DIAGNOSIS_HISTORY.map((item) => (
-            <HistoryCard key={item.id} item={item} />
-          ))}
-        </div>
-      </div>
+      <ul>
+        {DIAGNOSIS_HISTORY.map((item) => (
+          <HistoryRow key={item.id} item={item} />
+        ))}
+      </ul>
     </AppShell>
   );
 }
