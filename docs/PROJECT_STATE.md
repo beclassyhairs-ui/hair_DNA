@@ -1,7 +1,11 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-07-30
+> 최종 갱신: 2026-08-01
+
+## ✅ 랜딩 히어로 사진 교체 배포 (2026-08-01)
+
+`public/landing/` 히어로 4종(style·damage·bangs·quiz-hero.jpg)을 **50대 모델 사진으로 교체** — 파일명 동일, 코드 변경 없음. 커밋 `0bdb81d`, `feat/ui-ivory-revamp` push(프리뷰) + `vercel --prod`로 프로덕션 배포(`hair-ow3ig46h9`, READY). 라이브 검증: `hair-dna.vercel.app`의 `/diagnosis` 썸네일 4장·`/style` 히어로 전부 200. (파일 실측 880×1168 ~3:4지만 프레임 CSS `aspect-[4/5]`+`object-cover`로 4:5 크롭 — 레이아웃 정상. LandingFrameHero.tsx·diagnosis/page.tsx 주석의 "896×1120 4:5" 표기는 실제 규격과 불일치 → 정정 미실시.)
 
 ## ✅ 배포 완료 (2026-07-20)
 
