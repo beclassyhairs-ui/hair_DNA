@@ -22,6 +22,14 @@
 
 > ⚠️ **`/result` 페이지는 도달 불가 코드다.** `next.config.mjs`가 `/result`를 통째로 리다이렉트하므로 `app/result/page.tsx`는 렌더되지 않는다. 과거 이 페이지의 제휴 링크를 제거했지만(f0c4eb8) 실효는 없었고 dead code 정리였다. 이 페이지를 되살리려면 리다이렉트부터 걷어내야 한다.
 
+## ⚠️ 사업자 표시(푸터) — 환경변수 + 재배포 필요 (2026-07-31)
+
+`lib/business.ts`가 사업자 6항목을 **환경변수에서만** 읽는다(소스 하드코딩 금지 — 자택 주소 git 히스토리 잔존 방지). 미설정이면 "" 폴백 → `isBusinessInfoReady()` all-or-nothing 게이트가 false → 푸터 사업자 블록 숨김(링크·저작권은 항상 노출).
+- **Vercel 프로젝트 환경변수에 6개 등록 후 반드시 재배포(redeploy)** 해야 반영됨(NEXT_PUBLIC_* = 빌드타임 인라인, 런타임 주입 아님). 변수명(값은 사업주가 Vercel에 직접 입력, 여기 기재 금지):
+  `NEXT_PUBLIC_BIZ_COMPANY_NAME`(상호) · `NEXT_PUBLIC_BIZ_REPRESENTATIVE`(대표자) · `NEXT_PUBLIC_BIZ_REG_NO`(사업자등록번호) · `NEXT_PUBLIC_BIZ_MAILORDER_NO`(통신판매업신고번호) · `NEXT_PUBLIC_BIZ_ADDRESS`(주소) · `NEXT_PUBLIC_BIZ_EMAIL`(이메일 — 서비스 전용 계정 개설 대기).
+- 전화번호는 표시 6항목에 **없음**(050 안심번호는 추후 별건). 이메일 개설·주소 확정(비상주 사무실 이전) 전까진 블록이 안 뜨는 게 정상.
+- ⚠️ 실제 값은 소스·커밋·`.env.example`에 절대 넣지 말 것. Vercel env + 로컬 `.env.local`(gitignored)로만.
+
 ## 현재 상태 한 줄
 
 **아이보리 리뱀프 3단계 전 페이지 완료 — 커밋·프리뷰 push 완료, 프로덕션(main) 머지 대기(2026-07-31).** 브랜치 `feat/ui-ivory-revamp`. 2단계(토큰)는 이미 프로덕션(`origin/main`=e39fe25). 3단계는 프리뷰에만 있고 **사업주 실기기 확인 후 main 머지 예정**.
