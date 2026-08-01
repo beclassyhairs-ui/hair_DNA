@@ -38,6 +38,17 @@
 - 전화번호는 표시 6항목에 **없음**(050 안심번호는 추후 별건). 이메일 개설·주소 확정(비상주 사무실 이전) 전까진 블록이 안 뜨는 게 정상.
 - ⚠️ 실제 값은 소스·커밋·`.env.example`에 절대 넣지 말 것. Vercel env + 로컬 `.env.local`(gitignored)로만.
 
+## ✅ 다이어리 통합 — main FF 머지·프로덕션 배포 완료 (2026-08-02)
+
+**하단탭 "마이헤어" 목적지를 껍데기 더미(/myhair) → 실체(/my-diary)로 통일. 방식 (가)(회귀 최소).**
+- 반전 확인: **/my-diary가 실체**(실기록·AI이미지·상품CTA·시술이력), **/myhair가 껍데기 더미**였음. 그래서 "묻은 건 /myhair".
+- 변경 3파일(`087ff06`): ① `BottomNav` "마이헤어" href `/myhair`→`/my-diary` ② `/my-diary` 자체 sticky 헤더 제거→**AppShell 하단탭 셸**+명조 제목 "내 헤어 다이어리"(5-B 톤), **카드 기능 본체(4종 카드·이미지 모달·갤러리 저장·/items 상품CTA·TreatmentHistoryField)는 코드 이동 없이 그대로 유지 — 유실 0** ③ `/myhair`는 `REDIRECT_TO_DIARY:boolean=true` 플래그로 `/my-diary` 리다이렉트(더미 데이터·컴포넌트 삭제 없이 보존, 가짜 2건 노출 0, false 플립 시 복귀).
+- 홈 "지난 진단 기록 보기" 링크는 **이미 /my-diary**라 통일 상태였음(무변경).
+- 배포: `feat/diary-merge` → 프리뷰 push(Ready) → 사업주 실기기 확인 → main **clean FF 머지**(머지커밋 없음, `7a2354f..087ff06`) → 프로덕션 `hair-r6qltsy5q`(● Ready).
+- **라이브 검증(hair-dna.vercel.app) 통과**: 하단탭 마이헤어 href `/my-diary` / 홈 링크 `/my-diary` / `/myhair` 307→실브라우저에서 `/my-diary` 착지 / 하단탭 5개+/my-diary 200 / 더미 누출 0 / 시술이력·상품CTA·AI이미지 카드 정상(dev 샘플 주입 검증). 저장→/home 흐름은 결과지 코드 미변경으로 무회귀.
+- ⚠️ **주의(다음 세션)**: /myhair는 이제 리다이렉트 스텁이다. 되살리려면 `REDIRECT_TO_DIARY=false`. **하단탭·홈링크·구 /myhair 세 경로 모두 /my-diary로 수렴** — 새 진입점 만들 때 이 통일 유지.
+- 🟡 **다음 라운드(미착수)**: /my-diary 카드의 5-B 선-리스트 톤 심화(현재 카드는 이미지·CTA 보존 위해 카드형 유지) / 히어로 이미지 / 게시판 실기능(카카오 인증).
+
 ## ✅ UI 5단계(노안 배려) — main FF 머지·프로덕션 배포 완료 (2026-08-01)
 
 **5단계 묶음 main 머지·배포 완료. 3·4단계(리뱀프 페이지·진단허브 BEST)는 이미 기배포돼 있었음(아래 정정).**
