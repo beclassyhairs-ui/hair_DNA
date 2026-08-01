@@ -257,7 +257,7 @@ export default function HomePage() {
 
       <Link
         href="/my-diary"
-        className="block py-2 text-center text-aux text-sub transition-colors active:text-ink"
+        className="flex min-h-[44px] items-center justify-center py-2 text-center text-aux text-sub transition-colors active:text-ink"
       >
         지난 진단 기록 보기 →
       </Link>

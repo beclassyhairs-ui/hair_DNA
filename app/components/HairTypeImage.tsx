@@ -18,13 +18,13 @@ export default function HairTypeImage({ coreKey }: { coreKey: string | null }) {
   if (!src || failed) return null;
 
   return (
-    <div className="relative aspect-[4/5] w-[84px] shrink-0 overflow-hidden rounded-[14px]">
+    <div className="relative aspect-[4/5] w-[92px] shrink-0 overflow-hidden rounded-[14px]">
       <Image
         src={src}
         alt=""
         aria-hidden
         fill
-        sizes="84px"
+        sizes="92px"
         priority
         className="object-cover"
         onError={() => setFailed(true)}

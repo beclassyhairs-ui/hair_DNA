@@ -57,7 +57,7 @@ const config: Config = {
         h2: ["18px", { lineHeight: "1.35", fontWeight: "600" }], // 섹션·카드 제목
         body: ["16px", { lineHeight: "1.6", fontWeight: "400" }], // 본문
         emphasis: ["16px", { lineHeight: "1.4", fontWeight: "600" }], // 버튼·강조
-        aux: ["13px", { lineHeight: "1.5", fontWeight: "400" }], // 보조
+        aux: ["14px", { lineHeight: "1.6", fontWeight: "400" }], // 보조 (노안 배려: 13→14, 1.5→1.6)
       },
       borderRadius: {
         // ── WORKORDER-02 형태 토큰 ──
