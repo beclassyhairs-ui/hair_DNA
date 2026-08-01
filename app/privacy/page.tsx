@@ -137,14 +137,25 @@ export default function PrivacyPage() {
         </p>
         {SENTRY_ENABLED && (
           <>
-            <p className="text-[13px] text-ink-2">
-              ※ 서비스 안정화를 위한 오류 모니터링 과정에서 <b>오류 정보</b>(오류 메시지·요청 경로·기기/브라우저
-              정보)가 <b>Sentry</b>로 이전되어 처리됩니다. 이전 지역은 Sentry 프로젝트 리전(미국 또는 EU)에 따르며,
-              구체적 리전은 확정 후 반영합니다.
+            <p>
+              서비스 오류 모니터링을 위해 이용자의 <b>오류 정보</b>가 <b>Sentry(미국)</b>로 이전되어 처리됩니다.
             </p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>이전받는 자: Functional Software, Inc. (d/b/a Sentry)</li>
+              <li>이전 국가: 미국</li>
+              <li>
+                이전 항목: 서비스 오류 발생 시의 오류 메시지, 스택 트레이스, 브라우저·기기 정보, 오류 발생 페이지 주소
+                <ul className="mt-1 list-none space-y-0.5 pl-0 text-[13px] text-ink-2">
+                  <li>※ 얼굴 이미지는 전송하지 않습니다</li>
+                  <li>※ IP주소·쿠키는 전송하지 않도록 설정되어 있습니다(sendDefaultPii=false)</li>
+                </ul>
+              </li>
+              <li>이전 목적: 서비스 오류 감지 및 안정성 개선</li>
+              <li>이전 일시 및 방법: 오류 발생 시점에 네트워크를 통한 자동 전송</li>
+              <li>보유·이용 기간: Sentry 보관정책에 따른 기간(최대 90일) 또는 이용목적 달성 시까지</li>
+            </ul>
             <p className="text-[13px] text-ink-2">
-              <b>얼굴 이미지는 Sentry로 전송하지 않습니다.</b> 전송 전 요청 쿼리·쿠키·인증 정보는 제거되나,
-              오류 메시지·스택에 포함된 내용까지 완전한 제거를 보장하지는 않습니다.
+              ※ 쿼리스트링·쿠키·인증정보는 제거되나, 오류 메시지·스택 내용까지 완전한 제거를 보장하지는 못합니다.
             </p>
           </>
         )}
