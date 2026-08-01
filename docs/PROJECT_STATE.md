@@ -3,6 +3,10 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-01
 
+## 🟡 Sentry 고지 배포 완료 → DSN 켜기 대기 (2026-08-01)
+
+`/privacy` Sentry 국외이전 고지(6항목 불릿·US 리전 확정) **프로덕션 배포 완료(`984c19a`)**. 이제 사업주가 US 리전으로 DSN 발급 → Vercel env 등록·재배포하면 고지가 자동 노출되며 순서가 맞는다. 현재 DSN 미설정이라 Sentry는 완전 no-op(문구도 안 뜸 — 정상). 상세는 아래 「Sentry — 고지 배포 완료 → DSN 켜기 대기」 섹션.
+
 ## ✅ 랜딩 히어로 사진 교체 배포 (2026-08-01)
 
 `public/landing/` 히어로 4종(style·damage·bangs·quiz-hero.jpg)을 **50대 모델 사진으로 교체** — 파일명 동일, 코드 변경 없음. 커밋 `0bdb81d`, `feat/ui-ivory-revamp` push(프리뷰) + `vercel --prod`로 프로덕션 배포(`hair-ow3ig46h9`, READY). 라이브 검증: `hair-dna.vercel.app`의 `/diagnosis` 썸네일 4장·`/style` 히어로 전부 200. (파일 실측 880×1168 ~3:4지만 프레임 CSS `aspect-[4/5]`+`object-cover`로 4:5 크롭 — 레이아웃 정상. LandingFrameHero.tsx·diagnosis/page.tsx 주석의 "896×1120 4:5" 표기는 실제 규격과 불일치 → 정정 미실시.)
@@ -331,13 +335,17 @@ POST 최상단에서 `abeauty_session` 쿠키를 `verifyUserToken`으로 검증,
 1차: lockfile 미스테이징 / 공개 테스트 라우트 남용 / 중복 캡처 / tracesSampleRate·beforeSend 부재 / 국외이전 고지.
 2차: 클라 테스트 페이지도 공개라 자동화 남용 가능 → `/admin/` 아래로 이동 / 서버 GET 부작용(SameSite=Lax CSRF) → **POST로 변경**. → 반영 완료.
 
-### 🔴 사업주 조치 대기 (Sentry — 켜기 전 필수)
+### 🟡 Sentry — 고지 배포 완료(984c19a) → DSN 켜기 대기 (2026-08-01 갱신)
 
-**Sentry DSN 활성화 = 에러 데이터(오류 메시지·stack·요청 경로·기기/브라우저 정보)의 국외이전 개시다.** DSN을 넣기 전에 반드시:
-1. `/privacy`에 **Sentry를 처리위탁 수탁자로 추가**(오류 모니터링) + **국외이전**(Sentry 프로젝트 리전) 고지 반영. Sentry는 지금 비활성이라 법적 문서에 미리 넣지 않았다 — 켜는 순간 함께 갱신할 것.
-2. Sentry 프로젝트 실제 리전(US/EU) 확인 + 필요 시 DPA.
-3. Sentry 대시보드에서 이메일 알림 채널 지정(`beclassyhairs@gmail.com`).
-4. (선택) 소스맵 업로드용 `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` — 없어도 에러 수집은 정상.
+**진행 상황: 개인정보처리방침 Sentry 고지가 프로덕션에 배포 완료됐다. 이제 사업주가 DSN만 켜면 순서가 맞는다.**
+
+- ✅ **[완료] `/privacy` Sentry 고지 배포** — 커밋 `984c19a`, `vercel --prod`로 프로덕션 배포·검증 완료. 4항 처리위탁 표(Sentry 행) + 5항 국외이전(Replicate와 동일 **6항목 불릿**: 이전받는 자=Functional Software, Inc. dba Sentry / 이전 국가=**미국(US 확정)** / 이전 항목·목적·일시방법 / 보유기간 최대 90일). `SENTRY_ENABLED = Boolean(NEXT_PUBLIC_SENTRY_DSN)`로 게이팅 — DSN 미설정인 지금은 문구가 **안 뜨는 게 정상**(프로덕션 실측 확인). 한계 고지("스택 내용까지 완전제거 보장 못함") 유지.
+- ⬜ **[대기] 사업주 조치 — DSN 켜기 (아래 순서 준수)**:
+  1. Sentry에서 프로젝트/DSN 발급 시 **US 리전 선택**(고지가 US로 확정돼 있음 — EU로 만들면 고지와 어긋남). 필요 시 DPA.
+  2. Vercel 프로젝트 env에 `NEXT_PUBLIC_SENTRY_DSN` 등록 후 **재배포** → 그 순간 고지 자동 노출 + 에러 데이터 국외이전 개시.
+  3. Sentry 대시보드에서 이메일 알림 채널 지정(`beclassyhairs@gmail.com`).
+  4. (선택) 소스맵 업로드용 `SENTRY_ORG`/`SENTRY_PROJECT`/`SENTRY_AUTH_TOKEN` — 없어도 에러 수집은 정상.
+- 코드 no-op 재확인(2026-08-01): client/server/edge config 3개 모두 `enabled:Boolean(DSN)`, `sendDefaultPii:false`, `tracesSampleRate:0`, replay 0, `beforeSend:scrubEvent`. 앱 코드에 Sentry로 셀카·카카오 회원번호를 싣는 `setUser/setContext/setExtra` 호출 없음. 현재 `.env.local`에 DSN 키 없음 → 완전 no-op.
 
 ### ✅ 배포 검증 (2026-07-21, 프로덕션 실측)
 
