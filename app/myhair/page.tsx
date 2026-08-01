@@ -1,15 +1,16 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 — 마이헤어 다이어리 (`/myhair`)
-// 과거 진단 결과와 다이어리가 저장되는 개인 보관함. 하단 탭바 "마이헤어"의 목적지.
-// 지금은 뼈대(더미 기록) — 실 연동 시 카카오 로그인 세션 기준으로 저장된
-// 진단 이력 목록으로 대체.
+// 어뷰티 — 마이헤어 (`/myhair`)  [다이어리 통합: /my-diary로 흡수]
 //
-// 참고: 기존 `/my-diary`(로컬스토리지 기반 스타일 진단 기록)와 개념이 겹치지만,
-// 이번 작업 범위에는 통합/정리가 포함되지 않아 별개로 둔다.
+// ⚠️ 이 페이지는 더미(가짜 기록) 껍데기였고, 실제 저장 기록·AI이미지·상품CTA·
+//    시술이력은 전부 /my-diary(실체)에 있다. 다이어리 통합으로 하단탭 "마이헤어"
+//    목적지를 /my-diary로 옮기고, 이 경로로 들어오는 손님은 /my-diary로 리다이렉트한다.
+//    (아래 REDIRECT_TO_DIARY 플래그가 false가 되면 더미 화면이 다시 렌더 — 코드 보존)
+//    더미 데이터·컴포넌트는 삭제하지 않고 그대로 둔다(가짜 2건은 절대 노출 안 됨).
 // ============================================================================
 
+import { redirect } from "next/navigation";
 import AppShell from "../components/layout/AppShell";
 
 const userName = "고객"; // 로그인 전 기본 호칭 통일("고객님"). 실명 연결은 WORKORDER-01.
@@ -35,7 +36,13 @@ function HistoryRow({ item }: { item: (typeof DIAGNOSIS_HISTORY)[number] }) {
   );
 }
 
+// 다이어리 통합 후 true. /my-diary(실체)로 흡수됐으므로 이 경로는 리다이렉트한다.
+// (: boolean 명시 → 아래 더미 화면이 타입상 도달 가능 → unused/unreachable 경고 없이 보존)
+const REDIRECT_TO_DIARY: boolean = true;
+
 export default function MyHairPage() {
+  if (REDIRECT_TO_DIARY) redirect("/my-diary");
+
   return (
     <AppShell>
       {/* 배너 카드 제거 → 명조 제목만(5-B). 히어로 이미지는 다음 라운드. */}

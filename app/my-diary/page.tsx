@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import AppShell from "../components/layout/AppShell";
 import { LENGTH_LABEL_MAP } from "../style/surveyData";
 import TreatmentHistoryField from "@/components/TreatmentHistoryField";
 import { toast } from "../../lib/toast";
@@ -519,88 +520,69 @@ export default function MyDiaryPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return <main className="relative min-h-screen" />;
+  if (!ready) return <AppShell><div className="min-h-[40vh]" /></AppShell>;
 
   return (
-    <main className="relative min-h-screen" style={{ color: "var(--ink)" }}>
-
-      {/* 이미지 확대 모달 */}
+    <AppShell>
+      {/* 이미지 확대 모달 (fixed 오버레이 — 셸 위에 뜸) */}
       {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
 
-      {/* 헤더 */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-bg/95 px-page py-4 backdrop-blur-md">
-        <Link href="/" className="text-[15px] font-medium transition-colors" style={{ color: "var(--ink-2)" }}>
-          ← 홈
-        </Link>
-        <span className="text-aux font-medium uppercase tracking-[0.28em]" style={{ color: "var(--ink-2)" }}>
-          내 다이어리
-        </span>
-        <Link href="/style/survey" className="text-[13px] font-medium transition-colors" style={{ color: "var(--ink-2)" }}>
-          새 진단
+      {/* 명조 페이지 제목 (5-B 톤). 하단탭 "마이헤어" 목적지 = 이 실체 페이지 */}
+      <header className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-h1 text-ink">내 헤어 다이어리</h1>
+          {entries.length > 0 && (
+            <p className="mt-1 text-aux text-sub">진단 이력 {entries.length}건</p>
+          )}
+        </div>
+        <Link
+          href="/style/survey"
+          className="shrink-0 pb-1 text-aux font-medium text-sub transition-colors active:text-ink"
+        >
+          새 진단 →
         </Link>
       </header>
 
-      <div className="mx-auto max-w-lg px-4 pb-20 pt-6">
+      {/* A-3 시술 이력 — 저장·회수만(알림·경고·재구매 트리거 없음) */}
+      <TreatmentHistoryField />
 
-        {/* A-3 시술 이력 — 저장·회수만(알림·경고·재구매 트리거 없음) */}
-        <TreatmentHistoryField className="mb-5" />
-
-        {entries.length === 0 ? (
-          /* 빈 상태 */
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-              style={{ border: "1px solid var(--line)", background: "var(--surface)" }}>
-              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" stroke="var(--ink-3)" strokeWidth={1.2}>
-                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round" />
-              </svg>
-            </div>
-            <p className="mb-6 text-[15px]" style={{ color: "var(--ink-2)" }}>
-              저장된 진단 결과가 없어요.
-            </p>
-            <Link
-              href="/style"
-              className="inline-flex h-14 items-center justify-center rounded-2xl px-8 text-base font-bold"
-              style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}
-            >
-              AI 헤어 분석 시작하기 →
-            </Link>
+      {entries.length === 0 ? (
+        /* 빈 상태 */
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ border: "1px solid var(--line)", background: "var(--soft)" }}>
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" stroke="var(--sub)" strokeWidth={1.2}>
+              <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" strokeLinecap="round" />
+            </svg>
           </div>
-        ) : (
-          <>
-            {/* 진단 이력 헤더 */}
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-bold uppercase tracking-[0.28em]" style={{ color: "var(--ink-2)" }}>
-                  A-Beauty Hair Diary
-                </p>
-                <p className="mt-0.5 text-[15px]" style={{ color: "var(--ink-2)" }}>
-                  진단 이력 {entries.length}건
-                </p>
-              </div>
-            </div>
-
-            {/* 진단 카드 리스트 */}
-            <div className="space-y-4">
-              {entries.map((entry, i) =>
-                isDamageEntry(entry) ? (
-                  <DamageDiaryCard key={entry.id} entry={entry} index={i} />
-                ) : isBangsEntry(entry) ? (
-                  <BangsDiaryCard key={entry.id} entry={entry} index={i} />
-                ) : isHairQuizEntry(entry) ? (
-                  <HairQuizDiaryCard key={entry.id} entry={entry} index={i} />
-                ) : (
-                  <DiaryCard
-                    key={entry.id}
-                    entry={entry}
-                    index={i}
-                    onOpenModal={setModalUrl}
-                  />
-                ),
-              )}
-            </div>
-          </>
-        )}
-      </div>
-    </main>
+          <p className="mb-6 text-body text-sub">
+            저장된 진단 결과가 없어요.
+          </p>
+          <Link href="/style" className="btn-primary">
+            AI 헤어 분석 시작하기 →
+          </Link>
+        </div>
+      ) : (
+        /* 진단 카드 리스트 (기능 본체 불변 — AI이미지·모달·다운로드·상품CTA·시술이력 유지) */
+        <div className="space-y-4">
+          {entries.map((entry, i) =>
+            isDamageEntry(entry) ? (
+              <DamageDiaryCard key={entry.id} entry={entry} index={i} />
+            ) : isBangsEntry(entry) ? (
+              <BangsDiaryCard key={entry.id} entry={entry} index={i} />
+            ) : isHairQuizEntry(entry) ? (
+              <HairQuizDiaryCard key={entry.id} entry={entry} index={i} />
+            ) : (
+              <DiaryCard
+                key={entry.id}
+                entry={entry}
+                index={i}
+                onOpenModal={setModalUrl}
+              />
+            ),
+          )}
+        </div>
+      )}
+    </AppShell>
   );
 }

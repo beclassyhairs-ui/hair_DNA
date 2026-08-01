@@ -3,7 +3,7 @@
 // ============================================================================
 // 어뷰티 공용 하단 탭바 (WORKORDER-02 토큰화).
 // AI진단(/diagnosis) · 고민상담소(/consulting) · 오늘케어(/home) · 발견템(/items) ·
-// 마이헤어(/myhair) 5대 메뉴. 라우트·라벨은 기존과 동일(기능 회귀 없음).
+// 마이헤어(/my-diary) 5대 메뉴. (마이헤어 목적지: 구 /myhair 더미 → /my-diary 실체로 통일)
 // 변경: 이모지 → Lucide 단색 1세트(stroke 1.8), 무지개·골드 폐지 →
 //       비활성 --ink-2 / 활성만 --ink(색이 아니라 명도로 구분).
 // ============================================================================
@@ -24,7 +24,7 @@ const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
   { href: "/consulting", icon: MessageCircle, label: "고민상담소" },
   { href: "/home", icon: Home, label: "오늘케어" },
   { href: "/items", icon: ShoppingBag, label: "발견템" },
-  { href: "/myhair", icon: User, label: "마이헤어" },
+  { href: "/my-diary", icon: User, label: "마이헤어" }, // 실체(진짜 기록) 페이지로 통일. 구 /myhair(더미)는 /my-diary로 리다이렉트.
 ];
 
 export default function BottomNav() {
