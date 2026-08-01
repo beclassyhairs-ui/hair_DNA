@@ -86,7 +86,7 @@ export default function StyleLoadingPage() {
           // 이벤트가 오귀속되지 않게(전환 창 차단). 로그인 확정 후 ProfileSync가 다시 심는다.
           clearAccountId();
           window.location.href =
-            `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
+            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
           return;
         }
       }
@@ -129,7 +129,7 @@ export default function StyleLoadingPage() {
           // 발생하는 이벤트가 옛 계정에 붙지 않게 한다(Codex 지적 창 차단).
           clearAccountId();
           window.location.href =
-            `/api/auth/kakao/start?return_to=${encodeURIComponent("/style/loading")}`;
+            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
           return;
         }
 
