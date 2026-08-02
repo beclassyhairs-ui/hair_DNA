@@ -10,9 +10,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { USER_COOKIE, verifyUserToken } from "../../../../lib/userAuth";
 import { supabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { CONSENT_POLICY_VERSION } from "../../../../lib/consent";
+import { hasCurrentOverseasConsent } from "../../../../lib/consentServer";
 
 // last_login_at 스로틀 — 이 간격 안이면 갱신하지 않는다.
 const LAST_LOGIN_THROTTLE_MS = 24 * 60 * 60 * 1000;
+// §5/§8: 현재 방침버전 국외이전 동의 보유 여부는 lib/consentServer가 조회(hair-transform과 공용).
 const BUMP_COOKIE = "abeauty_seen";        // 마지막 bump 시각(epoch ms). 스로틀 판정용.
 const BUMP_DB_TIMEOUT_MS = 2500;            // DB가 느려도 /me가 오래 멈추지 않게.
 
@@ -46,7 +49,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ loggedIn: false });
   }
 
-  const res = NextResponse.json({ loggedIn: true, userId: session.userId });
+  // §5: 기존 필드(loggedIn/userId) 유지 + consent 필드만 추가. loading 백스톱은 loggedIn만 봐서 무영향.
+  const overseasGranted = await hasCurrentOverseasConsent(session.userId);
+  const res = NextResponse.json({
+    loggedIn: true,
+    userId: session.userId,
+    consent: { overseas_transfer: overseasGranted, policy_version: CONSENT_POLICY_VERSION },
+  });
 
   // 핫패스 최적화: 이 브라우저가 "같은 계정으로" 24h 이내에 이미 bump했으면 DB 왕복을 생략한다.
   // ProfileSync가 route change마다 /me를 부르므로, 스로틀 판정을 쿠키로 하면 하루 1회만 DB를 친다.

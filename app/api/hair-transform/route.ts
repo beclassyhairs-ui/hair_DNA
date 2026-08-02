@@ -32,6 +32,7 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
 import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
+import { hasCurrentOverseasConsent } from "@/lib/consentServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 // 서버측 일일 호출 제한(유저당). 클라 표시(3회)보다 여유를 둬 정상 재시도를 막지 않는다.
@@ -135,6 +136,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { ok: false, reason: "login_required", debugError: "로그인이 필요합니다." },
         { status: 401 },
+      );
+    }
+
+    // ── 동의 게이트(§13, fail-CLOSED) — 로그인 확인 뒤, 비용(일일한도) 발생 前 ──
+    // 얼굴 사진의 국외이전(미국 Replicate) 처리 前, 현재 방침버전 국외이전 동의 보유를 서버에서
+    // 재검증한다. 클라 게이트(설문/upload)는 UX·리다이렉트용이고, 실제 강제는 여기서 한다.
+    // 미동의는 물론, 동의 조회 자체가 실패해도 403(조회 실패를 통과로 처리하면 그게 우회로가 된다).
+    // ⚠️ 기존 로그인 게이트(위)·일일한도(아래) 로직은 한 줄도 수정하지 않는다 — 사이에 추가만 한다.
+    const overseasOk = await hasCurrentOverseasConsent(session.userId);
+    if (!overseasOk) {
+      return NextResponse.json(
+        { ok: false, reason: "consent_required", debugError: "국외이전 동의가 필요합니다." },
+        { status: 403 },
       );
     }
 

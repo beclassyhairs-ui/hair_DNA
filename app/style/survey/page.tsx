@@ -16,6 +16,7 @@ import {
   type StyleAnswers,
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
+import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
@@ -64,13 +65,16 @@ export default function StyleSurveyPage() {
       ? q.options.filter((opt) => opt.id !== "s_curl")
       : q?.options ?? [];
 
-  function advance(next: StyleAnswers) {
+  async function advance(next: StyleAnswers) {
     try { sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(next)); } catch { /**/ }
     if (isLast) {
       // 진단 완료 — 마지막 문항 제출 시점. 결과지 열람(report_view)은 upload→loading(AI 합성)을
       // 거친 뒤라 별도 이벤트다. 두 이벤트 사이 격차가 곧 합성 대기 이탈률이다.
       trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, { landing_id: "style", diagnosis_type: "style" });
-      router.push("/style/upload");
+      // 얼굴 사진 수집 前 동의 게이트(§8): 현재버전 국외이전 동의 보유자만 사진 단계로,
+      // 아니면 동의화면으로. 조회 실패 시 안전측(동의화면).
+      const ok = await hasOverseasConsent();
+      router.push(ok ? "/style/upload" : consentGateHref());
     } else {
       setDir(1);
       setQIdx((i) => i + 1);
@@ -102,7 +106,8 @@ export default function StyleSurveyPage() {
 
     setAnswers(next);
     setPending(true);
-    setTimeout(() => { setPending(false); advance(next); }, 350);
+    // advance 완료(마지막 문항은 /api/auth/me 조회 포함)까지 pending 유지 → 중복 클릭·중복 이동 방지(Codex).
+    setTimeout(() => { void advance(next).finally(() => setPending(false)); }, 350);
   }
 
   function goBack() {

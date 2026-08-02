@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
 import { STYLE_PHOTO_KEY } from "../constants";
+import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BlackCTAButton from "@/components/beauty-ui/BlackCTAButton";
@@ -63,8 +64,9 @@ function FaceGuide({ tone = "dark" }: { tone?: "dark" | "light" }) {
 // [요구사항 1] 체크 미완료 시 버튼 비활성화 → 법적 동의 취득
 
 function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
-  const [agreed, setAgreed] = useState(false);
-
+  // 국외이전 동의는 이제 로그인 동의화면(/login/consent)에서 받아 user_consents에 기록한다.
+  // 사진 단계에 도달했다는 것 = 동의를 이미 마쳤다는 뜻이므로 여기엔 체크박스를 두지 않는다.
+  // (안심 문구·개인정보처리방침 링크는 투명성 위해 유지.)
   return (
     <SilkBackground>
       <main className="flex h-[100dvh] flex-col text-ink">
@@ -112,35 +114,7 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             </p>
           </div>
 
-          {/* 동의 체크박스 */}
-          <button
-            type="button"
-            onClick={() => setAgreed(v => !v)}
-            className="mb-4 flex w-full items-start gap-3 text-left"
-          >
-            {/* 커스텀 체크박스 */}
-            <span className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full border-2 transition-all duration-200 ${
-              agreed ? "border-ink bg-ink" : "border-btn-line bg-transparent"
-            }`}>
-              {agreed && (
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                  <path d="M5 12.5l4.5 4.5L19 7" stroke="white" strokeWidth="3"
-                    strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-            </span>
-            <span>
-              <span className="block text-body font-medium leading-snug text-ink">
-                AI 헤어 합성을 위한 사진 업로드·처리 및 국외이전에 동의합니다.{" "}
-                <span className="text-ink-2">(필수)</span>
-              </span>
-              <span className="mt-1 block text-aux text-ink-2">
-                합성이 끝나면 사진은 즉시 파기됩니다.
-              </span>
-            </span>
-          </button>
-
-          <p className="text-center text-aux text-ink-2">
+          <p className="mb-4 text-center text-aux text-ink-2">
             자세한 처리 방식은{" "}
             <Link href="/privacy" className="font-medium text-ink underline underline-offset-2">
               개인정보처리방침
@@ -148,9 +122,9 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
             에서 확인하실 수 있어요
           </p>
 
-          {/* CTA 버튼 — 체크 전 disabled */}
-          <BlackCTAButton onClick={onConfirm} disabled={!agreed}>
-            {agreed ? "가이드 확인했어요 · 사진 찍으러 가기" : "위 항목에 동의 후 진행할 수 있어요"}
+          {/* 국외이전 동의는 로그인 동의화면에서 이미 완료(사진 단계 前). 여기선 게이트 없음. */}
+          <BlackCTAButton onClick={onConfirm}>
+            가이드 확인했어요 · 사진 찍으러 가기
           </BlackCTAButton>
         </div>
       </main>
@@ -166,6 +140,8 @@ export default function StyleUploadPage() {
   const router = useRouter();
 
   const [showGuide,  setShowGuide]  = useState(true);
+  // §10-2 직접진입 가드: 현재버전 국외이전 동의 없이 사진 단계에 들어오지 못하게 한다(조사5).
+  const [gateOk, setGateOk] = useState(false);
   const [src,        setSrc]        = useState<string | null>(null);
   const [natural,    setNatural]    = useState<{ w: number; h: number } | null>(null);
   const [savedPhoto, setSavedPhoto] = useState<string | null>(null);
@@ -194,6 +170,18 @@ export default function StyleUploadPage() {
       if (cached) { setSavedPhoto(cached); setShowGuide(false); }
     } catch { /**/ }
   }, []);
+
+  // 동의 게이트: 현재버전 국외이전 동의 보유자만 통과. 아니면 동의화면으로(fail-closed).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const ok = await hasOverseasConsent();
+      if (!alive) return;
+      if (ok) setGateOk(true);
+      else router.replace(consentGateHref());
+    })();
+    return () => { alive = false; };
+  }, [router]);
 
   useEffect(() => { return () => { if (src) URL.revokeObjectURL(src); }; }, [src]);
   useEffect(() => { return () => { streamRef.current?.getTracks().forEach(t => t.stop()); }; }, []);
@@ -413,6 +401,14 @@ export default function StyleUploadPage() {
   const showImageCrop    = Boolean(src && !camera);
   const showChooser      = !src && !camera && !savedPhoto;
 
+  // 동의 확인 전에는 어떤 화면(가이드·카메라)도 렌더하지 않는다(fail-closed).
+  if (!gateOk) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center px-page text-ink">
+        <p className="text-body text-sub">확인 중이에요…</p>
+      </main>
+    );
+  }
   if (showGuide) return <PhotoGuide onConfirm={() => setShowGuide(false)} />;
 
   return (
