@@ -7,8 +7,15 @@
 // 앱 자체 동의 UI가 없어 이 화면을 삽입한다. /style/loading의 로그인 트리거가
 // /api/auth/kakao/start 로 직행하던 것을 이 화면을 경유하도록 바꾼다.
 //   · 필수 2종(개인정보 수집·이용 / 이용약관) 동의해야만 "카카오로 계속하기" 활성.
-//   · 선택 2종(닉네임·프로필 제공 / 마케팅)은 미동의여도 진행 가능.
+//   · 선택 1종(닉네임·프로필 제공)은 미동의여도 진행 가능.
 //   · 동의 후 원래 return_to를 그대로 물고 /api/auth/kakao/start 로 이동.
+//
+// ⓘ 마케팅 수신 동의는 의도적으로 뺐다(PM방 확정). 동의값 서버 영속화(marketing_consent)가
+//   미착수라 지금 동의를 받아도 어디에도 기록되지 않는데, 개인정보보호법상 동의 사실의
+//   입증 책임은 처리자에게 있어 "동의는 받았는데 기록이 없는" 상태를 만들지 않는다.
+//   마케팅 발송 계획도 현재 없다. 서버 저장(1b)이 붙을 때 다시 넣는다.
+//   (닉네임·프로필 선택 동의는 카카오 동의창이 자체 기록하므로 입증 문제 없어 유지.)
+//   DB의 marketing_consent 컬럼은 그대로 두고 화면에서만 뺀다.
 //
 // ⚠️ 범위(이번 패스): 프론트 게이트만. 동의 값의 서버 영속화(marketing_consent 등)와
 //    서버측 강제는 auth 콜백·DB 변경(§3 Codex·§4 사업주 SQL)이 필요한 후속(1b)이다.
@@ -97,13 +104,12 @@ function ConsentInner() {
   const [privacy, setPrivacy] = useState(false);
   const [terms, setTerms] = useState(false);
   const [profileOptional, setProfileOptional] = useState(false);
-  const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
     trackEvent("login_consent_view", { source: "kakao_login_gate" });
   }, []);
 
-  const allChecked = privacy && terms && profileOptional && marketing;
+  const allChecked = privacy && terms && profileOptional;
   const canProceed = privacy && terms; // 필수 2종
 
   const toggleAll = () => {
@@ -111,7 +117,6 @@ function ConsentInner() {
     setPrivacy(next);
     setTerms(next);
     setProfileOptional(next);
-    setMarketing(next);
   };
 
   const proceed = () => {
@@ -120,12 +125,12 @@ function ConsentInner() {
     try {
       sessionStorage.setItem(
         "abeauty:consent",
-        JSON.stringify({ privacy, terms, profileOptional, marketing, at: Date.now() }),
+        JSON.stringify({ privacy, terms, profileOptional, at: Date.now() }),
       );
     } catch {
       /**/
     }
-    trackEvent("login_consent_agree", { profileOptional, marketing });
+    trackEvent("login_consent_agree", { profileOptional });
     window.location.href = `/api/auth/kakao/start?return_to=${encodeURIComponent(returnTo)}`;
   };
 
@@ -187,12 +192,7 @@ function ConsentInner() {
           label="닉네임·프로필 이미지 제공"
           detail="개인화 표시(예: 화면에 닉네임)에만 이용해요. 동의하지 않아도 로그인·진단은 그대로 이용할 수 있어요."
         />
-        <ConsentRow
-          checked={marketing}
-          onToggle={() => setMarketing((v) => !v)}
-          label="마케팅 정보 수신"
-          detail="새 기능·혜택 소식을 받아볼 수 있어요. 언제든 해지할 수 있어요."
-        />
+        {/* 마케팅 수신 동의는 서버 영속화(1b) 붙을 때 다시 추가 — 상단 주석 참고 */}
       </div>
 
       <button
