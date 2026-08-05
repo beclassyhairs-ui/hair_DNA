@@ -35,9 +35,9 @@ const WAVE_DIR: Record<string, string> = {
 // ─── [weight/층] 3종 — 설문 값(heavy/medium/light) = 폴더명 그대로(항등) ──────────
 const LAYER_SET = new Set(["heavy", "medium", "light"]);
 
-// 최종 폴백 이미지 경로(모든 슬롯·기장 폴백 실패 시). ⚠️ 사업주 지정 대기 —
-// default_style.jpg는 현재 워킹트리 부재(커밋본만 존재). 지정 전까지 최종 방어용.
-export const DEFAULT_REFERENCE_PATH = "/references/default_style.jpg";
+// 최종 폴백 이미지 경로(모든 슬롯·기장 폴백 실패 시). 사업주가 references 루트에 지정한
+// 대표 이미지(정면·단일 얼굴·전체 헤어) — faceswap 캔버스로 안전.
+export const DEFAULT_REFERENCE_PATH = "/references/c9248590-615b-4754-b6e6-85e079b2e926.jpg";
 
 // 컬·weight 순회용(폴백 체인) — allowlist. 여기 없는 값은 슬롯키에 절대 안 들어간다(traversal 차단).
 export const ALL_WEIGHTS = ["heavy", "medium", "light"] as const;
