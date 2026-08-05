@@ -1,12 +1,14 @@
 // ============================================================================
-// /privacy — 개인정보처리방침 (초안)
-// ⚠️ 초안이다. 상호·보호책임자·연락처 등 [ ] 표기는 사업주 확정 후 채운다.
-//    플레이스홀더가 색인되지 않도록 noindex 처리.
+// /privacy — 개인정보처리방침 (시행 2026-08-02)
+// 보호책임자·시행일 확정, noindex 해제(2026-08-05 Phase A). 색인 허용.
 //
-// 📌 셀카 보유기간은 확정됨: "합성 완료 즉시 파기".
+// 📌 셀카 파기: "정상 처리 후 지체 없이 삭제"(단정적 '즉시 완전 파기' 표현은 회피).
 //    실동작 근거 — app/api/submit-diagnosis(셀카 미저장, 답변만 Sheets) +
-//    app/api/hair-transform(합성 직후 finally에서 원본 즉시삭제). 이 문서 문구는
-//    반드시 그 실동작과 일치해야 하며, 되돌릴 때는 코드부터 바꿀 것.
+//    app/api/hair-transform(합성 직후 finally에서 원본 삭제, best-effort 2회 재시도).
+//    이 문서 문구는 그 실동작과 일치해야 하며, 되돌릴 때는 코드부터 바꿀 것.
+//
+// 📌 삭제권: 현재 셀프 삭제기능 없음 → 보호책임자 이메일 접수·처리 방식으로 고지.
+//    삭제기능(Phase B) 배포 시 이 문단 갱신 + CONSENT_POLICY_VERSION 상향.
 //    (법률 자문 아님 — 최종 문안은 사업주 검토 전제)
 // ============================================================================
 
@@ -22,8 +24,7 @@ const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export const metadata: Metadata = {
   title: "개인정보처리방침 | 어뷰티(A-Beauty)",
-  description: "어뷰티(A-Beauty)의 개인정보 수집·이용·처리위탁·국외이전 및 이용자 권리 안내(초안).",
-  robots: { index: false, follow: false },
+  description: "어뷰티(A-Beauty)의 개인정보 수집·이용·처리위탁·국외이전 및 이용자 권리 안내.",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -38,11 +39,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
-      <div className="rounded-btn border border-line bg-surface px-4 py-3 text-aux font-medium text-ink-2">
-        초안 — 사업주 검토 전입니다. 상호·연락처·개인정보 보호책임자 등 [ ] 표기 항목은 확정 후 반영됩니다.
-      </div>
-
-      <h1 className="mt-6 text-h1 text-ink">개인정보처리방침</h1>
+      <h1 className="text-h1 text-ink">개인정보처리방침</h1>
       <p className="mt-2 text-[13px] text-ink-2">
         어뷰티(A-Beauty)(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 중요하게 생각하며,
         「개인정보 보호법」 등 관련 법령을 준수합니다.
@@ -79,13 +76,14 @@ export default function PrivacyPage() {
       <Section title="3. 보유 및 이용기간">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <b>셀카 이미지</b>: <b>합성 완료 즉시 파기</b>합니다. 업로드한 사진은 AI 헤어스타일
-            합성 처리에만 사용되며, 처리가 끝나는 즉시 서버에서 삭제되고 원본을 영구 보관하지
-            않습니다.
+            <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, 합성이 끝나면 서버에 임시
+            저장된 원본의 <b>삭제를 곧바로 진행</b>합니다. 원본을 별도로 보관하거나 다른 목적으로
+            이용하지 않습니다.
           </li>
           <li>
             <b>진단 답변·이벤트 로그</b>: 수집·이용 목적을 달성할 때까지 보관하며, 목적 달성 후
-            지체 없이 파기합니다.
+            지체 없이 파기합니다. 서비스 개선을 위한 진단 답변은 <b>이름·연락처·사진 없이</b>{" "}
+            보관하며, 특정 개인을 식별할 목적으로 이용하지 않습니다.
           </li>
           {/* 카카오 로그인 활성화(KAKAO_LOGIN_ENABLED) 시에만 노출 */}
           {KAKAO_LOGIN_ENABLED && (
@@ -109,9 +107,9 @@ export default function PrivacyPage() {
             </thead>
             <tbody className="[&_td]:border-b [&_td]:border-black/[0.05] [&_td]:py-2 [&_td]:pr-4 [&_td]:align-top">
               <tr><td>Supabase</td><td>진단·이벤트 데이터 저장·관리</td></tr>
-              <tr><td>Vercel</td><td>서비스 호스팅 및 이미지(셀카) 임시 저장</td></tr>
+              <tr><td>Vercel (Vercel Blob 포함)</td><td>서비스 호스팅 및 셀카 이미지 임시 저장</td></tr>
               <tr><td>Replicate</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
-              <tr><td>Google</td><td>이용 통계·분석</td></tr>
+              <tr><td>Google (Google Sheets)</td><td>개인식별정보를 제외한 진단 답변 집계·분석</td></tr>
               {SENTRY_ENABLED && (
                 <tr><td>Sentry</td><td>오류 모니터링(에러 로그·요청 경로·기기/브라우저 정보)</td></tr>
               )}
@@ -129,7 +127,7 @@ export default function PrivacyPage() {
           <li>이전 국가/업체: 미국 / Replicate, Inc.</li>
           <li>이전 목적: AI 헤어스타일 합성</li>
           <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
-          <li>보유·이용기간: 합성 완료 즉시 파기(위 3항과 동일 — 영구 보관하지 않음)</li>
+          <li>보유·이용기간: 합성 목적으로만 전송하며, 서비스가 보관하는 원본은 합성 후 삭제합니다(위 3항). Replicate가 전송받은 이미지의 보유·삭제는 Replicate의 처리정책에 따릅니다.</li>
         </ul>
         <p className="text-[13px] text-ink-2">
           ※ Vercel·Supabase·Google 등 다른 수탁업체의 서버 소재지에 따라 추가 국외이전이 발생할 수 있으며,
@@ -164,7 +162,12 @@ export default function PrivacyPage() {
       <Section title="6. 이용자의 권리와 행사 방법">
         <p>
           이용자는 언제든지 자신의 개인정보에 대한 열람·정정·삭제·처리정지를 요청할 수 있습니다.
-          요청은 아래 개인정보 보호책임자에게 연락하시면 지체 없이 처리합니다.
+          현재 서비스 내 자동 삭제(회원 탈퇴) 기능은 제공하지 않으며, 아래 개인정보 보호책임자
+          이메일로 요청하시면 <b>접수일로부터 10일 이내</b>에 조치 여부와 그 결과를 알려드립니다.
+        </p>
+        <p className="text-[13px] text-ink-2">
+          ※ 다만 다음은 삭제 대상에서 제외될 수 있습니다: 관련 법령상 보존이 필요한 정보,
+          동의 사실을 입증하기 위한 동의 기록, 그리고 개인을 식별할 수 있는 정보를 제외한 집계·분석 자료.
         </p>
       </Section>
 
@@ -177,16 +180,15 @@ export default function PrivacyPage() {
 
       <Section title="8. 개인정보 보호책임자">
         <ul className="list-disc space-y-1 pl-5">
-          <li>성명: [사업주 기재 필요]</li>
-          <li>연락처: [사업주 기재 필요]</li>
-          <li>이메일: [사업주 기재 필요]</li>
+          <li>성명: 김진성</li>
+          <li>이메일: beclassyhairs@gmail.com</li>
         </ul>
       </Section>
 
       <Section title="9. 고지의 의무">
         <p>
           본 방침의 내용 추가·삭제·수정이 있을 경우 시행일 전에 서비스 내 공지를 통해 안내합니다.
-          본 방침의 시행일: [사업주 기재 필요].
+          본 방침의 시행일: 2026년 8월 2일.
         </p>
       </Section>
 
