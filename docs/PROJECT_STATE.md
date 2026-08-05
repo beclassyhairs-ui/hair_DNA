@@ -3,9 +3,17 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
-## 🟡 faceswap 전환 — 브랜치 구현·canary 통과, 사업주 품질승인 대기 (2026-08-05)
+## ✅ faceswap 전환 — 프로덕션 배포·스모크 통과 (2026-08-05)
 
-`/api/hair-transform`를 flux-kontext($0.04) → **codeplugtech/face-swap($≈0.01) 복원(그래프트)**. 브랜치 `feat/faceswap-restore`(`8b522e8`, push·프리뷰 빌드 Ready). **아직 프로덕션 미머지**(전면 전환은 사업주 품질승인 후).
+`/api/hair-transform`를 flux-kontext($0.04) → **codeplugtech/face-swap($≈0.01) 복원(그래프트)**. 사업주 품질승인 후 `feat/faceswap-restore` → **main clean FF 머지(`f5f22bc..ae2a167`) → 프로덕션 배포 Ready**.
+- **프로덕션 스모크 전부 통과**: ① 레퍼런스 URL 200(bob jpg·chest png·루트 폴백 c9248590) ② 무인증 `/api/hair-transform` → **401 `login_required`**(로그인 가드레일 라이브 정상) ③ **Replicate가 프로덕션 레퍼런스 URL 정상 fetch·합성**(output image/jpeg 200 — 프리뷰서 302로 막혔던 지점 해소).
+- **폴백 배선(`ae2a167`)**: `DEFAULT_REFERENCE_PATH` → 사업주가 references 루트에 넣은 `c9248590…jpg`(정면·단일얼굴). 빈 슬롯·폴백 실패 시 최종 캔버스.
+- **REPLICATE_VERSION**: 코드에 `278a81e7` 기본값 고정 → env 없이도 프로덕션이 그 해시 사용(env 설정은 사업주 선택 하드닝).
+- **가드레일**: 로그인401 라이브 검증. 동의403 fail-closed·일일한도429·비용상한·셀카 finally 즉시삭제는 로그인 뒤 동일 블록에 byte-보존(Codex diff 검증) — 인증 요청(사업주 실기기)에서 동작.
+- **롤백**: 문제 시 직전 프로덕션(flux, `hair-6lynwjslz` 등) Instant Rollback 대기.
+- ⚠️ 미커밋 임시파일 `_canary_tmp.mjs`(프로젝트 루트, 미추적·미배포·무해) — 샌드박스가 터미널 삭제 차단. `git add .` 금지 유지하면 커밋 안 됨. 수동 삭제 요망.
+
+### (이전) 브랜치 구현 기록
 - **그래프트(revert 아님)**: 모델 호출부만 이식 — 엔드포인트 `/v1/predictions`+version(`278a81e7`), 입력빌더 `{input_image=레퍼런스, swap_image=셀카}`. **가드레일(로그인401·동의403 fail-closed·일일한도429·비용상한·셀카 finally 즉시삭제) 전부 보존**(diff·Codex 확인).
 - **레퍼런스 해석 = 빌드타임 manifest**(`lib/referencesManifest.json`, 42슬롯/60장). 런타임 fs 폐기(Vercel 서버리스 대비). `prebuild` 훅 자동재생성. 경로 무나이 `<len>/<heavy|medium|light>/<curl>`, shoulder→collarbone, 슬롯키 allowlist(traversal 불가), 폴백 체인.
 - **레퍼런스 60장 커밋·배포**(사업주 자산, 내용 무변경 §0). default_style.jpg는 로컬삭제·커밋본 존재 → **사업주 대표 폴백 1장 지정 대기**.
