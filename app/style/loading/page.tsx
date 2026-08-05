@@ -20,12 +20,12 @@ import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
+// D-2: 실제 단계를 스트리밍으로 알 수는 없지만, 손님에게 "지금 뭘 하는 중인지"를 사람 말로
+// 순서대로 보여준다(마지막 단계에서 멈춰 유지 — 뒤로 되돌아가는 느낌 방지).
 const STEPS = [
-  "AI가 고객님의 두상과 8가지 모질 데이터를 정밀 결합 중입니다...",
-  "두상 구조와 희망 스타일 데이터를 정밀 매칭하고 있습니다...",
-  "전문가 헤어 데이터베이스에서 최적 스타일을 도출하고 있습니다...",
-  "맞춤 케어 처방전과 스타일을 최종 생성하고 있습니다...",
-  "마지막 세부 조정 중입니다. 결과지가 곧 완성됩니다...",
+  "사진을 확인하고 있어요",
+  "원하시는 스타일을 입히는 중이에요",
+  "자연스럽게 다듬어 마무리하는 중이에요",
 ];
 
 const HAIR_TIPS = [
@@ -57,7 +57,7 @@ export default function StyleLoadingPage() {
 
   // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립)
   useEffect(() => {
-    const t = setInterval(() => setStepIdx(i => (i + 1) % STEPS.length), 3_000);
+    const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 2_500);
     return () => clearInterval(t);
   }, []);
 
@@ -240,6 +240,9 @@ export default function StyleLoadingPage() {
               {STEPS[stepIdx]}
             </motion.p>
           </AnimatePresence>
+
+          {/* D-2: 대략 소요시간 안내(단정 금지 — 범위 표현). 스피너가 "멈추지 않았다"는 시각 신호. */}
+          <p className="text-[12px] leading-relaxed text-ink-2">보통 30초 안팎이 걸려요 · 창을 닫지 말고 잠시만 기다려 주세요</p>
         </div>
 
         {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 (광고 제거됨) ── */}

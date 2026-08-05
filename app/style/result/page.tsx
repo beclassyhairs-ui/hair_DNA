@@ -524,6 +524,12 @@ export default function StyleResultPage() {
                   <span key={tag} className="rounded-full bg-surface px-3 py-0.5 text-[13px] font-semibold text-ink-2">{tag}</span>
                 ))}
             </div>
+            {/* D-3: faceswap 결과도 실제 시술을 보장하지 않는다 — 미리보기 고지 유지(재전환 복원). */}
+            {generated && (
+              <p className="mt-3 text-center text-[12px] leading-relaxed text-ink-2">
+                미리 만들어 본 스타일 이미지예요. 실제 시술 결과와는 다를 수 있어요.
+              </p>
+            )}
           </ResultHeroCard>
 
           {/* Phase B: 로그인 후 진입이라 항상 공개(블러 없음) */}
