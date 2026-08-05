@@ -17,7 +17,9 @@
 // 서버 권위(§6): granted/policy_version/시각/user_id/필수판정은 전부 서버(/api/consents)가
 // 정한다. 클라는 '어떤 유형에 동의했는가' 목록만 보낸다.
 //
-// ⚠️ 법적 문구는 초안(사업주/법률 검토 전). noindex·스위치·env·auth 라우트 미변경.
+// ⓘ 실서비스 배포본(2026-08-02). "초안" 배너 제거 — 실제 구속력 있는 동의를 기록하므로.
+//   /privacy 본문 마감(보호책임자 실값·noindex 해제)은 별도 트랙이며, 완료 시 CONSENT_POLICY_VERSION을
+//   올려 유저 1회 재동의로 반영한다(policy_version 설계). noindex·스위치·env·auth 라우트 미변경.
 // ============================================================================
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -285,11 +287,7 @@ function ConsentInner() {
   // ── 동의 폼 ──
   return (
     <main className="mx-auto min-h-screen max-w-[430px] px-page py-8">
-      <div className="rounded-btn border border-line bg-soft px-4 py-3 text-aux font-medium text-sub">
-        초안 — 사업주·법률 검토 전입니다. 동의 문안은 확정 후 반영됩니다.
-      </div>
-
-      <h1 className="mt-7 font-serif text-h1 text-ink">로그인 전, 동의가 필요해요</h1>
+      <h1 className="font-serif text-h1 text-ink">로그인 전, 동의가 필요해요</h1>
       <p className="mt-3 text-body leading-relaxed text-sub">
         카카오 로그인으로 진단 결과를 내 계정에 안전하게 보관하고, 다른 기기에서도 이어서 볼 수
         있어요. AI 헤어 합성을 위해 사진이 해외(미국) 서버에서 처리되므로, 아래 항목을 확인하고
