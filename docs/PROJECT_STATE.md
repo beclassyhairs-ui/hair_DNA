@@ -1,7 +1,17 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-01
+> 최종 갱신: 2026-08-05
+
+## ✅ /privacy 본문 마감 — 프로덕션 배포 완료 (2026-08-05, Phase A)
+
+법적 마감 라운드 Phase A. `app/privacy/page.tsx` 단일 파일(`2f3b7c5`) → main push → 웹훅 프로덕션 배포 `hair-6lxsker9g`(● Ready). **라이브 검증(hair-dna.vercel.app/privacy) 통과**: HTTP 200 / 보호책임자 김진성·beclassyhairs@gmail.com 노출 / 초안배너 0 / 시행일 2026년 8월 2일 / **noindex 메타 제거(색인 허용)** / 수탁표 "Vercel Blob"·"Google Sheets" 표기.
+- **반영**: 보호책임자 실값, noindex 해제, 초안배너·(초안)표기 제거, 시행일 2026-08-02(`CONSENT_POLICY_VERSION` 정합·같은 성격 커밋), 수탁표 명칭 정밀화, 셀카 파기 문구를 best-effort 실동작에 맞춰 행위 서술로 정직화("삭제를 곧바로 진행"), 국외이전 Replicate 보유주체 분리, 삭제권(6항) "셀프 삭제기능 없음→보호책임자 이메일 10일 내 조치·통지+제외항목".
+- **Codex 3차 통과**: "식별자 삭제≠개인정보 파기" 과장 경계. (a)셀카 지체없이삭제 결과보증 (b)Replicate 파기보증 (c)"익명 집계" 법적 단정 3건 지적 → 행위·사실 서술로 완화. 의도적 유지: 시행일 2026-08-02(상수 정합 불변식), "익명" 법적 라벨 제거하고 "개인식별정보 제외" 사실만(재식별 판단은 사장/변호사 몫 — PM ③).
+- 🟡 **Phase B(삭제 기능) 착수 예정**: soft-delete(users.deleted_at)+세션폐기+deleted_at 필터+조건부 유니크+RPC 단일 트랜잭션. 스키마+RPC 설계→Codex 반론검증→PM 보고 후 멈춤. 되돌릴 수 없는 삭제·스키마는 사장 승인 전 실행 금지.
+- **P-01(셀카 합성 후 자동파기)는 이미 구현됨**(hair-transform finally del, best-effort 2회). 신규 삭제코드 불필요. 남은 갭: orphan 정리(스윕/TTL) 부재 — Phase B에서 저비용이면 동반, 아니면 별건.
+
+## (이전) 상태
 
 ## 🟡 Sentry 고지 배포 완료 → DSN 켜기 대기 (2026-08-01)
 
@@ -48,7 +58,7 @@
 - **게이트(§8)**: 로그인만으론 스킵 불가 — 현재 방침버전 국외이전 동의 보유까지 확인. `/api/auth/me`에 consent 필드 추가(기존 구조 불변→loading 백스톱 무영향). `lib/consentServer`(서버)·`lib/consentGate`(클라)·`lib/consent`(상수 `CONSENT_POLICY_VERSION="2026-08-02"`).
 - **Codex**: 1차 반론검증(IP미저장/캐시없음/멱등/게이트/순서) + 2차 보안(멱등키 user_id 누락 실버그·append-only 트리거·pending 수정) + 3차 B안(통과). ⚠️ codex는 `-s read-only` + '레포탐색 금지'로 실행해야 함(안 그러면 승인대기로 hang).
 - **프리뷰 카카오 왕복 이슈 해결**: `KAKAO_REDIRECT_URI`가 Prod+Preview 공용이라 프리뷰가 프로덕션으로 튕기던 것 → **Prod 항목은 그대로 두고 Preview 스코프 별도 항목 추가**(프로덕션 폴백 위험 회피, getKakaoEnv는 NEXT_PUBLIC_SITE_URL 폴백에 기본값 없음에 유의).
-- 🟡 **남은 것**: (a) **사업주 실기기 최종 스모크**(카카오 로그인 필요 — 정상흐름 / 미동의 직접호출 403 / user_consents insert / 멱등). (b) **/privacy 본문 마감**(보호책임자 실값·noindex 해제) — 블로커 아님(이메일 P-04 닫힘). 완료 시 `CONSENT_POLICY_VERSION` 상향→유저 1회 재동의. (c) 탈퇴는 soft-delete(단계3, `docs/DESIGN_consent_and_deletion.md` §4·§7).
+- 🟡 **남은 것**: (a) **사업주 실기기 최종 스모크**(카카오 로그인 필요 — 정상흐름 / 미동의 직접호출 403 / user_consents insert / 멱등). (b) ~~**/privacy 본문 마감**~~ **[완료 2026-08-05, 위 Phase A 참조]** — 시행일을 현재 버전 2026-08-02에 맞춰 확정했으므로 `CONSENT_POLICY_VERSION` 상향·재동의 없음(PM 결정). (c) 탈퇴는 soft-delete(단계3=Phase B, `docs/DESIGN_consent_and_deletion.md` §4·§7).
 - **불변 유지**: `LOGIN_REQUIREMENT_POINT`·`hair-transform` 비용게이트·loading 백스톱·`/api/auth/me` 기존 응답구조.
 
 ## ✅ 다이어리 통합 — main FF 머지·프로덕션 배포 완료 (2026-08-02)
