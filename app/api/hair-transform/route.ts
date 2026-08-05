@@ -1,33 +1,31 @@
 // ============================================================================
 // POST /api/hair-transform
-// 유저 셀카(input_image) + 마스터 프롬프트 → flux-kontext-pro 헤어 전이
+// 유저 셀카(swap_image) + 레퍼런스 헤어사진(target_image) → Face Swap 합성
+// (2026-08-05: flux-kontext 텍스트생성 경로 완전 제거 → faceswap 전용. 실패 시 텍스트
+//  폴백 없이 정직하게 실패시킨다. 로그인/동의/일일한도/비용상한/셀카 즉시삭제 가드레일 보존.)
 //
-// 모델: black-forest-labs/flux-kontext-pro
-//   - 엔드포인트: /v1/models/black-forest-labs/flux-kontext-pro/predictions
-//     (공식 모델 엔드포인트 — version hash 불필요, 항상 최신 버전)
-//   - 비용: $0.04/run | 속도: 6~10초
+// 모델: codeplugtech/face-swap (커뮤니티 → /v1/predictions + version hash)
+//   - target_image = 레퍼런스 헤어사진(얼굴이 교체될 캔버스, 공개 https URL)
+//   - swap_image   = 유저 셀카(삽입할 얼굴, Vercel Blob 공개 URL)
+//   - 결과: 유저 얼굴 + 레퍼런스 헤어스타일. 텍스트 프롬프트 불필요.
+//   - 비용: ≈$0.01/run
 //
-// 파라미터:
-//   input_image → 유저 셀카 (Vercel Blob 공개 URL)
-//   prompt      → 4차원 마스터 프롬프트 (연령·기장·레이어드·웨이브 + 얼굴 보존 강제)
+// 레퍼런스 해석: 빌드타임 manifest(lib/referencesManifest.json) 기반(런타임 fs 없음).
+//   슬롯키 <len>/<weight>/<curl> (무나이) → 파일 랜덤 픽 → 폴백 체인 → default_style.jpg.
+//   ★ 이 폴백은 "레퍼런스 자산 내부"에서만 움직인다(사업주 자산). 텍스트 생성 폴백 아님.
 //
 // 환경변수:
 //   REPLICATE_API_TOKEN   — 필수
+//   REPLICATE_VERSION     — 선택(미설정 시 아래 고정 해시). canary 검증본 고정 권장.
 //   BLOB_READ_WRITE_TOKEN — 필수 (유저 셀카 Blob 업로드용)
 // ============================================================================
 
-export const maxDuration = 60; // Node.js 런타임 고정 (fs 사용)
+export const maxDuration = 60; // Node.js 런타임 고정
 
-import { access } from "fs/promises";
-import { join }   from "path";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getStyleDirectoryPath,
-  buildHairStylePrompt,
-  DEFAULT_REFERENCE_PATH,
-  MAX_IMG,
-} from "@/lib/styleReference";
+import { DEFAULT_REFERENCE_PATH } from "@/lib/styleReference";
+import { resolveReference, buildReferenceUrl } from "@/lib/referencePick";
 import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
 import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
@@ -40,63 +38,52 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 const SERVER_DAILY_MAX = 5;
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
-const REPLICATE_ENDPOINT =
-  "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions";
+// 커뮤니티 모델 → /v1/predictions + version hash 방식.
+const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
+// codeplugtech/face-swap 최신 해시(2026-08-05 Replicate 유효성 확인·canary 검증 대상).
+// ⚠️ 배포 전 canary 성공으로 고정. 해시 변경은 품질 회귀테스트 동반(단순 설정변경 아님).
+const REPLICATE_VERSION =
+  process.env.REPLICATE_VERSION ??
+  "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34";
 
-// ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
-function isPublicHttpsUrl(url: string): boolean {
-  return (
-    url.startsWith("https://") &&
-    !url.includes("localhost") &&
-    !url.includes("127.0.0.1")
-  );
+// ─── 레퍼런스(공개 자산) 절대 URL의 origin ────────────────────────────────────
+// ★ 2026-08-05 장애 재발방지: Replicate가 target_image(레퍼런스)를 "쿠키·인증 없이" 공개
+//   fetch할 수 있어야 한다. VERCEL_URL(배포도메인)은 Vercel 배포보호(SSO)로 302→미접근이라
+//   전건 실패의 원인이었다. 그래서 배포 환경에서는 배포도메인/요청Host를 추론하지 않고,
+//   "배포보호가 없는 것으로 확인된 공개 alias"를 고정 origin으로 쓴다(호스트 스푸핑·프리뷰
+//   보호도메인·스테일 env 문제를 원천 차단 — Codex 반론 반영).
+//   ⚠️ 배포 전 스모크 게이트(필수): 이 함수가 만든 실제 URL을 "쿠키·인증헤더 없는 외부 GET"
+//      으로 때려 200 image/*로 끝나는지 검증할 것(브라우저 200 확인만으로 넘기지 말 것 —
+//      과거 장애가 그 방식으로 새어나갔다).
+const PUBLIC_ASSET_ORIGIN = "https://hair-dna.vercel.app"; // 공개 alias(배포보호 없음). 비밀 아님.
+
+function getAssetBaseUrl(req: NextRequest): string {
+  // 배포환경: 배포보호가 없는 것으로 확인된 공개 alias를 "무조건 최우선" 고정.
+  // 요청 Host·VERCEL_URL·env 추론을 일절 안 한다 → 보호도메인/호스트 스푸핑/스테일 env로
+  // 302가 재발할 여지를 원천 차단. (커스텀 도메인 도입 시 이 상수를 그 도메인으로 교체.)
+  if (process.env.VERCEL) return PUBLIC_ASSET_ORIGIN;
+  // 로컬 개발만: 요청 origin(Host 헤더 인젝션 방지 위해 nextUrl.origin 사용).
+  return req.nextUrl.origin;
 }
 
-// ─── 절대 base URL 조립 ───────────────────────────────────────────────────────
-// 우선순위: NEXT_PUBLIC_SITE_URL → VERCEL_URL → 요청 헤더
-function getBaseUrl(req: NextRequest): string {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  if (siteUrl) return siteUrl.replace(/\/$/, "");
-
-  const vercelUrl = process.env.VERCEL_URL;
-  if (vercelUrl) return `https://${vercelUrl}`;
-
-  const proto = req.headers.get("x-forwarded-proto") ?? req.nextUrl.protocol.replace(":", "");
-  const host  = req.headers.get("x-forwarded-host")
-    ?? req.headers.get("host")
-    ?? "localhost:3000";
-  return `${proto}://${host}`;
-}
-
-// ─── [요구사항 2] 레퍼런스 이미지 랜덤 픽 + Fallback ──────────────────────────
-// 1. 설문 결과로 조합된 폴더에서 1~MAX_IMG(5) 중 랜덤 시작 인덱스로 순환 탐색
-// 2. 파일 존재 확인(fs.access) → 확정
-// 3. 폴더 전체 비어있으면 /references/default_style.jpg 로 안전 폴백
-async function pickReferenceUrl(
+// ─── 레퍼런스 이미지 픽 + 폴백 (빌드타임 manifest 기반, 런타임 fs 없음) ──────────
+// 1. 설문 → 슬롯키 <len>/<weight>/<curl> → manifest에서 파일목록 조회(폴백 체인 포함)
+// 2. 그 목록에서 랜덤 1장 → 공개 URL 조립(파일명 인코딩)
+// 3. 매칭·폴백 모두 없으면 default_style.jpg 로 안전 폴백
+function pickReferenceUrl(
   answers: StyleAnswers,
   baseUrl: string,
-): Promise<{ url: string; isDefault: boolean }> {
-  const dir    = getStyleDirectoryPath(answers);      // e.g. "/references/group_2040/bob/c_curl/soft/"
-  const relDir = dir.replace(/^\//, "");              // "references/group_2040/bob/c_curl/soft/"
-
-  const startIdx = Math.floor(Math.random() * MAX_IMG) + 1; // 랜덤 시작 (1~5)
-
-  for (let i = 0; i < MAX_IMG; i++) {
-    const idx     = ((startIdx - 1 + i) % MAX_IMG) + 1;
-    const relPath = `${relDir}${idx}.jpg`;
-    const absPath = join(process.cwd(), "public", relPath);
-    try {
-      await access(absPath);
-      const url = `${baseUrl}/${relPath}`;
-      console.log(`[hair-transform] ✅ 레퍼런스 픽: ${relPath} → ${url}`);
-      return { url, isDefault: false };
-    } catch { /* 파일 없음 → 다음 인덱스 */ }
+): { url: string; isDefault: boolean; slot: string; isFallback: boolean } {
+  const res = resolveReference(answers);
+  if (!res) {
+    const url = `${baseUrl.replace(/\/$/, "")}${DEFAULT_REFERENCE_PATH}`;
+    console.warn("[hair-transform] ⚠️ 매칭 슬롯·폴백 모두 없음 → default_style.jpg 폴백");
+    return { url, isDefault: true, slot: "", isFallback: true };
   }
-
-  const url = `${baseUrl}${DEFAULT_REFERENCE_PATH}`;
-  console.warn(`[hair-transform] ⚠️ 빈 폴더(${dir}) → default_style.jpg 폴백`);
-  return { url, isDefault: true };
+  const file = res.files[Math.floor(Math.random() * res.files.length)]!;
+  const url  = buildReferenceUrl(baseUrl, res.slot, file);
+  console.log(`[hair-transform] ✅ 레퍼런스 픽: ${res.slot}/${file}${res.isFallback ? " (폴백)" : ""} → ${url}`);
+  return { url, isDefault: false, slot: res.slot, isFallback: res.isFallback };
 }
 
 // ─── base64 Data URI 정규화 ───────────────────────────────────────────────────
@@ -110,14 +97,15 @@ function normalizeBase64(raw: string): string {
 }
 
 // ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
-// 모델: black-forest-labs/flux-kontext-pro
-function buildReplicateInput(inputImage: string, prompt: string) {
+// 모델: codeplugtech/face-swap v278a81e7 — 스키마 { input_image, swap_image }
+//   input_image = 레퍼런스 헤어사진(= "Target image", 얼굴이 교체될 캔버스)
+//   swap_image  = 유저 셀카(삽입할 얼굴)
+//   ⚠️ 스키마 확인(2026-08-05 Replicate openapi): 키는 input_image/swap_image.
+//      target_image로 보내면 HTTP 422. 스키마에 없는 파라미터도 422.
+function buildReplicateInput(swapImage: string, targetImage: string) {
   return {
-    input_image:       inputImage,
-    prompt,
-    guidance:          3.0,
-    output_quality:    90,
-    prompt_upsampling: false,
+    input_image: targetImage, // 레퍼런스(캔버스)
+    swap_image:  swapImage,    // 셀카(삽입 얼굴)
   };
 }
 
@@ -233,7 +221,7 @@ export async function POST(req: NextRequest) {
   const normalizedPhoto = normalizeBase64(userPhoto);
   console.log(`[hair-transform] 유저 사진: ${normalizedPhoto.slice(0, 30)}... (${normalizedPhoto.length}chars)`);
 
-  // 유저 셀카는 Replicate가 input_image를 https URL로 가져가야 해서 잠깐 Blob에 올린다
+  // 유저 셀카는 Replicate가 swap_image를 https URL로 가져가야 해서 잠깐 Blob에 올린다
   // (data: URI 직접 전달은 이 모델에서 불안정). 합성 직후 아래 finally에서 즉시 삭제한다.
   // 업로드 전 예산 소진 검사 — 여기서 예산이 없으면 아직 Blob이 없으니 삭제할 것도 없다.
   if (budgetLeft() <= 1_000) {
@@ -250,10 +238,10 @@ export async function POST(req: NextRequest) {
 
   // ── 4~6. Replicate 합성 (업로드 포함) ────────────────────────────────────────
   // ★ 원본 셀카 즉시삭제 보장: 업로드 시도 시점부터 전체를 하나의 try/finally로 감싼다.
-  //   업로드 실패·프롬프트 예외·합성 타임아웃 등 어떤 경로로 빠져나가도 finally가
-  //   pathname으로 원본을 지운다(URL 미확보 케이스까지 회수).
+  //   업로드 실패·합성 타임아웃 등 어떤 경로로 빠져나가도 finally가 pathname으로 원본을
+  //   지운다(URL 미확보 케이스까지 회수).
   try {
-    // 3-1. 유저 셀카 → Vercel Blob 공개 URL (Replicate input_image는 https URL 필요)
+    // 3-1. 유저 셀카 → Vercel Blob 공개 URL (Replicate swap_image는 https URL 필요)
     let swapImageUrl: string;
     try {
       // 업로드도 예산을 소비·공유한다(hang 시 남은 예산 내에서 끊어 finally 도달 보장).
@@ -281,17 +269,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
-    const prompt = buildHairStylePrompt(answers);
+    // 4. 레퍼런스 헤어사진 픽 (target_image) — 빌드타임 manifest 기반, 폴백 체인 포함
+    const baseUrl   = getAssetBaseUrl(req);
+    const reference = pickReferenceUrl(answers, baseUrl);
 
-    // 5. Payload 로그
-    console.log("[hair-transform] → flux-kontext-pro payload:", JSON.stringify({
-      model:       "black-forest-labs/flux-kontext-pro",
-      input_image: swapImageUrl,
-      prompt:      prompt.slice(0, 120) + "...",
+    // 5. Payload 로그 — 레퍼런스 슬롯/버전만. 셀카(swap_image) Blob URL은 민감정보라 로깅 금지.
+    console.log("[hair-transform] → codeplugtech/face-swap:", JSON.stringify({
+      version:       REPLICATE_VERSION.slice(0, 12) + "…",
+      reference_url: reference.url,
+      slot:          reference.slot,
+      fallback:      reference.isFallback,
+      isDefault:     reference.isDefault,
     }));
 
-    // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
+    // 6. Replicate API 호출 (/v1/predictions — version hash 필수)
     // 잔여 예산을 한 번 캡처. 없으면 호출하지 않고 즉시 타임아웃 처리(→ finally에서 원본 삭제).
     const fetchBudget = budgetLeft();
     if (fetchBudget <= 1_000) {
@@ -310,7 +301,8 @@ export async function POST(req: NextRequest) {
         Prefer:         `wait=${waitSec}`,
       },
       body: JSON.stringify({
-        input: buildReplicateInput(swapImageUrl, prompt),
+        version: REPLICATE_VERSION,
+        input:   buildReplicateInput(swapImageUrl, reference.url),
       }),
       signal: AbortSignal.timeout(fetchBudget),
     });
@@ -331,23 +323,23 @@ export async function POST(req: NextRequest) {
 
     // starting/processing → 완료까지 폴링.
     // ⚠️ starting을 빼먹으면(워커 미시작 상태) no_output으로 반환한 뒤 finally에서
-    //    원본을 지워, 이후 워커가 input_image를 가져오려 할 때 합성이 깨진다.
+    //    원본을 지워, 이후 워커가 swap_image를 가져오려 할 때 합성이 깨진다.
     if ((data.status === "starting" || data.status === "processing") && data.urls?.get) {
       const pollResult = await pollUntilDone(data.urls.get, token, hardDeadline);
-      if (!pollResult) {
+      if (!pollResult.ok) {
         return NextResponse.json({
           ok: false,
-          reason: "poll_timeout",
-          debugError: "Replicate 폴링 타임아웃: 제한 시간 내에 이미지 생성 완료되지 않음",
+          reason: pollResult.reason,
+          debugError: pollResult.debugError,
         });
       }
-      return NextResponse.json({ ok: true, imageUrl: pollResult });
+      return NextResponse.json({ ok: true, imageUrl: pollResult.imageUrl });
     }
 
     if (data.error) {
       const debugError = `Replicate prediction error: ${data.error}`;
       console.error("[hair-transform] Prediction error:", data.error);
-      return NextResponse.json({ ok: false, reason: "prediction_error", debugError });
+      return NextResponse.json({ ok: false, reason: classifyFailure(data.error), debugError });
     }
 
     const imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
@@ -372,20 +364,41 @@ export async function POST(req: NextRequest) {
     // ★ 원본 셀카 즉시삭제 — 합성 성공/실패/타임아웃/업로드 abort 무관하게 지운다.
     // URL(swapImageUrl)이 아니라 pathname(blobPath)으로 지운다 → 업로드가 abort돼
     // URL을 못 받았지만 서버엔 저장된 케이스까지 회수한다.
-    // 이 시점(응답 확정)엔 Replicate가 이미 input_image를 가져갔으므로 원본은 불필요.
+    // 이 시점(응답 확정)엔 Replicate가 이미 swap_image를 가져갔으므로 원본은 불필요.
     // await로 응답 반환 전에 삭제를 끝내고(서버리스가 얼기 전), deleteDeadline을 공유해
     // 삭제 재시도가 maxDuration을 넘기지 않도록 한다.
     await deletePhotoFromBlob(blobPath, { deadline: deleteDeadline });
   }
 }
 
+// ─── 실패 사유 분류 ───────────────────────────────────────────────────────────
+// 모델/프로바이더의 에러 문자열을 손님 안내용 사유 코드로 좁힌다. 개인정보는 안 싣는다(사유만).
+//   face_not_detected — 셀카에서 얼굴 미검출(자주 발생 → "다시 찍어주세요" 안내)
+//   prediction_error  — 그 외 모델 실패(일시 장애·프로바이더 거부 등 → "잠시 후 다시")
+function classifyFailure(errText: string | undefined): "face_not_detected" | "prediction_error" {
+  const t = (errText ?? "").toLowerCase();
+  // 좁게 매칭한다 — 바 "face"/"detect"만으론 프로바이더 detector 오류·레퍼런스측 문제까지
+  // "셀카 얼굴 미검출"로 오분류돼 손님에게 애먼 "다시 찍어주세요"가 나간다. 확실한 문구만.
+  const faceMiss =
+    t.includes("no face") ||
+    t.includes("no faces") ||
+    t.includes("face not") ||
+    t.includes("face detect") ||
+    (t.includes("could not") && t.includes("face"));
+  return faceMiss ? "face_not_detected" : "prediction_error";
+}
+
 // ─── Replicate 폴링 ───────────────────────────────────────────────────────────
+
+type PollResult =
+  | { ok: true; imageUrl: string }
+  | { ok: false; reason: "face_not_detected" | "prediction_error" | "poll_timeout"; debugError: string };
 
 async function pollUntilDone(
   pollUrl:  string,
   token:    string,
   deadline: number, // 절대 마감시각(ms). 호출부 hardDeadline과 공유해 maxDuration 초과를 막는다.
-): Promise<string | null> {
+): Promise<PollResult> {
   // 폴 한 사이클(sleep + fetch)에 최소한 이만큼은 남아 있어야 시도한다. 그보다 적으면
   // 마감을 넘기거나 무의미하므로 중단한다(500ms 강제 부여로 deadline을 넘기지 않도록).
   const MIN_CYCLE_MS = 1_500;
@@ -406,13 +419,19 @@ async function pollUntilDone(
         error?:  string;
       };
       if (data.status === "succeeded") {
-        return Array.isArray(data.output) ? (data.output[0] ?? null) : (data.output ?? null);
+        const url = Array.isArray(data.output) ? (data.output[0] ?? null) : (data.output ?? null);
+        if (url) return { ok: true, imageUrl: url };
+        return { ok: false, reason: "prediction_error", debugError: "succeeded인데 output 없음" };
       }
       if (data.status === "failed" || data.error) {
-        console.error("[hair-transform] 폴링 실패:", data.error ?? data.status);
-        return null;
+        const debugError = `폴링 실패: ${data.error ?? data.status}`;
+        console.error("[hair-transform]", debugError);
+        return { ok: false, reason: classifyFailure(data.error), debugError };
       }
-    } catch { return null; }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false, reason: "poll_timeout", debugError: `폴링 중단: ${msg}` };
+    }
   }
-  return null;
+  return { ok: false, reason: "poll_timeout", debugError: "Replicate 폴링 타임아웃: 제한 시간 내 미완료" };
 }
