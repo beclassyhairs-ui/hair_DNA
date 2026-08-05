@@ -3,6 +3,24 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
+## 🔴→🟢 faceswap 전용 재전환 — 커밋 완료·배포 대기(스모크·SQL 관문) (2026-08-05)
+
+**flux-kontext(텍스트 생성) 완전 제거 → codeplugtech/face-swap 전용.** 실서비스 테스트에서 손님 얼굴이 다른/나이 든 얼굴로 나간 결함 대응. **push 안 함(커밋만) — 아래 🔴관문 통과 후 배포.**
+
+- **핵심 발견**: 롤백(`26fa726`) 후 프로덕션은 처음부터 끝까지 **flux-kontext(생성형)**였고 faceswap은 코드에 없었음. 손님이 본 "다른 얼굴"은 **폴백이 아니라 flux가 신원을 보존 못 한 것**(flux가 유일 경로였음). → 재전환은 폴백 삭제가 아니라 모델 교체.
+- **커밋(미push, main `b3dffe1`→`12cb523`, 앞 잔업라운드 위에 얹음)**:
+  - `b3dffe1` **Phase B 재전환** — flux 모델호출·프롬프트(`buildHairStylePrompt`) 완전 삭제(grep 0). codeplugtech/face-swap 복원(`input_image`=레퍼런스/`swap_image`=셀카, `/v1/predictions`+version). `referencePick.ts`·`referencesManifest.json`(42슬롯/60장)·prebuild 생성기 복원. **롤백 원인 URL-302 수정: `getAssetBaseUrl`이 배포환경에서 공개 alias `hair-dna.vercel.app`을 고정 최우선**(요청Host·env·VERCEL_URL 추론 안 함 — Codex 반론 반영, 호스트 스푸핑·스테일 env 차단). 레퍼런스 내부 폴백(규칙 6-가) 유지.
+  - `f83eddc` **C1 실패 UX** — 결과지 raw 에러(영어) 제거 → 사유별 한국어(face_not_detected="밝은 곳서 정면 다시 찍어주세요"/그 외="잠시 후 다시"). 401→로그인·403(consent)→동의 리다이렉트(서버 fail-closed 불변). 성공/실패 이벤트(`hair_transform_done`/`hair_transform_fail`, 사유 allowlist 정규화). Sentry에 원본에러(DSN 미설정 시 no-op).
+  - `944a067` **C2 실패 시 미차감** — 예약→성공확정/실패환불. `supabase/hair_usage_refund.sql` 신규(**⚠️사업주 직접 실행, §4**). 셀카삭제 가드레일 우선(중첩 try/finally). 미실행 시 degrade(기존=선차감 유지, 서비스 정상).
+  - `12cb523` **D 진행표시·고지** — 로딩 3단계 사람말("사진 확인 중"→"스타일 입히는 중"→"마무리 중")+소요시간 범위("보통 30초 안팎"). 미리보기 고지 복원("미리 만들어 본 스타일 이미지예요. 실제 시술 결과와 다를 수 있어요").
+- **가드레일 불변(Codex 4회 검수 확인)**: 로그인401·동의403 fail-closed·일일한도429·비용상한 budget·셀카 finally 즉시삭제 — 전부 보존.
+- 🔴 **배포 전 필수 관문(안 하면 전건 실패 재발)**:
+  1. **스모크 교정(필수)**: `getAssetBaseUrl` 실제 URL을 **쿠키·인증 없는 외부 GET**으로 때려 **200 image/*** 확인(브라우저 200만으론 부족 — 과거 장애가 그렇게 샘). + Replicate 실fetch canary.
+  2. **REPLICATE 토큰/VERSION env** + Replicate 계정 정상.
+  3. **C-2 활성화**: 사업주가 `hair_usage_refund.sql` 실행(미실행이면 실패도 차감됨 — 서비스 자체는 정상).
+- **사장님 눈으로 확인(배포 후)**: /style→설문→사진→합성 **성공** 시 얼굴 보존+레퍼런스 헤어스타일. **일부러 실패시키는 법**: 얼굴이 안 나온 사진(손·풍경 등)을 업로드 → "얼굴이 잘 안 보여요…다시 찍어주세요" + [다시 찍기]. 어드민/SQL로 `events` `event_name='hair_transform_fail'`·`meta.reason` 확인. refund SQL 실행 상태면 실패 후 일일횟수 안 깎임.
+- ⚠️ **앞 잔업 소탕 라운드(아래)도 함께 미push** — push는 사장 승인 후 두 라운드 한 번에.
+
 ## 🧹 잔업 소탕 라운드 — Phase 0·1·3·4 커밋 완료 · 1-4 보류·2 보류 (2026-08-05)
 
 계측 조사(`docs/INSTRUMENTATION_AUDIT_2026-08-05.md`) 후속. **push 안 함(커밋만) — 배포는 사장 승인 후 별도.** 라이브는 여전히 flux(롤백 상태).
@@ -18,7 +36,7 @@
 - 🔵 **Phase 1-4(이벤트 위조 방어) — 이번엔 안 함(사장 결정)**: 검증 결과 events는 브라우저 **anon키로 Supabase 직 insert**(서버 수집라우트 없음, `eventTracking.ts:296`) → 클라 allowlist/Origin은 위조에 무력(anon키로 REST 직접 우회 가능), meta캡은 `sanitizeMeta`에 이미 존재. 효과 없는 클라 방어는 넣지 않기로. **진짜 방어 = 서버 인제스트 라우트 + anon INSERT 회수(RLS/스키마) → 별도 라운드**(영상 돌리기 직전 레이트리밋과 함께 검토 후보).
 - 🔴 **Phase 2 보류(사장 지시)**: faceswap-only 재전환(§0-6) 완료 후 그 위에 얹는다. 지금 라이브가 flux라 Phase 2-1(진행표시) 전제 불일치. 2-2 에러문구도 §0-6 규칙 위에서.
 
-## 🔴 faceswap 프로덕션 장애 → flux 롤백 완료 (2026-08-05, 재전환 대기)
+## (해소됨) 🔴 faceswap 프로덕션 장애 → flux 롤백 (2026-08-05) — ✅ 위 "faceswap 전용 재전환" 커밋으로 대체됨
 
 **증상**: 프로덕션 faceswap 합성이 "Replicate 폴링 타임아웃"으로 전건 실패.
 **확정 근본원인(추측 아님, 증거)**: `getBaseUrl`이 레퍼런스 URL을 **VERCEL_URL(배포도메인)** 으로 만드는데, 그 배포도메인(`hair-xxxxx-beclassyhairs-3736s-projects.vercel.app`)은 **Vercel 배포보호(SSO)로 302→vercel.com/sso-api**를 반환한다(curl 실측). 그래서 Replicate가 `input_image`(레퍼런스)를 못 가져와 prediction이 starting에서 멈추고 우리 폴링(~52s)이 타임아웃. **공개 alias `hair-dna.vercel.app`는 200**이라 canary(data URI)·스모크(alias 직접 fetch)는 성공했었음 → 실경로만 실패. (스모크가 alias를 직접 썼지 코드의 getBaseUrl 출력을 안 써서 못 잡음 — 재발방지 교훈.)
