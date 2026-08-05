@@ -3,7 +3,34 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
-## ✅ faceswap 전환 — 프로덕션 배포·스모크 통과 (2026-08-05)
+## 🧹 잔업 소탕 라운드 — Phase 0·1·4 커밋 완료 · Phase 3 시안/1-4 판정 대기 (2026-08-05)
+
+계측 조사(`docs/INSTRUMENTATION_AUDIT_2026-08-05.md`) 후속. **push 안 함(커밋만).** 라이브는 여전히 flux(롤백 상태).
+
+- **커밋(미push, main)**:
+  - `564037f` **/api/track 죽은 경로 제거(시스템 B)** — route.ts + lib/analytics `trackServer` + app/result(리다이렉트로 도달불가) 호출부. 살아있는 시스템 A(`lib/eventTracking`) 불변. Codex: 제거 로직 자체 통과(전체 워킹트리 diff의 범위 오염만 지적 → 해당 3파일만 스테이징해 커밋).
+  - `3c9e6dc` **죽은 추천함수 5종 삭제(S-07)** — getStyleProduct/getSecondStyleProduct(가짜 "어뷰티…샴푸" 상품카피)·buildAhaText·buildCarePrescription·buildAIDiagnosisText + 고아 심볼(AHA_BLOCKS·getPrimaryConcern·HairConcern·AhaBlock·CarePrescription·StyleProduct). 살아있는 getStyleEntry·toSheetAnswers·getHairTypeReport 불변. 전수 grep 미참조 확인.
+  - `f4a0e21` **완성도 게이지 미완료 칸 링크화(L-03)** — InlineCompletion 미완료 칸 → 해당 랜딩(/style·/damage-check·/bangs·/hair-quiz). `completion_nav_click` 이벤트 신설(B6 "랜딩 간 이동 미측정" 갭 해소). 50·60 탭영역 확대(py-2.5 -my-2.5).
+  - `2e8297a` **purchase_click meta 세그먼트 3종(D-01)** — coreKey·ageGroup(q1_age 원값)·treatmentFreq(q10_history_count 원값). 진단 전 방문자는 3값 null 안전 적재. 확인경로: `events.meta.{coreKey,ageGroup,treatmentFreq}` (event_name='purchase_click'). 컬럼승격(D-02/D-05)은 미착수.
+- **Phase 1-2(L-02) 무변경**: style 저장 `kind:"style"` 명시는 이미 `27d6780`(2026-07-20)에 완료돼 있었음(감사서가 stale). classifyKind 폴백 유지 → 추가 작업 없음.
+- 🟡 **Phase 3(사진화면) 시안 판정 대기**: 사장 확정대로 국외이전 문구 제거(로그인 시 동의·user_consents 기록 완료·/privacy에 상세) + "합성 끝나면 곧바로 삭제돼요"(단정형)를 /privacy "삭제를 **곧바로 진행**" 강도로 완화 + 촬영가이드가 화면 주인공이 되게 고지박스 축소. 시안 2~3개 제시함 → pick 후 구현+Codex. **CONSENT_POLICY_VERSION 상향 불필요**(동의내용·동의게이트 불변, 서버 403 fail-closed 유지, 바뀌는 건 upload "표시"뿐).
+- 🟡 **Phase 1-4(이벤트 위조 방어) 판정 대기**: 검증 결과 events는 브라우저 **anon키로 Supabase 직 insert**(서버 수집라우트 없음, `eventTracking.ts:296`). → 클라 allowlist/Origin은 위조 무력(anon키로 REST 직접 우회 가능), meta캡은 `sanitizeMeta`에 이미 존재(키20·문자열500·비원시 제거). 진짜 방어 = 서버 인제스트 라우트 + anon INSERT 회수(RLS/스키마 변경) = 이번 "최소·코드만·계측 안 건드림" 범위 밖. 옵션 제시 → 사장 판정 대기.
+- 🔴 **Phase 2 보류(사장 지시)**: faceswap-only 재전환(§0-6) 완료 후 그 위에 얹는다. 지금 라이브가 flux라 Phase 2-1(진행표시) 전제 불일치. 2-2 에러문구도 §0-6 규칙 위에서.
+
+## 🔴 faceswap 프로덕션 장애 → flux 롤백 완료 (2026-08-05, 재전환 대기)
+
+**증상**: 프로덕션 faceswap 합성이 "Replicate 폴링 타임아웃"으로 전건 실패.
+**확정 근본원인(추측 아님, 증거)**: `getBaseUrl`이 레퍼런스 URL을 **VERCEL_URL(배포도메인)** 으로 만드는데, 그 배포도메인(`hair-xxxxx-beclassyhairs-3736s-projects.vercel.app`)은 **Vercel 배포보호(SSO)로 302→vercel.com/sso-api**를 반환한다(curl 실측). 그래서 Replicate가 `input_image`(레퍼런스)를 못 가져와 prediction이 starting에서 멈추고 우리 폴링(~52s)이 타임아웃. **공개 alias `hair-dna.vercel.app`는 200**이라 canary(data URI)·스모크(alias 직접 fetch)는 성공했었음 → 실경로만 실패. (스모크가 alias를 직접 썼지 코드의 getBaseUrl 출력을 안 써서 못 잡음 — 재발방지 교훈.)
+- **롤백 완료(`26fa726`, main push→프로덕션 `hair-77s7ny6yb` Ready)**: route.ts·styleReference.ts·result/page.tsx·package.json을 `f5f22bc`(flux)로 복원 + referencePick/manifest/gen스크립트 제거. **레퍼런스 60장·폴백 이미지는 유지**(무해, 재전환 시 재사용). (Vercel instant rollback은 직전 배포까지만=Pro 필요라 코드 롤백으로.)
+- **라이브 검증**: 무인증 hair-transform 401(로그인게이트) / privacy 보호책임자·시행일 유지 / /login/consent 200(동의게이트) / /style·/diagnosis·/items 200. **오늘의 동의게이트·privacy 전부 유지.**
+- 🟡 **faceswap 재전환 수정안(구현·배포 X, 승인·Replicate 복구 후)**:
+  1. **1순위(사장 env)**: Vercel 프로덕션 env에 `NEXT_PUBLIC_SITE_URL=https://hair-dna.vercel.app` 등록 → getBaseUrl이 공개 alias로 레퍼런스 URL 생성(§4라 값 등록은 사장). NEXT_PUBLIC_*은 빌드타임 인라인이라 등록 후 재배포 필수.
+  2. **코드 하드닝(권장)**: getBaseUrl이 레퍼런스 같은 **공개 자산 URL**은 VERCEL_URL(배포도메인)보다 요청 Host헤더(공개 alias)를 우선하도록. env 없이도 안전.
+  3. **스모크 교정(필수)**: 재전환 전 스모크는 **코드의 getBaseUrl이 실제로 만든 URL**을 Replicate로 fetch시켜 검증(이번처럼 alias를 직접 넣지 말 것). 이게 이 버그를 잡는 유일한 게이트.
+  - 순서: env 등록 → 코드 하드닝(선택) → 프리뷰/프로덕션에서 getBaseUrl 실측 URL이 200인지 + Replicate 실fetch canary → 됨 확인 후 faceswap 재전환.
+- ⚠️ Replicate 목록 API가 조사 시점 500(Internal server error) 반환 → prediction 원문 로그는 사장님이 Replicate 대시보드에서 직접 확인 가능(원인은 URL 302로 이미 확정이라 블로커 아님).
+
+## (이전) faceswap 전환 — 프로덕션 배포·스모크 통과 (2026-08-05, 위 장애로 롤백됨)
 
 `/api/hair-transform`를 flux-kontext($0.04) → **codeplugtech/face-swap($≈0.01) 복원(그래프트)**. 사업주 품질승인 후 `feat/faceswap-restore` → **main clean FF 머지(`f5f22bc..ae2a167`) → 프로덕션 배포 Ready**.
 - **프로덕션 스모크 전부 통과**: ① 레퍼런스 URL 200(bob jpg·chest png·루트 폴백 c9248590) ② 무인증 `/api/hair-transform` → **401 `login_required`**(로그인 가드레일 라이브 정상) ③ **Replicate가 프로덕션 레퍼런스 URL 정상 fetch·합성**(output image/jpeg 200 — 프리뷰서 302로 막혔던 지점 해소).
