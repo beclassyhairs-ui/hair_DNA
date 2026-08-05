@@ -1,30 +1,33 @@
 // ============================================================================
 // POST /api/hair-transform
-// 유저 셀카(swap_image) + 레퍼런스 헤어사진(target_image) → Face Swap 합성
-// (2026-08-05: flux-kontext 텍스트생성 → 옛 faceswap 복원. 모델 호출부만 이식,
-//  로그인/동의/일일한도/비용상한/셀카 즉시삭제 가드레일은 전부 보존.)
+// 유저 셀카(input_image) + 마스터 프롬프트 → flux-kontext-pro 헤어 전이
 //
-// 모델: codeplugtech/face-swap (커뮤니티 → /v1/predictions + version hash)
-//   - target_image = 레퍼런스 헤어사진(얼굴이 교체될 캔버스, 공개 https URL)
-//   - swap_image   = 유저 셀카(삽입할 얼굴, Vercel Blob 공개 URL)
-//   - 결과: 유저 얼굴 + 레퍼런스 헤어스타일. 텍스트 프롬프트 불필요.
-//   - 비용: ≈$0.01/run
+// 모델: black-forest-labs/flux-kontext-pro
+//   - 엔드포인트: /v1/models/black-forest-labs/flux-kontext-pro/predictions
+//     (공식 모델 엔드포인트 — version hash 불필요, 항상 최신 버전)
+//   - 비용: $0.04/run | 속도: 6~10초
 //
-// 레퍼런스 해석: 빌드타임 manifest(lib/referencesManifest.json) 기반(런타임 fs 없음).
-//   슬롯키 <len>/<weight>/<curl> (무나이) → 파일 랜덤 픽 → 폴백 체인.
+// 파라미터:
+//   input_image → 유저 셀카 (Vercel Blob 공개 URL)
+//   prompt      → 4차원 마스터 프롬프트 (연령·기장·레이어드·웨이브 + 얼굴 보존 강제)
 //
 // 환경변수:
 //   REPLICATE_API_TOKEN   — 필수
-//   REPLICATE_VERSION     — 선택(미설정 시 아래 고정 해시). canary 검증본 고정 권장.
 //   BLOB_READ_WRITE_TOKEN — 필수 (유저 셀카 Blob 업로드용)
 // ============================================================================
 
-export const maxDuration = 60; // Node.js 런타임 고정
+export const maxDuration = 60; // Node.js 런타임 고정 (fs 사용)
 
+import { access } from "fs/promises";
+import { join }   from "path";
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { DEFAULT_REFERENCE_PATH } from "@/lib/styleReference";
-import { resolveReference, buildReferenceUrl } from "@/lib/referencePick";
+import {
+  getStyleDirectoryPath,
+  buildHairStylePrompt,
+  DEFAULT_REFERENCE_PATH,
+  MAX_IMG,
+} from "@/lib/styleReference";
 import type { StyleAnswers } from "@/app/style/surveyData";
 import { uploadPhotoToBlob, deletePhotoFromBlob } from "@/lib/storage";
 import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
@@ -37,13 +40,9 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 const SERVER_DAILY_MAX = 5;
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// 커뮤니티 모델 → /v1/predictions + version hash 방식.
-const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
-// codeplugtech/face-swap 최신 해시(2026-08-05 Replicate 유효성 확인·canary 검증 대상).
-// ⚠️ 배포 전 canary 성공으로 고정. 해시 변경은 품질 회귀테스트 동반(단순 설정변경 아님).
-const REPLICATE_VERSION =
-  process.env.REPLICATE_VERSION ??
-  "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34";
+// /v1/models/{owner}/{name}/predictions 엔드포인트 → version hash 불필요
+const REPLICATE_ENDPOINT =
+  "https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions";
 
 // ─── 공개 절대 URL 판별 ───────────────────────────────────────────────────────
 function isPublicHttpsUrl(url: string): boolean {
@@ -70,24 +69,34 @@ function getBaseUrl(req: NextRequest): string {
   return `${proto}://${host}`;
 }
 
-// ─── 레퍼런스 이미지 픽 + 폴백 (빌드타임 manifest 기반, 런타임 fs 없음) ──────────
-// 1. 설문 → 슬롯키 <len>/<weight>/<curl> → manifest에서 파일목록 조회(폴백 체인 포함)
-// 2. 그 목록에서 랜덤 1장 → 공개 URL 조립(파일명 인코딩)
-// 3. 매칭·폴백 모두 없으면 default_style.jpg 로 안전 폴백
-function pickReferenceUrl(
+// ─── [요구사항 2] 레퍼런스 이미지 랜덤 픽 + Fallback ──────────────────────────
+// 1. 설문 결과로 조합된 폴더에서 1~MAX_IMG(5) 중 랜덤 시작 인덱스로 순환 탐색
+// 2. 파일 존재 확인(fs.access) → 확정
+// 3. 폴더 전체 비어있으면 /references/default_style.jpg 로 안전 폴백
+async function pickReferenceUrl(
   answers: StyleAnswers,
   baseUrl: string,
-): { url: string; isDefault: boolean; slot: string; isFallback: boolean } {
-  const res = resolveReference(answers);
-  if (!res) {
-    const url = `${baseUrl.replace(/\/$/, "")}${DEFAULT_REFERENCE_PATH}`;
-    console.warn("[hair-transform] ⚠️ 매칭 슬롯·폴백 모두 없음 → default_style.jpg 폴백");
-    return { url, isDefault: true, slot: "", isFallback: true };
+): Promise<{ url: string; isDefault: boolean }> {
+  const dir    = getStyleDirectoryPath(answers);      // e.g. "/references/group_2040/bob/c_curl/soft/"
+  const relDir = dir.replace(/^\//, "");              // "references/group_2040/bob/c_curl/soft/"
+
+  const startIdx = Math.floor(Math.random() * MAX_IMG) + 1; // 랜덤 시작 (1~5)
+
+  for (let i = 0; i < MAX_IMG; i++) {
+    const idx     = ((startIdx - 1 + i) % MAX_IMG) + 1;
+    const relPath = `${relDir}${idx}.jpg`;
+    const absPath = join(process.cwd(), "public", relPath);
+    try {
+      await access(absPath);
+      const url = `${baseUrl}/${relPath}`;
+      console.log(`[hair-transform] ✅ 레퍼런스 픽: ${relPath} → ${url}`);
+      return { url, isDefault: false };
+    } catch { /* 파일 없음 → 다음 인덱스 */ }
   }
-  const file = res.files[Math.floor(Math.random() * res.files.length)]!;
-  const url  = buildReferenceUrl(baseUrl, res.slot, file);
-  console.log(`[hair-transform] ✅ 레퍼런스 픽: ${res.slot}/${file}${res.isFallback ? " (폴백)" : ""} → ${url}`);
-  return { url, isDefault: false, slot: res.slot, isFallback: res.isFallback };
+
+  const url = `${baseUrl}${DEFAULT_REFERENCE_PATH}`;
+  console.warn(`[hair-transform] ⚠️ 빈 폴더(${dir}) → default_style.jpg 폴백`);
+  return { url, isDefault: true };
 }
 
 // ─── base64 Data URI 정규화 ───────────────────────────────────────────────────
@@ -101,15 +110,14 @@ function normalizeBase64(raw: string): string {
 }
 
 // ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
-// 모델: codeplugtech/face-swap v278a81e7 — 스키마 { input_image, swap_image }
-//   input_image = 레퍼런스 헤어사진(= "Target image", 얼굴이 교체될 캔버스)
-//   swap_image  = 유저 셀카(삽입할 얼굴)
-//   ⚠️ 스키마 확인(2026-08-05 Replicate openapi): 키는 input_image/swap_image.
-//      target_image로 보내면 HTTP 422. 스키마에 없는 파라미터도 422.
-function buildReplicateInput(swapImage: string, targetImage: string) {
+// 모델: black-forest-labs/flux-kontext-pro
+function buildReplicateInput(inputImage: string, prompt: string) {
   return {
-    input_image: targetImage, // 레퍼런스(캔버스)
-    swap_image:  swapImage,    // 셀카(삽입 얼굴)
+    input_image:       inputImage,
+    prompt,
+    guidance:          3.0,
+    output_quality:    90,
+    prompt_upsampling: false,
   };
 }
 
@@ -273,20 +281,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. 레퍼런스 헤어사진 픽 (target_image) — 빌드타임 manifest 기반, 폴백 체인 포함
-    const baseUrl   = getBaseUrl(req);
-    const reference = pickReferenceUrl(answers, baseUrl);
+    // 4. 마스터 프롬프트 생성 (4차원 변수 → 헤어 전이 지시문 + 얼굴 보존 강제)
+    const prompt = buildHairStylePrompt(answers);
 
-    // 5. Payload 로그 — 레퍼런스 슬롯/버전만. 셀카(swap_image) Blob URL은 민감정보라 로깅 금지.
-    console.log("[hair-transform] → codeplugtech/face-swap:", JSON.stringify({
-      version:       REPLICATE_VERSION.slice(0, 12) + "…",
-      reference_url: reference.url,
-      slot:          reference.slot,
-      fallback:      reference.isFallback,
-      isDefault:     reference.isDefault,
+    // 5. Payload 로그
+    console.log("[hair-transform] → flux-kontext-pro payload:", JSON.stringify({
+      model:       "black-forest-labs/flux-kontext-pro",
+      input_image: swapImageUrl,
+      prompt:      prompt.slice(0, 120) + "...",
     }));
 
-    // 6. Replicate API 호출 (/v1/predictions — version hash 필수)
+    // 6. Replicate API 호출 (/v1/models/ 엔드포인트 — version hash 불필요)
     // 잔여 예산을 한 번 캡처. 없으면 호출하지 않고 즉시 타임아웃 처리(→ finally에서 원본 삭제).
     const fetchBudget = budgetLeft();
     if (fetchBudget <= 1_000) {
@@ -305,8 +310,7 @@ export async function POST(req: NextRequest) {
         Prefer:         `wait=${waitSec}`,
       },
       body: JSON.stringify({
-        version: REPLICATE_VERSION,
-        input:   buildReplicateInput(swapImageUrl, reference.url),
+        input: buildReplicateInput(swapImageUrl, prompt),
       }),
       signal: AbortSignal.timeout(fetchBudget),
     });

@@ -1,30 +1,45 @@
 // ============================================================================
 // lib/styleReference.ts
-// 설문 답변 → public/references/ 레퍼런스 슬롯키 매핑 (2026-08-05 무나이 전환)
+// 설문 답변 → public/references/ 최종 확정 디렉토리 매핑
 //
-// 구조(사업주 확정, §0): /references/<기장>/<weight: heavy|medium|light>/<컬>/
-//   예) 단발 + 층없음(heavy) + C컬 → references/bob/heavy/c_curl
-//   ※ 나이(group_2040/5060) 제거 — 나이는 결과지 노출 필터에서 처리.
-//   ※ 폴더명은 사업주 분류가 최종. weight 폴더는 heavy/medium/light 그대로 쓴다
-//      (과거 none/soft/rich remap 폐기 — §0-4 옛 생성규칙 무효).
+// 구조: /references/[age 2그룹]/[length 6그룹]/[wave 4그룹]/[layer 3그룹]/
+// 예)  30대 + 단발(bob) + C컬 + 중간층 → /references/group_2040/bob/c_curl/soft/
 //
-// ※ 레퍼런스 이미지는 Replicate 백엔드 전용(target_image) — 유저 브라우저 미노출
+// ※ 레퍼런스 이미지는 Replicate 백엔드 전용 — 유저 브라우저 절대 미노출
 // ============================================================================
 
 import type { StyleAnswers } from "@/app/style/surveyData";
 
-// ─── [기장] — public/references/ 실제 폴더명과 1:1. shoulder는 레거시→collarbone ──
-// (설문에서 2026-07 제거됐으나 과거 저장 다이어리/세션 값 방어. surveyData와 동일 처리.)
+// ─── [나이] 2그룹 ─────────────────────────────────────────────────────────────
+// 20대·30대·40대 → group_2040 / 50대·60대 이상 → group_5060
+
+const AGE_DIR: Record<string, string> = {
+  age_20:     "group_2040",
+  age_30:     "group_2040",
+  age_40:     "group_2040",
+  age_50:     "group_5060",
+  age_60plus: "group_5060",
+};
+
+// ─── [기장] 6그룹 — 확정 규격(2026-07-11), public/references/ 실제 폴더명과 1:1 ──
+// short      (숏)       → short
+// short_bob  (숏단발)    → short_bob
+// bob        (단발/턱선) → bob
+// shoulder   (어깨선)    → shoulder   ※ 기존 long 완전 대체 — long 폴더는 디스크에 없음
+// collarbone (쇄골선)    → collarbone
+// chest      (가슴선)    → chest
+
 const LENGTH_DIR: Record<string, string> = {
   short:      "short",
   short_bob:  "short_bob",
   bob:        "bob",
-  shoulder:   "collarbone", // 레거시 별칭
+  shoulder:   "shoulder",
   collarbone: "collarbone",
   chest:      "chest",
 };
 
-// ─── [컬] 4종 ─────────────────────────────────────────────────────────────────
+// ─── [웨이브] 4그룹 ───────────────────────────────────────────────────────────
+
 const WAVE_DIR: Record<string, string> = {
   straight: "straight",
   c_curl:   "c_curl",
@@ -32,30 +47,39 @@ const WAVE_DIR: Record<string, string> = {
   wave:     "wave",
 };
 
-// ─── [weight/층] 3종 — 설문 값(heavy/medium/light) = 폴더명 그대로(항등) ──────────
-const LAYER_SET = new Set(["heavy", "medium", "light"]);
+// ─── [레이어드/질감] 3그룹 ────────────────────────────────────────────────────
+// heavy  (무거움/층없음)  → none
+// medium (중간/층약간)    → soft
+// light  (가벼움/층많이)  → rich
 
-// 최종 폴백 이미지 경로(모든 슬롯·기장 폴백 실패 시). 사업주가 references 루트에 지정한
-// 대표 이미지(정면·단일 얼굴·전체 헤어) — faceswap 캔버스로 안전.
-export const DEFAULT_REFERENCE_PATH = "/references/c9248590-615b-4754-b6e6-85e079b2e926.jpg";
+const LAYER_DIR: Record<string, string> = {
+  heavy:  "none",
+  medium: "soft",
+  light:  "rich",
+};
 
-// 컬·weight 순회용(폴백 체인) — allowlist. 여기 없는 값은 슬롯키에 절대 안 들어간다(traversal 차단).
-export const ALL_WEIGHTS = ["heavy", "medium", "light"] as const;
-export const ALL_CURLS   = ["straight", "c_curl", "s_curl", "wave"] as const;
+// 기본 대체 이미지 경로 (빈 폴더 방어용)
+export const DEFAULT_REFERENCE_PATH = "/references/default_style.jpg";
 
-// ─── 핵심: 설문 답변 → 레퍼런스 슬롯키 "<len>/<weight>/<curl>" ──────────────────
-// 반환값의 3토막은 전부 위 allowlist(LENGTH_DIR 값 / LAYER_SET / WAVE_DIR 값)에서만 나온다.
-// 원시 설문값을 경로에 직접 넣지 않으므로 경로 traversal이 원천 불가능하다.
+// 폴더당 최대 이미지 수 (1.jpg ~ MAX_IMG.jpg)
+export const MAX_IMG = 5;
+
+// ─── 핵심 매핑 함수 ───────────────────────────────────────────────────────────
+
 /**
+ * 설문 답변 4가지 → 4차원 디렉토리 경로 (trailing slash 포함)
+ *
  * @example
- * getReferenceSlotKey({ q11_length:"bob", q14_layer:"heavy", q13_design:"c_curl" })
- * // → "bob/heavy/c_curl"
+ * getStyleDirectoryPath({ q1_age:"age_30", q11_length:"shoulder",
+ *                         q13_design:"c_curl", q14_layer:"medium" })
+ * // → "/references/group_2040/shoulder/c_curl/soft/"
  */
-export function getReferenceSlotKey(answers: StyleAnswers): string {
+export function getStyleDirectoryPath(answers: StyleAnswers): string {
+  const age    = AGE_DIR[answers.q1_age      ?? ""] ?? "group_2040";
   const length = LENGTH_DIR[answers.q11_length ?? ""] ?? "bob";
-  const layer  = LAYER_SET.has(answers.q14_layer ?? "") ? (answers.q14_layer as string) : "medium";
-  const wave   = WAVE_DIR[answers.q13_design ?? ""] ?? "straight";
-  return `${length}/${layer}/${wave}`;
+  const wave   = WAVE_DIR[answers.q13_design  ?? ""] ?? "straight";
+  const layer  = LAYER_DIR[answers.q14_layer  ?? ""] ?? "soft";
+  return `/references/${age}/${length}/${wave}/${layer}/`;
 }
 
 /**

@@ -156,7 +156,6 @@ function BeforeAfterSection({
   onRetry:      () => void;
 }) {
   return (
-    <>
     <div className="grid grid-cols-2 gap-3">
       {/* BEFORE */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700"
@@ -221,12 +220,6 @@ function BeforeAfterSection({
         )}
       </div>
     </div>
-    {generatedUrl && (
-      <p className="mt-2 text-center text-[11px] leading-relaxed text-ink-2">
-        ※ AI 스타일 미리보기입니다. 실제 시술 결과와 다를 수 있어요.
-      </p>
-    )}
-    </>
   );
 }
 
