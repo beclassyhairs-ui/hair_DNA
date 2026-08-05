@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   STYLE_ANSWERS_KEY,
   STYLE_DEBUG_ERROR_KEY,
+  STYLE_FAIL_REASON_KEY,
   STYLE_GENERATED_KEY,
   STYLE_LIMIT_KEY,
   STYLE_PHOTO_KEY,
@@ -146,12 +147,30 @@ function SaveDiaryModal({
 // ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시.
 // Phase B: 잠금(blur) 오버레이 제거 — 결과지 진입 전 이미 로그인을 마쳤으므로 항상 공개한다.
 
+// 실패 사유 코드 → 손님 안내(한국어 평서문·에러코드/영어 없음·50·60이 읽는 문장).
+// 얼굴 미검출은 자주 나므로 "다시 찍어주세요", 그 외 일시/서버 문제는 "잠시 후 다시".
+function failMessage(reason: string | null): { title: string; hint: string; button: string } {
+  if (reason === "face_not_detected") {
+    return {
+      title:  "얼굴이 잘 안 보여요",
+      hint:   "밝은 곳에서 얼굴이 정면으로 나오게 다시 찍어주세요.",
+      button: "다시 찍기",
+    };
+  }
+  // poll_timeout·api_error·prediction_error·exception·network·blob_*·no_output·budget 등
+  return {
+    title:  "지금 잠시 붐볐어요",
+    hint:   "잠시 후 다시 시도해 주세요.",
+    button: "다시 시도",
+  };
+}
+
 function BeforeAfterSection({
-  photo, generatedUrl, debugError, limitMessage, onRetry,
+  photo, generatedUrl, failReason, limitMessage, onRetry,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
-  debugError:   string | null;
+  failReason:   string | null;
   limitMessage: string | null;
   onRetry:      () => void;
 }) {
@@ -193,24 +212,22 @@ function BeforeAfterSection({
             <p className="text-[13px] font-semibold leading-snug text-white/90">오늘 무료 합성을<br />모두 사용했어요</p>
             <p className="text-[11px] leading-relaxed text-white/70">{limitMessage}</p>
           </div>
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
-            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/40" stroke="currentColor" strokeWidth={1.2}>
-              <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
-            </svg>
-            <p className="text-[13px] leading-snug text-white/85">AI 합성에<br />실패했어요</p>
-            {debugError && (
-              <div className="w-full rounded-lg border border-red-500/40 bg-red-950/60 px-2 py-2 text-left">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-red-400 mb-1">[개발자 디버그] 에러 원인:</p>
-                <p className="text-[10px] leading-snug text-red-300 break-all">{debugError}</p>
-              </div>
-            )}
-            <button onClick={onRetry}
-              className="rounded-btn border border-white/35 bg-white/10 px-3.5 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/20">
-              다시 시도
-            </button>
-          </div>
-        )}
+        ) : (() => {
+          const f = failMessage(failReason);
+          return (
+            <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center overflow-y-auto py-4">
+              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
+              </svg>
+              <p className="text-[13px] font-semibold leading-snug text-white/90">{f.title}</p>
+              <p className="text-[11px] leading-relaxed text-white/70">{f.hint}</p>
+              <button onClick={onRetry}
+                className="mt-1 rounded-btn border border-white/35 bg-white/10 px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/20">
+                {f.button}
+              </button>
+            </div>
+          );
+        })()}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white">After</span>
         </div>
@@ -403,7 +420,7 @@ export default function StyleResultPage() {
 
   const [photo,      setPhoto]      = useState<string | null>(null);
   const [generated,  setGenerated]  = useState<string | null>(null);
-  const [debugError, setDebugError] = useState<string | null>(null);
+  const [failReason, setFailReason] = useState<string | null>(null);
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [answers,    setAnswers]    = useState<StyleAnswers>({});
   const [ready,      setReady]      = useState(false);
@@ -430,8 +447,9 @@ export default function StyleResultPage() {
           setLimitMessage(limit);
         } else {
           const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
-          console.warn("[Result] ⚠️ AI 이미지 URL 없음. debugError:", dbgErr ?? "(없음)");
-          if (dbgErr) setDebugError(dbgErr);
+          const reason = sessionStorage.getItem(STYLE_FAIL_REASON_KEY);
+          console.warn("[Result] ⚠️ AI 이미지 URL 없음. reason:", reason ?? "(없음)", "debugError:", dbgErr ?? "(없음)");
+          setFailReason(reason);
         }
       }
     } catch { /**/ }
@@ -495,7 +513,7 @@ export default function StyleResultPage() {
           {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
           <ResultHeroCard
             eyebrow="AI STYLE DIAGNOSIS"
-            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} debugError={debugError} limitMessage={limitMessage} onRetry={handleRetry} />}
+            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} />}
             badge={entry.name}
             badgeVariant="subtle"
             title={copy.painPointHeadline}

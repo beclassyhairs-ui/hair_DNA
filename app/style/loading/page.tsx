@@ -10,12 +10,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_GENERATED_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_FAIL_REASON_KEY, STYLE_GENERATED_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
-import { clearAccountId } from "@/lib/eventTracking";
+import { clearAccountId, trackEvent } from "@/lib/eventTracking";
+import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
@@ -35,6 +36,18 @@ const HAIR_TIPS = [
   "샴푸 시 손끝으로 두피를 30초 마사지하면 혈액순환이 활성화되어 모발 성장 주기 자체가 달라집니다.",
   "펌·컬러 후 48시간은 황금 시간입니다. 이 시간 안에 모발이 젖으면 웨이브가 풀리거나 색이 빠질 수 있어요.",
 ];
+
+// 서버가 주는 실패 사유를 그대로 이벤트·Sentry·sessionStorage에 넣지 않는다 — 알려진 코드만
+// 통과시키고 나머지는 "unknown"으로 정규화(원본 에러·PII가 계측에 새는 것 차단, Codex 반영).
+const KNOWN_FAIL_REASONS = new Set([
+  "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
+  "blob_token_missing", "blob_upload_failed", "budget_exhausted", "poll_timeout",
+  "api_error", "prediction_error", "no_output", "exception", "face_not_detected",
+  "consent_required", "login_required", "network",
+]);
+function normFailReason(r: string | undefined): string {
+  return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
+}
 
 export default function StyleLoadingPage() {
   const router     = useRouter();
@@ -97,6 +110,7 @@ export default function StyleLoadingPage() {
       //   과거 생성 이미지를 먼저 읽어(한도 카드보다 우선) 낡은 결과를 보여준다.
       try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
       try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_FAIL_REASON_KEY); } catch { /**/ }
       try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
 
       // 설문 답변만 Sheets에 기록 — fire-and-forget.
@@ -138,21 +152,46 @@ export default function StyleLoadingPage() {
         };
         console.log("[AI] 응답 전체:", data);
 
+        // 동의 필요(403·consent_required)만 동의화면으로. 다른 403은 일반 실패로(오안내·루프 방지).
+        // 서버 게이트(fail-closed)는 그대로 두고 손님만 안내한다.
+        if (res.status === 403 && data.reason === "consent_required") {
+          window.location.href =
+            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
+          return;
+        }
+
         if (res.status === 429 || data.reason === "daily_limit") {
           // 일일 한도 초과 → 결과지에 친절한 안내 카드로(빨간 에러 아님)
           const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
           try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
+          // 실패 계측(C-3) — 사유 코드만, 개인정보 없음.
+          void trackEvent("hair_transform_fail", { reason: "daily_limit", source: "style" });
         } else if (data.ok && data.imageUrl) {
           console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
           try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
           try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+          // 성공 계측 — 실패율 계산의 분모(전체 시도 대비 성공).
+          void trackEvent("hair_transform_done", { source: "style" });
         } else {
-          const errMsg = data.debugError ?? `reason: ${data.reason ?? "unknown"} (debugError 없음)`;
+          const reason = normFailReason(data.reason);
+          const errMsg = data.debugError ?? `reason: ${reason} (debugError 없음)`;
           console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
+          // 원인 코드는 손님 안내 분기용, debugError는 로그/Sentry용(손님 화면 미노출).
+          try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, reason); } catch { /**/ }
           try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
+          // 실패 계측(C-3) + Sentry에 원본 에러 정직하게(손님 화면만 순화). DSN 미설정 시 no-op.
+          void trackEvent("hair_transform_fail", { reason, source: "style" });
+          Sentry.captureMessage(`[hair-transform] 합성 실패: ${reason}`, {
+            level: "error",
+            extra: { debugError: errMsg },
+          });
         }
       } catch (e) {
         console.error("[AI] ❌ API 호출 예외:", e);
+        // 네트워크 예외/타임아웃도 실패로 계측 + Sentry.
+        try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, "network"); } catch { /**/ }
+        void trackEvent("hair_transform_fail", { reason: "network", source: "style" });
+        Sentry.captureException(e);
       }
 
       // 합성 시도 완료(성공/실패/타임아웃/한도 무관) → 결과지 이동.
