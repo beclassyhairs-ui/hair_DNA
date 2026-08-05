@@ -38,6 +38,19 @@
 - 전화번호는 표시 6항목에 **없음**(050 안심번호는 추후 별건). 이메일 개설·주소 확정(비상주 사무실 이전) 전까진 블록이 안 뜨는 게 정상.
 - ⚠️ 실제 값은 소스·커밋·`.env.example`에 절대 넣지 말 것. Vercel env + 로컬 `.env.local`(gitignored)로만.
 
+## ✅ 카카오 로그인 前 국외이전 동의 화면·서버강제 + 동의기록(user_consents) — 프로덕션 배포 (2026-08-05)
+
+**목적**: 국외이전(얼굴) 동의가 `upload:66 useState(agreed)`뿐이라 어디에도 안 적히던 구조(입증력 0)를 **"한 번 묻고 영구 기록, 안 적혔으면 서버가 차단"**으로 전환. 순서변경(로그인·동의를 사진 前으로)은 부산물.
+
+- **main FF 머지·배포 완료**: `feat/kakao-consent`(3커밋 c0b2898·535b741·11077a1 + 배너제거 74ac895) → main clean FF(`46711d7..74ac895`) → 프로덕션 `hair-5gkgsra5j` Ready. 라이브 검증(무인증): 전 경로 200(미끼 3종 포함 무회귀), 동의화면 "초안" 배너 제거 확인, `/api/hair-transform`·`/api/consents` 무인증 401.
+- **동의 기록 user_consents(append-only)**: 서버권위(user_id/policy_version/시각/필수판정=서버, granted 클라 목록만), 멱등 `UNIQUE(user_id, submission_id, consent_type)`, UPDATE/DELETE 차단 트리거, RLS deny-all, **IP 미저장**. 사업주가 `users_auth_schema.sql`+`user_consents_schema.sql` 실행 완료(count 0 확인).
+- **서버 강제(§13 B안)**: `/api/hair-transform`에 로그인(:130) 뒤·비용(일일한도) 前 동의 확인 추가 — 미동의/조회실패 모두 **403 fail-closed**. 기존 로그인·일일한도 로직 불변(사이 추가만).
+- **게이트(§8)**: 로그인만으론 스킵 불가 — 현재 방침버전 국외이전 동의 보유까지 확인. `/api/auth/me`에 consent 필드 추가(기존 구조 불변→loading 백스톱 무영향). `lib/consentServer`(서버)·`lib/consentGate`(클라)·`lib/consent`(상수 `CONSENT_POLICY_VERSION="2026-08-02"`).
+- **Codex**: 1차 반론검증(IP미저장/캐시없음/멱등/게이트/순서) + 2차 보안(멱등키 user_id 누락 실버그·append-only 트리거·pending 수정) + 3차 B안(통과). ⚠️ codex는 `-s read-only` + '레포탐색 금지'로 실행해야 함(안 그러면 승인대기로 hang).
+- **프리뷰 카카오 왕복 이슈 해결**: `KAKAO_REDIRECT_URI`가 Prod+Preview 공용이라 프리뷰가 프로덕션으로 튕기던 것 → **Prod 항목은 그대로 두고 Preview 스코프 별도 항목 추가**(프로덕션 폴백 위험 회피, getKakaoEnv는 NEXT_PUBLIC_SITE_URL 폴백에 기본값 없음에 유의).
+- 🟡 **남은 것**: (a) **사업주 실기기 최종 스모크**(카카오 로그인 필요 — 정상흐름 / 미동의 직접호출 403 / user_consents insert / 멱등). (b) **/privacy 본문 마감**(보호책임자 실값·noindex 해제) — 블로커 아님(이메일 P-04 닫힘). 완료 시 `CONSENT_POLICY_VERSION` 상향→유저 1회 재동의. (c) 탈퇴는 soft-delete(단계3, `docs/DESIGN_consent_and_deletion.md` §4·§7).
+- **불변 유지**: `LOGIN_REQUIREMENT_POINT`·`hair-transform` 비용게이트·loading 백스톱·`/api/auth/me` 기존 응답구조.
+
 ## ✅ 다이어리 통합 — main FF 머지·프로덕션 배포 완료 (2026-08-02)
 
 **하단탭 "마이헤어" 목적지를 껍데기 더미(/myhair) → 실체(/my-diary)로 통일. 방식 (가)(회귀 최소).**
