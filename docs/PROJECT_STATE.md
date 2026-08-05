@@ -3,9 +3,10 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
-## 🧹 잔업 소탕 라운드 — Phase 0·1·4 커밋 완료 · Phase 3 시안/1-4 판정 대기 (2026-08-05)
+## 🧹 잔업 소탕 라운드 — Phase 0·1·3·4 커밋 완료 · 1-4 보류·2 보류 (2026-08-05)
 
-계측 조사(`docs/INSTRUMENTATION_AUDIT_2026-08-05.md`) 후속. **push 안 함(커밋만).** 라이브는 여전히 flux(롤백 상태).
+계측 조사(`docs/INSTRUMENTATION_AUDIT_2026-08-05.md`) 후속. **push 안 함(커밋만) — 배포는 사장 승인 후 별도.** 라이브는 여전히 flux(롤백 상태).
+**커밋 범위: `564037f`(track제거) → `3c9e6dc`(죽은함수) → `f4a0e21`(게이지링크) → `2e8297a`(구매세그) → `cdcbd16`(문서) → `391e809`(사진화면).** 사장이 눈으로 볼 곳은 아래 각 항목 "확인" 참조.
 
 - **커밋(미push, main)**:
   - `564037f` **/api/track 죽은 경로 제거(시스템 B)** — route.ts + lib/analytics `trackServer` + app/result(리다이렉트로 도달불가) 호출부. 살아있는 시스템 A(`lib/eventTracking`) 불변. Codex: 제거 로직 자체 통과(전체 워킹트리 diff의 범위 오염만 지적 → 해당 3파일만 스테이징해 커밋).
@@ -13,8 +14,8 @@
   - `f4a0e21` **완성도 게이지 미완료 칸 링크화(L-03)** — InlineCompletion 미완료 칸 → 해당 랜딩(/style·/damage-check·/bangs·/hair-quiz). `completion_nav_click` 이벤트 신설(B6 "랜딩 간 이동 미측정" 갭 해소). 50·60 탭영역 확대(py-2.5 -my-2.5).
   - `2e8297a` **purchase_click meta 세그먼트 3종(D-01)** — coreKey·ageGroup(q1_age 원값)·treatmentFreq(q10_history_count 원값). 진단 전 방문자는 3값 null 안전 적재. 확인경로: `events.meta.{coreKey,ageGroup,treatmentFreq}` (event_name='purchase_click'). 컬럼승격(D-02/D-05)은 미착수.
 - **Phase 1-2(L-02) 무변경**: style 저장 `kind:"style"` 명시는 이미 `27d6780`(2026-07-20)에 완료돼 있었음(감사서가 stale). classifyKind 폴백 유지 → 추가 작업 없음.
-- 🟡 **Phase 3(사진화면) 시안 판정 대기**: 사장 확정대로 국외이전 문구 제거(로그인 시 동의·user_consents 기록 완료·/privacy에 상세) + "합성 끝나면 곧바로 삭제돼요"(단정형)를 /privacy "삭제를 **곧바로 진행**" 강도로 완화 + 촬영가이드가 화면 주인공이 되게 고지박스 축소. 시안 2~3개 제시함 → pick 후 구현+Codex. **CONSENT_POLICY_VERSION 상향 불필요**(동의내용·동의게이트 불변, 서버 403 fail-closed 유지, 바뀌는 건 upload "표시"뿐).
-- 🟡 **Phase 1-4(이벤트 위조 방어) 판정 대기**: 검증 결과 events는 브라우저 **anon키로 Supabase 직 insert**(서버 수집라우트 없음, `eventTracking.ts:296`). → 클라 allowlist/Origin은 위조 무력(anon키로 REST 직접 우회 가능), meta캡은 `sanitizeMeta`에 이미 존재(키20·문자열500·비원시 제거). 진짜 방어 = 서버 인제스트 라우트 + anon INSERT 회수(RLS/스키마 변경) = 이번 "최소·코드만·계측 안 건드림" 범위 밖. 옵션 제시 → 사장 판정 대기.
+- ✅ **Phase 3(사진화면) A안 구현·커밋(`391e809`)**: 사장 A안 채택. 국외이전 문구 제거(로그인 시 동의·user_consents 기록 완료·/privacy §5 상세) + "곧바로 삭제돼요"(단정) → **"원본 삭제를 곧바로 진행해요"**(/privacy "삭제를 곧바로 진행"과 동일 강도) + 큰 고지박스 → 안심 한 줄, 하단 얇게(pt-4) → **촬영 가이드가 화면 주인공**(잘림 원인=하단 고정블록 과대였음). **동의 게이트·서버 403 fail-closed·onConfirm 불변(표시만).** **CONSENT_POLICY_VERSION 상향 불필요**(동의내용 불변). Codex 통과("삭제 강도 정합·게이트 미훼손·JSX 정상"). **확인: 로그인 후 /style → 설문 → 사진 등록 진입 시 가이드 화면**(국외이전 문구 사라짐, 안심 한 줄만).
+- 🔵 **Phase 1-4(이벤트 위조 방어) — 이번엔 안 함(사장 결정)**: 검증 결과 events는 브라우저 **anon키로 Supabase 직 insert**(서버 수집라우트 없음, `eventTracking.ts:296`) → 클라 allowlist/Origin은 위조에 무력(anon키로 REST 직접 우회 가능), meta캡은 `sanitizeMeta`에 이미 존재. 효과 없는 클라 방어는 넣지 않기로. **진짜 방어 = 서버 인제스트 라우트 + anon INSERT 회수(RLS/스키마) → 별도 라운드**(영상 돌리기 직전 레이트리밋과 함께 검토 후보).
 - 🔴 **Phase 2 보류(사장 지시)**: faceswap-only 재전환(§0-6) 완료 후 그 위에 얹는다. 지금 라이브가 flux라 Phase 2-1(진행표시) 전제 불일치. 2-2 에러문구도 §0-6 규칙 위에서.
 
 ## 🔴 faceswap 프로덕션 장애 → flux 롤백 완료 (2026-08-05, 재전환 대기)
