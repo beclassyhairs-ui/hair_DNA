@@ -7,9 +7,11 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/gen-references-manifest.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "gen:references": "node scripts/gen-references-manifest.mjs"
   },
   "dependencies": {
     "@mediapipe/face_mesh": "^0.4.1633559619",
