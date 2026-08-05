@@ -53,7 +53,7 @@ import {
   type RankedItem,
 } from "./recommend";
 import type { BeautyProduct } from "./masterData";
-import { EVENTS, track, trackServer } from "../../lib/analytics";
+import { EVENTS, track } from "../../lib/analytics";
 import {
   captureReferral,
   buildReferralUrl,
@@ -100,7 +100,6 @@ export default function ResultPage() {
     setIncomingRef(ref);
     if (ref) {
       track(EVENTS.REFERRAL_LANDED, { ref });
-      void trackServer(EVENTS.REFERRAL_LANDED, { ref });
     }
     setMyRefId(getOrCreateMyRef());
     try {
@@ -993,10 +992,6 @@ function ProductCard({ product, no }: { product: BeautyProduct; no: number }) {
       product_name: product.name,
       price: product.price,
     });
-    void trackServer(EVENTS.PRODUCT_CLICK, {
-      product_id: product.id,
-      product_name: product.name,
-    });
   }
 
   return (
@@ -1084,7 +1079,6 @@ function ShareRow({ styleName, myRefId }: { styleName: string; myRefId: string }
 
   async function handleShare(method: "kakao" | "copy") {
     track(EVENTS.SHARE_CLICK, { method, ref: myRefId, style: styleName });
-    void trackServer(EVENTS.SHARE_CLICK, { method, ref: myRefId });
     if (method === "kakao") {
       try {
         await loadKakaoSDK();

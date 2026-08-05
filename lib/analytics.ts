@@ -46,23 +46,3 @@ export function track(event: EventName, params?: EventParams): void {
     });
   }
 }
-
-/**
- * 서버사이드 이벤트 로그 엔드포인트(/api/track)에 비동기로 전송합니다.
- * 실패해도 사용자 경험에 영향을 주지 않습니다.
- */
-export async function trackServer(
-  event: EventName,
-  params?: EventParams & { ref?: string },
-): Promise<void> {
-  try {
-    await fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, params, timestamp: Date.now() }),
-      keepalive: true, // 페이지 이탈 시에도 전송 보장
-    });
-  } catch {
-    // 네트워크 오류 등 — 프로덕션에서는 Sentry 등으로 보고
-  }
-}
