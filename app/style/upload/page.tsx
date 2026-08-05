@@ -91,35 +91,24 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           </div>
         </div>
 
-        {/* ── Sticky Bottom: 체크박스 + 버튼 ── */}
+        {/* ── Sticky Bottom: 안심 한 줄 + 버튼 (촬영 가이드가 주인공이 되게 얇게) ── */}
         <div
-          className="flex-none border-t border-line bg-bg px-page pt-5"
-          style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+          className="flex-none border-t border-line bg-bg px-page pt-4"
+          style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
-          {/* 안심 문구 + 국외이전 고지 — 톤: 따뜻·담담, 겁주기 금지.
-              ⚠️ 실동작과 반드시 일치해야 하는 문구다.
-                · submit-diagnosis: 셀카 미저장(답변만 Sheets)
-                · hair-transform: 합성 위해 잠깐 Blob 업로드 → 합성 직후 finally에서 즉시삭제
-                · 합성은 Replicate(미국)에서 처리 → 국외이전 함께 고지
-              "즉시 파기"가 이제 실동작이다. 되돌릴 땐 코드(위 두 라우트)부터 바꿀 것. */}
-          {/* WORKORDER-02: 문구는 그대로, 크기(13→16px)·대비(--ink)만 강화해 앞에 크게 노출 */}
-          <div className="mb-4 rounded-card border border-line bg-surface px-4 py-4">
-            <p className="text-body leading-relaxed text-ink">
-              올려주신 사진은 <span className="font-semibold">헤어스타일을 합성하는 데에만</span> 쓰이고,{" "}
-              <span className="font-semibold">합성이 끝나면 곧바로 서버에서 삭제</span>돼요.
-              원본은 따로 보관하지 않으니 안심하고 진행하셔도 좋아요.
-            </p>
-            <p className="mt-2 text-aux leading-relaxed text-ink-2">
-              합성은 해외(미국 Replicate) 서버에서 처리되며, 이 과정에서 사진이 국외로 이전됩니다.
-            </p>
-          </div>
-
-          <p className="mb-4 text-center text-aux text-ink-2">
-            자세한 처리 방식은{" "}
+          {/* 안심 한 줄 — 톤: 따뜻·담담, 겁주기 금지. ⚠️ 실동작과 일치해야 하는 문구다.
+              · hair-transform: 합성 위해 잠깐 Blob 업로드 → 합성 직후 finally에서 삭제 시도(best-effort 2회).
+              ★ 단정형('삭제됩니다/즉시 파기') 금지 — /privacy 본문 "삭제를 곧바로 진행"과 같은 강도로 맞춘다
+                (삭제 재시도 2회 모두 실패 시 잔존 엣지 + 스윕/TTL 부재 때문에 100% 단정 못 함).
+              ★ 국외이전 고지는 여기서 뺀다 — 로그인 동의화면에서 이미 동의·user_consents 기록 완료(사진 단계 前),
+                상세 고지는 /privacy §5. 로그인 단계에서 사전 고지·동의를 완료하므로 매 촬영마다 재고지하지 않는다. */}
+          <p className="mb-3 text-center text-aux leading-relaxed text-ink-2">
+            사진은 스타일 만드는 데에만 쓰고, 끝나면 원본 삭제를 곧바로 진행해요.{" "}
+            자세한 내용은{" "}
             <Link href="/privacy" className="font-medium text-ink underline underline-offset-2">
               개인정보처리방침
             </Link>
-            에서 확인하실 수 있어요
+            에서 확인하실 수 있어요.
           </p>
 
           {/* 국외이전 동의는 로그인 동의화면에서 이미 완료(사진 단계 前). 여기선 게이트 없음. */}
