@@ -3,6 +3,18 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
+## 🟡 faceswap 전환 — 브랜치 구현·canary 통과, 사업주 품질승인 대기 (2026-08-05)
+
+`/api/hair-transform`를 flux-kontext($0.04) → **codeplugtech/face-swap($≈0.01) 복원(그래프트)**. 브랜치 `feat/faceswap-restore`(`8b522e8`, push·프리뷰 빌드 Ready). **아직 프로덕션 미머지**(전면 전환은 사업주 품질승인 후).
+- **그래프트(revert 아님)**: 모델 호출부만 이식 — 엔드포인트 `/v1/predictions`+version(`278a81e7`), 입력빌더 `{input_image=레퍼런스, swap_image=셀카}`. **가드레일(로그인401·동의403 fail-closed·일일한도429·비용상한·셀카 finally 즉시삭제) 전부 보존**(diff·Codex 확인).
+- **레퍼런스 해석 = 빌드타임 manifest**(`lib/referencesManifest.json`, 42슬롯/60장). 런타임 fs 폐기(Vercel 서버리스 대비). `prebuild` 훅 자동재생성. 경로 무나이 `<len>/<heavy|medium|light>/<curl>`, shoulder→collarbone, 슬롯키 allowlist(traversal 불가), 폴백 체인.
+- **레퍼런스 60장 커밋·배포**(사업주 자산, 내용 무변경 §0). default_style.jpg는 로컬삭제·커밋본 존재 → **사업주 대표 폴백 1장 지정 대기**.
+- **결과지 UI 고지** "AI 스타일 미리보기·실제와 다를 수 있음" 추가. 셀카 URL 로깅 제거.
+- **Codex 검수 2회 통과**(치명: codeplugtech 스키마가 target_image 아닌 `input_image`=Target image → 수정). tsc 통과.
+- **canary 1회 성공**: data URI로 레퍼런스 2장 전송 → HTTP 202→succeeded, output image/jpeg 200. **캔버스 단발+뱅에 얼굴 자연 스왑 확인**(제품 동작 재현). 결과 이미지 사업주 전달함.
+- 🔴 **프리뷰 레퍼런스 URL은 Vercel 배포보호로 302**(Replicate 미접근). **프로덕션 도메인은 공개 200**이라 머지 후 정상. 이게 전면전환 전제.
+- 🟡 **다음(승인 후)**: 사업주 품질승인 → main 머지(프로덕션 전환) + 대표 폴백 지정. `REPLICATE_VERSION` env 고정 권장. 미커밋 임시파일 `_canary_tmp.mjs`(무해) 삭제 필요(샌드박스가 터미널 삭제 차단).
+
 ## ✅ /privacy 본문 마감 — 프로덕션 배포 완료 (2026-08-05, Phase A)
 
 법적 마감 라운드 Phase A. `app/privacy/page.tsx` 단일 파일(`2f3b7c5`) → main push → 웹훅 프로덕션 배포 `hair-6lxsker9g`(● Ready). **라이브 검증(hair-dna.vercel.app/privacy) 통과**: HTTP 200 / 보호책임자 김진성·beclassyhairs@gmail.com 노출 / 초안배너 0 / 시행일 2026년 8월 2일 / **noindex 메타 제거(색인 허용)** / 수탁표 "Vercel Blob"·"Google Sheets" 표기.
