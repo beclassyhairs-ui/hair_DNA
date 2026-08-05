@@ -113,6 +113,13 @@ function buildReplicateInput(swapImage: string, targetImage: string) {
 
 export async function POST(req: NextRequest) {
 
+  // ── C-2: 실패 시 미차감 (예약→성공확정/실패환불) ────────────────────────────
+  // bump_hair_usage는 합성 前에 1회를 "선차감(예약)"한다. 성공을 확정하기 전에 빠져나가면
+  // (프로바이더 오류·타임아웃·얼굴미검출 등) finally에서 refund_hair_usage로 1회를 되돌린다.
+  // 실제 증가된 경우에만 userId를 담는다(한도초과 -1·RPC오류 fail-open은 증가 안 했으므로 제외).
+  let chargedUserId: string | null = null;
+  let succeeded = false;
+
   // ── 서버측 로그인 게이트 + 일일 호출 제한 (앞문 /style/loading 게이트와 동일 기준) ──
   // 클라 흐름을 우회한 무인증/과다 직접 호출을 서버에서 차단 → 로그인 없이·무제한으로 합성이
   // 도는 것을 막아 Replicate 서버비 남용을 방지한다. KAKAO_LOGIN_ENABLED를 끄면 함께 꺼진다.
@@ -160,6 +167,8 @@ export async function POST(req: NextRequest) {
           },
           { status: 429 },
         );
+      } else if (typeof data === "number" && data > 0) {
+        chargedUserId = session.userId; // 실제 증가(1..max)일 때만 선차감 인정(실패 시 환불).
       }
     } catch (e) {
       console.error("[hair-transform] 일일제한 예외(제한 미적용):", e instanceof Error ? e.message : String(e));
@@ -333,6 +342,7 @@ export async function POST(req: NextRequest) {
           debugError: pollResult.debugError,
         });
       }
+      succeeded = true; // 성공 확정 → finally 환불 안 함
       return NextResponse.json({ ok: true, imageUrl: pollResult.imageUrl });
     }
 
@@ -350,6 +360,7 @@ export async function POST(req: NextRequest) {
     }
 
     console.log("[hair-transform] ✅ 합성 완료:", imageUrl);
+    succeeded = true; // 성공 확정 → finally 환불 안 함
     return NextResponse.json({ ok: true, imageUrl });
 
   } catch (e) {
@@ -367,7 +378,24 @@ export async function POST(req: NextRequest) {
     // 이 시점(응답 확정)엔 Replicate가 이미 swap_image를 가져갔으므로 원본은 불필요.
     // await로 응답 반환 전에 삭제를 끝내고(서버리스가 얼기 전), deleteDeadline을 공유해
     // 삭제 재시도가 maxDuration을 넘기지 않도록 한다.
-    await deletePhotoFromBlob(blobPath, { deadline: deleteDeadline });
+    // ★ 셀카 삭제(가드레일)를 먼저·반드시 시도한다. 삭제가 throw해도 아래 환불이 도달하도록
+    //   중첩 try/finally로 감싼다(삭제를 먼저 await해 삭제 예산은 침범하지 않는다).
+    try {
+      await deletePhotoFromBlob(blobPath, { deadline: deleteDeadline });
+    } finally {
+      // C-2: 선차감했는데 성공 못 하면 1회 환불(우리 잘못으로 손님 횟수가 깎이지 않게).
+      // rpc는 오류를 throw하지 않고 {error}로 준다 → error를 명시 검사(미배포/권한오류를 성공으로
+      // 오인해 잘못 로깅하지 않게). 어떤 경우든 degrade는 "기존=선차감 유지"라 안전하다.
+      if (chargedUserId && !succeeded) {
+        try {
+          const { error: refundErr } = await supabaseAdmin.rpc("refund_hair_usage", { p_user_id: chargedUserId });
+          if (refundErr) console.error("[hair-transform] 환불 RPC 오류(무시·degrade):", refundErr.message);
+          else console.log("[hair-transform] 실패로 일일횟수 1회 환불");
+        } catch (e) {
+          console.error("[hair-transform] 환불 예외(무시):", e instanceof Error ? e.message : String(e));
+        }
+      }
+    }
   }
 }
 
