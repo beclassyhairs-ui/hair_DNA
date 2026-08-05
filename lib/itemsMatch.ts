@@ -46,6 +46,36 @@ export function deriveCoreKeyFromEntries(entries: DiaryEntryLike[]): string | nu
   return null;
 }
 
+/** 구매클릭 세그먼트 — purchase_click meta에 실어 "누가 구매를 눌렀나"를 세그먼트로 본다(D-01). */
+export interface PurchaseSegments {
+  coreKey:       string | null; // curl__thickness__density (deriveCoreKeyFromEntries 재사용)
+  ageGroup:      string | null; // q1_age 원값 (예: "age_50") — 진단 전이면 null
+  treatmentFreq: string | null; // q10_history_count 원값 (예: "count_5_6") — 진단 전이면 null
+}
+
+/**
+ * diaryEntries에서 구매클릭 세그먼트 3종을 도출한다. 각 필드는 "그 값이 유효한 가장 최근
+ * 엔트리"에서 독립적으로 뽑는다(부분 진단·진단 전에도 안전). 값이 없으면 그 필드만 null.
+ * ⚠️ 값 화이트리스트를 두지 않는다 — 우리 설문의 옵션 id면 무엇이든 원값 그대로 싣는다
+ *    (목록에서 빠진 유효 옵션이 조용히 null로 떨어지는 것을 막기 위함). meta는 sanitizeMeta가 캡.
+ */
+export function derivePurchaseSegments(entries: DiaryEntryLike[]): PurchaseSegments {
+  const sorted = [...entries].sort((a, b) => entryTime(b) - entryTime(a));
+  let ageGroup: string | null = null;
+  let treatmentFreq: string | null = null;
+  for (const entry of sorted) {
+    const answers = entry.answers;
+    if (!answers || typeof answers !== "object") continue;
+    const a = answers as Record<string, unknown>;
+    if (ageGroup === null && typeof a.q1_age === "string" && a.q1_age) ageGroup = a.q1_age;
+    if (treatmentFreq === null && typeof a.q10_history_count === "string" && a.q10_history_count) {
+      treatmentFreq = a.q10_history_count;
+    }
+    if (ageGroup !== null && treatmentFreq !== null) break;
+  }
+  return { coreKey: deriveCoreKeyFromEntries(entries), ageGroup, treatmentFreq };
+}
+
 /**
  * 상품이 이 유저(coreKey)에게 노출 대상인지 판정한다.
  *  - avoid_hair_types에 coreKey가 있으면 제외
