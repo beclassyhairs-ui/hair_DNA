@@ -3,9 +3,18 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-05
 
-## 🔴→🟢 faceswap 전용 재전환 — 커밋 완료·배포 대기(스모크·SQL 관문) (2026-08-05)
+## 🟢 faceswap 프로덕션 라이브 — 스모크 ①③ 통과·②④ 사장확인 대기 (2026-08-05)
 
-**flux-kontext(텍스트 생성) 완전 제거 → codeplugtech/face-swap 전용.** 실서비스 테스트에서 손님 얼굴이 다른/나이 든 얼굴로 나간 결함 대응. **push 안 함(커밋만) — 아래 🔴관문 통과 후 배포.**
+**flux-kontext(텍스트 생성) 완전 제거 → codeplugtech/face-swap 전용.** 실서비스 테스트에서 손님 얼굴이 다른/나이 든 얼굴로 나간 결함 대응. **두 라운드(잔업 소탕 + faceswap) main push 완료(`26fa726..2ffe9af`) → 웹훅 프로덕션 배포 `hair-i41km6oma`(● Ready).**
+
+**★ 배포 후 스모크 결과(2026-08-05):**
+- **① 레퍼런스 URL 외부 무인증 GET(=getAssetBaseUrl 산출 public alias) → ✅ 200 · `image/jpeg` · redirects=0 · 56298B.** **대조군: 같은 파일을 배포도메인(SSO보호)으로 부르면 302 재현** → 아침 장애 원인이 이 fix로 해소됨을 side-by-side 입증(브라우저 200만 보고 넘겼던 실수 반복 안 함 — 무인증 curl로 확인).
+- **③ 무인증 POST /api/hair-transform → ✅ 401 `login_required`**(로그인 가드레일 라이브 생존).
+- **② Replicate 실fetch 합성 canary — 미실행(REPLICATE 토큰=§4라 Claude가 못 씀).** ①이 "URL 공개 fetch 가능"을 입증하므로 Replicate 접근 조건은 충족. 남은 실패모드는 정직한 실패화면(가짜얼굴/전건장애 아님). **→ 사장 실기기 실제 합성으로 최종 확인 요망.**
+- **④ REPLICATE_VERSION/토큰/잔액 — §4(env·계정)라 미확인. → 사장 Replicate 대시보드 확인.**
+- **롤백 안 함**: 롤백 게이트(①/② 실패)에서 ①은 통과, ②는 "실패"가 아니라 "Claude가 실행 불가"(사장 확인 대상)라 유지 판정.
+
+🟡 **남은 사장 조치**: (a) 실기기 합성 1회(②검증) (b) `hair_usage_refund.sql` 실행(C-2 활성화 — 미실행이면 실패도 차감됨) (c) Replicate 잔액 확인.
 
 - **핵심 발견**: 롤백(`26fa726`) 후 프로덕션은 처음부터 끝까지 **flux-kontext(생성형)**였고 faceswap은 코드에 없었음. 손님이 본 "다른 얼굴"은 **폴백이 아니라 flux가 신원을 보존 못 한 것**(flux가 유일 경로였음). → 재전환은 폴백 삭제가 아니라 모델 교체.
 - **커밋(미push, main `b3dffe1`→`12cb523`, 앞 잔업라운드 위에 얹음)**:
