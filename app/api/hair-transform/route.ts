@@ -4,7 +4,7 @@
 // (2026-08-05: flux-kontext 텍스트생성 경로 완전 제거 → faceswap 전용. 실패 시 텍스트
 //  폴백 없이 정직하게 실패시킨다. 로그인/동의/일일한도/비용상한/셀카 즉시삭제 가드레일 보존.)
 //
-// 모델: codeplugtech/face-swap (커뮤니티 → /v1/predictions + version hash)
+// 모델: lucataco/faceswap (커뮤니티 → /v1/predictions + version hash) — lib/faceswapModel.ts 단일출처
 //   - target_image = 레퍼런스 헤어사진(얼굴이 교체될 캔버스, 공개 https URL)
 //   - swap_image   = 유저 셀카(삽입할 얼굴, Vercel Blob 공개 URL)
 //   - 결과: 유저 얼굴 + 레퍼런스 헤어스타일. 텍스트 프롬프트 불필요.
@@ -32,19 +32,18 @@ import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 import { hasCurrentOverseasConsent } from "@/lib/consentServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { FACESWAP_MODEL, FACESWAP_VERSION } from "@/lib/faceswapModel";
 
 // 서버측 일일 호출 제한(유저당). 클라 표시(3회)보다 여유를 둬 정상 재시도를 막지 않는다.
 // 조정은 이 상수 하나로. 실제 강제는 Supabase RPC bump_hair_usage가 원자적으로 수행한다.
 const SERVER_DAILY_MAX = 5;
 
 // ─── 모델 설정 ────────────────────────────────────────────────────────────────
-// 커뮤니티 모델 → /v1/predictions + version hash 방식.
+// 커뮤니티 모델 → /v1/predictions + version hash. 모델명·해시는 lib/faceswapModel.ts 단일출처.
 const REPLICATE_ENDPOINT = "https://api.replicate.com/v1/predictions";
-// codeplugtech/face-swap 최신 해시(2026-08-05 Replicate 유효성 확인·canary 검증 대상).
-// ⚠️ 배포 전 canary 성공으로 고정. 해시 변경은 품질 회귀테스트 동반(단순 설정변경 아님).
-const REPLICATE_VERSION =
-  process.env.REPLICATE_VERSION ??
-  "278a81e7ebb22db98bcba54de985d22cc1abeead2754eb1f2af717247be69b34";
+// env REPLICATE_VERSION이 있으면 우선(하드닝), 없으면 단일출처 상수(lucataco 9a4298…).
+// ⚠️ 해시 변경은 canary + 품질 회귀테스트 동반(단순 설정변경 아님).
+const REPLICATE_VERSION = process.env.REPLICATE_VERSION ?? FACESWAP_VERSION;
 
 // ─── 레퍼런스(공개 자산) 절대 URL의 origin ────────────────────────────────────
 // ★ 2026-08-05 장애 재발방지: Replicate가 target_image(레퍼런스)를 "쿠키·인증 없이" 공개
@@ -97,15 +96,14 @@ function normalizeBase64(raw: string): string {
 }
 
 // ─── Replicate 입력 빌더 ─────────────────────────────────────────────────────
-// 모델: codeplugtech/face-swap v278a81e7 — 스키마 { input_image, swap_image }
-//   input_image = 레퍼런스 헤어사진(= "Target image", 얼굴이 교체될 캔버스)
-//   swap_image  = 유저 셀카(삽입할 얼굴)
-//   ⚠️ 스키마 확인(2026-08-05 Replicate openapi): 키는 input_image/swap_image.
-//      target_image로 보내면 HTTP 422. 스키마에 없는 파라미터도 422.
+// 모델: lucataco/faceswap — 스키마 { target_image, swap_image } (Replicate openapi 실조회 2026-08-06)
+//   target_image = 레퍼런스 헤어사진("Target/base image", 얼굴이 교체될 캔버스)
+//   swap_image   = 유저 셀카("Swap/source image", 삽입할 얼굴)
+//   ⚠️ 의미 고정: 캔버스=레퍼런스=target_image / 넣을얼굴=셀카=swap_image. 뒤바뀌면 엉뚱한 결과.
 function buildReplicateInput(swapImage: string, targetImage: string) {
   return {
-    input_image: targetImage, // 레퍼런스(캔버스)
-    swap_image:  swapImage,    // 셀카(삽입 얼굴)
+    target_image: targetImage, // 레퍼런스(캔버스) — 이 사진의 얼굴이 셀카로 교체됨
+    swap_image:   swapImage,    // 셀카(삽입 얼굴)
   };
 }
 
@@ -283,7 +281,7 @@ export async function POST(req: NextRequest) {
     const reference = pickReferenceUrl(answers, baseUrl);
 
     // 5. Payload 로그 — 레퍼런스 슬롯/버전만. 셀카(swap_image) Blob URL은 민감정보라 로깅 금지.
-    console.log("[hair-transform] → codeplugtech/face-swap:", JSON.stringify({
+    console.log(`[hair-transform] → ${FACESWAP_MODEL}:`, JSON.stringify({
       version:       REPLICATE_VERSION.slice(0, 12) + "…",
       reference_url: reference.url,
       slot:          reference.slot,
@@ -301,7 +299,8 @@ export async function POST(req: NextRequest) {
         debugError: "Replicate 호출 전 실행 예산 소진(업로드 지연) — 원본은 삭제됨",
       });
     }
-    const waitSec = Math.max(1, Math.min(45, Math.floor(fetchBudget / 1_000) - 2));
+    // lucataco는 실측 ~0.6s라 45초를 걸어둘 이유가 없다. wait=10이면 대부분 초기 응답에서 끝난다.
+    const waitSec = Math.max(1, Math.min(10, Math.floor(fetchBudget / 1_000) - 2));
     const res = await fetch(REPLICATE_ENDPOINT, {
       method: "POST",
       headers: {
@@ -324,11 +323,14 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json() as {
+      id?:     string;
       output?: string | string[];
       error?:  string;
       status?: string;
       urls?:   { get?: string };
     };
+    // 진단 로그(2026-08-06): prediction id/status/get URL을 남긴다 → Replicate 대시보드 추적 가능.
+    console.log("[hair-transform] prediction:", JSON.stringify({ id: data.id, status: data.status, get: data.urls?.get }));
 
     // starting/processing → 완료까지 폴링.
     // ⚠️ starting을 빼먹으면(워커 미시작 상태) no_output으로 반환한 뒤 finally에서
@@ -346,9 +348,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, imageUrl: pollResult.imageUrl });
     }
 
-    if (data.error) {
-      const debugError = `Replicate prediction error: ${data.error}`;
-      console.error("[hair-transform] Prediction error:", data.error);
+    // terminal 실패(failed/canceled) 또는 에러 → 즉시 실패 반환(canceled도 명시 처리 — 타임아웃으로 안 샘).
+    if (data.status === "failed" || data.status === "canceled" || data.error) {
+      const debugError = `Replicate ${data.status ?? "error"}: ${data.error ?? "(에러 메시지 없음)"}`;
+      console.error("[hair-transform] prediction 실패:", debugError);
       return NextResponse.json({ ok: false, reason: classifyFailure(data.error), debugError });
     }
 
@@ -451,7 +454,7 @@ async function pollUntilDone(
         if (url) return { ok: true, imageUrl: url };
         return { ok: false, reason: "prediction_error", debugError: "succeeded인데 output 없음" };
       }
-      if (data.status === "failed" || data.error) {
+      if (data.status === "failed" || data.status === "canceled" || data.error) {
         const debugError = `폴링 실패: ${data.error ?? data.status}`;
         console.error("[hair-transform]", debugError);
         return { ok: false, reason: classifyFailure(data.error), debugError };

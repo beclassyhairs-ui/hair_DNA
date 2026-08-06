@@ -5,7 +5,7 @@
 
 ## A. 확정 사실
 1. 현재 = flux-kontext-pro(`/v1/models/.../predictions`, `input_image`+거대 prompt). **레퍼런스 미사용**(pickReferenceUrl dead). $0.04/run.
-2. 옛 faceswap(git `e513e3e^`, 6/25) = codeplugtech/face-swap(`/v1/predictions`+version hash). 입력 `{target_image:레퍼런스 공개URL, swap_image:셀카}`. 레퍼런스가 스타일 캐리어(프롬프트 불필요). ※task는 lucataco/faceswap 지칭 — 마지막 동작본은 codeplugtech. **모델·해시 확정은 PM+사업주(Replicate 계정)**.
+2. **[정정·확정 2026-08-06]** 옛 동작본(git `e513e3e^`, 6/25)은 **lucataco/faceswap** (해시 `9a4298…843d20d`)였다 — 당시 주석이 "codeplugtech"으로 **잘못 라벨**했고(실물 해시 9a4298은 Replicate API상 lucataco 소유), 그 라벨을 보고 8/5 복원 때 진짜 codeplugtech(`278a81e7`, 실측 57~59s)으로 갈아탄 것이 전건 타임아웃의 원인이었다. **확정: lucataco/faceswap · `9a4298…843d20d` · 사유: 실측 ~1s (6/25 0.6~1.0s·canary 1.15s / codeplugtech 57~59s).** 입력 `{target_image:레퍼런스 공개URL, swap_image:셀카}`(레퍼런스가 스타일 캐리어, 프롬프트 불필요). **모델명·해시 단일출처 = `lib/faceswapModel.ts`**(라벨↔실물 재분리 방지).
 3. 가드레일(로그인401·동의403 fail-closed·일일한도429=비용상한)·예산·blob업로드·finally 셀카 즉시삭제 = 전부 faceswap 이후 추가 → 옛 route.ts엔 없음.
 4. 경로 스킴 불일치(코드 group_2040·wave/layer·1.jpg vs 실제 무나이·len/weight/curl·UUID).
 5. **60장 git 미추적(미배포)**. default_style.jpg 커밋됐으나 로컬삭제. group_2040 디스크 부재(이미 무나이).
