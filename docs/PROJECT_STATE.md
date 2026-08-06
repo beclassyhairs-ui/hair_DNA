@@ -1,9 +1,23 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-05
+> 최종 갱신: 2026-08-06
 
-## 🟢 faceswap 프로덕션 라이브 — 스모크 ①③ 통과·②④ 사장확인 대기 (2026-08-05)
+## 🟢 faceswap 모델 원복 lucataco 라이브 — 타임아웃 근본해결 (2026-08-06)
+
+**원인 확정(Replicate 실기록)**: 8/5 배포된 **codeplugtech(278a81e7)의 predict_time가 56.9s·59.3s**로 함수 예산(52s)을 넘겨 `poll_timeout`("지금 잠시 붐볐어요"). **prediction 자체는 Replicate에서 succeeded**였고 결과 이미지도 생성됐으나 우리가 안 기다리고 버렸다. 큐 0초·입력 fetch 정상(input_image=hair-dna.vercel.app 확인) → 순수 "모델이 느림". 진짜 원인 = 6/25 옛 동작본(**lucataco 9a4298**, 실측 0.6~1s)을 주석이 "codeplugtech"으로 **잘못 라벨** → 8/5 복원 때 진짜 codeplugtech으로 오전환.
+
+- **원복 커밋 `19fbeff` → 배포 `hair-62laej28n`(● Ready), main push(`b9e2587..19fbeff`)**:
+  - 모델 **lucataco/faceswap 해시 `9a4298…843d20d`**. 스키마 `{target_image=레퍼런스, swap_image=셀카}`.
+  - **모델명·해시 단일출처 `lib/faceswapModel.ts`** 신설(라벨↔실물 재분리 방지). 코드에 `278a81e7` 0건(grep 증명).
+  - Prefer wait 45→10, 진단로그(prediction id/status/get) 추가, `canceled` 명시 처리(초기·폴링).
+  - 잘못된 라벨 정정: 라우트 주석 + `DESIGN_task3_faceswap.md:8` 미결문구→확정.
+- **canary(배포 전, `.env.local` 토큰 직접 요청)**: lucataco 9a4298 + target/swap 스키마 → **HTTP 201·succeeded·predict_time 1.15s**(codeplugtech 57~59s 대비).
+- **배포 후 스모크**: ③ 무인증 `/api/hair-transform` 401(가드레일), ① 레퍼런스 외부 GET 200 image redirects=0.
+- **가드레일 불변**: 로그인401·동의403·일일한도429·비용상한·셀카 finally 삭제. Codex 통과("입력 필드 의미 안 뒤바뀜·매핑 그대로").
+- 🟡 **남은 사장 확인**: (a) **실기기 실제 합성 1회** → Replicate 대시보드 소요 1초대 + 6/25 결과 대비 **얼굴 보존·아티팩트(★50·60 얼굴 — 이번 전체 라운드 목적)** (b) `hair_usage_refund.sql` 실행(미실행이면 실패 시 차감).
+
+## (모델 원복됨 → 위 섹션) 🟢 faceswap 프로덕션 라이브 — 스모크 ①③ 통과 (2026-08-05)
 
 **flux-kontext(텍스트 생성) 완전 제거 → codeplugtech/face-swap 전용.** 실서비스 테스트에서 손님 얼굴이 다른/나이 든 얼굴로 나간 결함 대응. **두 라운드(잔업 소탕 + faceswap) main push 완료(`26fa726..2ffe9af`) → 웹훅 프로덕션 배포 `hair-i41km6oma`(● Ready).**
 
