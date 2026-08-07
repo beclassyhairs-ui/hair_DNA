@@ -1,9 +1,23 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-06
+> 최종 갱신: 2026-08-07
 
-## 🟢 faceswap 모델 원복 lucataco 라이브 — 타임아웃 근본해결 (2026-08-06)
+## 🟢 합성 모델 전면 전환 OpenAI 라이브 — 재동의·방침 정합 (2026-08-07)
+
+**Replicate faceswap → OpenAI `gpt-image-1-mini`(quality "low") 전면 전환.** "얼굴 유지 + 머리만 교체"가 faceswap보다 우수(블라인드 A/B로 사업주 결정). **셀카 미저장(A안)**. **커밋 `8863dd4` → 배포 `hair-ie37ek4r7`(● Ready), main push(`54c77d9..8863dd4`).**
+
+- **모델**: `/v1/images/edits` · gpt-image-1-mini · quality="low" · jpeg 출력. **단일출처 `lib/hairSynthModel.ts`**(quality 한 줄로 low↔medium 전환). 프롬프트=얼굴보존/헤어충실도 분리 + 흰 반팔 통일.
+- **셀카 미저장(A안)**: Blob 업/삭제 제거, 셀카를 요청에 **바이트로만** 실어 OpenAI 전송. 결과도 **data URI**(서버·Blob 미저장) → orphan 갭 소멸. image[0]=셀카/[1]=레퍼런스 순서 고정. 레퍼런스는 공개 URL에서 바이트 fetch(manifest·폴백 해석 유지, public/references 읽기전용).
+- **죽은코드 제거**: `faceswapModel.ts`·`storage.ts` 삭제, `REPLICATE_*` 코드 0(grep). `@vercel/blob`은 admin mirror-image가 계속 써서 유지.
+- **재동의 + 방침 정합**: `CONSENT_POLICY_VERSION 2026-08-07`(전 유저 재동의) + /privacy 시행일 + §3/§4/§5 + 동의화면 + 업로드 문구를 **OpenAI OpCo, LLC·"서버 미저장"·학습 미사용·30일 보관·거부방법(§28-8)**으로 전면 교체.
+- **가드레일 4종 불변**(로그인401·동의403·일일한도429·환불). Codex 통과(예산 첫줄 이동·bump 후 전경로 환불·셀카 크기가드·content_flagged 안전필터 한국어).
+- **배포 후 스모크 통과**: ① 무인증 401 `login_required` ② 레퍼런스 200 image/jpeg ③ /privacy 라이브에 "OpenAI OpCo, LLC"·"2026년 8월 7일"·"privacy@openai.com"·"최대 30일" 노출, **Replicate 0건**.
+- 🔴 **사업주 조치(배포됐으나 이거 전엔 합성 안 됨)**: (1) **Vercel env `OPENAI_API_KEY` 등록(Prod·Preview) + 재배포** — 없으면 no_token. (2) **OpenAI usage limit(월 예산 상한) 설정** — Replicate spend limit 방어 대체(감사서 O-02 재개봉). (3) 선택: 미사용 `REPLICATE_*` env 제거.
+- 🟡 **사업주 실기기 확인**: 실합성 1회(얼굴 유지+머리 교체·흰반팔) / **재동의 재노출**(2026-08-07로 올라 동의화면 재등장 — 8/4엔 스킵됐음) / `user_consents`에 `policy_version='2026-08-07'` 3종 적재.
+- ⚠️ `selfie1.jpg`·`selfie2.jpg` 로컬 삭제 — 환경 권한거부로 Claude가 못 지움 → **사업주 직접 삭제**. `.env.local` OPENAI_API_KEY는 gitignored 잔존(로컬용).
+
+## (모델 재전환됨 → 위 OpenAI 섹션) 🟢 faceswap lucataco 라이브 (2026-08-06)
 
 **원인 확정(Replicate 실기록)**: 8/5 배포된 **codeplugtech(278a81e7)의 predict_time가 56.9s·59.3s**로 함수 예산(52s)을 넘겨 `poll_timeout`("지금 잠시 붐볐어요"). **prediction 자체는 Replicate에서 succeeded**였고 결과 이미지도 생성됐으나 우리가 안 기다리고 버렸다. 큐 0초·입력 fetch 정상(input_image=hair-dna.vercel.app 확인) → 순수 "모델이 느림". 진짜 원인 = 6/25 옛 동작본(**lucataco 9a4298**, 실측 0.6~1s)을 주석이 "codeplugtech"으로 **잘못 라벨** → 8/5 복원 때 진짜 codeplugtech으로 오전환.
 
