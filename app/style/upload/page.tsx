@@ -97,13 +97,13 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           {/* 안심 한 줄 — 톤: 따뜻·담담, 겁주기 금지. ⚠️ 실동작과 일치해야 하는 문구다.
-              · hair-transform: 합성 위해 잠깐 Blob 업로드 → 합성 직후 finally에서 삭제 시도(best-effort 2회).
-              ★ 단정형('삭제됩니다/즉시 파기') 금지 — /privacy 본문 "삭제를 곧바로 진행"과 같은 강도로 맞춘다
-                (삭제 재시도 2회 모두 실패 시 잔존 엣지 + 스윕/TTL 부재 때문에 100% 단정 못 함).
+              · hair-transform(2026-08-07 OpenAI 전환): 셀카를 서버/Blob에 저장하지 않고 요청에 바이트로만
+                실어 OpenAI로 전송한다 → "저장하지 않습니다"는 단정 가능(애초에 저장 안 함). OpenAI 측
+                오·남용 점검 최대 30일 보관은 /privacy §5에 고지.
               ★ 국외이전 고지는 여기서 뺀다 — 로그인 동의화면에서 이미 동의·user_consents 기록 완료(사진 단계 前),
                 상세 고지는 /privacy §5. 로그인 단계에서 사전 고지·동의를 완료하므로 매 촬영마다 재고지하지 않는다. */}
           <p className="mb-3 text-center text-aux leading-relaxed text-ink-2">
-            사진은 스타일 만드는 데에만 쓰고, 끝나면 원본 삭제를 곧바로 진행해요.{" "}
+            사진은 스타일 만드는 데에만 쓰고, 우리 서버에는 저장하지 않아요.{" "}
             자세한 내용은{" "}
             <Link href="/privacy" className="font-medium text-ink underline underline-offset-2">
               개인정보처리방침

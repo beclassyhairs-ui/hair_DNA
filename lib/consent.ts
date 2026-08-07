@@ -10,7 +10,7 @@
 // ============================================================================
 
 /** 현재 동의문/방침 버전(시행일 기반). 화면 문구와 반드시 일치시킨다. */
-export const CONSENT_POLICY_VERSION = "2026-08-02";
+export const CONSENT_POLICY_VERSION = "2026-08-07";
 
 /** 필수 동의 유형 — 이게 전부 granted=true여야 사진(얼굴 수집) 단계로 진입한다. */
 export const REQUIRED_CONSENT_TYPES = ["privacy", "terms", "overseas_transfer"] as const;

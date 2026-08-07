@@ -41,9 +41,8 @@ const HAIR_TIPS = [
 // 통과시키고 나머지는 "unknown"으로 정규화(원본 에러·PII가 계측에 새는 것 차단, Codex 반영).
 const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
-  "blob_token_missing", "blob_upload_failed", "budget_exhausted", "poll_timeout",
-  "api_error", "prediction_error", "no_output", "exception", "face_not_detected",
-  "consent_required", "login_required", "network",
+  "reference_fetch_failed", "poll_timeout", "api_error", "no_output", "exception",
+  "content_flagged", "consent_required", "login_required", "network",
 ]);
 function normFailReason(r: string | undefined): string {
   return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
@@ -125,7 +124,7 @@ export default function StyleLoadingPage() {
         }),
       });
 
-      // ★ Replicate AI 합성 (62초 타임아웃).
+      // ★ OpenAI AI 합성 (62초 타임아웃).
       try {
         incrementUsage(); // 클라 표시용 횟수(서버 제한이 실제 강제)
         console.log("[AI] /api/hair-transform 호출 시작...");

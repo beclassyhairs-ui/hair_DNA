@@ -125,9 +125,9 @@ export default function StyleLandingPage() {
               나의 맞춤 스타일 분석하기
             </button>
 
-            {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 합성 직후 즉시 파기한다
-                (app/api/hair-transform finally 삭제, submit-diagnosis는 셀카 미저장).
-                "개인정보 미저장"으로 되돌리지 말 것 — 국외이전·즉시파기 고지는 /style/upload에 있다. */}
+            {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 우리 서버/Blob에 저장하지 않는다
+                (2026-08-07 OpenAI 전환: 요청에 바이트로만 전송, submit-diagnosis는 셀카 미저장).
+                국외이전·미저장 상세 고지는 /privacy §5 및 /style/upload에 있다. */}
             <p className="text-center text-aux text-sub">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요
             </p>

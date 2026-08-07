@@ -339,7 +339,7 @@ function ConsentInner() {
           checked={overseas}
           onToggle={() => setOverseas((v) => !v)}
           label="사진의 국외이전에 동의"
-          detail="AI 헤어 합성을 위해 사진이 미국(Replicate) 서버로 이전·처리돼요. 합성이 끝나면 사진은 즉시 파기됩니다."
+          detail="AI 헤어 합성을 위해 사진이 미국(OpenAI) 서버로 이전·처리돼요. 원본 사진은 우리 서버에 저장하지 않고, OpenAI에서는 오·남용 점검을 위해 최대 30일 뒤 삭제됩니다."
           linkHref="/privacy"
           linkLabel="전문 보기"
         />

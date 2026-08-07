@@ -1,5 +1,5 @@
 // ============================================================================
-// /privacy — 개인정보처리방침 (시행 2026-08-02)
+// /privacy — 개인정보처리방침 (시행 2026-08-07)
 // 보호책임자·시행일 확정, noindex 해제(2026-08-05 Phase A). 색인 허용.
 //
 // 📌 셀카 파기: "정상 처리 후 지체 없이 삭제"(단정적 '즉시 완전 파기' 표현은 회피).
@@ -76,9 +76,9 @@ export default function PrivacyPage() {
       <Section title="3. 보유 및 이용기간">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, 합성이 끝나면 서버에 임시
-            저장된 원본의 <b>삭제를 곧바로 진행</b>합니다. 원본을 별도로 보관하거나 다른 목적으로
-            이용하지 않습니다.
+            <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, <b>우리 서버에는 저장하지 않습니다</b>.
+            합성 처리를 위해 OpenAI(미국)로 전송되며(아래 5항 국외이전 참조), 원본을 별도로 보관하거나
+            다른 목적으로 이용하지 않습니다.
           </li>
           <li>
             <b>진단 답변·이벤트 로그</b>: 수집·이용 목적을 달성할 때까지 보관하며, 목적 달성 후
@@ -107,8 +107,8 @@ export default function PrivacyPage() {
             </thead>
             <tbody className="[&_td]:border-b [&_td]:border-black/[0.05] [&_td]:py-2 [&_td]:pr-4 [&_td]:align-top">
               <tr><td>Supabase</td><td>진단·이벤트 데이터 저장·관리</td></tr>
-              <tr><td>Vercel (Vercel Blob 포함)</td><td>서비스 호스팅 및 셀카 이미지 임시 저장</td></tr>
-              <tr><td>Replicate</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
+              <tr><td>Vercel</td><td>서비스 호스팅</td></tr>
+              <tr><td>OpenAI OpCo, LLC (미국)</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
               <tr><td>Google (Google Sheets)</td><td>개인식별정보를 제외한 진단 답변 집계·분석</td></tr>
               {SENTRY_ENABLED && (
                 <tr><td>Sentry</td><td>오류 모니터링(에러 로그·요청 경로·기기/브라우저 정보)</td></tr>
@@ -120,14 +120,28 @@ export default function PrivacyPage() {
 
       <Section title="5. 개인정보 국외이전">
         <p>
-          AI 합성을 위해 이용자의 <b>얼굴 이미지</b>가 <b>Replicate(미국)</b>로 이전되어 처리됩니다.
+          AI 합성을 위해 이용자의 <b>얼굴 이미지</b>가 <b>OpenAI(미국)</b>로 이전되어 처리됩니다.
         </p>
         <ul className="list-disc space-y-1 pl-5">
+          <li>이전받는 자: OpenAI OpCo, LLC (미국 / 1455 3rd Street, San Francisco, California 94158, USA)</li>
+          <li>이전받는 자의 연락처: privacy@openai.com (정보주체 권리 요청: dsar@openai.com)</li>
+          <li>
+            이전받는 자의 개인정보 처리방침:{" "}
+            <a href="https://openai.com/policies/row-privacy-policy/" target="_blank" rel="noreferrer"
+              className="font-medium underline underline-offset-2">
+              openai.com/policies/row-privacy-policy
+            </a>
+          </li>
           <li>이전 항목: 셀카(얼굴) 이미지</li>
-          <li>이전 국가/업체: 미국 / Replicate, Inc.</li>
           <li>이전 목적: AI 헤어스타일 합성</li>
           <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
-          <li>보유·이용기간: 합성 목적으로만 전송하며, 서비스가 보관하는 원본은 합성 후 삭제합니다(위 3항). Replicate가 전송받은 이미지의 보유·삭제는 Replicate의 처리정책에 따릅니다.</li>
+          <li>이전받는 자의 데이터 처리: 입력 데이터는 기본적으로 모델 학습에 사용되지 않습니다(별도 동의 시에만 사용).</li>
+          <li>보유·이용기간: 서비스는 원본 사진을 서버에 저장하지 않습니다(위 3항). 전송받은 OpenAI는 오·남용 점검(abuse monitoring) 목적으로 최대 30일 보관 후 삭제합니다(법령이 요구하는 경우 연장될 수 있습니다).</li>
+          <li>
+            국외이전 거부 방법 및 효과: 로그인 시 동의 화면의 필수 항목(개인정보·약관·사진의 국외이전)은 각각 선택할 수 있으나,{" "}
+            <b>국외이전에 동의하지 않으면 진행 버튼이 활성화되지 않아 다음 단계로 넘어갈 수 없습니다.</b>{" "}
+            국외이전에 동의하지 않는 것이 거부 방법이며, 이 경우 얼굴 사진을 이용하는 AI 헤어스타일 합성 기능을 이용할 수 없습니다(서버도 합성 요청을 거부합니다). 다만 얼굴 사진이 필요 없는 진단 설문·결과 안내 등은 이용하실 수 있습니다.
+          </li>
         </ul>
         <p className="text-[13px] text-ink-2">
           ※ Vercel·Supabase·Google 등 다른 수탁업체의 서버 소재지에 따라 추가 국외이전이 발생할 수 있으며,
@@ -188,7 +202,7 @@ export default function PrivacyPage() {
       <Section title="9. 고지의 의무">
         <p>
           본 방침의 내용 추가·삭제·수정이 있을 경우 시행일 전에 서비스 내 공지를 통해 안내합니다.
-          본 방침의 시행일: 2026년 8월 2일.
+          본 방침의 시행일: 2026년 8월 7일.
         </p>
       </Section>
 

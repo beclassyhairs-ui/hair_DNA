@@ -157,7 +157,14 @@ function failMessage(reason: string | null): { title: string; hint: string; butt
       button: "다시 찍기",
     };
   }
-  // poll_timeout·api_error·prediction_error·exception·network·blob_*·no_output·budget 등
+  if (reason === "content_flagged") {
+    return {
+      title:  "이 사진은 처리할 수 없어요",
+      hint:   "다른 사진으로 다시 시도해 주세요.",
+      button: "다시 찍기",
+    };
+  }
+  // poll_timeout·api_error·exception·network·no_output·reference_fetch_failed 등 일시/서버 문제
   return {
     title:  "지금 잠시 붐볐어요",
     hint:   "잠시 후 다시 시도해 주세요.",
