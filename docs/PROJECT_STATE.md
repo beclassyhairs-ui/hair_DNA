@@ -1,9 +1,23 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-07
+> 최종 갱신: 2026-08-08
 
-## 🟢 합성 모델 전면 전환 OpenAI 라이브 — 재동의·방침 정합 (2026-08-07)
+## 🟡 합성 모델 faceswap 재전환 — 커밋 대기(미배포) (2026-08-08)
+
+**OpenAI gpt-image → Replicate faceswap 되돌림.** 채택 = `ddvinh1/face-swap-gpu` · `enhance=false`(스윕 최선, 0.37s·≈₩0). 근거: 합성 방식 전수 탐색 결과 gpt-image는 얼굴을 미화·재생성해 정체성이 흔들렸고, 인페인팅 경로도 실전 장벽(스킨톤 이음새·자동 랜드마크·재동의)이 커 폐기. **git revert 아님 — 코드 호출부와 방침 문구만 교체, 그간 개선(A안 미저장·한국어 실패 UX·환불·가드레일 4종)은 유지.** ★ **미커밋·미배포**(사업주 승인 대기).
+
+- **모델 단일출처 `lib/hairSynthModel.ts`**: `HAIRSYNTH_MODEL`=ddvinh1/face-swap-gpu, `HAIRSYNTH_MODEL_VERSION`=d766886c…2971d(해시 고정), `HAIRSYNTH_ENHANCE=false`(핵심 상수). 프롬프트·quality·size·output_format 상수 전부 제거(faceswap은 프롬프트 안 받음).
+- **route 재작성**: `REPLICATE_API_TOKEN` 사용, 예측 생성(`Prefer: wait`)+폴백 폴링. **입력순서 고정: swap_image=셀카(얼굴)/input_image=레퍼런스(헤어)**. 결과는 output URL을 fetch→**data URI**로 반환(서버·Blob 미저장 유지). Codex 지적 반영: 출력 크기 가드(3MB, data URI 한도 방어)·`succeeded`는 응답 객체 생성 후 설정(직렬화 실패 시 환불 유지).
+- **Phase 0-1 결과**: face-swap-gpu는 **data URI 입력 수용 확정**(이번 세션 fs3 combo A로 재확인) → **Blob 부활 불필요, "서버 미저장" 유지**.
+- **OpenAI 정리(1-4)**: `OPENAI_API_KEY`·`api.openai.com`·`OPENAI_EDIT_ENDPOINT`·gpt-image 상수 **기능 참조 0건**(grep 증명). dead route `app/api/analyze-face/route.ts`(gpt-4o, 호출부 없음 — PROJECT_STATE 기존 감사서 dead 확정)를 삭제해 0건 달성.
+- **방침 정합(Replicate 공식 확인)**: §4 표 OpenAI→**Replicate, LLC (미국)**. §5 국외이전 값 교체(항목 구조 유지) — 이전받는 자 **Replicate, LLC / 101 Townsend Street, San Francisco, CA 94107** · 연락처 **privacy@replicate.com** · 처리방침 **replicate.com/privacy** · 학습 **원본 입력·출력 미사용, 익명·집계 통계만**(replicate.com/terms) · 보유 **API 예측 입·출력·로그 기본 1시간 후 자동 삭제**(replicate.com/docs/topics/predictions/data-retention). 동의화면 "미국(OpenAI)"→"미국(Replicate)"+파기서술 1시간. `CONSENT_POLICY_VERSION 2026-08-08`(재동의 강제) + /privacy 시행일 2026년 8월 8일.
+- **Phase 3-1 진행표시**: 3단계 간격 2.5s→1.1s + **최소 표시 2.8s**(faceswap 0.4s라 깜빡임 방지). "보통 30초 안팎"→"보통 몇 초면 끝나요".
+- **검증**: tsc 무에러 · **Codex 통과**(입력순서·가드레일 4종·방침 정합·환불·크기가드 확인). 레퍼런스 manifest·폴백·budget·bump·refund 불변.
+- 🔴 **사업주 배포 전 필수**: (1) **Vercel env `REPLICATE_API_TOKEN` 등록(Prod·Preview) 확인** — 없으면 no_token. (2) **Replicate spend limit(월 예산 상한) 설정**. (3) 선택: 미사용 `OPENAI_API_KEY` env 제거. (4) 커밋·배포 승인.
+- 🟡 **배포 후 사업주 실기기**: 실합성 1회(얼굴 유지+헤어 교체) · 재동의 재노출(2026-08-08) · `user_consents`에 `policy_version='2026-08-08'` 3종 적재.
+
+## (재전환됨 → 위 faceswap 섹션) 🟢 합성 모델 OpenAI 라이브였음 (2026-08-07)
 
 **Replicate faceswap → OpenAI `gpt-image-1-mini`(quality "low") 전면 전환.** "얼굴 유지 + 머리만 교체"가 faceswap보다 우수(블라인드 A/B로 사업주 결정). **셀카 미저장(A안)**. **커밋 `8863dd4` → 배포 `hair-ie37ek4r7`(● Ready), main push(`54c77d9..8863dd4`).**
 
