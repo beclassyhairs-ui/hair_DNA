@@ -97,9 +97,9 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
           style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
         >
           {/* 안심 한 줄 — 톤: 따뜻·담담, 겁주기 금지. ⚠️ 실동작과 일치해야 하는 문구다.
-              · hair-transform(2026-08-07 OpenAI 전환): 셀카를 서버/Blob에 저장하지 않고 요청에 바이트로만
-                실어 OpenAI로 전송한다 → "저장하지 않습니다"는 단정 가능(애초에 저장 안 함). OpenAI 측
-                오·남용 점검 최대 30일 보관은 /privacy §5에 고지.
+              · hair-transform(2026-08-07 개정 Replicate faceswap): 셀카를 서버/Blob에 저장하지 않고 요청에 data URI로만
+                실어 Replicate로 전송한다 → "저장하지 않습니다"는 단정 가능(애초에 저장 안 함). Replicate 측
+                API 예측 데이터는 기본 1시간 후 자동 삭제는 /privacy §5에 고지.
               ★ 국외이전 고지는 여기서 뺀다 — 로그인 동의화면에서 이미 동의·user_consents 기록 완료(사진 단계 前),
                 상세 고지는 /privacy §5. 로그인 단계에서 사전 고지·동의를 완료하므로 매 촬영마다 재고지하지 않는다. */}
           <p className="mb-3 text-center text-aux leading-relaxed text-ink-2">

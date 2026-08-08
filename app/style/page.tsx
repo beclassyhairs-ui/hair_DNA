@@ -126,7 +126,7 @@ export default function StyleLandingPage() {
             </button>
 
             {/* ⚠️ 실동작과 일치해야 하는 문구 — 셀카는 합성에만 쓰고 우리 서버/Blob에 저장하지 않는다
-                (2026-08-07 OpenAI 전환: 요청에 바이트로만 전송, submit-diagnosis는 셀카 미저장).
+                (2026-08-07 개정 Replicate faceswap: 요청에 data URI로만 전송, submit-diagnosis는 셀카 미저장).
                 국외이전·미저장 상세 고지는 /privacy §5 및 /style/upload에 있다. */}
             <p className="text-center text-aux text-sub">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요

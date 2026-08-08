@@ -28,6 +28,11 @@ const STEPS = [
   "자연스럽게 다듬어 마무리하는 중이에요",
 ];
 
+// Phase 3-1: faceswap은 합성이 ~0.4초로 매우 빨라 로딩이 깜빡이고 끝나면 오히려 불안하다.
+//   → 결과지 이동 전 최소 표시 시간을 둬 3단계 안내가 한 번은 매끄럽게 흐르게 한다.
+//   (에러/리다이렉트 등 조기 return 경로에는 적용하지 않는다 — 정상 완료 경로에만.)
+const MIN_LOADING_MS = 2_800;
+
 const HAIR_TIPS = [
   "드라이 마지막 10초는 찬바람으로 마무리하세요. 큐티클이 닫히며 윤기가 살고, 아침에 잡은 스타일이 저녁까지 유지됩니다.",
   "샴푸 전 건식 브러싱 2분이면 두피 노폐물이 떠오르고 모발 엉킴이 풀려, 같은 샴푸로도 세정력이 훨씬 높아집니다.",
@@ -54,9 +59,10 @@ export default function StyleLoadingPage() {
   const [tipIdx,  setTipIdx]  = useState(0);
   const calledRef  = useRef(false); // 중복 호출 방지
 
-  // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립)
+  // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립). faceswap이 빨라 간격을 줄여
+  // 최소 표시 시간(MIN_LOADING_MS) 안에 세 단계가 한 번은 흐르게 한다.
   useEffect(() => {
-    const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 2_500);
+    const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 1_100);
     return () => clearInterval(t);
   }, []);
 
@@ -72,6 +78,7 @@ export default function StyleLoadingPage() {
     calledRef.current = true;
 
     async function run() {
+      const runStart = Date.now(); // Phase 3-1: 최소 표시 시간 계산 기준
       // 입력·게이트 검증은 try/finally 밖에서 한다 — 여기서 다른 곳으로 라우팅하면
       // 아래 합성 finally의 "/style/result" 이동과 경쟁하지 않도록 즉시 return한다.
       const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
@@ -124,7 +131,7 @@ export default function StyleLoadingPage() {
         }),
       });
 
-      // ★ OpenAI AI 합성 (62초 타임아웃).
+      // ★ Replicate faceswap 합성 (62초 타임아웃 — 상한. 실제 ~수 초 내 완료).
       try {
         incrementUsage(); // 클라 표시용 횟수(서버 제한이 실제 강제)
         console.log("[AI] /api/hair-transform 호출 시작...");
@@ -194,6 +201,11 @@ export default function StyleLoadingPage() {
       }
 
       // 합성 시도 완료(성공/실패/타임아웃/한도 무관) → 결과지 이동.
+      // Phase 3-1: 너무 빨리 끝났으면 최소 표시 시간까지 채워 로딩이 깜빡이며 지나가지 않게 한다.
+      const elapsed = Date.now() - runStart;
+      if (elapsed < MIN_LOADING_MS) {
+        await new Promise((r) => setTimeout(r, MIN_LOADING_MS - elapsed));
+      }
       // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
       // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
       router.replace("/style/result");
@@ -241,7 +253,7 @@ export default function StyleLoadingPage() {
           </AnimatePresence>
 
           {/* D-2: 대략 소요시간 안내(단정 금지 — 범위 표현). 스피너가 "멈추지 않았다"는 시각 신호. */}
-          <p className="text-[12px] leading-relaxed text-ink-2">보통 30초 안팎이 걸려요 · 창을 닫지 말고 잠시만 기다려 주세요</p>
+          <p className="text-[12px] leading-relaxed text-ink-2">보통 몇 초면 끝나요 · 창을 닫지 말고 잠시만 기다려 주세요</p>
         </div>
 
         {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 (광고 제거됨) ── */}

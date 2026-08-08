@@ -9,8 +9,10 @@
 //      상수+git 이력) 전제가 무너진다. (PM방 §7 · C-1)
 // ============================================================================
 
-/** 현재 동의문/방침 버전(시행일 기반). 화면 문구와 반드시 일치시킨다. */
-export const CONSENT_POLICY_VERSION = "2026-08-07";
+/** 현재 동의문/방침 버전(시행일 기반). 화면 문구와 반드시 일치시킨다.
+ *  ※ 2026-08-08 개정 — 합성 수탁사 OpenAI→Replicate 재전환으로 국외이전 이전받는 자·보유기간이
+ *     바뀌었다(실질적 변경, PIPA §28-8). 버전을 올려 전 유저 재동의를 강제한다(유입 0이라 실피해 없음). */
+export const CONSENT_POLICY_VERSION = "2026-08-08";
 
 /** 필수 동의 유형 — 이게 전부 granted=true여야 사진(얼굴 수집) 단계로 진입한다. */
 export const REQUIRED_CONSENT_TYPES = ["privacy", "terms", "overseas_transfer"] as const;

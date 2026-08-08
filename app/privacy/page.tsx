@@ -1,11 +1,12 @@
 // ============================================================================
-// /privacy — 개인정보처리방침 (시행 2026-08-07)
+// /privacy — 개인정보처리방침 (시행 2026-08-08)
 // 보호책임자·시행일 확정, noindex 해제(2026-08-05 Phase A). 색인 허용.
 //
-// 📌 셀카 파기: "정상 처리 후 지체 없이 삭제"(단정적 '즉시 완전 파기' 표현은 회피).
-//    실동작 근거 — app/api/submit-diagnosis(셀카 미저장, 답변만 Sheets) +
-//    app/api/hair-transform(합성 직후 finally에서 원본 삭제, best-effort 2회 재시도).
+// 📌 셀카 미저장(A안): 우리 서버/Blob에 원본을 저장하지 않는다. 실동작 근거 —
+//    app/api/submit-diagnosis(셀카 미저장, 답변만 Sheets) +
+//    app/api/hair-transform(셀카를 data URI로만 실어 Replicate faceswap 요청 안에서만 사용, 미저장).
 //    이 문서 문구는 그 실동작과 일치해야 하며, 되돌릴 때는 코드부터 바꿀 것.
+//    (2026-08-08 개정: 합성 수탁사 OpenAI→Replicate 재전환에 맞춰 §3·§4·§5 값 교체.)
 //
 // 📌 삭제권: 현재 셀프 삭제기능 없음 → 보호책임자 이메일 접수·처리 방식으로 고지.
 //    삭제기능(Phase B) 배포 시 이 문단 갱신 + CONSENT_POLICY_VERSION 상향.
@@ -77,7 +78,7 @@ export default function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-5">
           <li>
             <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, <b>우리 서버에는 저장하지 않습니다</b>.
-            합성 처리를 위해 OpenAI(미국)로 전송되며(아래 5항 국외이전 참조), 원본을 별도로 보관하거나
+            합성 처리를 위해 Replicate(미국)로 전송되며(아래 5항 국외이전 참조), 원본을 별도로 보관하거나
             다른 목적으로 이용하지 않습니다.
           </li>
           <li>
@@ -108,7 +109,7 @@ export default function PrivacyPage() {
             <tbody className="[&_td]:border-b [&_td]:border-black/[0.05] [&_td]:py-2 [&_td]:pr-4 [&_td]:align-top">
               <tr><td>Supabase</td><td>진단·이벤트 데이터 저장·관리</td></tr>
               <tr><td>Vercel</td><td>서비스 호스팅</td></tr>
-              <tr><td>OpenAI OpCo, LLC (미국)</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
+              <tr><td>Replicate, LLC (미국)</td><td>AI 헤어스타일 합성 처리(얼굴 이미지 포함)</td></tr>
               <tr><td>Google (Google Sheets)</td><td>개인식별정보를 제외한 진단 답변 집계·분석</td></tr>
               {SENTRY_ENABLED && (
                 <tr><td>Sentry</td><td>오류 모니터링(에러 로그·요청 경로·기기/브라우저 정보)</td></tr>
@@ -120,23 +121,23 @@ export default function PrivacyPage() {
 
       <Section title="5. 개인정보 국외이전">
         <p>
-          AI 합성을 위해 이용자의 <b>얼굴 이미지</b>가 <b>OpenAI(미국)</b>로 이전되어 처리됩니다.
+          AI 합성을 위해 이용자의 <b>얼굴 이미지</b>가 <b>Replicate(미국)</b>로 이전되어 처리됩니다.
         </p>
         <ul className="list-disc space-y-1 pl-5">
-          <li>이전받는 자: OpenAI OpCo, LLC (미국 / 1455 3rd Street, San Francisco, California 94158, USA)</li>
-          <li>이전받는 자의 연락처: privacy@openai.com (정보주체 권리 요청: dsar@openai.com)</li>
+          <li>이전받는 자: Replicate, LLC (미국 / 101 Townsend Street, San Francisco, CA 94107, USA)</li>
+          <li>이전받는 자의 연락처: privacy@replicate.com</li>
           <li>
             이전받는 자의 개인정보 처리방침:{" "}
-            <a href="https://openai.com/policies/row-privacy-policy/" target="_blank" rel="noreferrer"
+            <a href="https://replicate.com/privacy" target="_blank" rel="noreferrer"
               className="font-medium underline underline-offset-2">
-              openai.com/policies/row-privacy-policy
+              replicate.com/privacy
             </a>
           </li>
           <li>이전 항목: 셀카(얼굴) 이미지</li>
           <li>이전 목적: AI 헤어스타일 합성</li>
           <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
-          <li>이전받는 자의 데이터 처리: 입력 데이터는 기본적으로 모델 학습에 사용되지 않습니다(별도 동의 시에만 사용).</li>
-          <li>보유·이용기간: 서비스는 원본 사진을 서버에 저장하지 않습니다(위 3항). 전송받은 OpenAI는 오·남용 점검(abuse monitoring) 목적으로 최대 30일 보관 후 삭제합니다(법령이 요구하는 경우 연장될 수 있습니다).</li>
+          <li>이전받는 자의 데이터 처리: Replicate은 원본 입력·출력을 모델 학습에 사용하지 않으며, 서비스 개선에는 익명·집계된 이용 통계만 사용합니다(생성 결과물의 권리는 이용자에게 귀속). 출처: replicate.com/terms.</li>
+          <li>보유·이용기간: 서비스는 원본 사진을 서버에 저장하지 않습니다(위 3항). 전송받은 Replicate는 API 예측의 입력·출력·로그를 기본적으로 1시간 후 자동 삭제합니다(출처: replicate.com/docs/topics/predictions/data-retention. 법령이 요구하는 경우 연장될 수 있습니다).</li>
           <li>
             국외이전 거부 방법 및 효과: 로그인 시 동의 화면의 필수 항목(개인정보·약관·사진의 국외이전)은 각각 선택할 수 있으나,{" "}
             <b>국외이전에 동의하지 않으면 진행 버튼이 활성화되지 않아 다음 단계로 넘어갈 수 없습니다.</b>{" "}
@@ -202,7 +203,7 @@ export default function PrivacyPage() {
       <Section title="9. 고지의 의무">
         <p>
           본 방침의 내용 추가·삭제·수정이 있을 경우 시행일 전에 서비스 내 공지를 통해 안내합니다.
-          본 방침의 시행일: 2026년 8월 7일.
+          본 방침의 시행일: 2026년 8월 8일 (개정: AI 합성 수탁사를 Replicate로 변경).
         </p>
       </Section>
 
