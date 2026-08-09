@@ -38,7 +38,7 @@ function buildHairTags(answers: StyleAnswers): string[] {
   if (answers.q10_history_count === "count_7plus") tags.push("#손상모");
   if (answers.q8_density === "thin_density") tags.push("#볼륨처짐");
   if (answers.q7_thickness === "fine") tags.push("#가는모");
-  if (answers.q3_curl === "curly_hair") tags.push("#곱슬모");
+  if (answers.q3_curl === "curly_hair" || answers.q3_curl === "curly_hair_mid") tags.push("#곱슬모");
   return tags.length > 0 ? tags : ["#건강모"];
 }
 
@@ -74,7 +74,7 @@ function SaveDiaryModal({
         isSevereDamage:    answers.q10_history_count === "count_7plus",
         isLowDensity:      answers.q8_density === "thin_density",
         isFineHair:        answers.q7_thickness === "fine",
-        isCurly:           answers.q3_curl === "curly_hair",
+        isCurly:           answers.q3_curl === "curly_hair" || answers.q3_curl === "curly_hair_mid",
       };
       // 배열에 누적 저장 (UUID로 중복 방지)
       let arr: typeof entry[] = [];
@@ -344,7 +344,7 @@ const Q_DEBUG_LABELS: Record<string, [string, Record<string, string>]> = {
   q13_design:        ["웨이브",    { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" }],
   q8_density:        ["숱",        { thick_density: "많음", medium_density: "보통", thin_density: "적음" }],
   q7_thickness:      ["굵기",      { coarse: "굵음", medium_thickness: "보통", fine: "가늘음" }],
-  q3_curl:           ["곱슬",      { straight_hair: "직모", wavy_hair: "반곱슬", curly_hair: "악성곱슬" }],
+  q3_curl:           ["곱슬",      { straight_hair: "직모", wavy_hair: "반곱슬", curly_hair_mid: "곱슬", curly_hair: "악성곱슬" }],
   q10_history_count: ["시술 횟수", { count_1_2: "1~2회", count_3_4: "3~4회", count_5_6: "5~6회", count_7plus: "7회+" }],
 };
 

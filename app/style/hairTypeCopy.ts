@@ -215,6 +215,22 @@ const CORE_COPY_27: Record<string, CoreCopy> = {
   },
 };
 
+// ─── 곱슬(중간) 핵심카피 9키 — [카피 대기] (지시서 A-1①·A-3 · 블로커 3 답) ────────
+// 신규 곱슬값 curly_hair_mid × 굵기3 × 숱3 = 9키. 핵심카피(painPoint/why/prescription/
+// discoveryHint)는 알고리즘방 전집 v2 도착 시 주입 — 지금은 구조·키만 채운다(임의 생성 금지).
+// (시술/케어 문구는 매트릭스 쪽에서 악성곱슬 복제분을 deriveTreatmentCopy가 그대로 파생.)
+const CORE_COPY_PENDING: CoreCopy = {
+  painPointHeadline: "[카피 대기]",
+  whyItHappens:      "[카피 대기]",
+  stylePrescription: "[카피 대기]",
+  discoveryItemHint: "[카피 대기]",
+};
+for (const t of ["coarse", "medium_thickness", "fine"]) {
+  for (const d of ["thick_density", "medium_density", "thin_density"]) {
+    CORE_COPY_27[coreKey("curly_hair_mid", t, d)] = { ...CORE_COPY_PENDING };
+  }
+}
+
 const DEFAULT_CORE_KEY = coreKey("straight_hair", "medium_thickness", "medium_density");
 
 // ─── 108개 시술/케어 문구 파생 — 원본 손대지 않고 안전 문구만 교정 ─────────────
@@ -234,7 +250,7 @@ interface CorrectionRule {
 const SAFETY_CORRECTIONS: CorrectionRule[] = [
   // 1) 곱슬 — 겉머리 틴닝 표현 교정
   {
-    scope: (e) => e.curl === "curly_hair",
+    scope: (e) => e.curl === "curly_hair" || e.curl === "curly_hair_mid",
     pattern: /겉머리는\s*가볍게\s*틴닝해서\s*무게감만\s*살짝\s*줄여주세요\./g,
     replacement: "겉결은 흐트러뜨리지 않고 안쪽 양감과 부피만 가볍게 조절해주세요.",
   },

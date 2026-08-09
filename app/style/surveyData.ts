@@ -106,9 +106,11 @@ export const STYLE_SURVEY: StyleStep[] = [
         no:    "Q7",
         title: "곱슬기가 있나요?",
         options: [
-          { id: "straight_hair", label: "직모",    desc: "곱슬기 없이 매끈한 편" },
-          { id: "wavy_hair",     label: "반곱슬",  desc: "습하면 약간 부스스해지는 편" },
-          { id: "curly_hair",    label: "악성곱슬", desc: "뻣뻣하거나 곱슬이 강한 편" },
+          // 판별 멘트 확정(지시서 A-1① · 확정 115·134). curly_hair_mid는 신설(곱슬·중간).
+          { id: "straight_hair",  label: "직모",    desc: "곱슬기 없이 매끈한 편" },
+          { id: "wavy_hair",      label: "반곱슬",  desc: "평소엔 괜찮은데 비 오는 날·습한 날 부스스해져요" },
+          { id: "curly_hair_mid", label: "곱슬",    desc: "말리면 곱슬기가 올라와서, 펴는 기구 없이는 못 나가요" },
+          { id: "curly_hair",     label: "악성곱슬", desc: "누가 봐도 곱슬, 어릴 때부터요" },
         ],
       },
       {
