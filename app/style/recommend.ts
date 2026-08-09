@@ -4,47 +4,38 @@
 // ============================================================================
 
 import type { StyleAnswers } from "./surveyData";
+import { LENGTH_LABEL_MAP } from "./surveyData";
 
 // 모발 성질 기반 헤어 방향 리포트(q3_curl/q7_thickness/q8_density/q10_history_count
 // 108조합) — 데이터/조회 함수 본체는 app/style/hairTypeMatrix.ts에 있고, 기존
 // getStyleEntry와 동일한 진입점(../recommend)에서 가져다 쓸 수 있도록 재노출한다.
 export { getHairTypeReport, type HairTypeEntry } from "./hairTypeMatrix";
 
-// ─── 스타일 명칭 조립 시스템 [2×6×3×4 = 144조합] ─────────────────────────────
-// 60종 하드코딩 테이블 전면 폐기 → 런타임 생성 함수로 교체
+// ─── 스타일 네이밍 (지시서 A-6 · 확정 137) ───────────────────────────────────
+// 조립식 접두어(연령×레이어) 전면 폐기 → 간판명 단일 세트(연령 분기 없음).
+//   간판명 = q13_design(웨이브축) × q14_layer(레이어) 12조합 맵(확정 표 그대로).
+//   부제  = "{기장 라벨} 기장 · {컬 설명}". 컬 설명 문구는 확정분(목업 v4)만 채우고,
+//          나머지 (design,layer)는 컬 라벨로 조립(구조 기본값) — 세부 문구는 [카피 대기].
 
-interface StyleEntry { name: string; mood: string; }
+interface StyleEntry { name: string; subtitle: string; mood: string; }
 
-// [연령 2그룹]
-function getAgeGroup(age: string): "2040" | "5060plus" {
-  return ["age_20", "age_30", "age_40"].includes(age) ? "2040" : "5060plus";
-}
-
-// [효과 접두어] Age 2 × Layer 3 = 6칸
-const EFFECT_PREFIX: Record<"2040" | "5060plus", Record<string, string>> = {
-  "2040": {
-    heavy:  "볼륨감 있는",
-    medium: "손질이 편한",
-    light:  "얼굴이 갸름해 보이는",
-  },
-  "5060plus": {
-    heavy:  "관리하기 쉬운",
-    medium: "손질이 편한",
-    light:  "동안으로 보이는",
-  },
+// [간판명] q13_design × q14_layer = 12칸 (지시서 A-6 표)
+const SIGN_NAME: Record<string, Record<string, string>> = {
+  straight: { heavy: "슬릭컷",     medium: "슬릭펌",     light: "레이어드 슬릭컷" },
+  c_curl:   { heavy: "러블리펌",   medium: "빌드펌",     light: "에어펌" },
+  s_curl:   { heavy: "엘리자벳펌", medium: "그레이스펌", light: "물결펌" },
+  wave:     { heavy: "바디펌",     medium: "젤리펌",     light: "히피펌" },
 };
 
-// [기본 스타일명] Length 6 × Wave 4 = 24칸
-const BASE_STYLE: Record<string, Record<string, string>> = {
-  short:      { straight: "숏컷",           c_curl: "숏컷 C컬",       s_curl: "숏컷 S컬",       wave: "숏컷 웨이브" },
-  short_bob:  { straight: "귀밑 단발",       c_curl: "귀밑 단발 C컬",  s_curl: "귀밑 단발 S컬",  wave: "귀밑 단발 웨이브" },
-  bob:        { straight: "단발컷",          c_curl: "단발 C컬",       s_curl: "단발 S컬",       wave: "단발 웨이브" },
-  shoulder:   { straight: "어깨선 단발컷",   c_curl: "어깨선 C컬",     s_curl: "어깨선 S컬",     wave: "어깨선 웨이브" },
-  collarbone: { straight: "쇄골 레이어드컷", c_curl: "쇄골 C컬",       s_curl: "쇄골 S컬",       wave: "쇄골 웨이브" },
-  chest:      { straight: "가슴선 롱컷",     c_curl: "가슴선 롱 C컬",  s_curl: "가슴선 롱 S컬",  wave: "가슴선 롱 웨이브" },
+// [부제 — 컬 설명] 확정분(목업 v4)만 채운다. 나머지는 아래 DESIGN_LABEL로 조립(구조 기본값).
+//   ※ 세부 문구는 알고리즘방 전집 v2 도착 시 주입 [카피 대기] — 임의로 채우지 않는다.
+const SUBTITLE_CURL: Record<string, Record<string, string>> = {
+  c_curl: { medium: "끝에서 안으로 말리는 C컬" },
+  s_curl: { medium: "자연스럽게 흐르는 S웨이브", light: "가볍게 흐르는 S웨이브" },
 };
+const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
 
-// [무드 문구] Wave 4 × Layer 3 = 12칸
+// [무드 문구] 공유/저장 문구용(Wave 4 × Layer 3 = 12칸). 기존 유지.
 const STYLE_MOOD: Record<string, Record<string, string>> = {
   straight: {
     heavy:  "깔끔하고 단정한 선이 자신감 있는 인상을 만들어요",
@@ -69,23 +60,23 @@ const STYLE_MOOD: Record<string, Record<string, string>> = {
 };
 
 export function getStyleEntry(answers: StyleAnswers): StyleEntry {
-  const ageGroup = getAgeGroup(answers.q1_age ?? "age_30");
-  const layer    = answers.q14_layer  ?? "medium";
+  const layer = answers.q14_layer ?? "medium";
 
   // 레거시/정책 예외 정규화 — shoulder(구 옵션, 2026-07 제거)는 collarbone으로,
-  // short·short_bob + s_curl(신정책상 존재하지 않는 조합)은 wave로 취급한다.
+  // short·short_bob + s_curl(신정책상 존재하지 않는 조합)은 wave로 취급한다. (기존 유지)
   const rawLength = answers.q11_length ?? "bob";
   const length    = rawLength === "shoulder" ? "collarbone" : rawLength;
   const isShort   = length === "short" || length === "short_bob";
   const rawDesign = answers.q13_design ?? "straight";
   const design    = isShort && rawDesign === "s_curl" ? "wave" : rawDesign;
 
-  const prefix = EFFECT_PREFIX[ageGroup][layer] ?? "손질이 편한";
-  const base   = BASE_STYLE[length]?.[design]  ?? "단발컷";
-  const name   = `${prefix} ${base}`;
-  const mood   = STYLE_MOOD[design]?.[layer]   ?? "자연스럽고 편안한 스타일이에요";
+  const name        = SIGN_NAME[design]?.[layer] ?? SIGN_NAME.straight!.medium!;
+  const lengthLabel = LENGTH_LABEL_MAP[length] ?? LENGTH_LABEL_MAP.bob ?? "단발";
+  const curlDesc    = SUBTITLE_CURL[design]?.[layer] ?? DESIGN_LABEL[design] ?? "";
+  const subtitle    = `${lengthLabel} 기장 · ${curlDesc}`;
+  const mood        = STYLE_MOOD[design]?.[layer] ?? "자연스럽고 편안한 스타일이에요";
 
-  return { name, mood };
+  return { name, subtitle, mood };
 }
 
 // ─── 구글 시트 제출용 answers 변환 ───────────────────────────────────────────
