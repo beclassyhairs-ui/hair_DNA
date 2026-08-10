@@ -22,7 +22,6 @@ import {
   getHairTypeReport,
   type HairTypeEntry,
 } from "../recommend";
-import { getHairTypeCopy, type HairTypeCopy } from "../hairTypeCopy";
 import { evaluateStyleGate } from "../styleGate";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
 
@@ -36,8 +35,9 @@ import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
 import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
-import ResultHeroCard from "@/components/beauty-ui/ResultHeroCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
+import { resolveCrossBranch } from "../crossBranch";
+import { getBranchCopy, SCALP_ROUTINE, VERDICT_STAMP, CAUTION_NOTICE } from "../branchCopy";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
@@ -253,92 +253,51 @@ function BeforeAfterSection({
   );
 }
 
-// ─── 모발 성질 기반 헤어 방향 리포트 카드 5종 ────────────────────────────────
-// care_matrix_v3 원문(report) 대신 사용자 언어로 번역된 copy(hairTypeCopy.ts)를
-// 보여준다. 손상 이력(historyCount)은 AvoidCard의 damageCaution 한 줄에서만
-// modifier로 등장한다 — painPointHeadline/whyItHappens/stylePrescription은
-// copy layer 설계상 손상 이력과 무관하게 항상 동일하다.
+// ─── 결과지 갈래 리포트 컴포넌트 (지시서 A-5 · 목업 v4 구조) ──────────────────
+// crossBranch가 정한 갈래로 branchCopy에서 카피를 꺼내 슬롯에 채운다. 갈래 2·5·7만
+// 확정, 나머지는 [카피 대기]가 그대로 노출(후주입 전). 카피는 아래 슬롯을 기계 교체.
 
-function TextureReportCard({ copy }: { copy: HairTypeCopy }) {
+// 내부 신뢰 카피(<b> 강조 유지) 렌더 — 사용자 입력 아님.
+function Rich({ html, className }: { html: string; className?: string }) {
+  return <span className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// 섹션 라벨(작은 제목)
+function TT({ children }: { children: string }) {
+  return <p className="mb-2 mt-6 text-[11px] font-extrabold uppercase tracking-[0.24em] text-ink-2">{children}</p>;
+}
+
+// 판정 스탬프 3단 (pass / caution=단서 한 줄 / block=차단)
+function VerdictStamp({ level, clause }: { level: "pass" | "caution" | "block"; clause: string }) {
+  const isBlock = level === "block";
+  const clauseOk = Boolean(clause) && clause !== "[카피 대기]";
   return (
-    <GlassCard accent className="space-y-2 px-5 py-5">
-      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">모발 성질 리포트</p>
-      <p className="text-[15px] leading-relaxed text-ink">{copy.whyItHappens}</p>
-    </GlassCard>
+    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+      <span className={`rounded-full border px-4 py-1.5 text-[14px] font-extrabold ${
+        isBlock ? "border-amber-500 bg-amber-50 text-amber-700" : "border-emerald-600 bg-emerald-50 text-emerald-700"
+      }`}>
+        {isBlock ? VERDICT_STAMP.block : VERDICT_STAMP.pass}
+      </span>
+      {!isBlock && clauseOk && <span className="text-[13px] text-ink-2">{clause}</span>}
+    </div>
   );
 }
 
-function StyleDirectionCard({ copy }: { copy: HairTypeCopy }) {
+// 게이트 주의 — 노란 안내줄 + 데미지 송객 CTA(링크만, 문구 기존 유지)
+function CautionNotice() {
   return (
-    <GlassCard accent className="space-y-2 px-5 py-5">
-      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">추천 스타일 방향</p>
-      <p className="text-[15px] leading-relaxed text-ink">{copy.stylePrescription}</p>
-    </GlassCard>
-  );
-}
-
-function AvoidCard({ copy, damageCaution }: { copy: HairTypeCopy; damageCaution: string }) {
-  return (
-    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">피해야 할 스타일 · 시술</p>
-      <div className="space-y-2">
-        {copy.avoidWithReason.map((line) => (
-          <div key={line} className="flex items-start gap-2.5">
-            <span className="mt-2 h-1 w-1 flex-none rounded-full bg-ink-2/60" />
-            <p className="text-[15px] leading-relaxed text-ink">{line}</p>
-          </div>
-        ))}
-      </div>
-      {/* 손상 이력 modifier — 제목/방향은 바꾸지 않고 주의 한 줄로만 반영 */}
-      <div className="rounded-xl border border-line bg-surface px-4 py-3">
-        <p className="text-[15px] font-medium text-ink-2">{damageCaution}</p>
-      </div>
-    </GlassCard>
-  );
-}
-
-function SalonTipCard({ copy }: { copy: HairTypeCopy }) {
-  return (
-    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">미용실 상담 팁</p>
-      <div className="space-y-2">
-        {copy.salonScript.map((line) => (
-          <div key={line} className="rounded-xl border border-line bg-surface px-4 py-3">
-            <p className="text-[15px] italic leading-relaxed text-ink-2">{line}</p>
-          </div>
-        ))}
-      </div>
-    </GlassCard>
-  );
-}
-
-function HomeCareCard({ copy, showDamageCTA }: { copy: HairTypeCopy; showDamageCTA: boolean }) {
-  return (
-    <GlassCard tone="soft" className="space-y-3 px-5 py-4">
-      <p className="text-[12px] font-bold uppercase tracking-[0.25em] text-ink-2">홈케어 방향</p>
-      <p className="text-[15px] leading-relaxed text-ink">{copy.homeCareDirection}</p>
-      {/* 제품 카드 직접 노출 없음 — discoveryItemHint는 카테고리 힌트로만, 실제 제품은 발견템(/items)에서 */}
-      <Link
-        href="/items"
-        onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_homecare", diagnosis_type: "style" })}
-        className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-surface hover:text-ink"
-      >
-        {copy.discoveryItemHint} 같은 제품은 발견템에서 볼 수 있어요
-        <span className="flex-none text-ink-2">→</span>
+    <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+      <p className="text-[14px] font-semibold text-amber-800">{CAUTION_NOTICE}</p>
+      <Link href="/damage-check"
+        className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-amber-700 underline underline-offset-2">
+        정밀 손상 진단 받아보기 →
       </Link>
-      {/* 시술 이력 7회 이상(count_7plus) 답변자에게만 노출되는 교차 진단 CTA */}
-      {showDamageCTA && (
-        <Link
-          href="/damage-check"
-          className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-surface hover:text-ink"
-        >
-          정밀 손상 진단 받아보기
-          <span className="flex-none text-ink-2">→</span>
-        </Link>
-      )}
-    </GlassCard>
+    </div>
   );
 }
+
+// (구 AvoidCard / SalonTipCard / HomeCareCard 제거 — A-5 갈래 구조로 대체.
+//  살롱 상담 스크립트 카드는 확정 119에 따라 삭제. 제품은 갈래별 3종 슬롯 + /items 링크로.)
 
 // ─── 기획자용 진단 로직 디버그 패널 ──────────────────────────────────────────
 // (테스트/기획 검증용 — 의도적으로 눈에 띄는 디버그 톤을 유지, 리디자인 대상 아님)
@@ -491,12 +450,11 @@ export default function StyleResultPage() {
 
   if (!ready) return <main className="min-h-screen bg-surface" />;
 
-  const entry   = getStyleEntry(answers);
-  const report  = getHairTypeReport(answers);
-  const copy    = getHairTypeCopy(answers);
-
-  const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
-  const LAYER_LABEL:  Record<string, string> = { heavy: "층 없음", medium: "소프트", light: "허쉬컷" };
+  const entry  = getStyleEntry(answers);
+  const report = getHairTypeReport(answers);   // 디버그 패널·REPORT_VIEW 추적용(hairTypeKey 등)
+  const gate   = evaluateStyleGate(answers);   // 판정 스탬프·주의/차단
+  const branch = resolveCrossBranch(answers);  // 대표 갈래 + 흡수 + 부가카드
+  const bcopy  = getBranchCopy(branch.primary);
 
   return (
     <SilkBackground>
@@ -523,42 +481,101 @@ export default function StyleResultPage() {
           {/* A-1 완성도 게이지 — 결과지 상단 */}
           <CompletionGauge className="mb-4" />
 
-          {/* 결과 히어로 — Before/After + 스타일명 + 불편함 헤드라인 + 태그 */}
-          <ResultHeroCard
-            eyebrow="AI STYLE DIAGNOSIS"
-            visual={<BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} />}
-            badge={entry.name}
-            badgeVariant="subtle"
-            title={copy.painPointHeadline}
-          >
-            <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-              {[LENGTH_LABEL_MAP[answers.q11_length], DESIGN_LABEL[answers.q13_design], LAYER_LABEL[answers.q14_layer]]
-                .filter(Boolean).map(tag => (
-                  <span key={tag} className="rounded-full bg-surface px-3 py-0.5 text-[13px] font-semibold text-ink-2">{tag}</span>
-                ))}
-            </div>
-            {/* D-3: faceswap 결과도 실제 시술을 보장하지 않는다 — 미리보기 고지 유지(재전환 복원). */}
-            {generated && (
-              <p className="mt-3 text-center text-[12px] leading-relaxed text-ink-2">
-                미리 만들어 본 스타일 이미지예요. 실제 시술 결과와는 다를 수 있어요.
-              </p>
-            )}
-          </ResultHeroCard>
+          {/* 1. Before/After — 캡션 확정(농담성 문구 금지, 확정 138). 차단이어도 After는 그대로 노출. */}
+          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} />
+          <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
 
-          {/* Phase B: 로그인 후 진입이라 항상 공개(블러 없음) */}
+          {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 */}
+          <div className="mt-4 text-center">
+            <p className="text-[12px] text-ink-2">내가 고른 스타일</p>
+            <p className="mt-0.5 text-[24px] font-extrabold tracking-tight text-ink">{entry.name}</p>
+            {entry.subtitle && <p className="mt-0.5 text-[13px] text-ink-2">{entry.subtitle}</p>}
+            <VerdictStamp level={gate.level} clause={bcopy.verdictClause} />
+          </div>
+
+          {/* 게이트 주의 — 노란줄 + 데미지 CTA(차단은 스탬프로 이미 표시) */}
+          {gate.level === "caution" && <div className="mt-4"><CautionNotice /></div>}
+
           <div className="mt-4 space-y-5 transition-all duration-700">
+            <div className="space-y-1">
 
-            {/* Tier 1 — 핵심 진단: 왜 불편한지 + 어떻게 하면 되는지 */}
-            <div className="space-y-3">
-              <TextureReportCard copy={copy} />
-              <StyleDirectionCard copy={copy} />
-            </div>
+              {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
+              <TT>혹시, 이런 적 있다면</TT>
+              <GlassCard className="border-l-4 border-l-ink px-5 py-4">
+                <Rich html={bcopy.prophecy} className="block text-[16px] font-extrabold leading-relaxed text-ink" />
+              </GlassCard>
 
-            {/* Tier 2 — 참고 정보: 시술 주의 / 상담 팁 / 홈케어 */}
-            <div className="space-y-2.5">
-              <AvoidCard copy={copy} damageCaution={report.damageCaution} />
-              <SalonTipCard copy={copy} />
-              <HomeCareCard copy={copy} showDamageCTA={isDamageBlock(answers)} />
+              {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
+              <TT>왜 그랬던 걸까요</TT>
+              <div className="rounded-xl border border-line bg-surface px-4 py-3">
+                <Rich html={bcopy.ahaHeadline} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
+              </div>
+              <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">자세히 보기</summary>
+                <div className="border-t border-line px-4 py-3"><Rich html={bcopy.ahaDetail} className="text-[14px] leading-relaxed text-ink" /></div>
+              </details>
+
+              {/* 5. 평소 관리 꿀팁(주인공, 펼침) + 정수리 루틴 접기 내장 */}
+              <TT>평소엔 이렇게 해보세요</TT>
+              <GlassCard tone="soft" className="px-5 py-4">
+                <p className="mb-2 text-[14px] font-extrabold text-ink">{bcopy.tipsTitle}</p>
+                <ol className="list-decimal space-y-1.5 pl-5">
+                  {bcopy.tips.map((t, i) => (
+                    <li key={i} className="text-[14px] leading-relaxed text-ink"><Rich html={t} /></li>
+                  ))}
+                </ol>
+              </GlassCard>
+              {branch.scalpRoutineCard && (
+                <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{SCALP_ROUTINE.title}</summary>
+                  <div className="border-t border-line px-4 py-3">
+                    <ol className="list-decimal space-y-1.5 pl-5">
+                      {SCALP_ROUTINE.steps.map((s, i) => (
+                        <li key={i} className="text-[13.5px] leading-relaxed text-ink"><Rich html={s} /></li>
+                      ))}
+                    </ol>
+                    <p className="mt-2 text-[12.5px] text-ink-2">{SCALP_ROUTINE.note}</p>
+                  </div>
+                </details>
+              )}
+
+              {/* 6. 시술 참고(접힘) — 대표 + 흡수된 갈래 스텝 */}
+              <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">시술 생각이 있으시다면</summary>
+                <div className="space-y-2 border-t border-line px-4 py-3">
+                  <Rich html={bcopy.procedureRef} className="block text-[14px] leading-relaxed text-ink" />
+                  {bcopy.procedureAfter && bcopy.procedureAfter !== "[카피 대기]" && (
+                    <p className="text-[13px] text-ink-2">시술 후엔: <Rich html={bcopy.procedureAfter} /></p>
+                  )}
+                  {branch.absorbed.map((k) => (
+                    <Rich key={k} html={getBranchCopy(k).procedureRef} className="block text-[13px] leading-relaxed text-ink-2" />
+                  ))}
+                </div>
+              </details>
+
+              {/* 7. 제품 슬롯 3종(맨 아래) + 발견템 링크 */}
+              <TT>이 머리에 맞는 도구</TT>
+              <div className="grid grid-cols-3 gap-2">
+                {bcopy.products.map((p, i) => (
+                  <div key={i} className="rounded-xl border border-line bg-surface px-2 py-3 text-center">
+                    <p className="text-[12.5px] font-bold text-ink">{p.name}</p>
+                    <p className="mt-0.5 text-[10.5px] leading-snug text-ink-2">{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <Link href="/items"
+                onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_products", diagnosis_type: "style" })}
+                className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                이런 제품은 발견템에서 볼 수 있어요 <span className="flex-none">→</span>
+              </Link>
+
+              {/* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */}
+              {gate.level === "block" && (
+                <Link href="/damage-check"
+                  className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                  정밀 손상 진단 받아보기 <span className="flex-none">→</span>
+                </Link>
+              )}
             </div>
 
             {/* 저장 + 공유 */}
