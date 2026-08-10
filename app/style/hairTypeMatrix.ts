@@ -13,6 +13,7 @@
 // ============================================================================
 
 import type { StyleAnswers } from "./surveyData";
+import { evaluateStyleGate } from "./styleGate";
 
 // curly_hair_mid(곱슬·중간) = 지시서 A-1① 신설값. 반곱슬과 악성곱슬 사이.
 export type CurlKey      = "straight_hair" | "wavy_hair" | "curly_hair_mid" | "curly_hair";
@@ -3518,7 +3519,10 @@ export function getHairTypeReport(answers: StyleAnswers): HairTypeEntry {
   const curl      = (answers.q3_curl ?? "straight_hair") as CurlKey;
   const thickness = (answers.q7_thickness ?? "medium_thickness") as ThicknessKey;
   const density   = (answers.q8_density ?? "medium_density") as DensityKey;
-  const history   = (answers.q10_history_count ?? "count_1_2") as HistoryKey;
+  // 손상 modifier 4단(HistoryKey): 구 설문값(q10_history_count)이 있으면 그대로 존중(레거시/구세션),
+  // 없으면 A-1② 시술이력 → 게이트 점수 어댑터로 파생(지시서 A-3 "손상 modifier 기존 재사용" · (가)안).
+  const legacy = answers.q10_history_count as HistoryKey | undefined;
+  const history = legacy ?? evaluateStyleGate(answers).historyKey;
 
   const id = `${curl}__${thickness}__${density}__${history}`;
   return HAIR_TYPE_MATRIX_BY_ID[id] ?? HAIR_TYPE_MATRIX_BY_ID[DEFAULT_ENTRY_ID];
