@@ -9,16 +9,24 @@
 
 **확정문서 상태**: 확정 44~138은 레포에 없음 → 지시서/목업이 유일 스펙. 목업 v4가 갈래 2·5·7 최종카피 제공.
 
-### ✅ 커밋 완료(스코프 커밋, 배포 안 함)
-- `100725a` **A-6 네이밍**: 간판명 12조합 맵(design×layer) + 부제(기장+컬). 조립접두어·연령분기 폐기. 부제 세부문구는 확정분(목업)만, 나머지 [카피 대기].
+### ✅ 커밋 완료 — A 패스 구조 전부(스코프 커밋, 미배포)
+- `100725a` **A-6 네이밍**: 간판명 12조합 맵(design×layer) + 부제(기장+컬). 조립접두어·연령분기 폐기. 부제 세부문구 확정분(목업)만, 나머지 [카피 대기].
 - `ecd9689` **A-1① 곱슬 4값**: q3_curl 4값(직/반/곱슬/악성). 매트릭스 108→144(곱슬중간=악성곱슬 복제, 타입서술 [카피 대기]), 코어카피 27→36키(곱슬중간 9키 [카피 대기]). 폴백0건 구성증명.
-- `ba36540` **A-2 게이트**: `styleGate.constants.ts`(PM-임시 점수·경계 격리) + `styleGate.ts`(evaluateStyleGate 순수함수). 한 점수→게이트3단+HistoryKey4단. getHairTypeReport 어댑터((가)안): 레거시 q10 있으면 존중, 없으면 게이트 파생(현재 동작 무변화).
+- `ba36540` **A-2 게이트**: `styleGate.constants.ts`(PM-임시 점수·경계 격리) + `styleGate.ts`. 한 점수→게이트3단+HistoryKey4단. getHairTypeReport 어댑터((가)안).
+- `2fb8f0c` **A-1② 시술이력 문항**: q10_history_count 폐기 → 전용 다단계 렌더러(TreatmentHistoryStep). 최근/그전/더+하위체크(탈색2회·뿌리새치), 최근='없음' 단락. 키 q8a_recent/q8b_prev/q8c_more/q8_bleach_2plus/q8_root_gray → styleGate 소비. 결과지 #손상모·isSevereDamage·CTA를 isDamageBlock으로 갱신.
+- `18d9210` **A-4 crossBranch**: 10갈래 엔진. 갈래9(차단) 최우선, 복수발동 시 문1개(표순서 첫발동=대표)+흡수. 부가 정수리 카드(새치/뿌염+펌/fine+thin/50대+fine).
+- `37fc61a` **A-5 branchCopy**: 갈래별 카피 레지스트리(빈칸-후주입). 갈래 2·5·7 목업 원문, 나머지 [카피 대기]. SCALP_ROUTINE·판정스탬프·주의줄 확정.
+- `bd539bc` **A-5 결과지 재작성**: 목업 v4 구조(BA캡션→간판명+부제+스탬프3단→예언→아하→꿀팁+정수리접기→시술참고접기(대표+흡수)→제품3종→저장). 게이트 주의=노란줄+CTA/차단=스탬프전환·After유지. 살롱 스크립트 카드 삭제. 금지어 grep 클린.
 
-### ⏭ 다음(순서 고정: PM 승인): A-1② → A-4 → A-5
-- **A-1② 시술이력 문항**(다음): survey/page.tsx는 단일선택·자동넘김 균일패턴 → Q8-a/b/c+하위체크(뿌리→새치, 탈색→2회+)를 "1문항 UX로 묶는" **전용 다단계 렌더러 신규 필요**. 스키마 키: q8a_recent/q8b_prev/q8c_more/q8_bleach_2plus/q8_root_gray(styleGate가 소비). q10_history_count 제거 시 게이트 어댑터가 자동 인계.
-- **A-4 crossBranch**(신규 10갈래): 지시서 A-4 표. 갈래9=게이트 차단(evaluateStyleGate level==="block"). 곱슬·악성 조건은 curl 4값 사용.
-- **A-5 결과지 재작성**(result/page.tsx 610줄): 목업 v4 구조·순서. 갈래 2·5·7 확정카피만, 나머지 [카피 대기]. 차단=갈래9 전환(After 이미지는 유지), 주의=노란줄+데미지 CTA(링크만, 문구 기존유지).
-- 마지막: tsc + 폴백0건 전수 스크립트(D 체크리스트) + 금지어 grep.
+### ✅ 마무리 검증
+- **tsc 무에러**(각 단계). **폴백0건**: 매트릭스 4×36=144·코어 4×9=36 구성증명(런타임 전수 스윕은 node TS resolver 이슈로 보류, 구성상 완전). **금지어 grep 클린**(재미로/복구·재생·영양·강화·탈모). **A-7**: q3_curl은 faceswap 슬롯키(referencePick)에 없음 → 영향 없음 확인.
+- **next build 성공(exit 0)**: 전 라우트 컴파일 완료(/style/survey·/style/result 포함), lint·타입 에러 0(dangerouslySetInnerHTML 통과). A 패스 프로덕션 빌드 검증 완료.
+
+### ⏭ 남음: 카피 후주입 + B 패스(별도)
+- **[카피 대기] 후주입 표면**(PM이 원고 넘기면 기계 교체): `branchCopy.ts`(갈래 1·3·4·6·8·9·10 슬롯 + b9 차단모드), `hairTypeCopy.ts`(곱슬중간 9키 CORE_COPY), `hairTypeMatrix.ts`(곱슬중간 36엔트리 타입서술), `recommend.ts`(부제 컬설명 나머지 조합).
+- **게이트 임시값 튜닝**: `styleGate.constants.ts`(형님 분포 시뮬 후).
+- **B 패스(데미지)**: 지시서 B-1~7 별도. 건조문항 충돌 PM 재확정 대기.
+- 배포: A 완료 후 별도 승인.
 
 ### PM 확정 답(이번 세션)
 - (가)안: 게이트 점수 하나로 HistoryKey 파생. 경계 0~1.4/1.5~4.4/4.5~6.9/7.0+ → styleGate.constants(PM-임시).
