@@ -90,7 +90,13 @@ export function toSheetAnswers(answers: StyleAnswers): Record<string, string | s
     q8_density:         answers.q8_density         ?? "",
     q7_thickness:       answers.q7_thickness        ?? "",
     q3_curl:            answers.q3_curl            ?? "",
+    // A-1② 시술이력(구 q10_history_count 대체). 구 컬럼은 하위호환 위해 유지(신규 세션은 빈값).
     q10_history_count:  answers.q10_history_count  ?? "",
+    q8a_recent:         answers.q8a_recent         ?? "",
+    q8b_prev:           answers.q8b_prev           ?? "",
+    q8c_more:           answers.q8c_more           ?? "",
+    q8_bleach_2plus:    answers.q8_bleach_2plus    ?? "",
+    q8_root_gray:       answers.q8_root_gray       ?? "",
     q10_history:        ["color_regular"],
   };
 }

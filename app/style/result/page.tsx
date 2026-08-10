@@ -23,7 +23,13 @@ import {
   type HairTypeEntry,
 } from "../recommend";
 import { getHairTypeCopy, type HairTypeCopy } from "../hairTypeCopy";
+import { evaluateStyleGate } from "../styleGate";
 import { LENGTH_LABEL_MAP, type StyleAnswers } from "../surveyData";
+
+// 손상 "차단" 판정 — 신규 게이트(block) 또는 레거시 q10(count_7plus). A-1② 이후 소비처 공용.
+function isDamageBlock(a: StyleAnswers): boolean {
+  return a.q10_history_count === "count_7plus" || evaluateStyleGate(a).level === "block";
+}
 import { toast } from "../../../lib/toast";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
@@ -35,7 +41,7 @@ import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
-  if (answers.q10_history_count === "count_7plus") tags.push("#손상모");
+  if (isDamageBlock(answers)) tags.push("#손상모");
   if (answers.q8_density === "thin_density") tags.push("#볼륨처짐");
   if (answers.q7_thickness === "fine") tags.push("#가는모");
   if (answers.q3_curl === "curly_hair" || answers.q3_curl === "curly_hair_mid") tags.push("#곱슬모");
@@ -71,7 +77,7 @@ function SaveDiaryModal({
         savedAt:           Date.now(),
         generatedImageUrl,
         hairTags, // 통합 프로필(abeauty_user_profile) 재생성용 — /style은 1순위라 이 태그가 가장 앞에 옴
-        isSevereDamage:    answers.q10_history_count === "count_7plus",
+        isSevereDamage:    isDamageBlock(answers),
         isLowDensity:      answers.q8_density === "thin_density",
         isFineHair:        answers.q7_thickness === "fine",
         isCurly:           answers.q3_curl === "curly_hair" || answers.q3_curl === "curly_hair_mid",
@@ -552,7 +558,7 @@ export default function StyleResultPage() {
             <div className="space-y-2.5">
               <AvoidCard copy={copy} damageCaution={report.damageCaution} />
               <SalonTipCard copy={copy} />
-              <HomeCareCard copy={copy} showDamageCTA={answers.q10_history_count === "count_7plus"} />
+              <HomeCareCard copy={copy} showDamageCTA={isDamageBlock(answers)} />
             </div>
 
             {/* 저장 + 공유 */}

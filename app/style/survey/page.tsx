@@ -13,6 +13,8 @@ import {
   ALL_STYLE_QUESTIONS,
   STYLE_SURVEY,
   isShortLength,
+  TREATMENT_OPTIONS,
+  MORE_OPTIONS,
   type StyleAnswers,
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
@@ -32,6 +34,113 @@ const slideVariants = {
   center: { opacity: 1, x: 0 },
   exit:   (dir: number) => ({ opacity: 0, x: dir > 0 ? -56 : 56 }),
 };
+
+// ─── 시술이력(Q8) 전용 다단계 렌더러 (A-1②) ─────────────────────────────────
+// "1문항 UX"로 묶는다: 최근 시술 → (선택 시) 그 전 시술 → (선택 시) 더 하신 거 + 하위체크 →
+// "다음" 버튼으로 한 번에 제출. 저장 키: q8a_recent/q8b_prev/q8c_more/q8_bleach_2plus/q8_root_gray.
+function TreatmentHistoryStep({
+  initial, disabled, onComplete,
+}: {
+  initial: StyleAnswers;
+  disabled: boolean;
+  onComplete: (partial: StyleAnswers) => void;
+}) {
+  const [recent, setRecent] = useState<string | null>(initial.q8a_recent ?? null);
+  const [prev,   setPrev]   = useState<string | null>(initial.q8b_prev ?? null);
+  const [more,   setMore]   = useState<string>(initial.q8c_more ?? "none");
+  const [bleach2, setBleach2] = useState<boolean>(initial.q8_bleach_2plus === "1");
+  const [rootGray, setRootGray] = useState<boolean>(initial.q8_root_gray === "1");
+
+  // 최근 시술 = "없음" → 시술 이력 없음(점수 0·통과). 그전·하위체크·"더 하신 거" 전부 스킵하고
+  // 바로 "다음" 활성. (그전 = "없음"은 최근만 하고 그전엔 안 한 유효 경우 → "더 하신 거"로 진행.)
+  const recentIsNone = recent === "none";
+  const hasBleach   = !recentIsNone && (recent === "bleach"   || prev === "bleach");
+  const hasRootDye  = !recentIsNone && (recent === "root_dye" || prev === "root_dye");
+  const canProceed  = !disabled && (recentIsNone || (recent !== null && prev !== null));
+
+  function submit() {
+    if (!canProceed) return;
+    if (recentIsNone) {
+      onComplete({ q8a_recent: "none", q8b_prev: "none", q8c_more: "none", q8_bleach_2plus: "", q8_root_gray: "" });
+      return;
+    }
+    onComplete({
+      q8a_recent:      recent!,
+      q8b_prev:        prev!,
+      q8c_more:        more,
+      q8_bleach_2plus: hasBleach && bleach2 ? "1" : "",
+      q8_root_gray:    hasRootDye && rootGray ? "1" : "",
+    });
+  }
+
+  const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
+    <button type="button" onClick={onToggle} disabled={disabled}
+      className={`flex w-full items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-[15px] transition-colors disabled:opacity-40 ${
+        on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
+      }`}>
+      <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
+        {on ? "✓" : ""}
+      </span>
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Q8-a 가장 최근 */}
+      <div>
+        <p className="mb-2 text-[14px] font-bold text-ink">가장 최근에 한 시술은?</p>
+        <div className="grid grid-cols-2 gap-2">
+          {TREATMENT_OPTIONS.map((o) => (
+            <RoundedOptionButton key={o.id} label={o.label} selected={recent === o.id}
+              disabled={disabled} onSelect={() => setRecent(o.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* Q8-b 그 전 (최근 선택 후 노출, 단 최근="없음"이면 스킵) */}
+      {recent !== null && !recentIsNone && (
+        <div>
+          <p className="mb-2 text-[14px] font-bold text-ink">그 전에 한 시술은?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {TREATMENT_OPTIONS.map((o) => (
+              <RoundedOptionButton key={o.id} label={o.label} selected={prev === o.id}
+                disabled={disabled} onSelect={() => setPrev(o.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 하위 체크 — 탈색 2회+ / 뿌리=새치 (해당 시술 선택 시에만, 최근="없음"이면 스킵) */}
+      {!recentIsNone && (hasBleach || hasRootDye) && recent !== null && prev !== null && (
+        <div className="space-y-2">
+          {hasBleach  && <Chk on={bleach2}  onToggle={() => setBleach2((v) => !v)}  label="탈색은 2번 이상 했어요" />}
+          {hasRootDye && <Chk on={rootGray} onToggle={() => setRootGray((v) => !v)} label="뿌리염색은 새치 염색이에요" />}
+        </div>
+      )}
+
+      {/* Q8-c 더 하신 거 (그 전 선택 후 노출, 선택 안 해도 됨. 최근="없음"이면 스킵) */}
+      {!recentIsNone && recent !== null && prev !== null && (
+        <div>
+          <p className="mb-1 text-[14px] font-bold text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
+          <p className="mb-2 text-[13px] text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
+          <div className="grid grid-cols-3 gap-2">
+            {MORE_OPTIONS.map((o) => (
+              <RoundedOptionButton key={o.id} label={o.label} selected={more === o.id}
+                disabled={disabled} onSelect={() => setMore(o.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 다음 */}
+      <button type="button" onClick={submit} disabled={!canProceed}
+        className="btn-primary mt-2 w-full disabled:opacity-40">
+        다음
+      </button>
+    </div>
+  );
+}
 
 export default function StyleSurveyPage() {
   const router = useRouter();
@@ -110,6 +219,20 @@ export default function StyleSurveyPage() {
     setTimeout(() => { void advance(next).finally(() => setPending(false)); }, 350);
   }
 
+  // 시술이력 전용 렌더러 제출 — 여러 키를 한 번에 병합하고 진행(단일선택 자동넘김과 별개 경로).
+  function handleTreatmentComplete(partial: StyleAnswers) {
+    if (pending) return;
+    const next: StyleAnswers = { ...answers, ...partial };
+    trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
+      landing_id: "style",
+      diagnosis_type: "style",
+      answers: { questionId: q.id, choice: `${partial.q8a_recent}>${partial.q8b_prev}`, step: qIdx + 1 },
+    });
+    setAnswers(next);
+    setPending(true);
+    setTimeout(() => { void advance(next).finally(() => setPending(false)); }, 250);
+  }
+
   function goBack() {
     if (pending || qIdx === 0) return;
     setDir(-1);
@@ -151,18 +274,26 @@ export default function StyleSurveyPage() {
                 )}
               </div>
 
-              <div className="space-y-2.5">
-                {visibleOptions.map((opt) => (
-                  <RoundedOptionButton
-                    key={opt.id}
-                    label={opt.label}
-                    desc={opt.desc}
-                    selected={answers[q.id] === opt.id}
-                    disabled={pending}
-                    onSelect={() => handleSelect(opt.id)}
-                  />
-                ))}
-              </div>
+              {q.kind === "treatment_history" ? (
+                <TreatmentHistoryStep
+                  initial={answers}
+                  disabled={pending}
+                  onComplete={handleTreatmentComplete}
+                />
+              ) : (
+                <div className="space-y-2.5">
+                  {visibleOptions.map((opt) => (
+                    <RoundedOptionButton
+                      key={opt.id}
+                      label={opt.label}
+                      desc={opt.desc}
+                      selected={answers[q.id] === opt.id}
+                      disabled={pending}
+                      onSelect={() => handleSelect(opt.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>

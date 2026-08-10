@@ -18,6 +18,8 @@ export interface StyleQuestion {
   title:   string;
   hint?:   string;
   options: StyleOption[];
+  // "single"(기본, 단일선택 자동넘김) | "treatment_history"(시술이력 전용 다단계 렌더러, A-1②)
+  kind?:   "single" | "treatment_history";
 }
 
 export interface StyleStep {
@@ -114,16 +116,15 @@ export const STYLE_SURVEY: StyleStep[] = [
         ],
       },
       {
-        id:    "q10_history_count",
+        // A-1②: 구 q10_history_count(횟수 단일선택) 폐기 → 시술이력 다단계 문항으로 교체.
+        // 저장 키: q8a_recent/q8b_prev/q8c_more/q8_bleach_2plus/q8_root_gray (styleGate가 소비).
+        // 화면은 "1문항 UX"로 묶어 전용 렌더러(TreatmentHistoryStep)가 처리 → 8문항 감각 유지.
+        id:    "q8_treatment_history",
         no:    "Q8",
-        title: "1년에 헤어 시술을 몇 번 받으세요?",
-        hint:  "펌, 염색, 탈색 등 전체 시술 횟수",
-        options: [
-          { id: "count_1_2",   label: "1~2회",    desc: "전체 펌·염색 위주" },
-          { id: "count_3_4",   label: "3~4회",    desc: "주기적인 전체 시술" },
-          { id: "count_5_6",   label: "5~6회",    desc: "잦은 스타일 체인지" },
-          { id: "count_7plus", label: "7회 이상", desc: "⚠️ 잦은 새치·뿌리 염색" },
-        ],
+        kind:  "treatment_history",
+        title: "최근 1년, 어떤 시술을 받으셨어요?",
+        hint:  "가장 최근에 한 것부터 순서대로 알려주세요",
+        options: [],
       },
     ],
   },
@@ -133,6 +134,23 @@ export const ALL_STYLE_QUESTIONS: StyleQuestion[] = STYLE_SURVEY.flatMap(
   (s) => s.questions,
 );
 export const STYLE_TOTAL = ALL_STYLE_QUESTIONS.length; // 8
+
+// ─── 시술이력(Q8) 전용 선택지 (A-1②) ─────────────────────────────────────────
+// 전용 렌더러(survey/TreatmentHistoryStep)와 styleGate.ts가 함께 참조하는 단일 출처.
+// id는 styleGate.constants의 TreatmentId / MoreLevel과 1:1로 일치시킨다.
+export const TREATMENT_OPTIONS: StyleOption[] = [
+  { id: "bleach",        label: "탈색" },
+  { id: "straight_perm", label: "매직·열펌" },
+  { id: "normal_perm",   label: "일반펌" },
+  { id: "dye",           label: "염색" },
+  { id: "root_dye",      label: "뿌리염색" },
+  { id: "none",          label: "없음" },
+];
+export const MORE_OPTIONS: StyleOption[] = [
+  { id: "none", label: "없어요" },
+  { id: "few",  label: "한두 번 더" },
+  { id: "many", label: "꽤 여러 번" },
+];
 
 // ─── 기장(Q2) id → 한글 라벨, 단일 진실 공급원(SSOT) ─────────────────────────
 // styleReference.ts(폴더 매칭)·recommend.ts(스타일명)·result/page.tsx·my-diary가
