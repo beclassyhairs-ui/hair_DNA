@@ -22,8 +22,11 @@
 - **tsc 무에러**(각 단계). **폴백0건**: 매트릭스 4×36=144·코어 4×9=36 구성증명(런타임 전수 스윕은 node TS resolver 이슈로 보류, 구성상 완전). **금지어 grep 클린**(재미로/복구·재생·영양·강화·탈모). **A-7**: q3_curl은 faceswap 슬롯키(referencePick)에 없음 → 영향 없음 확인.
 - **next build 성공(exit 0)**: 전 라우트 컴파일 완료(/style/survey·/style/result 포함), lint·타입 에러 0(dangerouslySetInnerHTML 통과). A 패스 프로덕션 빌드 검증 완료.
 
-### ⏭ 남음: 카피 후주입 + B 패스(별도)
-- **[카피 대기] 후주입 표면**(PM이 원고 넘기면 기계 교체): `branchCopy.ts`(갈래 1·3·4·6·8·9·10 슬롯 + b9 차단모드), `hairTypeCopy.ts`(곱슬중간 9키 CORE_COPY), `hairTypeMatrix.ts`(곱슬중간 36엔트리 타입서술), `recommend.ts`(부제 컬설명 나머지 조합).
+### ✅ 카피 최종본 주입 완료 — `13ddd1b` (docs/카피_최종본_코드방주입용.md)
+- **branchCopy**: 갈래 1~10 전 원문(2·5·7도 새 원문 교체), 7필드. 제품 마스터 P1~P8 통일(구표기 8종 grep 0). 갈래9 제품 미노출. 신규 공용 `curlyMidCopy.ts`(C1~C9) → hairTypeCopy 9키 + matrix 타입서술(§3). recommend 부제 12개. 정수리 6단계 '집게형 볼륨 롤', 갈래 3·5·10 공용. **[카피 대기] 0건 · tsc · next build 통과.**
+- 참고: getHairTypeCopy/discoveryItemHint는 현재 결과지에서 미렌더(갈래 구조로 대체)지만 타입시스템·후속 서피스 위해 채워둠.
+
+### ⏭ 남음: 게이트 튜닝 + B 패스(별도)
 - **게이트 임시값 튜닝**: `styleGate.constants.ts`(형님 분포 시뮬 후).
 - **B 패스(데미지)**: 지시서 B-1~7 별도. 건조문항 충돌 PM 재확정 대기.
 - 배포: A 완료 후 별도 승인.
