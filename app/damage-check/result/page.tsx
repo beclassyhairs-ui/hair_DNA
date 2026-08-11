@@ -69,6 +69,17 @@ const DEFAULT_ANSWERS: DamageSurveyAnswers = {
   h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
 };
 
+// 평소 관리 꿀팁 = 주인공 블록 (확정94, 그대로)
+const MANAGEMENT_TIP =
+  "트리트먼트는 바른 다음 빗으로 골고루 빗질해서 결 정돈까지 돼야 효과가 난다. 손 빗질만으론 부족하다.";
+
+// [접힘] 시술 참고 — 레벨 기준 (AI 초안 · 빨간펜 대상)
+function procedureRef(level: number): string {
+  return level >= 3
+    ? "지금은 새 시술을 얹기보다, 남은 손상 부위를 정리하면서 기르는 쪽이 결과가 더 빠릅니다."
+    : "지금은 원하시는 시술 대부분 무리 없는 상태예요. 다만 시술이 쌓일수록 선택지가 줄어드니, 간격을 두시는 걸 권해드립니다.";
+}
+
 export default function DamageCheckResultPage() {
   const router = useRouter();
   const [answers,   setAnswers]   = useState<DamageSurveyAnswers>(DEFAULT_ANSWERS);
@@ -213,7 +224,13 @@ export default function DamageCheckResultPage() {
             <p className="mt-1 whitespace-pre-line text-body leading-relaxed text-ink">{result.typeInfo.causeExplain}</p>
           </section>
 
-          {/* ── 흰머리 원고 (확정104) — 새치 체크 손님만 ── */}
+          {/* ── 평소 관리 꿀팁 (주인공, 확정94) — 결과지에서 제일 넓은 블록 ── */}
+          <section className="card-soft space-y-2 p-5">
+            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">평소 관리 꿀팁</p>
+            <p className="mt-1 text-[16px] font-semibold leading-relaxed text-ink">{MANAGEMENT_TIP}</p>
+          </section>
+
+          {/* ── 흰머리 원고 (확정104) — 새치 체크 손님만 (관리 영역 접힘) ── */}
           {result.grayHairStory && (
             <details className="overflow-hidden rounded-2xl border border-line bg-card">
               <summary className="cursor-pointer p-5 text-body font-bold text-ink">새치 염색을 오래 하셨다면 — 꼭 읽어보세요</summary>
@@ -222,6 +239,14 @@ export default function DamageCheckResultPage() {
               </div>
             </details>
           )}
+
+          {/* ── [접힘] 시술 참고 (AI 초안 · 빨간펜 대상) ── */}
+          <details className="overflow-hidden rounded-2xl border border-line bg-card">
+            <summary className="cursor-pointer p-5 text-body font-bold text-ink">시술 생각이 있으시다면</summary>
+            <div className="border-t border-line px-5 pb-5 pt-3">
+              <p className="text-body leading-relaxed text-ink">{procedureRef(result.level.level)}</p>
+            </div>
+          </details>
 
           {/* ── 제품 (맨 아래) — 새치 마스카라 최상단·18-MEA 간판, 정수리·볼륨 제외 ── */}
           <section className="space-y-2.5">
