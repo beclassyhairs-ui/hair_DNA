@@ -1,13 +1,10 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 셀프 손상도 자가진단 — 결과지  [아이보리 리뱀프 3단계 · 미끼 결과지]
-// 디자인 SSOT: docs/ui-spec.html §6/§7 — 히어로 + 본문 흰 카드 ≤2.
-//   · 히어로 = 곱슬축 3장 이미지(coreKey 곱슬축, /home과 동일 규칙) + 하단
-//     그라데이션 + 타입명(명조·흰색). 파일 없으면 soft 패널 폴백. (텍스처 사선
-//     스와치는 판독 불가로 폐기 — 참조만 제거, 코드는 남겨둠.) 나머지는 플랫.
-//   · 주 CTA = 차콜 채움(.btn-primary). 저장/공유/이벤트/A-2 잠금카드 로직 불변.
-// 저장 시 abeauty_user_profile(홈 호환) + abeauty:diaryEntries(kind:"damage")에 기록.
+// 어뷰티 셀프 손상도 자가진단 — 결과지 (2026-08 개편 · 확정 68·81·104·116)
+//   판정 스탬프(Lv+유형) → 예언(C2, 겹칠 때만) → 유형 설명 → 흰머리 원고(새치만)
+//   → 제품(맨 아래). 흐르는 문단, % 금지, "25년 원장 판단 기준" 푸터(확정49).
+//   저장 시 abeauty_user_profile(홈 호환) + abeauty:diaryEntries(kind:"damage").
 // ============================================================================
 
 import { useEffect, useState } from "react";
@@ -68,7 +65,8 @@ function uid(): string {
 }
 
 const DEFAULT_ANSWERS: DamageSurveyAnswers = {
-  q1_pull: "", q2_friction: "", q3_dry: "", q4_habits: [],
+  q1_pull: "", q2_friction: "", q3_dry: "",
+  h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
 };
 
 export default function DamageCheckResultPage() {
@@ -85,12 +83,14 @@ export default function DamageCheckResultPage() {
       const raw = sessionStorage.getItem(DAMAGE_SURVEY_KEY);
       if (raw) setAnswers(JSON.parse(raw) as DamageSurveyAnswers);
     } catch { /**/ }
-    // 히어로 스와치용 — 유저가 앞서 한 진단(주로 /style)에서 coreKey를 파생(매칭 로직 재사용).
     try { setCoreKey(deriveCoreKeyFromEntries(readDiaryEntries())); } catch { /**/ }
     setReady(true);
   }, []);
 
   const result: DamageResult = diagnoseDamage(answers);
+  const isHealthy = result.typeInfo.type === "HEALTHY";
+  // 히어로/스탬프 헤드라인: Lv 라벨 (+ 유형, 건강모는 유형 생략)
+  const stampTitle = isHealthy ? result.level.label : `${result.level.label} · ${result.typeInfo.label}`;
 
   useEffect(() => {
     if (!ready) return;
@@ -112,11 +112,11 @@ export default function DamageCheckResultPage() {
         resultCode: result.resultCode,
         levelLabel: result.level.label,
         typeLabel: result.typeInfo.label,
-        headline: result.headline,
+        headline: stampTitle,
         concernTags: result.concernTags,
         hairTags: result.concernTags,
-        diagnosisSummary: result.headline,
-        product: result.typeInfo.products[0],
+        diagnosisSummary: result.level.summary,
+        product: result.products[0],
       });
       refreshBeautyUserProfileFromDiary();
     } catch { /**/ }
@@ -138,7 +138,7 @@ export default function DamageCheckResultPage() {
             objectType: "feed",
             content: {
               title: "어뷰티 | 내 모발 손상도 자가진단 결과",
-              description: `AI 진단 결과, 나는 [${result.level.label} · ${result.typeInfo.label}]입니다.`,
+              description: `AI 진단 결과, 나는 [${stampTitle}]입니다.`,
               imageUrl: `${SITE_URL}/og-default.png`,
               link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
             },
@@ -151,7 +151,7 @@ export default function DamageCheckResultPage() {
       }
     } catch { /**/ }
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "어뷰티 | 손상도 자가진단", text: `나는 ${result.level.label} · ${result.typeInfo.label}!`, url: shareUrl }).catch(() => {});
+      navigator.share({ title: "어뷰티 | 손상도 자가진단", text: `나는 ${stampTitle}!`, url: shareUrl }).catch(() => {});
       return;
     }
     navigator.clipboard?.writeText(shareUrl).then(() => {
@@ -179,65 +179,83 @@ export default function DamageCheckResultPage() {
       <div className="mx-auto w-full max-w-lg px-page pt-5">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-5">
 
-          {/* ── 히어로 (곱슬축 이미지 · 명조 흰색 타입명, 파일 없으면 soft 패널) ── */}
+          {/* ── 히어로 + 판정 스탬프 (Lv + 유형) ── */}
           <HairTypeHero
             coreKey={coreKey}
             eyebrow={`LEVEL ${result.level.level} · ${result.level.label}`}
-            title={result.headline}
+            title={stampTitle}
           />
 
-          {/* 완성도 게이지 — 인라인(카드 아님) */}
           <InlineCompletion />
 
-          {/* ── 흰 카드 1 : 진단 요약 (요약·관리강도·원인·주의) ── */}
-          <section className="card-soft space-y-4 p-5">
-            <div>
-              <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">진단 요약</p>
-              <p className="mt-2 text-body leading-relaxed text-ink">{result.level.summary}</p>
-              <p className="mt-3 text-[13px] font-semibold text-sub">
-                권장 관리 강도: <span className="text-ink">{result.level.careIntensity}</span>
-              </p>
-            </div>
-
-            {result.level.cutAdvice && (
-              <div className="border-t border-line pt-4">
-                <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">전문가 처방</p>
-                <p className="mt-2 text-body leading-relaxed text-ink">{result.level.cutAdvice}</p>
-                {result.level.keratinCaution && (
-                  <p className="mt-2 text-[15px] font-medium text-sub">{result.level.keratinCaution}</p>
-                )}
-              </div>
-            )}
-
-            <div className="border-t border-line pt-4">
-              <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">주된 원인 — {result.typeInfo.label}</p>
-              <p className="mt-2 text-body leading-relaxed text-ink">{result.typeInfo.causeExplain} 상태예요.</p>
-              <p className="mt-2 text-[15px] font-medium text-sub">이런 습관은 피해보세요 — {result.typeInfo.avoid}</p>
-            </div>
+          {/* ── 판정 요약 (확정81 4단계 문구) ── */}
+          <section className="card-soft space-y-2 p-5">
+            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">진단 요약</p>
+            <p className="mt-1 text-body leading-relaxed text-ink">{result.level.summary}</p>
+            <p className="pt-1 text-[13px] font-semibold text-sub">
+              권장 관리 강도: <span className="text-ink">{result.level.careIntensity}</span>
+            </p>
           </section>
 
-          {/* ── 다른 진단 안내 — 플랫 리스트(카드 벗김) ── */}
-          <nav>
-            <Link href="/items" className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body font-medium text-ink active:opacity-70">
-              발견템에서 손상도 단계에 맞는 홈케어 제품 보기
-              <span className="flex-none text-sub">→</span>
+          {/* ── 예언 (C2) — 열펌 AND (뿌리+새치) 겹칠 때만 (확정116) ── */}
+          {result.prophecy && (
+            <section className="rounded-2xl border border-line border-l-4 border-l-ink bg-card p-5">
+              <p className="text-[16px] font-extrabold leading-relaxed text-ink">{result.prophecy}</p>
+              {result.prophecyAha && <p className="mt-2 text-body leading-relaxed text-sub">{result.prophecyAha}</p>}
+            </section>
+          )}
+
+          {/* ── 유형 설명 (건강모는 원인 카드 대신 톤만) ── */}
+          <section className="card-soft space-y-2 p-5">
+            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">
+              {isHealthy ? "지금 상태" : `주된 원인 — ${result.typeInfo.label}`}
+            </p>
+            <p className="mt-1 whitespace-pre-line text-body leading-relaxed text-ink">{result.typeInfo.causeExplain}</p>
+          </section>
+
+          {/* ── 흰머리 원고 (확정104) — 새치 체크 손님만 ── */}
+          {result.grayHairStory && (
+            <details className="overflow-hidden rounded-2xl border border-line bg-card">
+              <summary className="cursor-pointer p-5 text-body font-bold text-ink">새치 염색을 오래 하셨다면 — 꼭 읽어보세요</summary>
+              <div className="border-t border-line px-5 pb-5 pt-3">
+                <p className="text-body leading-relaxed text-ink">{result.grayHairStory}</p>
+              </div>
+            </details>
+          )}
+
+          {/* ── 제품 (맨 아래) — 새치 마스카라 최상단·18-MEA 간판, 정수리·볼륨 제외 ── */}
+          <section className="space-y-2.5">
+            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">이 상태에 맞는 제품</p>
+            {result.products.map((p) => (
+              <div key={p.name} className="flex items-start gap-3 rounded-2xl border border-line bg-card p-4">
+                <span className="text-[22px] leading-none">{p.emoji}</span>
+                <div>
+                  <p className="text-body font-bold text-ink">{p.name}</p>
+                  <p className="mt-0.5 text-[14px] leading-relaxed text-sub">{p.description}</p>
+                </div>
+              </div>
+            ))}
+            <Link href="/items" className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] font-semibold text-ink active:opacity-70">
+              발견템에서 손상도에 맞는 제품 보기 <span className="flex-none text-sub">→</span>
             </Link>
+          </section>
+
+          {/* ── 다른 진단 안내 ── */}
+          <nav>
             <Link href="/hair-quiz" className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body font-medium text-ink active:opacity-70">
-              평소 손질 습관 진단
-              <span className="flex-none text-sub">→</span>
+              평소 손질 습관 진단 <span className="flex-none text-sub">→</span>
             </Link>
             <Link href="/style" className="flex items-center justify-between gap-3 py-3.5 text-body font-medium text-ink active:opacity-70">
-              AI 헤어 분석으로 내 스타일도 찾기
-              <span className="flex-none text-sub">→</span>
+              AI 헤어 분석으로 내 스타일도 찾기 <span className="flex-none text-sub">→</span>
             </Link>
           </nav>
 
-          {/* ── 흰 카드 2 : A-2 잠금 미리보기(→ /style) ── */}
+          {/* ── A-2 잠금 미리보기(→ /style) ── */}
           <LockedPreviewCard
             onCtaClick={() => trackEvent("locked_preview_cta_click", { landing_id: "damage_check" })}
           />
 
-          {/* 공유 + 재진단 — 플랫 */}
+          {/* 공유 + 재진단 */}
           <div className="flex flex-col items-center gap-3 pt-1">
             <button onClick={handleKakaoShare} className="btn-textlink text-[15px]">
               {kakaoSent ? "카카오톡 전송 완료 ✓" : "결과 공유하기"}
@@ -248,10 +266,15 @@ export default function DamageCheckResultPage() {
             </Link>
           </div>
 
+          {/* 푸터 — 25년 원장 판단 기준(확정49). % 미노출. */}
+          <p className="pt-2 text-center text-[12px] leading-relaxed text-sub">
+            이 진단은 25년 경력 원장의 판단 기준을 바탕으로 안내드리는 참고 결과예요.
+          </p>
+
         </motion.div>
       </div>
 
-      {/* ── 하단 고정 CTA — 최우선 행동 = 저장·프로필 누적 ── */}
+      {/* ── 하단 고정 CTA — 저장·프로필 누적 ── */}
       <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-5 py-4 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-lg">
           <button onClick={handleSaveAndGoHome} disabled={saved} className="btn-primary w-full disabled:opacity-50">

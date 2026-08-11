@@ -1,7 +1,8 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 셀프 손상도 자가진단 — 4문항 설문 (Q1~Q3 단일선택 자동진행 / Q4 다중선택)
+// 어뷰티 셀프 손상도 자가진단 — 4문항 (Q1~Q3 단일선택 자동진행 / Q4 시술이력 전용 렌더러)
+// 2026-08 개편(확정 68·72·77·115): Q4 습관 다중선택 폐기 → 시술이력 다단계 문항.
 // ============================================================================
 
 import { useState } from "react";
@@ -9,7 +10,12 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { DAMAGE_SURVEY_KEY } from "../constants";
-import { SURVEY_QUESTIONS, type DamageSurveyAnswers, type HabitFlag } from "../surveyData";
+import {
+  SURVEY_QUESTIONS,
+  TREATMENT_OPTIONS,
+  MORE_OPTIONS,
+  type DamageSurveyAnswers,
+} from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import TestHeader from "@/components/beauty-ui/TestHeader";
 import ProgressBar from "@/components/beauty-ui/ProgressBar";
@@ -24,73 +30,149 @@ const slideVariants = {
   exit:   (dir: number) => ({ opacity: 0, x: dir > 0 ? -64 : 64 }),
 };
 
+// ─── Q4 시술이력 전용 다단계 렌더러 (확정 72·77·95) ──────────────────────────
+// 최근 → (선택 시) 그 전 → (선택 시) 더 하신 거 + 하위체크 → "진단 결과 보기".
+// 최근="없음"이면 나머지 스킵하고 바로 제출 활성.
+function TreatmentHistoryStep({
+  disabled, onComplete,
+}: {
+  disabled: boolean;
+  onComplete: (partial: Partial<DamageSurveyAnswers>) => void;
+}) {
+  const [recent, setRecent] = useState<string | null>(null);
+  const [prev, setPrev]     = useState<string | null>(null);
+  const [more, setMore]     = useState<string>("none");
+  const [bleach2, setBleach2]   = useState(false);
+  const [rootGray, setRootGray] = useState(false);
+
+  const recentIsNone = recent === "none";
+  const hasBleach  = !recentIsNone && (recent === "bleach" || prev === "bleach");
+  const hasRootDye = !recentIsNone && (recent === "root_dye" || prev === "root_dye");
+  const canProceed = !disabled && (recentIsNone || (recent !== null && prev !== null));
+
+  function submit() {
+    if (!canProceed) return;
+    if (recentIsNone) {
+      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false });
+      return;
+    }
+    onComplete({
+      h_recent: recent as DamageSurveyAnswers["h_recent"],
+      h_prev:   prev as DamageSurveyAnswers["h_prev"],
+      h_more:   more as DamageSurveyAnswers["h_more"],
+      h_bleach_2plus: hasBleach && bleach2,
+      h_root_gray:    hasRootDye && rootGray,
+    });
+  }
+
+  const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
+    <button type="button" onClick={onToggle} disabled={disabled}
+      className={`flex w-full items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-[15px] transition-colors disabled:opacity-40 ${
+        on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
+      }`}>
+      <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
+        {on ? "✓" : ""}
+      </span>
+      {label}
+    </button>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="mb-2 text-[14px] font-bold text-ink">가장 최근에 한 시술은?</p>
+        <div className="grid grid-cols-2 gap-2">
+          {TREATMENT_OPTIONS.map((o) => (
+            <RoundedOptionButton key={o.id} label={o.label} selected={recent === o.id}
+              disabled={disabled} onSelect={() => setRecent(o.id)} />
+          ))}
+        </div>
+      </div>
+
+      {recent !== null && !recentIsNone && (
+        <div>
+          <p className="mb-2 text-[14px] font-bold text-ink">그 전에 한 시술은?</p>
+          <div className="grid grid-cols-2 gap-2">
+            {TREATMENT_OPTIONS.map((o) => (
+              <RoundedOptionButton key={o.id} label={o.label} selected={prev === o.id}
+                disabled={disabled} onSelect={() => setPrev(o.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!recentIsNone && (hasBleach || hasRootDye) && recent !== null && prev !== null && (
+        <div className="space-y-2">
+          {hasBleach  && <Chk on={bleach2}  onToggle={() => setBleach2((v) => !v)}  label="탈색은 2번 이상 했어요" />}
+          {hasRootDye && <Chk on={rootGray} onToggle={() => setRootGray((v) => !v)} label="뿌리염색은 새치 염색이에요" />}
+        </div>
+      )}
+
+      {!recentIsNone && recent !== null && prev !== null && (
+        <div>
+          <p className="mb-1 text-[14px] font-bold text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
+          <p className="mb-2 text-[13px] text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
+          <div className="grid grid-cols-3 gap-2">
+            {MORE_OPTIONS.map((o) => (
+              <RoundedOptionButton key={o.id} label={o.label} selected={more === o.id}
+                disabled={disabled} onSelect={() => setMore(o.id)} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button type="button" onClick={submit} disabled={!canProceed}
+        className="btn-primary h-11 w-full disabled:opacity-50">
+        진단 결과 보기 →
+      </button>
+    </div>
+  );
+}
+
 export default function DamageCheckSurveyPage() {
   const router = useRouter();
   const [qIdx, setQIdx]       = useState(0);
   const [dir, setDir]         = useState(1);
   const [pending, setPending] = useState(false);
   const [answers, setAnswers] = useState<DamageSurveyAnswers>({
-    q1_pull: "", q2_friction: "", q3_dry: "", q4_habits: [],
+    q1_pull: "", q2_friction: "", q3_dry: "",
+    h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
   });
 
-  const q = SURVEY_QUESTIONS[qIdx];
+  const q = SURVEY_QUESTIONS[qIdx]!;
   const isLast = qIdx === TOTAL - 1;
 
   function finishAndGoToResult(finalAnswers: DamageSurveyAnswers) {
     try { sessionStorage.setItem(DAMAGE_SURVEY_KEY, JSON.stringify(finalAnswers)); } catch { /**/ }
-    // 진단 완료 — 마지막 문항 제출 시점(단일/복수 선택 두 경로 공통). 결과지 열람은 report_view.
     trackEvent(EVENT_NAMES.DIAGNOSIS_COMPLETE, { landing_id: LANDING_ID, diagnosis_type: LANDING_ID });
     router.push("/damage-check/result");
   }
 
   function handleSelectSingle(optId: string) {
-    if (pending || q.multi) return;
+    if (pending || q.kind !== "single") return;
     const newAnswers = { ...answers, [q.qKey]: optId } as DamageSurveyAnswers;
     setAnswers(newAnswers);
     setPending(true);
-
     trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
-      landing_id: LANDING_ID,
-      diagnosis_type: LANDING_ID,
+      landing_id: LANDING_ID, diagnosis_type: LANDING_ID,
       answers: { questionKey: q.qKey, optionId: optId },
     });
-
     setTimeout(() => {
       setPending(false);
-      if (isLast) {
-        finishAndGoToResult(newAnswers);
-      } else {
-        setDir(1);
-        setQIdx((i) => i + 1);
-      }
+      if (isLast) finishAndGoToResult(newAnswers);
+      else { setDir(1); setQIdx((i) => i + 1); }
     }, 350);
   }
 
-  function toggleHabit(optId: string) {
-    setAnswers((prev) => {
-      const id = optId as HabitFlag;
-      let habits = prev.q4_habits;
-      if (id === "none") {
-        habits = habits.includes("none") ? [] : ["none"];
-      } else if (habits.includes("none")) {
-        habits = [id];
-      } else {
-        habits = habits.includes(id) ? habits.filter((h) => h !== id) : [...habits, id];
-      }
-      return { ...prev, q4_habits: habits };
-    });
-  }
-
-  function handleConfirmMulti() {
-    if (answers.q4_habits.length === 0) return;
-
+  function handleTreatmentComplete(partial: Partial<DamageSurveyAnswers>) {
+    if (pending) return;
+    const merged = { ...answers, ...partial } as DamageSurveyAnswers;
     trackEvent(EVENT_NAMES.ANSWER_SELECTED, {
-      landing_id: LANDING_ID,
-      diagnosis_type: LANDING_ID,
-      answers: { questionKey: q.qKey, optionId: answers.q4_habits },
+      landing_id: LANDING_ID, diagnosis_type: LANDING_ID,
+      answers: { questionKey: "h_history", optionId: `${partial.h_recent}>${partial.h_prev}` },
     });
-
-    finishAndGoToResult(answers);
+    setAnswers(merged);
+    finishAndGoToResult(merged);
   }
 
   function goBack() {
@@ -98,9 +180,6 @@ export default function DamageCheckSurveyPage() {
     setDir(-1);
     setQIdx((i) => i - 1);
   }
-
-  const isMultiQuestion = q.multi;
-  const canConfirmMulti = isMultiQuestion && answers.q4_habits.length > 0;
 
   return (
     <div className="relative min-h-screen">
@@ -110,7 +189,6 @@ export default function DamageCheckSurveyPage() {
           <ProgressBar value={((qIdx + 1) / TOTAL) * 100} />
         </TestHeader>
 
-        {/* ── 질문 본문 ── */}
         <div className="flex flex-1 flex-col overflow-y-auto px-5">
           <AnimatePresence mode="wait" custom={dir}>
             <motion.div
@@ -124,71 +202,42 @@ export default function DamageCheckSurveyPage() {
               className="flex flex-1 flex-col justify-center py-6"
             >
               <div className="mb-6">
-                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">
-                  {q.no}
-                </p>
-                <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">
-                  {q.title}
-                </h2>
-                {q.hint && (
-                  <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{q.hint}</p>
-                )}
+                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">{q.no}</p>
+                <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">{q.title}</h2>
+                {q.hint && <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{q.hint}</p>}
               </div>
 
-              <div className="space-y-2.5">
-                {q.options.map((opt) => {
-                  const isSel = q.multi
-                    ? answers.q4_habits.includes(opt.id as HabitFlag)
-                    : answers[q.qKey] === opt.id;
-
-                  return (
+              {q.kind === "treatment_history" ? (
+                <TreatmentHistoryStep disabled={pending} onComplete={handleTreatmentComplete} />
+              ) : (
+                <div className="space-y-2.5">
+                  {q.options.map((opt) => (
                     <RoundedOptionButton
                       key={opt.id}
                       icon={opt.icon}
                       label={opt.label}
                       desc={opt.desc}
-                      selected={isSel}
-                      multi={q.multi}
-                      disabled={!q.multi && pending}
-                      onSelect={() => (q.multi ? toggleHabit(opt.id) : handleSelectSingle(opt.id))}
+                      selected={answers[q.qKey] === opt.id}
+                      disabled={pending}
+                      onSelect={() => handleSelectSingle(opt.id)}
                     />
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* ── 하단 네비게이션 ── */}
         <div className="flex-none px-5 py-4">
-          <div className="flex items-center gap-3">
-            {qIdx > 0 ? (
-              <button
-                onClick={goBack}
-                disabled={pending}
-                className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
-              >
-                ← 이전
-              </button>
-            ) : (
-              <a href="/damage-check" className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">
-                나가기
-              </a>
-            )}
-
-            {isMultiQuestion && (
-              <div className="flex-1">
-                <button
-                  onClick={handleConfirmMulti}
-                  disabled={!canConfirmMulti}
-                  className="btn-primary h-11 w-full disabled:opacity-50"
-                >
-                  진단 결과 보기 →
-                </button>
-              </div>
-            )}
-          </div>
-          {!isMultiQuestion && (
+          {qIdx > 0 ? (
+            <button onClick={goBack} disabled={pending}
+              className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
+              ← 이전
+            </button>
+          ) : (
+            <a href="/damage-check" className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">나가기</a>
+          )}
+          {q.kind === "single" && (
             <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
           )}
         </div>
