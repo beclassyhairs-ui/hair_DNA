@@ -14,8 +14,7 @@ export { getHairTypeReport, type HairTypeEntry } from "./hairTypeMatrix";
 // ─── 스타일 네이밍 (지시서 A-6 · 확정 137) ───────────────────────────────────
 // 조립식 접두어(연령×레이어) 전면 폐기 → 간판명 단일 세트(연령 분기 없음).
 //   간판명 = q13_design(웨이브축) × q14_layer(레이어) 12조합 맵(확정 표 그대로).
-//   부제  = "{기장 라벨} 기장 · {컬 설명}". 컬 설명 문구는 확정분(목업 v4)만 채우고,
-//          나머지 (design,layer)는 컬 라벨로 조립(구조 기본값) — 세부 문구는 [카피 대기].
+//   부제  = "{기장 라벨} 기장 · {컬 설명}". 컬 설명 12개는 카피 최종본 §4 표에서 전부 주입.
 
 interface StyleEntry { name: string; subtitle: string; mood: string; }
 
@@ -27,13 +26,13 @@ const SIGN_NAME: Record<string, Record<string, string>> = {
   wave:     { heavy: "바디펌",     medium: "젤리펌",     light: "히피펌" },
 };
 
-// [부제 — 컬 설명] 확정분(목업 v4)만 채운다. 나머지는 아래 DESIGN_LABEL로 조립(구조 기본값).
-//   ※ 세부 문구는 알고리즘방 전집 v2 도착 시 주입 [카피 대기] — 임의로 채우지 않는다.
+// [부제 — 컬 설명] 카피 최종본 §4 표(간판명 12개 전부). design × layer로 매핑.
 const SUBTITLE_CURL: Record<string, Record<string, string>> = {
-  c_curl: { medium: "끝에서 안으로 말리는 C컬" },
-  s_curl: { medium: "자연스럽게 흐르는 S웨이브", light: "가볍게 흐르는 S웨이브" },
+  straight: { heavy: "한 줄로 떨어지는 매끈한 생머리", medium: "자연스럽게 정돈된 생머리",   light: "층을 낸 가벼운 생머리" },
+  c_curl:   { heavy: "얼굴을 감싸는 굵은 C컬",         medium: "끝에서 안으로 말리는 C컬",     light: "가볍게 뜨는 C컬" },
+  s_curl:   { heavy: "풍성하게 흐르는 S웨이브",        medium: "자연스럽게 흐르는 S웨이브",    light: "가볍게 흐르는 S웨이브" },
+  wave:     { heavy: "묵직하게 굽이치는 웨이브",       medium: "부드럽게 굽이치는 웨이브",     light: "잔컬이 흐르는 자연스러운 웨이브" },
 };
-const DESIGN_LABEL: Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
 
 // [무드 문구] 공유/저장 문구용(Wave 4 × Layer 3 = 12칸). 기존 유지.
 const STYLE_MOOD: Record<string, Record<string, string>> = {
@@ -72,7 +71,7 @@ export function getStyleEntry(answers: StyleAnswers): StyleEntry {
 
   const name        = SIGN_NAME[design]?.[layer] ?? SIGN_NAME.straight!.medium!;
   const lengthLabel = LENGTH_LABEL_MAP[length] ?? LENGTH_LABEL_MAP.bob ?? "단발";
-  const curlDesc    = SUBTITLE_CURL[design]?.[layer] ?? DESIGN_LABEL[design] ?? "";
+  const curlDesc    = SUBTITLE_CURL[design]?.[layer] ?? "";
   const subtitle    = `${lengthLabel} 기장 · ${curlDesc}`;
   const mood        = STYLE_MOOD[design]?.[layer] ?? "자연스럽고 편안한 스타일이에요";
 

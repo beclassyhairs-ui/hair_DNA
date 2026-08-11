@@ -37,7 +37,7 @@ import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 import { resolveCrossBranch } from "../crossBranch";
-import { getBranchCopy, SCALP_ROUTINE, VERDICT_STAMP, CAUTION_NOTICE } from "../branchCopy";
+import { getBranchCopy, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE, productName } from "../branchCopy";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
@@ -254,8 +254,8 @@ function BeforeAfterSection({
 }
 
 // ─── 결과지 갈래 리포트 컴포넌트 (지시서 A-5 · 목업 v4 구조) ──────────────────
-// crossBranch가 정한 갈래로 branchCopy에서 카피를 꺼내 슬롯에 채운다. 갈래 2·5·7만
-// 확정, 나머지는 [카피 대기]가 그대로 노출(후주입 전). 카피는 아래 슬롯을 기계 교체.
+// crossBranch가 정한 갈래로 branchCopy에서 카피를 꺼내 슬롯에 채운다.
+// 카피 최종본(§1 갈래 1~10)이 branchCopy에 전부 주입됨 — 여기선 필드만 배치.
 
 // 내부 신뢰 카피(<b> 강조 유지) 렌더 — 사용자 입력 아님.
 function Rich({ html, className }: { html: string; className?: string }) {
@@ -267,18 +267,16 @@ function TT({ children }: { children: string }) {
   return <p className="mb-2 mt-6 text-[11px] font-extrabold uppercase tracking-[0.24em] text-ink-2">{children}</p>;
 }
 
-// 판정 스탬프 3단 (pass / caution=단서 한 줄 / block=차단)
-function VerdictStamp({ level, clause }: { level: "pass" | "caution" | "block"; clause: string }) {
+// 판정 스탬프 3단 — 전문은 갈래 카피(bcopy.stamp), 색만 게이트 레벨로(block=amber / 그 외 green).
+function VerdictStamp({ level, stamp }: { level: "pass" | "caution" | "block"; stamp: string }) {
   const isBlock = level === "block";
-  const clauseOk = Boolean(clause) && clause !== "[카피 대기]";
   return (
-    <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-      <span className={`rounded-full border px-4 py-1.5 text-[14px] font-extrabold ${
+    <div className="mt-2.5 flex justify-center">
+      <span className={`rounded-full border px-4 py-1.5 text-center text-[14px] font-extrabold ${
         isBlock ? "border-amber-500 bg-amber-50 text-amber-700" : "border-emerald-600 bg-emerald-50 text-emerald-700"
       }`}>
-        {isBlock ? VERDICT_STAMP.block : VERDICT_STAMP.pass}
+        {stamp}
       </span>
-      {!isBlock && clauseOk && <span className="text-[13px] text-ink-2">{clause}</span>}
     </div>
   );
 }
@@ -490,7 +488,7 @@ export default function StyleResultPage() {
             <p className="text-[12px] text-ink-2">내가 고른 스타일</p>
             <p className="mt-0.5 text-[24px] font-extrabold tracking-tight text-ink">{entry.name}</p>
             {entry.subtitle && <p className="mt-0.5 text-[13px] text-ink-2">{entry.subtitle}</p>}
-            <VerdictStamp level={gate.level} clause={bcopy.verdictClause} />
+            <VerdictStamp level={gate.level} stamp={bcopy.stamp} />
           </div>
 
           {/* 게이트 주의 — 노란줄 + 데미지 CTA(차단은 스탬프로 이미 표시) */}
@@ -502,30 +500,25 @@ export default function StyleResultPage() {
               {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
               <TT>혹시, 이런 적 있다면</TT>
               <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                <Rich html={bcopy.prophecy} className="block text-[16px] font-extrabold leading-relaxed text-ink" />
+                <Rich html={bcopy.door} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
               </GlassCard>
 
               {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
               <TT>왜 그랬던 걸까요</TT>
               <div className="rounded-xl border border-line bg-surface px-4 py-3">
-                <Rich html={bcopy.ahaHeadline} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
+                <Rich html={bcopy.aha} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
               </div>
               <details className="mt-2 overflow-hidden rounded-xl border border-line">
                 <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">자세히 보기</summary>
-                <div className="border-t border-line px-4 py-3"><Rich html={bcopy.ahaDetail} className="text-[14px] leading-relaxed text-ink" /></div>
+                <div className="border-t border-line px-4 py-3"><Rich html={bcopy.detail} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" /></div>
               </details>
 
-              {/* 5. 평소 관리 꿀팁(주인공, 펼침) + 정수리 루틴 접기 내장 */}
+              {/* 5. 평소 관리 꿀팁(주인공, 펼침, 문단 통째) + 정수리 루틴 접기(갈래 3·5·10 공용 or 부가) */}
               <TT>평소엔 이렇게 해보세요</TT>
               <GlassCard tone="soft" className="px-5 py-4">
-                <p className="mb-2 text-[14px] font-extrabold text-ink">{bcopy.tipsTitle}</p>
-                <ol className="list-decimal space-y-1.5 pl-5">
-                  {bcopy.tips.map((t, i) => (
-                    <li key={i} className="text-[14px] leading-relaxed text-ink"><Rich html={t} /></li>
-                  ))}
-                </ol>
+                <Rich html={bcopy.tip} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
               </GlassCard>
-              {branch.scalpRoutineCard && (
+              {(branch.scalpRoutineCard || SCALP_ROUTINE_BRANCHES.includes(branch.primary)) && (
                 <details className="mt-2 overflow-hidden rounded-xl border border-line">
                   <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{SCALP_ROUTINE.title}</summary>
                   <div className="border-t border-line px-4 py-3">
@@ -543,31 +536,31 @@ export default function StyleResultPage() {
               <details className="mt-2 overflow-hidden rounded-xl border border-line">
                 <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">시술 생각이 있으시다면</summary>
                 <div className="space-y-2 border-t border-line px-4 py-3">
-                  <Rich html={bcopy.procedureRef} className="block text-[14px] leading-relaxed text-ink" />
-                  {bcopy.procedureAfter && bcopy.procedureAfter !== "[카피 대기]" && (
-                    <p className="text-[13px] text-ink-2">시술 후엔: <Rich html={bcopy.procedureAfter} /></p>
-                  )}
+                  <Rich html={bcopy.procedure} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
                   {branch.absorbed.map((k) => (
-                    <Rich key={k} html={getBranchCopy(k).procedureRef} className="block text-[13px] leading-relaxed text-ink-2" />
+                    <Rich key={k} html={getBranchCopy(k).procedure} className="block whitespace-pre-line text-[13px] leading-relaxed text-ink-2" />
                   ))}
                 </div>
               </details>
 
-              {/* 7. 제품 슬롯 3종(맨 아래) + 발견템 링크 */}
-              <TT>이 머리에 맞는 도구</TT>
-              <div className="grid grid-cols-3 gap-2">
-                {bcopy.products.map((p, i) => (
-                  <div key={i} className="rounded-xl border border-line bg-surface px-2 py-3 text-center">
-                    <p className="text-[12.5px] font-bold text-ink">{p.name}</p>
-                    <p className="mt-0.5 text-[10.5px] leading-snug text-ink-2">{p.desc}</p>
+              {/* 7. 제품 슬롯(맨 아래, P-키→마스터 표기) + 발견템 링크 — 갈래9(차단)는 미노출 */}
+              {bcopy.products.length > 0 && (
+                <>
+                  <TT>이 머리에 맞는 도구</TT>
+                  <div className="flex gap-2">
+                    {bcopy.products.map((pk) => (
+                      <div key={pk} className="flex-1 rounded-xl border border-line bg-surface px-2 py-3 text-center">
+                        <p className="text-[12.5px] font-bold text-ink">{productName(pk)}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <Link href="/items"
-                onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_products", diagnosis_type: "style" })}
-                className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
-                이런 제품은 발견템에서 볼 수 있어요 <span className="flex-none">→</span>
-              </Link>
+                  <Link href="/items"
+                    onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_products", diagnosis_type: "style" })}
+                    className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                    이런 제품은 발견템에서 볼 수 있어요 <span className="flex-none">→</span>
+                  </Link>
+                </>
+              )}
 
               {/* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */}
               {gate.level === "block" && (

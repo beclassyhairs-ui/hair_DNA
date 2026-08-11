@@ -22,6 +22,7 @@ import {
   type HairTypeEntry,
 } from "./hairTypeMatrix";
 import type { StyleAnswers } from "./surveyData";
+import { CURLY_MID_COPY } from "./curlyMidCopy";
 
 export interface HairTypeCopy {
   id:                 string; // HairTypeEntry.id와 동일(108키)
@@ -77,7 +78,7 @@ const CORE_COPY_27: Record<string, CoreCopy> = {
     painPointHeadline: "기본기가 좋아서 사소한 디테일 하나로 완성도가 확 달라지는 타입이에요",
     whyItHappens: "굵기와 숱이 모두 무난해서 스타일이 무너지거나 처지는 일은 적지만, 그만큼 끝선 라인이나 텍스처 같은 디테일 하나에 따라 결과물이 확 달라지는 타입이에요.",
     stylePrescription: "기본 조건이 좋으니 큰 보정보다는 끝선 텍스처나 앞머리 라인처럼 세밀한 디테일에 신경 쓰는 편이 완성도를 높여줘요.",
-    discoveryItemHint: "기본 트리트먼트 라인",
+    discoveryItemHint: "결 정돈 크림",
   },
   [coreKey("straight_hair", "medium_thickness", "thin_density")]: {
     painPointHeadline: "볼륨이 아쉽게 느껴지기 쉬워요",
@@ -114,7 +115,7 @@ const CORE_COPY_27: Record<string, CoreCopy> = {
     painPointHeadline: "날씨에 따라 스타일이 오르락내리락하기 쉬워요",
     whyItHappens: "반곱슬은 습도에 영향을 많이 받아서, 같은 손질을 해도 맑은 날과 습한 날의 스타일 느낌이 다르게 나타나기 쉬워요.",
     stylePrescription: "습한 날엔 가벼운 크림으로 결을 정돈하고, 맑은 날엔 웨이브를 그대로 살리는 방향으로 유연하게 스타일링하는 게 좋아요.",
-    discoveryItemHint: "습도 방어 크림",
+    discoveryItemHint: "결 정돈 크림",
   },
   [coreKey("wavy_hair", "coarse", "thin_density")]: {
     painPointHeadline: "숱이 적어 웨이브만으로는 볼륨이 아쉬울 수 있어요",
@@ -163,13 +164,13 @@ const CORE_COPY_27: Record<string, CoreCopy> = {
     painPointHeadline: "머리가 쉽게 뜨고 커 보이는 타입이에요",
     whyItHappens: "곱슬의 퍼짐, 굵은 모발의 힘, 많은 숱이 겹치면 손질을 못해서가 아니라 구조적으로 머리가 차분해 보이기보다 전체적으로 커 보이기 쉬워요.",
     stylePrescription: "컬을 더 많이 넣기보다 겉결은 흐트러뜨리지 않고 안쪽 양감과 부피를 먼저 정돈하고, 끝선 중심으로 움직임을 주는 방향이 좋아요.",
-    discoveryItemHint: "곱슬 정돈 크림이나 무스",
+    discoveryItemHint: "결 정돈 크림",
   },
   [coreKey("curly_hair", "coarse", "medium_density")]: {
     painPointHeadline: "볼륨은 좋은데 부피가 부담스러워 보일 수 있어요",
     whyItHappens: "곱슬 기운이 강하고 굵기가 있으면 볼륨감이 뚜렷해지는 대신, 정돈이 안 되면 부피가 부담스럽게 느껴지기 쉬워요.",
     stylePrescription: "부피 정돈과 결 관리를 함께 챙기면 곱슬 특유의 볼륨을 부담스럽지 않게 유지할 수 있어요.",
-    discoveryItemHint: "곱슬 정돈 크림",
+    discoveryItemHint: "결 정돈 크림",
   },
   [coreKey("curly_hair", "coarse", "thin_density")]: {
     painPointHeadline: "곱슬기는 있는데 숱이 적어 볼륨이 아쉬워 보일 수 있어요",
@@ -215,20 +216,16 @@ const CORE_COPY_27: Record<string, CoreCopy> = {
   },
 };
 
-// ─── 곱슬(중간) 핵심카피 9키 — [카피 대기] (지시서 A-1①·A-3 · 블로커 3 답) ────────
-// 신규 곱슬값 curly_hair_mid × 굵기3 × 숱3 = 9키. 핵심카피(painPoint/why/prescription/
-// discoveryHint)는 알고리즘방 전집 v2 도착 시 주입 — 지금은 구조·키만 채운다(임의 생성 금지).
+// ─── 곱슬(중간) 핵심카피 9키 (카피 최종본 §2 = curlyMidCopy.ts) ────────────────
+// 신규 곱슬값 curly_hair_mid × 굵기3 × 숱3 = 9키. 공용 출처(curlyMidCopy)에서 주입.
 // (시술/케어 문구는 매트릭스 쪽에서 악성곱슬 복제분을 deriveTreatmentCopy가 그대로 파생.)
-const CORE_COPY_PENDING: CoreCopy = {
-  painPointHeadline: "[카피 대기]",
-  whyItHappens:      "[카피 대기]",
-  stylePrescription: "[카피 대기]",
-  discoveryItemHint: "[카피 대기]",
-};
-for (const t of ["coarse", "medium_thickness", "fine"]) {
-  for (const d of ["thick_density", "medium_density", "thin_density"]) {
-    CORE_COPY_27[coreKey("curly_hair_mid", t, d)] = { ...CORE_COPY_PENDING };
-  }
+for (const [k, c] of Object.entries(CURLY_MID_COPY)) {
+  CORE_COPY_27[`curly_hair_mid__${k}`] = {
+    painPointHeadline: c.painPointHeadline,
+    whyItHappens:      c.whyItHappens,
+    stylePrescription: c.stylePrescription,
+    discoveryItemHint: c.discoveryItemHint,
+  };
 }
 
 const DEFAULT_CORE_KEY = coreKey("straight_hair", "medium_thickness", "medium_density");

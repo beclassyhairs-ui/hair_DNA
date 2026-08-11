@@ -14,6 +14,7 @@
 
 import type { StyleAnswers } from "./surveyData";
 import { evaluateStyleGate } from "./styleGate";
+import { CURLY_MID_COPY } from "./curlyMidCopy";
 
 // curly_hair_mid(곱슬·중간) = 지시서 A-1① 신설값. 반곱슬과 악성곱슬 사이.
 export type CurlKey      = "straight_hair" | "wavy_hair" | "curly_hair_mid" | "curly_hair";
@@ -3483,23 +3484,24 @@ const HAIR_TYPE_MATRIX_BASE: HairTypeEntry[] = [
   }
 ];
 
-// ─── 곱슬(중간) 파생 생성 (지시서 A-1① · 블로커 3 답) ─────────────────────────
+// ─── 곱슬(중간) 파생 생성 (지시서 A-1① · 카피 최종본 §3) ──────────────────────
 // 매트릭스 완전성(폴백 0건)을 위해 신규 곱슬값 curly_hair_mid의 36엔트리(굵기3×숱3×이력4)를
 // 코드로 파생한다. PM 확정: 손상 modifier/케어 필드는 악성곱슬(curly_hair) 엔트리를 "복제",
-// 타입 서술 카피(hairTypeTitle/textureSummary/styleDirection)는 [카피 대기]로 비운다
-// (알고리즘방 전집 v2 도착 시 주입 — 임의로 채우지 않는다).
-const COPY_PENDING = "[카피 대기]";
+// 타입 서술(hairTypeTitle/textureSummary/styleDirection)은 curlyMidCopy 공용 출처에서 주입.
 const CURLY_MID_ENTRIES: HairTypeEntry[] = HAIR_TYPE_MATRIX_BASE
   .filter((e) => e.curl === "curly_hair")
-  .map((e) => ({
-    ...e, // procedureHint·damageModifier·damageCaution·homeCare·avoid·salonRequest·recommendedCareTags 복제
-    id: e.id.replace(/^curly_hair__/, "curly_hair_mid__"),
-    curl: "curly_hair_mid" as CurlKey,
-    hairTypeKey: e.hairTypeKey.replace(/^curly_/, "curlymid_"),
-    hairTypeTitle: COPY_PENDING,
-    textureSummary: COPY_PENDING,
-    styleDirection: COPY_PENDING,
-  }));
+  .map((e) => {
+    const c = CURLY_MID_COPY[`${e.thickness}__${e.density}`]!;
+    return {
+      ...e, // procedureHint·damageModifier·damageCaution·homeCare·avoid·salonRequest·recommendedCareTags 복제
+      id: e.id.replace(/^curly_hair__/, "curly_hair_mid__"),
+      curl: "curly_hair_mid" as CurlKey,
+      hairTypeKey: e.hairTypeKey.replace(/^curly_/, "curlymid_"),
+      hairTypeTitle: c.title,          // §3: painPointHeadline을 명사구로 축약
+      textureSummary: c.whyItHappens,  // §3: whyItHappens 그대로
+      styleDirection: c.stylePrescription, // §3: stylePrescription 그대로
+    };
+  });
 
 export const HAIR_TYPE_MATRIX: HairTypeEntry[] = [...HAIR_TYPE_MATRIX_BASE, ...CURLY_MID_ENTRIES];
 
