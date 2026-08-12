@@ -1,7 +1,18 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-10
+> 최종 갱신: 2026-08-12
+
+## 🟢 faceswap 콜드스타트 → 비동기 폴링 전환 **배포 완료** (2026-08-12)
+
+**배포**: `f981069..32b6ef5` push → Vercel 빌드 성공. status 라우트 404→401(≈90s) + 레퍼런스 200(`default_style.jpg` 포함) 확인.
+**원인 정정**: 아래 FIX4의 "Vercel env REPLICATE_API_TOKEN 문제" 결론은 **오진**이었다. 실제는 Replicate GPU(face-swap-gpu) **콜드스타트 큐가 3~4.5분**으로 늘어, 동기대기(Prefer:wait·maxDuration 60s·클라 abort 62s)를 초과 → 식은 날 첫 요청이 100% `poll_timeout` 실패(대시보드: 잔액·호출·성공 정상, 큐만 폭증).
+**해결(E″ 안, SQL 없이)**: 동기대기 폐기 → POST는 예측 생성만 하고 `{id,token}` 반환, 클라가 `/api/hair-transform/status`를 2.5s 간격 최대 5분 폴링(새로고침 재개, 20s↑ 안내문구). `status`/`cancel` 라우트 신설 + (predictionId,userId) HMAC 소유권 토큰(IDOR 차단).
+**과금**: POST 예약(bump) 유지 + **환불 전면 폐지**(멱등/DoS 구멍 소거), 일일한도 5→7 보상. 5분 초과 시 예측 cancel(비용 중단, 환불 없음).
+**보안(Codex 3회 반복 통과)**: debugError 손님응답 제거·output fetch `redirect:manual`+호스트 화이트리스트·시크릿 fail-closed·status `pr.ok`·4xx/3MB/output누락 명확 실패분류.
+**합격 기준(사장님 폰)**: 콜드 상태에서 /style 합성 1회 → 4분 걸려도 사진이 나오면 성공.
+**⚠️ 잔여 리스크(수용)**: kickoff 응답 유실/탭 종료 시 재시도하면 1회 더 차감 가능(원장 없이 완전 차단 불가, 손님 자기불리라 악용 아님, 한도 7로 완충). 결제 붙일 때 `hair_jobs` 원장으로 정확한 멱등 도입 예정.
+**백로그**: 미커밋 355개(문서·스캐치 + `public/references` 구조 개편) 정리 필요 — ⚠️ references 삭제 커밋 시 배포 자산 누락으로 faceswap 사망 주의(디스크 실물 정합 먼저).
 
 ## 🟡 라이브 테스트 수정 FIX1~5 — 커밋·미배포 (2026-08-12)
 
@@ -9,7 +20,7 @@
 - **FIX1 (새치 하위체크)**: 데미지에 **이미 존재**(라이브 청크 확인 `73083ec`). 사장님이 데미지 배포 전 구버전 테스트하신 것. 코드 변경 없음.
 - **FIX2 `3fcb7cd` (매직·열펌 분리)**: `straight_perm`(매직) + `heat_perm`(열펌·세팅·디지털) 분리(데미지+스타일). 점수 동일 1.5. **C2 예언은 heat_perm만 트리거**(매직 제외). styleGate 상수·배열·crossBranch usedPerm 반영.
 - **FIX3 `0ce37f6` (링크 숨김)**: 데미지 결과지 `SHOW_HAIRQUIZ=false`·`SHOW_ITEMS=false`(플래그, 삭제 아님). 중복 스타일 텍스트링크 제거→LockedPreviewCard 송객 1개. 인라인 제품카드 유지.
-- **FIX4 (faceswap AFTER 실패)**: 진단 결과 — 레퍼런스 200(SSO 아님)·로컬 토큰/고정버전/계정(beclassyhairs-ui) **정상 동작(202 starting, 401/402/429 없음)**. ∴ **Vercel env `REPLICATE_API_TOKEN` 문제로 특정**(미등록/무효) → 🔴 **사장님 env 소관**: Vercel Prod에 REPLICATE_API_TOKEN 등록·확인 후 재배포.
+- **FIX4 (faceswap AFTER 실패)**: ⚠️ **정정됨(2026-08-12, 위 최상단 섹션)** — "env `REPLICATE_API_TOKEN` 문제" 결론은 오진. 실제 원인은 **GPU 콜드스타트 큐(3~4.5분)가 동기대기 타임아웃 초과**. 비동기 폴링 전환으로 해결·배포 완료(`32b6ef5`).
 - **FIX5 `cb7a23f` (QQ8 오타)**: 스타일 설문 `Q{q.no}`→`{q.no}`.
 - 미조치(확인만): 시술이력 두 랜딩 중복=정상(확정118 보류), 손대지 않음.
 
