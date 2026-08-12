@@ -3,6 +3,18 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-12
 
+## 🟢 나이별 레퍼런스(50·60 mature) + faceswap 정식가동 **배포 완료** (2026-08-12)
+
+**배포**: `3f2e9af..2955681` push → Vercel 빌드. mature 이미지 404→200(≈90s), young/`default_style` 200 유지 확인.
+- 커밋 `4452c62`(mature 이미지 33장), `2955681`(코드+병합 manifest). Codex 통과(tsc/lint exit0).
+- **나이 픽**: `q1_age` `age_50`·`age_60plus` → `references/mature/` 우선, 슬롯 비면 young 폴백. **40대↓·미상=young**. 경계=50대(사업주 확정).
+- **manifest 생성기**: `references/` + `references/mature/` 둘 다 스캔, `mature/` 접두 슬롯키. 이미지 있는 슬롯만 활성(빈폴더·txt 제외). prebuild가 빌드마다 재생성.
+- **mature 채움**: bob·collarbone 3층×4컬, short·short_bob light 3컬(=young 패턴). chest·롱 없음 → 30 mature 슬롯.
+- **숏 기장**: 설문이 숏은 층 미질문 → 기존처럼 light 폴백 유지(특수처리 없음).
+- **faceswap 302 수정**: `getAssetBaseUrl` = `NEXT_PUBLIC_SITE_URL`(미설정 시 공개 alias `hair-dna.vercel.app`) 우선, `VERCEL_URL` 배제. flux/텍스트엔진 없음(주석만). 가드레일(로그인·동의403·일일한도·셀카 미저장) 보존.
+- **합격 기준(사장님 폰)**: 50대로 /style 합성 → mature 스타일이 반영되는지.
+- 🔴 **미해결**: ① mature 오배치 이미지 3장(weight레벨 직속 = 생성기 미스캔): `mature/bob/heavy/2adfd19a`,`3267cc70`, `mature/short/light/1430bfe2` — 쓰려면 컬 하위폴더로 이동(사업주). ② 미커밋 355개 정리 시 `public/references` 삭제(특히 `default_style.jpg`) 커밋 금지 — 배포 자산 누락으로 faceswap 사망.
+
 ## 🟢 faceswap 콜드스타트 → 비동기 폴링 전환 **배포 완료** (2026-08-12)
 
 **배포**: `f981069..32b6ef5` push → Vercel 빌드 성공. status 라우트 404→401(≈90s) + 레퍼런스 200(`default_style.jpg` 포함) 확인.
