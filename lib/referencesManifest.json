@@ -142,5 +142,95 @@
   ],
   "chest/light/wave": [
     "b08d9cc0-04ea-437d-bc6e-43dcc3c7d0f4.png"
+  ],
+  "mature/short/light/straight": [
+    "ad7aeaf3-47a2-405c-b005-025791904f65.png"
+  ],
+  "mature/short/light/c_curl": [
+    "84541d59-3fc2-41ff-972f-7a5df84a53a9.png"
+  ],
+  "mature/short/light/wave": [
+    "3a75ad62-d569-40e4-875f-2fd2fd3fe05d.png"
+  ],
+  "mature/short_bob/light/straight": [
+    "a8b15da4-8bdb-4360-9ca4-4f21e2de5827.png"
+  ],
+  "mature/short_bob/light/c_curl": [
+    "6f464335-a534-4838-a8fc-7a8d719f6b4e.png"
+  ],
+  "mature/short_bob/light/wave": [
+    "5e65aea9-4f0b-4ab2-af19-df57f62265ab.png"
+  ],
+  "mature/bob/heavy/straight": [
+    "4565e5f4-addb-4727-aeef-b56ef3a0c86a.png"
+  ],
+  "mature/bob/heavy/c_curl": [
+    "85f8a636-3c49-4b97-b013-4e846d559468.png"
+  ],
+  "mature/bob/heavy/s_curl": [
+    "b2d5dab6-c787-412f-807f-e200ccfa0b1d.png"
+  ],
+  "mature/bob/heavy/wave": [
+    "94fb71b0-f240-4936-8f54-23bee6cb27e9.png"
+  ],
+  "mature/bob/medium/straight": [
+    "4565e5f4-addb-4727-aeef-b56ef3a0c86a.png"
+  ],
+  "mature/bob/medium/c_curl": [
+    "85f8a636-3c49-4b97-b013-4e846d559468.png"
+  ],
+  "mature/bob/medium/s_curl": [
+    "b2d5dab6-c787-412f-807f-e200ccfa0b1d.png"
+  ],
+  "mature/bob/medium/wave": [
+    "94fb71b0-f240-4936-8f54-23bee6cb27e9.png"
+  ],
+  "mature/bob/light/straight": [
+    "21d8d041-e45f-4668-8fd9-565f2d3feb1c.png"
+  ],
+  "mature/bob/light/c_curl": [
+    "89e8e86f-4eea-4ce2-9456-f7ccb2cd848a.png"
+  ],
+  "mature/bob/light/s_curl": [
+    "b433d663-d214-45e6-9b30-f8204d8ed8da.png"
+  ],
+  "mature/bob/light/wave": [
+    "0cad9c20-f7b1-4ffb-b19c-351adc273612.png"
+  ],
+  "mature/collarbone/heavy/straight": [
+    "ffe2b0a2-688d-47da-95af-f3a78685e2eb.png"
+  ],
+  "mature/collarbone/heavy/c_curl": [
+    "924ce1e6-7b62-475b-96a5-4da4f69111eb.png"
+  ],
+  "mature/collarbone/heavy/s_curl": [
+    "46d19e0a-695f-4419-9036-4001bc84e3a3.png"
+  ],
+  "mature/collarbone/heavy/wave": [
+    "5b6cbe7b-9a81-4f19-b154-012c391362a0.png"
+  ],
+  "mature/collarbone/medium/straight": [
+    "ffe2b0a2-688d-47da-95af-f3a78685e2eb.png"
+  ],
+  "mature/collarbone/medium/c_curl": [
+    "e2721e0d-1a19-4a60-9448-2624fe29b291.png"
+  ],
+  "mature/collarbone/medium/s_curl": [
+    "29d48007-4cd0-4c25-a202-92d5617dd706.png"
+  ],
+  "mature/collarbone/medium/wave": [
+    "b27aabdb-2a43-40d4-bae2-e95ac2d8f195.png"
+  ],
+  "mature/collarbone/light/straight": [
+    "e2721e0d-1a19-4a60-9448-2624fe29b291.png"
+  ],
+  "mature/collarbone/light/c_curl": [
+    "2b667ad1-6703-4c02-9b67-0f2b0adf0321.png"
+  ],
+  "mature/collarbone/light/s_curl": [
+    "f77fc8f7-fca0-4485-af43-e04037c48d13.png"
+  ],
+  "mature/collarbone/light/wave": [
+    "951b8e1c-3303-4ed8-ad3c-ee45927f5b1a.png"
   ]
 }

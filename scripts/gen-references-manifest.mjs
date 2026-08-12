@@ -25,34 +25,45 @@ async function isDir(p) {
   try { return (await stat(p)).isDirectory(); } catch { return false; }
 }
 
+// 스캔 루트 2개: 기존(young) 세트 + 성숙(mature) 세트.
+//   young  → 슬롯키 "<len>/<w>/<c>"        (public/references/<len>/<w>/<c>)
+//   mature → 슬롯키 "mature/<len>/<w>/<c>"  (public/references/mature/<len>/<w>/<c>)
+//   두 세트 모두 이미지 있는 슬롯만 활성. 빈 폴더·_안내.txt 는 자동 제외(IMG_RE 만 카운트).
+const SCAN_ROOTS = [
+  { dir: REF_DIR, prefix: "" },
+  { dir: join(REF_DIR, "mature"), prefix: "mature/" },
+];
+
 async function main() {
   const manifest = {};
   let total = 0;
   const emptySlots = [];
 
-  for (const len of LENGTHS) {
-    for (const w of WEIGHTS) {
-      for (const c of CURLS) {
-        const slot = `${len}/${w}/${c}`;
-        const dir = join(REF_DIR, len, w, c);
-        if (!(await isDir(dir))) { emptySlots.push(slot + " (없음)"); continue; }
-        let files = [];
-        try {
-          const entries = await readdir(dir, { withFileTypes: true });
-          files = entries
-            .filter((e) => e.isFile() && IMG_RE.test(e.name))
-            .map((e) => e.name)
-            .sort(); // 결정적 순서(런타임 랜덤픽은 이 목록 위에서)
-        } catch { /* skip */ }
-        if (files.length) { manifest[slot] = files; total += files.length; }
-        else emptySlots.push(slot + " (빈폴더)");
+  for (const root of SCAN_ROOTS) {
+    for (const len of LENGTHS) {
+      for (const w of WEIGHTS) {
+        for (const c of CURLS) {
+          const slot = `${root.prefix}${len}/${w}/${c}`;
+          const dir = join(root.dir, len, w, c);
+          if (!(await isDir(dir))) { emptySlots.push(slot + " (없음)"); continue; }
+          let files = [];
+          try {
+            const entries = await readdir(dir, { withFileTypes: true });
+            files = entries
+              .filter((e) => e.isFile() && IMG_RE.test(e.name))
+              .map((e) => e.name)
+              .sort(); // 결정적 순서(런타임 랜덤픽은 이 목록 위에서)
+          } catch { /* skip */ }
+          if (files.length) { manifest[slot] = files; total += files.length; }
+          else emptySlots.push(slot + " (빈폴더)");
+        }
       }
     }
   }
 
   await writeFile(OUT, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   const slotCount = Object.keys(manifest).length;
-  const gridTotal = LENGTHS.size * WEIGHTS.size * CURLS.size; // 5×3×4=60 격자
+  const gridTotal = SCAN_ROOTS.length * LENGTHS.size * WEIGHTS.size * CURLS.size; // 2×5×3×4=120 격자
   console.log(`[manifest] 채워진 슬롯 ${slotCount}개, 이미지 ${total}장 → ${relative(ROOT, OUT)}`);
   console.log(`[manifest] 빈/없는 슬롯 ${emptySlots.length}개 (격자 ${gridTotal}칸 중)`);
 }

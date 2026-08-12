@@ -53,9 +53,14 @@ const MAX_SELFIE_BYTES = 20_000_000;
 const ANON_BIND = "anon";
 
 // ─── 레퍼런스(공개 자산) 절대 URL의 origin ────────────────────────────────────
-const PUBLIC_ASSET_ORIGIN = "https://hair-dna.vercel.app"; // 공개 alias(배포보호 없음). 비밀 아님.
+const PUBLIC_ASSET_ORIGIN = "https://hair-dna.vercel.app"; // 공개 alias(배포보호 없음). 비밀 아님. NEXT_PUBLIC_SITE_URL 미설정 시 폴백.
 
 function getAssetBaseUrl(req: NextRequest): string {
+  // 레퍼런스 자산은 공개 alias origin에서 서버가 fetch한다. ★ VERCEL_URL(자동 배포도메인)은 배포보호(SSO)
+  //   302가 걸려 자산 fetch가 깨질 수 있어 절대 쓰지 않는다. 공개 alias를 NEXT_PUBLIC_SITE_URL로
+  //   오버라이드(권장), 미설정 시 고정 공개 alias로 폴백.
+  const publicSite = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  if (publicSite) return publicSite;
   if (process.env.VERCEL) return PUBLIC_ASSET_ORIGIN;
   return req.nextUrl.origin; // 로컬 개발
 }

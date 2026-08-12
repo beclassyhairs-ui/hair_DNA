@@ -11,6 +11,8 @@ import {
   getReferenceSlotKey,
   ALL_WEIGHTS,
   ALL_CURLS,
+  isMatureAge,
+  MATURE_SET_PREFIX,
 } from "@/lib/styleReference";
 import manifestJson from "@/lib/referencesManifest.json";
 
@@ -23,28 +25,36 @@ export type ReferenceResolution = {
   isFallback: boolean; // 원 슬롯이 아니라 폴백 체인에서 찾았는가
 };
 
-// 폴백 체인 순서:
+// 폴백 체인 순서(각 세트 내부):
 // 1) 정확 슬롯
 // 2) 같은 기장·같은 weight, 다른 컬
-// 3) 같은 기장, 아무 weight·컬
+// 3) 같은 기장, 아무 weight·컬  ← 숏 기장은 여기서 light 슬롯을 만난다(설문이 숏은 층 미질문 →
+//    exact가 medium이라 비고, weight 순회 heavy→medium→light 중 light에서 채워짐 = "기존처럼").
+// 나이 세트: 50·60대(mature)는 위 체인을 "mature/" 접두로 먼저 훑고, 전부 비면 같은 체인의 young
+//   슬롯으로 폴백한다(mature를 부분만 채워도 데드엔드 없이 안전 롤아웃). 40대 이하·미상은 young만.
 // 파일이 있는 첫 슬롯을 반환. 전부 비면 null(호출부가 DEFAULT_REFERENCE_PATH로).
 export function resolveReference(answers: StyleAnswers): ReferenceResolution | null {
   const exact = getReferenceSlotKey(answers);
   const [len, weight] = exact.split("/");
 
-  const order: string[] = [exact];
+  const base: string[] = [exact];
   // 2) 같은 len·weight, 다른 curl
   for (const c of ALL_CURLS) {
     const k = `${len}/${weight}/${c}`;
-    if (!order.includes(k)) order.push(k);
+    if (!base.includes(k)) base.push(k);
   }
   // 3) 같은 len, 아무 weight·curl
   for (const w of ALL_WEIGHTS) {
     for (const c of ALL_CURLS) {
       const k = `${len}/${w}/${c}`;
-      if (!order.includes(k)) order.push(k);
+      if (!base.includes(k)) base.push(k);
     }
   }
+
+  // 나이 픽: mature 우선(접두) → young 폴백. young/미상은 base 그대로.
+  const order = isMatureAge(answers)
+    ? [...base.map((k) => `${MATURE_SET_PREFIX}/${k}`), ...base]
+    : base;
 
   for (let i = 0; i < order.length; i++) {
     const files = MANIFEST[order[i]];

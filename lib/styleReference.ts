@@ -43,6 +43,16 @@ export const DEFAULT_REFERENCE_PATH = "/references/default_style.jpg";
 export const ALL_WEIGHTS = ["heavy", "medium", "light"] as const;
 export const ALL_CURLS   = ["straight", "c_curl", "s_curl", "wave"] as const;
 
+// ─── [나이 세트] 50·60대는 성숙(mature) 레퍼런스 세트를 우선 쓴다 ───────────────
+//   references/mature/<len>/<weight>/<curl> 를 우선 탐색하고, 비면 기존(young) 세트로 폴백한다.
+//   40대 이하·미상(q1_age 없음/모름)은 young 세트만 쓴다(young이 꽉 차 있어 데드엔드 없음).
+//   경계=50대: 사업주 확정 "젊은=20~40 / 새 세트=50·60". 폴더 접두는 "mature/".
+export const MATURE_SET_PREFIX = "mature";
+const MATURE_AGES = new Set(["age_50", "age_60plus"]);
+export function isMatureAge(answers: StyleAnswers): boolean {
+  return MATURE_AGES.has(answers.q1_age ?? "");
+}
+
 // ─── 핵심: 설문 답변 → 레퍼런스 슬롯키 "<len>/<weight>/<curl>" ──────────────────
 // 반환값의 3토막은 전부 위 allowlist(LENGTH_DIR 값 / LAYER_SET / WAVE_DIR 값)에서만 나온다.
 // 원시 설문값을 경로에 직접 넣지 않으므로 경로 traversal이 원천 불가능하다.
