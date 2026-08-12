@@ -69,6 +69,10 @@ const DEFAULT_ANSWERS: DamageSurveyAnswers = {
   h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
 };
 
+// FIX3: 미사용 서비스 링크 숨김(삭제 아님 · 플래그). 나중에 켤 때 true 한 줄.
+const SHOW_HAIRQUIZ = false; // hair-quiz(평소 손질 습관 진단) 미출시 → 숨김
+const SHOW_ITEMS    = false; // 별도 /items 페이지 링크 미사용 → 숨김 (인라인 제품 카드는 유지)
+
 // 평소 관리 꿀팁 = 주인공 블록 (확정94, 그대로)
 const MANAGEMENT_TIP =
   "트리트먼트는 바른 다음 빗으로 골고루 빗질해서 결 정돈까지 돼야 효과가 난다. 손 빗질만으론 부족하다.";
@@ -260,20 +264,22 @@ export default function DamageCheckResultPage() {
                 </div>
               </div>
             ))}
-            <Link href="/items" className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] font-semibold text-ink active:opacity-70">
-              발견템에서 손상도에 맞는 제품 보기 <span className="flex-none text-sub">→</span>
-            </Link>
+            {/* FIX3: 별도 /items 페이지 링크 숨김(인라인 제품 카드는 위에 유지) */}
+            {SHOW_ITEMS && (
+              <Link href="/items" className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] font-semibold text-ink active:opacity-70">
+                발견템에서 손상도에 맞는 제품 보기 <span className="flex-none text-sub">→</span>
+              </Link>
+            )}
           </section>
 
-          {/* ── 다른 진단 안내 ── */}
-          <nav>
-            <Link href="/hair-quiz" className="flex items-center justify-between gap-3 border-b border-line py-3.5 text-body font-medium text-ink active:opacity-70">
-              평소 손질 습관 진단 <span className="flex-none text-sub">→</span>
-            </Link>
-            <Link href="/style" className="flex items-center justify-between gap-3 py-3.5 text-body font-medium text-ink active:opacity-70">
-              AI 헤어 분석으로 내 스타일도 찾기 <span className="flex-none text-sub">→</span>
-            </Link>
-          </nav>
+          {/* ── 다른 진단 안내 (FIX3: hair-quiz 숨김 · 스타일 송객은 아래 카드 1개로 통일) ── */}
+          {SHOW_HAIRQUIZ && (
+            <nav>
+              <Link href="/hair-quiz" className="flex items-center justify-between gap-3 py-3.5 text-body font-medium text-ink active:opacity-70">
+                평소 손질 습관 진단 <span className="flex-none text-sub">→</span>
+              </Link>
+            </nav>
+          )}
 
           {/* ── A-2 잠금 미리보기(→ /style) ── */}
           <LockedPreviewCard
