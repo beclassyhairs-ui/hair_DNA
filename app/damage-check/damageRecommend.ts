@@ -52,7 +52,7 @@ export interface DamageResult {
 
 // ─── 점수 상수 (PM-임시 · 튜닝 대상) ─────────────────────────────────────────
 const TREAT_SCORE: Record<DamageTreatment, number> = {
-  bleach: 4.5, straight_perm: 1.5, normal_perm: 1, dye: 1, root_dye: 1, none: 0,
+  bleach: 4.5, straight_perm: 1.5, heat_perm: 1.5, normal_perm: 1, dye: 1, root_dye: 1, none: 0,
 };
 const ROOT_DYE_CYCLE_BONUS = 0.5; // 뿌염 주기 가중(6개월↑ 상당) — 회당, 단독 최대 ~1.3
 const MORE_BONUS: Record<"none" | "few" | "many", number> = { none: 0, few: 1, many: 2.5 };
@@ -137,7 +137,7 @@ function pickType(level: DamageLevel, a: DamageSurveyAnswers): DamageType {
     return level === 1 ? "HEALTHY" : "DRY"; // 없음+Lv2↑ 건조형 흡수 (// TODO 전용칸 보류)
   }
   if (last === "dye" || last === "root_dye" || last === "bleach") return "DRY";   // 화학 → 건조형
-  return "RIGID"; // straight_perm(매직·열펌) / normal_perm(일반펌) → 경직형
+  return "RIGID"; // straight_perm(매직) / heat_perm(열펌) / normal_perm(일반펌) → 경직형
 }
 
 function buildConcernTags(level: DamageLevel, type: DamageType): string[] {
@@ -155,8 +155,9 @@ export function diagnoseDamage(a: DamageSurveyAnswers): DamageResult {
   const level = calcLevel(a);
   const type  = pickType(level, a);
 
-  // C2 예언: 열펌(매직·열펌) AND (뿌리염색 & 새치 체크) 둘 다 겹칠 때만 (확정116·61)
-  const hasHeatPerm = a.h_recent === "straight_perm" || a.h_prev === "straight_perm";
+  // C2 예언: 열펌(heat_perm) AND (뿌리염색 & 새치 체크) 둘 다 겹칠 때만 (확정116·61).
+  //   FIX2: 매직(straight_perm)은 펴는 시술이라 '컬 처짐' 예언 대상 아님 — 열펌만.
+  const hasHeatPerm = a.h_recent === "heat_perm" || a.h_prev === "heat_perm";
   const hasGrayRootDye = (a.h_recent === "root_dye" || a.h_prev === "root_dye") && a.h_root_gray;
   const showProphecy = hasHeatPerm && hasGrayRootDye;
 

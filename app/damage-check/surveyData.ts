@@ -12,7 +12,9 @@ export type PullTest     = "snap" | "stretch" | "elastic" | "unsure" | "";
 export type FrictionTest = "tangled" | "loosens" | "smooth" | "unsure" | "";
 export type DryTest      = "slow" | "normal" | "fast" | "";
 // 시술 종류(확정68·77). 스타일 styleGate.constants의 TreatmentId와 값 정렬(통합 대비).
-export type DamageTreatment = "bleach" | "straight_perm" | "normal_perm" | "dye" | "root_dye" | "none";
+// FIX2(확정116): '매직·열펌' 단일 → '매직'(straight_perm) / '열펌'(heat_perm) 분리.
+//   예언 C2는 열펌(heat_perm)만 트리거(매직은 펴는 시술이라 '컬 처짐' 안 맞음). 점수는 둘 다 1.5.
+export type DamageTreatment = "bleach" | "straight_perm" | "heat_perm" | "normal_perm" | "dye" | "root_dye" | "none";
 export type DamageMore      = "none" | "few" | "many";
 
 export interface DamageSurveyAnswers {
@@ -103,7 +105,8 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
 // id는 DamageTreatment / DamageMore와 1:1. 값은 스타일 styleGate와 정렬(통합 대비).
 export const TREATMENT_OPTIONS: { id: DamageTreatment; label: string }[] = [
   { id: "bleach",        label: "탈색" },
-  { id: "straight_perm", label: "매직·열펌" },
+  { id: "straight_perm", label: "매직" },
+  { id: "heat_perm",     label: "열펌(세팅·디지털)" },
   { id: "normal_perm",   label: "일반펌" },
   { id: "dye",           label: "염색" },
   { id: "root_dye",      label: "뿌리염색" },

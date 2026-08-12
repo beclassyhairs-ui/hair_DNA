@@ -83,8 +83,8 @@ export function resolveCrossBranch(answers: StyleAnswers): CrossBranchResult {
   // ── 부가 카드(갈래와 독립): 정수리 루틴 ──
   //   트리거: 새치 체크 / 뿌염+열펌·일반펌 / fine+thin / 50대+fine
   const usedRootDye = answers.q8a_recent === "root_dye" || answers.q8b_prev === "root_dye";
-  const usedPerm    = ["straight_perm", "normal_perm"].includes(answers.q8a_recent ?? "")
-                   || ["straight_perm", "normal_perm"].includes(answers.q8b_prev ?? "");
+  const usedPerm    = ["straight_perm", "heat_perm", "normal_perm"].includes(answers.q8a_recent ?? "")
+                   || ["straight_perm", "heat_perm", "normal_perm"].includes(answers.q8b_prev ?? "");
   const scalpRoutineCard =
     answers.q8_root_gray === "1"        // 새치 체크
     || (usedRootDye && usedPerm)        // 뿌염 + 열펌·일반펌

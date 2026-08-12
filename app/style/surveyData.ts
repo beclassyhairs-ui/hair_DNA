@@ -140,7 +140,8 @@ export const STYLE_TOTAL = ALL_STYLE_QUESTIONS.length; // 8
 // id는 styleGate.constants의 TreatmentId / MoreLevel과 1:1로 일치시킨다.
 export const TREATMENT_OPTIONS: StyleOption[] = [
   { id: "bleach",        label: "탈색" },
-  { id: "straight_perm", label: "매직·열펌" },
+  { id: "straight_perm", label: "매직" },
+  { id: "heat_perm",     label: "열펌(세팅·디지털)" },
   { id: "normal_perm",   label: "일반펌" },
   { id: "dye",           label: "염색" },
   { id: "root_dye",      label: "뿌리염색" },

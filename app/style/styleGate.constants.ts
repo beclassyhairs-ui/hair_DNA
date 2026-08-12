@@ -13,7 +13,8 @@
 import type { HistoryKey } from "./hairTypeMatrix";
 
 /** 시술 종류(Q8-a/Q8-b 선택지) */
-export type TreatmentId = "bleach" | "straight_perm" | "normal_perm" | "dye" | "root_dye" | "none";
+// FIX2: '매직·열펌' 분리 — straight_perm(매직) / heat_perm(열펌). 점수 동일(1.5).
+export type TreatmentId = "bleach" | "straight_perm" | "heat_perm" | "normal_perm" | "dye" | "root_dye" | "none";
 /** "작년에 더 하신 거"(Q8-c) */
 export type MoreLevel = "none" | "few" | "many";
 /** 게이트 판정 3단 */
@@ -24,6 +25,7 @@ export type GateLevel = "pass" | "caution" | "block";
 export const TREATMENT_SCORE: Record<TreatmentId, number> = {
   bleach:        4.5,
   straight_perm: 1.5,
+  heat_perm:     1.5,
   normal_perm:   1,
   dye:           1,
   root_dye:      1,

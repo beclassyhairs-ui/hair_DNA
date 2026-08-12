@@ -27,7 +27,7 @@ import {
   type GateLevel,
 } from "./styleGate.constants";
 
-const TREATMENTS: TreatmentId[] = ["bleach", "straight_perm", "normal_perm", "dye", "root_dye", "none"];
+const TREATMENTS: TreatmentId[] = ["bleach", "straight_perm", "heat_perm", "normal_perm", "dye", "root_dye", "none"];
 function asTreatment(v: string | undefined): TreatmentId {
   return (TREATMENTS as string[]).includes(v ?? "") ? (v as TreatmentId) : "none";
 }
