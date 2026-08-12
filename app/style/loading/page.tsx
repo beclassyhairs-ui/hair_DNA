@@ -1,16 +1,18 @@
 "use client";
 
 // ============================================================================
-// /style/loading — 비동기 AI 헤어 합성 로딩 페이지
-// - 마운트 즉시 /api/hair-transform 호출 (가짜 타이머 없음)
-// - API 응답 완료 즉시 /style/result 로 라우팅
-// - 대기 중 헤어 꿀팁 콘텐츠 노출 (광고 없음 — AdSense 폐기, ROADMAP 광고 완전 제거 정책)
+// /style/loading — 비동기 AI 헤어 합성 로딩 페이지 (폴링 구조)
+// - 마운트 즉시 POST /api/hair-transform 로 예측 "착수"(id/token 수신)
+// - 이후 POST /api/hair-transform/status 를 2.5초 간격으로 최대 5분 폴링
+// - 새로고침해도 sessionStorage(STYLE_JOB_KEY)의 {id,token,startedAt}로 폴링 재개
+// - 5분 예산 소진 시 /api/hair-transform/cancel 로 예측 취소(비용 중단 목적, 환불 없음) 후 실패 안내
+// - GPU 콜드스타트(첫 요청 수 분)를 견디는 것이 목적. 동기대기(62s abort) 구조는 폐기.
 // ============================================================================
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_FAIL_REASON_KEY, STYLE_GENERATED_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_FAIL_REASON_KEY, STYLE_GENERATED_KEY, STYLE_JOB_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
@@ -20,18 +22,18 @@ import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
-// D-2: 실제 단계를 스트리밍으로 알 수는 없지만, 손님에게 "지금 뭘 하는 중인지"를 사람 말로
-// 순서대로 보여준다(마지막 단계에서 멈춰 유지 — 뒤로 되돌아가는 느낌 방지).
 const STEPS = [
   "사진을 확인하고 있어요",
   "원하시는 스타일을 입히는 중이에요",
   "자연스럽게 다듬어 마무리하는 중이에요",
 ];
 
-// Phase 3-1: faceswap은 합성이 ~0.4초로 매우 빨라 로딩이 깜빡이고 끝나면 오히려 불안하다.
-//   → 결과지 이동 전 최소 표시 시간을 둬 3단계 안내가 한 번은 매끄럽게 흐르게 한다.
-//   (에러/리다이렉트 등 조기 return 경로에는 적용하지 않는다 — 정상 완료 경로에만.)
-const MIN_LOADING_MS = 2_800;
+// faceswap 합성 자체는 빠르지만(웜업 후 수 초), GPU 콜드스타트 시 수 분 걸린다.
+const MIN_LOADING_MS   = 2_800;   // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
+const POLL_INTERVAL_MS = 2_500;   // status 폴링 간격
+const POLL_BUDGET_MS   = 300_000; // 전체 대기 상한(5분) — 콜드스타트 최대 관측 4분36초 + 여유
+const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
+const LONG_WAIT_MS     = 20_000;  // 이 시간 넘게 걸리면 "처음 한 번은 오래 걸려요" 안내로 전환
 
 const HAIR_TIPS = [
   "드라이 마지막 10초는 찬바람으로 마무리하세요. 큐티클이 닫히며 윤기가 살고, 아침에 잡은 스타일이 저녁까지 유지됩니다.",
@@ -42,8 +44,6 @@ const HAIR_TIPS = [
   "펌·컬러 후 48시간은 황금 시간입니다. 이 시간 안에 모발이 젖으면 웨이브가 풀리거나 색이 빠질 수 있어요.",
 ];
 
-// 서버가 주는 실패 사유를 그대로 이벤트·Sentry·sessionStorage에 넣지 않는다 — 알려진 코드만
-// 통과시키고 나머지는 "unknown"으로 정규화(원본 에러·PII가 계측에 새는 것 차단, Codex 반영).
 const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
   "reference_fetch_failed", "poll_timeout", "api_error", "no_output", "exception",
@@ -53,34 +53,56 @@ function normFailReason(r: string | undefined): string {
   return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
 }
 
+interface JobRef { id: string; token: string; startedAt: number; }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export default function StyleLoadingPage() {
   const router     = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
   const [tipIdx,  setTipIdx]  = useState(0);
+  const [longWait, setLongWait] = useState(false);
   const calledRef  = useRef(false); // 중복 호출 방지
 
-  // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립). faceswap이 빨라 간격을 줄여
-  // 최소 표시 시간(MIN_LOADING_MS) 안에 세 단계가 한 번은 흐르게 한다.
+  // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립).
   useEffect(() => {
     const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 1_100);
     return () => clearInterval(t);
   }, []);
 
-  // 꿀팁 롤링 (2.5초 간격 — STEPS 와 독립)
+  // 꿀팁 롤링 (2.5초 간격)
   useEffect(() => {
     const t = setInterval(() => setTipIdx(i => (i + 1) % HAIR_TIPS.length), 2_500);
     return () => clearInterval(t);
   }, []);
 
-  // ── 마운트 즉시 API 호출 ────────────────────────────────────────────────────
+  // 20초 넘게 걸리면 콜드스타트 안내로 문구 전환.
+  useEffect(() => {
+    const t = setTimeout(() => setLongWait(true), LONG_WAIT_MS);
+    return () => clearTimeout(t);
+  }, []);
+
+  // ── 마운트 즉시 착수 + 폴링 ─────────────────────────────────────────────────
   useEffect(() => {
     if (calledRef.current) return;
     calledRef.current = true;
 
+    const runStart = Date.now();
+
+    // 최소 표시 시간 채운 뒤 결과지로 이동(정상/실패/타임아웃 공통 종착).
+    async function finishAndRoute() {
+      try { sessionStorage.removeItem(STYLE_JOB_KEY); } catch { /**/ }
+      const elapsed = Date.now() - runStart;
+      if (elapsed < MIN_LOADING_MS) await sleep(MIN_LOADING_MS - elapsed);
+      router.replace("/style/result");
+    }
+
+    function goRelogin() {
+      clearAccountId();
+      window.location.href = `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
+    }
+
     async function run() {
-      const runStart = Date.now(); // Phase 3-1: 최소 표시 시간 계산 기준
-      // 입력·게이트 검증은 try/finally 밖에서 한다 — 여기서 다른 곳으로 라우팅하면
-      // 아래 합성 finally의 "/style/result" 이동과 경쟁하지 않도록 즉시 return한다.
       const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
       const raw   = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       let answers: StyleAnswers = {};
@@ -89,126 +111,166 @@ export default function StyleLoadingPage() {
       // 셀카 없으면 업로드로(결과지로 진행하지 않음)
       if (!photo) { router.replace("/style/upload"); return; }
 
-      // ── Phase B 로그인 게이트 ──────────────────────────────────────────────
-      // AI 합성(유료·결과 공개) 직전에 실제 카카오 로그인을 요구한다. 미로그인 시
-      // 카카오로 보냈다가 /style/loading으로 복귀 → sessionStorage의 셀카·답변이
-      // 그대로 남아 있어(같은 탭) 이어서 합성한다. 합성/횟수 차감은 로그인 이후에만.
-      // ★ 결과지로 진행하지 않고 return — 로그인 화면으로만 이동한다.
+      // ── Phase B 로그인 게이트 ──
       if (isLoginRequiredBeforeSynthesis()) {
         let loggedIn = false;
         try {
           const me = await fetch("/api/auth/me", { cache: "no-store" }).then(r => r.json());
           loggedIn = Boolean(me?.loggedIn);
         } catch { loggedIn = false; }
-        if (!loggedIn) {
-          // (재)로그인 개시 전 계정 id를 비운다 — 다른 계정으로 로그인해도 이전 계정으로
-          // 이벤트가 오귀속되지 않게(전환 창 차단). 로그인 확정 후 ProfileSync가 다시 심는다.
-          clearAccountId();
-          window.location.href =
-            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
-          return;
-        }
+        if (!loggedIn) { goRelogin(); return; }
       }
 
-      // ── 합성 ──
-      // 이전 상태 초기화(직전 생성 이미지 + 디버그 에러 + 한도 안내).
-      // ★ STYLE_GENERATED_KEY도 반드시 지운다 — 안 지우면 이번 실패/429가 나도 결과지가
-      //   과거 생성 이미지를 먼저 읽어(한도 카드보다 우선) 낡은 결과를 보여준다.
-      try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_FAIL_REASON_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
+      // ── 새로고침 재개: 진행 중 작업이 있으면 그걸 이어서 폴링한다(중복 착수·중복 차감 방지) ──
+      let job: JobRef | null = null;
+      try {
+        const rawJob = sessionStorage.getItem(STYLE_JOB_KEY);
+        if (rawJob) {
+          const parsed = JSON.parse(rawJob) as JobRef;
+          if (parsed?.id && parsed?.token && typeof parsed.startedAt === "number"
+              && Date.now() - parsed.startedAt < POLL_BUDGET_MS) {
+            job = parsed;
+          }
+        }
+      } catch { job = null; }
 
-      // 설문 답변만 Sheets에 기록 — fire-and-forget.
-      // 원본 셀카(photo)는 이 엔드포인트로 보내지 않는다(더 이상 저장하지 않으므로
-      // 얼굴 데이터를 불필요하게 전송하지 않는다). 셀카는 아래 hair-transform에만 전달.
+      if (job) {
+        // 재개 경로: 이전 상태(결과/에러/한도)만 정리하고 바로 폴링. incrementUsage 재호출 안 함.
+        clearPrevResultKeys();
+        await pollUntilDone(job);
+        return;
+      }
+
+      // ── 신규 착수 ──
+      clearPrevResultKeys();
+
+      // 설문 답변만 Sheets에 기록 — fire-and-forget(셀카 미전송).
       void fetch("/api/submit-diagnosis", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          answers:      toSheetAnswers(answers),
-          treatmentCounts: {},
-        }),
+        body:    JSON.stringify({ answers: toSheetAnswers(answers), treatmentCounts: {} }),
       });
 
-      // ★ Replicate faceswap 합성 (62초 타임아웃 — 상한. 실제 ~수 초 내 완료).
       try {
-        incrementUsage(); // 클라 표시용 횟수(서버 제한이 실제 강제)
-        console.log("[AI] /api/hair-transform 호출 시작...");
-        const res  = await fetch("/api/hair-transform", {
+        incrementUsage(); // 클라 표시용 횟수(서버 예약이 실제 강제)
+        console.log("[AI] 예측 착수(POST /api/hair-transform)...");
+        const res = await fetch("/api/hair-transform", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ userPhoto: photo, answers }),
-          signal:  AbortSignal.timeout(62_000),
+          signal:  AbortSignal.timeout(PER_POLL_TIMEOUT + 15_000), // 착수(레퍼런스 fetch+생성) 여유
         });
 
-        // 서버 게이트 응답 우선 처리
-        // 401(세션 만료 등) → 재로그인. 결과지로 가지 않는다(즉시 return).
-        if (res.status === 401) {
-          // 세션 만료(로그아웃 상태) → 재로그인. 만료된 계정 id를 즉시 비워 그 사이
-          // 발생하는 이벤트가 옛 계정에 붙지 않게 한다(Codex 지적 창 차단).
-          clearAccountId();
-          window.location.href =
-            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
-          return;
-        }
+        if (res.status === 401) { goRelogin(); return; }
 
         const data = await res.json() as {
-          ok: boolean; imageUrl?: string; reason?: string; message?: string; debugError?: string;
+          ok: boolean; id?: string; token?: string; reason?: string; message?: string; debugError?: string;
         };
-        console.log("[AI] 응답 전체:", data);
 
-        // 동의 필요(403·consent_required)만 동의화면으로. 다른 403은 일반 실패로(오안내·루프 방지).
-        // 서버 게이트(fail-closed)는 그대로 두고 손님만 안내한다.
         if (res.status === 403 && data.reason === "consent_required") {
-          window.location.href =
-            `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
+          window.location.href = `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
           return;
         }
 
         if (res.status === 429 || data.reason === "daily_limit") {
-          // 일일 한도 초과 → 결과지에 친절한 안내 카드로(빨간 에러 아님)
           const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
           try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
-          // 실패 계측(C-3) — 사유 코드만, 개인정보 없음.
           void trackEvent("hair_transform_fail", { reason: "daily_limit", source: "style" });
-        } else if (data.ok && data.imageUrl) {
-          console.log("[AI] ✅ 최종 AI 이미지 URL:", data.imageUrl);
-          try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-          try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-          // 성공 계측 — 실패율 계산의 분모(전체 시도 대비 성공).
-          void trackEvent("hair_transform_done", { source: "style" });
-        } else {
-          const reason = normFailReason(data.reason);
-          const errMsg = data.debugError ?? `reason: ${reason} (debugError 없음)`;
-          console.warn("[AI] ⚠️ 이미지 생성 실패 —", errMsg);
-          // 원인 코드는 손님 안내 분기용, debugError는 로그/Sentry용(손님 화면 미노출).
-          try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, reason); } catch { /**/ }
-          try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
-          // 실패 계측(C-3) + Sentry에 원본 에러 정직하게(손님 화면만 순화). DSN 미설정 시 no-op.
-          void trackEvent("hair_transform_fail", { reason, source: "style" });
-          Sentry.captureMessage(`[hair-transform] 합성 실패: ${reason}`, {
-            level: "error",
-            extra: { debugError: errMsg },
-          });
+          await finishAndRoute();
+          return;
         }
+
+        if (data.ok && data.id && data.token) {
+          const started: JobRef = { id: data.id, token: data.token, startedAt: Date.now() };
+          try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(started)); } catch { /**/ }
+          console.log("[AI] 착수 성공, 폴링 시작:", data.id);
+          await pollUntilDone(started);
+          return;
+        }
+
+        // 착수 자체 실패(레퍼런스 실패·토큰 오류 등)
+        recordFail(data.reason, data.debugError);
+        await finishAndRoute();
       } catch (e) {
-        console.error("[AI] ❌ API 호출 예외:", e);
-        // 네트워크 예외/타임아웃도 실패로 계측 + Sentry.
+        console.error("[AI] ❌ 착수 예외:", e);
         try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, "network"); } catch { /**/ }
         void trackEvent("hair_transform_fail", { reason: "network", source: "style" });
         Sentry.captureException(e);
+        await finishAndRoute();
+      }
+    }
+
+    // ── 폴링 루프: 성공/실패/타임아웃까지 ─────────────────────────────────────
+    async function pollUntilDone(job: JobRef) {
+      const deadline = job.startedAt + POLL_BUDGET_MS;
+      while (Date.now() < deadline) {
+        let data: { ok?: boolean; imageUrl?: string; status?: string; reason?: string; debugError?: string } | null = null;
+        try {
+          const res = await fetch("/api/hair-transform/status", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ id: job.id, token: job.token }),
+            signal:  AbortSignal.timeout(PER_POLL_TIMEOUT),
+          });
+          if (res.status === 401) { goRelogin(); return; }
+          data = await res.json();
+        } catch {
+          // 일시적 네트워크/타임아웃 → 예산 내에서 계속 재시도
+          await sleep(POLL_INTERVAL_MS);
+          continue;
+        }
+
+        if (data?.ok && data.imageUrl) {
+          try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
+          try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+          void trackEvent("hair_transform_done", { source: "style" });
+          await finishAndRoute();
+          return;
+        }
+
+        if (data?.status === "processing") {
+          await sleep(POLL_INTERVAL_MS);
+          continue;
+        }
+
+        // 그 외 = 터미널 실패(reason 있음)
+        recordFail(data?.reason, data?.debugError);
+        await finishAndRoute();
+        return;
       }
 
-      // 합성 시도 완료(성공/실패/타임아웃/한도 무관) → 결과지 이동.
-      // Phase 3-1: 너무 빨리 끝났으면 최소 표시 시간까지 채워 로딩이 깜빡이며 지나가지 않게 한다.
-      const elapsed = Date.now() - runStart;
-      if (elapsed < MIN_LOADING_MS) {
-        await new Promise((r) => setTimeout(r, MIN_LOADING_MS - elapsed));
-      }
-      // replace 사용: loading을 히스토리에서 제거해 결과지에서 뒤로가기 시
-      // 분석중 화면(및 API 재호출)으로 돌아가지 않고 upload로 이동하게 한다.
-      router.replace("/style/result");
+      // 5분 예산 소진 → 예측 취소 요청(비용 중단, best-effort) 후 실패 안내
+      console.warn("[AI] ⏱ 폴링 예산 소진 → 예측 취소 요청(비용 중단)");
+      try {
+        await fetch("/api/hair-transform/cancel", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ id: job.id, token: job.token }),
+          signal:  AbortSignal.timeout(10_000),
+        });
+      } catch { /* best-effort */ }
+      recordFail("poll_timeout", "폴링 5분 예산 소진 — 예측 취소 요청");
+      await finishAndRoute();
+    }
+
+    function clearPrevResultKeys() {
+      try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_FAIL_REASON_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
+    }
+
+    function recordFail(rawReason: string | undefined, rawDebug: string | undefined) {
+      const reason = normFailReason(rawReason);
+      const errMsg = rawDebug ?? `reason: ${reason} (debugError 없음)`;
+      console.warn("[AI] ⚠️ 합성 실패 —", errMsg);
+      try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, reason); } catch { /**/ }
+      try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
+      void trackEvent("hair_transform_fail", { reason, source: "style" });
+      Sentry.captureMessage(`[hair-transform] 합성 실패: ${reason}`, {
+        level: "error",
+        extra: { debugError: errMsg },
+      });
     }
 
     run();
@@ -226,7 +288,7 @@ export default function StyleLoadingPage() {
             AI 스타일 합성 중
           </span>
 
-          {/* 소형 링 스피너 (WORKORDER-02.1: 골드→무채색 차콜) */}
+          {/* 소형 링 스피너 */}
           <div className="relative flex h-20 w-20 items-center justify-center">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 rounded-full"
@@ -252,20 +314,21 @@ export default function StyleLoadingPage() {
             </motion.p>
           </AnimatePresence>
 
-          {/* D-2: 대략 소요시간 안내(단정 금지 — 범위 표현). 스피너가 "멈추지 않았다"는 시각 신호. */}
-          <p className="text-[12px] leading-relaxed text-ink-2">보통 몇 초면 끝나요 · 창을 닫지 말고 잠시만 기다려 주세요</p>
+          {/* 소요시간 안내 — 20초 넘어가면(콜드스타트) 정직한 문구로 전환 */}
+          <p className="max-w-[280px] text-center text-[12px] leading-relaxed text-ink-2">
+            {longWait
+              ? "처음 한 번은 준비에 시간이 조금 걸려요 · 창을 닫지 말고 잠시만 더 기다려 주세요"
+              : "보통 몇 초면 끝나요 · 창을 닫지 말고 잠시만 기다려 주세요"}
+          </p>
         </div>
 
-        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 (광고 제거됨) ── */}
+        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 ── */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
-
-          {/* 헤어 꿀팁 — 롤링 애니메이션 */}
           <div className="flex-none">
             <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-ink-2">
               기다리는 동안 읽는 헤어 꿀팁
             </p>
 
-            {/* 단일 팁 카드 — fade 롤링 */}
             <GlassCard className="relative flex min-h-[72px] items-center px-5 py-4">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -282,7 +345,6 @@ export default function StyleLoadingPage() {
               </AnimatePresence>
             </GlassCard>
 
-            {/* 진행 도트 */}
             <div className="mt-2.5 flex justify-center gap-1.5">
               {HAIR_TIPS.map((_, i) => (
                 <span key={i}
@@ -291,7 +353,6 @@ export default function StyleLoadingPage() {
               ))}
             </div>
           </div>
-
         </div>
 
       </main>

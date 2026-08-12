@@ -30,3 +30,35 @@ export const HAIRSYNTH_ENHANCE = false as const;
 
 /** Replicate 예측 생성 엔드포인트. */
 export const REPLICATE_PREDICTIONS_ENDPOINT = "https://api.replicate.com/v1/predictions";
+
+/** 특정 예측 조회 URL(비동기 폴링용). */
+export function replicatePredictionUrl(id: string): string {
+  return `${REPLICATE_PREDICTIONS_ENDPOINT}/${encodeURIComponent(id)}`;
+}
+
+/** 예측 취소 URL(장기 콜드스타트 타임아웃 시 비용 방치 방지용). */
+export function replicateCancelUrl(id: string): string {
+  return `${REPLICATE_PREDICTIONS_ENDPOINT}/${encodeURIComponent(id)}/cancel`;
+}
+
+/**
+ * 결과 이미지 URL 호스트 화이트리스트(SSRF 가드). status 라우트가 예측 output URL 의 바이트를
+ * 우리 서버로 가져와 data URI 로 재전송하므로, Replicate 가 실제로 결과를 두는 도메인만 허용한다.
+ * (Codex 반영: 신뢰 가능한 Replicate 출력 URL 만 fetch.)
+ */
+export function isAllowedReplicateOutputUrl(urlStr: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(urlStr);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  const h = u.hostname.toLowerCase();
+  return (
+    h === "replicate.delivery" ||
+    h.endsWith(".replicate.delivery") ||
+    h === "replicate.com" ||
+    h.endsWith(".replicate.com")
+  );
+}

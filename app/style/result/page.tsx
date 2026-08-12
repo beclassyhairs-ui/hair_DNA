@@ -170,7 +170,15 @@ function failMessage(reason: string | null): { title: string; hint: string; butt
       button: "다시 찍기",
     };
   }
-  // poll_timeout·api_error·exception·network·no_output·reference_fetch_failed 등 일시/서버 문제
+  if (reason === "poll_timeout") {
+    // 콜드스타트로 준비가 5분을 넘긴 경우. 두 번째부터는 GPU가 켜져 있어 금방 나온다.
+    return {
+      title:  "준비에 시간이 너무 오래 걸렸어요",
+      hint:   "다시 눌러주시면 이번엔 금방 나옵니다.",
+      button: "다시 시도",
+    };
+  }
+  // api_error·exception·network·no_output·reference_fetch_failed 등 일시/서버 문제
   return {
     title:  "지금 잠시 붐볐어요",
     hint:   "잠시 후 다시 시도해 주세요.",
