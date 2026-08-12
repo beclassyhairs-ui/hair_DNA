@@ -264,7 +264,7 @@ export default function StyleSurveyPage() {
             >
               <div className="mb-6">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">
-                  Q{q.no}
+                  {q.no}
                 </p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink sm:text-2xl">
                   {q.title}
