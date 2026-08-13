@@ -5,7 +5,7 @@
 // STEP 1(1~4) 스타일 결정 → STEP 2(5~8) 모질 파악 → /style/upload
 // ============================================================================
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,7 +17,7 @@ import {
   MORE_OPTIONS,
   type StyleAnswers,
 } from "../surveyData";
-import { STYLE_ANSWERS_KEY, STYLE_WARMUP_KEY } from "../constants";
+import { STYLE_ANSWERS_KEY } from "../constants";
 import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import TestHeader from "@/components/beauty-ui/TestHeader";
@@ -148,7 +148,6 @@ export default function StyleSurveyPage() {
   const [dir,     setDir]     = useState(1);
   const [answers, setAnswers] = useState<StyleAnswers>({});
   const [pending, setPending] = useState(false);
-  const warmedRef = useRef(false); // 예열 1회 발사 가드(sessionStorage 실패 시에도 마운트당 1회)
 
   // ★ Next.js Router Cache 대응: 네비게이션 복원 상태가 남아있어도 항상 Q1부터 강제 시작
   useEffect(() => {
@@ -156,19 +155,6 @@ export default function StyleSurveyPage() {
     setDir(1);
     setAnswers({});
   }, []);
-
-  // ── faceswap GPU 예열 ── 4번 문항(qIdx===3) 도달 시 1회 발사(세션당 1회). 남은 문항+로그인+사진
-  //   (≈2~3분) 동안 콜드스타트(GPU 부팅 3~5분)를 미리 태워 사진 단계엔 웜 상태가 되게 한다.
-  //   fire-and-forget: 실패해도 설문 흐름을 절대 막지 않는다. bump(일일한도) 미호출 → 비용상한 무관.
-  useEffect(() => {
-    if (qIdx < 3 || warmedRef.current) return;
-    try {
-      if (sessionStorage.getItem(STYLE_WARMUP_KEY) === "1") { warmedRef.current = true; return; }
-      sessionStorage.setItem(STYLE_WARMUP_KEY, "1");
-    } catch { /* sessionStorage 불가 시엔 ref 가드로 마운트당 1회만 */ }
-    warmedRef.current = true;
-    void fetch("/api/hair-transform/warmup", { method: "POST" }).catch(() => { /* 무시 */ });
-  }, [qIdx]);
 
   // short/short_bob이면 q14_layer 질문 자체를 화면에서 숨긴다(값은 handleSelect에서 자동 저장)
   const visibleQuestions = useMemo(
