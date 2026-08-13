@@ -1,7 +1,26 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-12
+> 최종 갱신: 2026-08-13
+
+## 🟡 faceswap GPU 예열(warm-up) — 구현 완료·Codex 통과·커밋 대기 (2026-08-13) [미배포]
+
+콜드스타트(GPU 부팅 3~5분, 실제 run ~1초) 대기 완화. **동기 폴링(5분)은 안전망으로 유지**, 예열은 흔한 경우 개선.
+- **트리거**: 설문 **Q4 진입(1차)** + **사진 화면 진입(2차)** 시 `/api/hair-transform/warmup` 발사(각 세션당 1회, fire-and-forget). 더미 예측 생성만으로 GPU 부팅 유발, 결과 버림.
+- 🔴 **idle 창 실측(리서치 결론)**: Replicate는 공개모델 idle 창을 **문서화하지 않음**. warm-up ping은 공식적으로 "best-effort, 보장 아님". 확실한 warm 은 ⓐofficial 모델(항상 warm·무료 — 우리 face-swap-gpu는 해당 없음) 또는 ⓑ유료 deployment(min_instances≥1, ~$583/월)뿐. → 1차가 2~3분 버틴다는 보장이 없어 **합성 직전 2차 ping** 추가(서버 60초 스로틀이 60초 이내 중복은 자동 스킵).
+- **가드레일**: `bump_hair_usage` 미호출 → **손님 일일한도 안 깎음**. 셀카 미수신/미저장. WARM_IMAGE=공개 alias `default_style.jpg`(**200·리다이렉트0 검증**, 302 아님).
+- **남용 방어**: Origin/Referer 동일출처 + 인스턴스별 60초 스로틀 + **전역 예열 일일상한**(`warmup_usage`/`bump_warmup_usage` RPC, 손님 한도와 완전 별개, fail-open, 상한 5000/일≈$1). 🔴 사장님 조치: ① `supabase/warmup_usage_schema.sql` 실행(안 하면 상한만 미적용·서비스 정상) ② Vercel Firewall로 warmup IP rate-limit 권장.
+- **비용**: 예열 회당 ~$0.0002(T4). 월 1천세션×2ping ≈ $0.44. 상시 warm(T4 deployment) ~$583/월 대비 예열 ping 채택.
+- **검증 예정(배포 후)**: Replicate 대시보드 queue 시간 before/after 실측(사장님 접근).
+
+## 📄 헤어 트랜스퍼 조사 기록 — **보류** (2026-08-13, 파일럿 안 함)
+
+재개 조건: **HairFastGAN급 2장 입력 모델이 Replicate에 살아나거나, Cog 자체호스팅을 별건으로 결정**할 때.
+- **HairFastGAN**(camenduru; `face_image`+`shape_image`+`color_image` 3장, V100 <1초 — 우리에 최적): Replicate 공개 엔드포인트 **404(죽음)** → Cog **자체호스팅** 필요.
+- **cjwbw/style-your-hair**: 라이브·2장 입력 맞지만 **~22분/회·~$0.29** → 인터랙티브 불가.
+- hairclip: 텍스트/편집(정체성보존 2장전송 아님). flux **change-haircut**: 사진1+**텍스트만**(우리 42레퍼런스 못 씀). custom-hair(L40S): 미검증.
+- **롱→숏**: 드러나는 목·어깨·배경 **인페인팅**이 GAN 공통 약점(아티팩트·정체성 흔들림).
+- **결론**: 배포 가능한 빠른 2장 트랜스퍼 모델 부재 → 품질만 봐도 출시 경로 없어 **파일럿도 보류**.
 
 ## 🟢 나이별 레퍼런스(50·60 mature) + faceswap 정식가동 **배포 완료** (2026-08-12)
 
