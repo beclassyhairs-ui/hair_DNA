@@ -9,7 +9,8 @@
 - **트리거**: 설문 **Q4 진입(1차)** + **사진 화면 진입(2차)** 시 `/api/hair-transform/warmup` 발사(각 세션당 1회, fire-and-forget). 더미 예측 생성만으로 GPU 부팅 유발, 결과 버림.
 - 🔴 **idle 창 실측(리서치 결론)**: Replicate는 공개모델 idle 창을 **문서화하지 않음**. warm-up ping은 공식적으로 "best-effort, 보장 아님". 확실한 warm 은 ⓐofficial 모델(항상 warm·무료 — 우리 face-swap-gpu는 해당 없음) 또는 ⓑ유료 deployment(min_instances≥1, ~$583/월)뿐. → 1차가 2~3분 버틴다는 보장이 없어 **합성 직전 2차 ping** 추가(서버 60초 스로틀이 60초 이내 중복은 자동 스킵).
 - **가드레일**: `bump_hair_usage` 미호출 → **손님 일일한도 안 깎음**. 셀카 미수신/미저장. WARM_IMAGE=공개 alias `default_style.jpg`(**200·리다이렉트0 검증**, 302 아님).
-- **남용 방어**: Origin/Referer 동일출처 + 인스턴스별 60초 스로틀 + **전역 예열 일일상한**(`warmup_usage`/`bump_warmup_usage` RPC, 손님 한도와 완전 별개, fail-open, 상한 5000/일≈$1). 🔴 사장님 조치: ① `supabase/warmup_usage_schema.sql` 실행(안 하면 상한만 미적용·서비스 정상) ② Vercel Firewall로 warmup IP rate-limit 권장.
+- **남용 방어**: Origin/Referer 동일출처 + 인스턴스별 60초 스로틀 + **전역 예열 일일상한**(`warmup_usage`/`bump_warmup_usage` RPC, 손님 한도와 완전 별개, 상한 5000/일≈$1). ✅ **SQL 실행 완료(2026-08-13) → 상한 활성**(라이브 예열 1회 {ok:true} 확인). 남은 권장: Vercel Firewall로 warmup IP rate-limit.
+- **배포 완료(2026-08-13)**: `ef2d7d7..b7d198c` push. warmup 404→200, same-origin 게이트 실측(curl·위조 Origin 차단·정상 통과), `default_style.jpg` 200. 커밋 `97a6bef`(코드)·`839eec3`(SQL)·`b7d198c`(docs).
 - **비용**: 예열 회당 ~$0.0002(T4). 월 1천세션×2ping ≈ $0.44. 상시 warm(T4 deployment) ~$583/월 대비 예열 ping 채택.
 - **검증 예정(배포 후)**: Replicate 대시보드 queue 시간 before/after 실측(사장님 접근).
 
