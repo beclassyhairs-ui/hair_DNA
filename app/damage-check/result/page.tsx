@@ -26,6 +26,8 @@ import { deriveCoreKeyFromEntries } from "../../../lib/itemsMatch";
 import InlineCompletion from "@/components/InlineCompletion";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
 import HairTypeHero from "../../components/HairTypeHero";
+import CoupangCardList from "@/components/CoupangCardList";
+import { pickDamageCards } from "@/lib/coupangCards";
 
 const LANDING_ID = "damage_check";
 
@@ -71,7 +73,6 @@ const DEFAULT_ANSWERS: DamageSurveyAnswers = {
 
 // FIX3: 미사용 서비스 링크 숨김(삭제 아님 · 플래그). 나중에 켤 때 true 한 줄.
 const SHOW_HAIRQUIZ = false; // hair-quiz(평소 손질 습관 진단) 미출시 → 숨김
-const SHOW_ITEMS    = false; // 별도 /items 페이지 링크 미사용 → 숨김 (인라인 제품 카드는 유지)
 
 // 평소 관리 꿀팁 = 주인공 블록 (확정94, 그대로)
 const MANAGEMENT_TIP =
@@ -252,25 +253,14 @@ export default function DamageCheckResultPage() {
             </div>
           </details>
 
-          {/* ── 제품 (맨 아래) — 새치 마스카라 최상단·18-MEA 간판, 정수리·볼륨 제외 ── */}
-          <section className="space-y-2.5">
-            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">이 상태에 맞는 제품</p>
-            {result.products.map((p) => (
-              <div key={p.name} className="flex items-start gap-3 rounded-2xl border border-line bg-card p-4">
-                <span className="text-[22px] leading-none">{p.emoji}</span>
-                <div>
-                  <p className="text-body font-bold text-ink">{p.name}</p>
-                  <p className="mt-0.5 text-[14px] leading-relaxed text-sub">{p.description}</p>
-                </div>
-              </div>
-            ))}
-            {/* FIX3: 별도 /items 페이지 링크 숨김(인라인 제품 카드는 위에 유지) */}
-            {SHOW_ITEMS && (
-              <Link href="/items" className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-card px-4 py-3 text-[14px] font-semibold text-ink active:opacity-70">
-                발견템에서 손상도에 맞는 제품 보기 <span className="flex-none text-sub">→</span>
-              </Link>
-            )}
-          </section>
+          {/* ── 제품 (맨 아래) — 쿠팡 제휴 매칭 카드로 교체(확정48). 결과지에서 바로 쿠팡 연결.
+                 ★ G13(뿌리 볼륨 파우더)은 DAMAGE_CARDS 목록에 없어 구조적으로 절대 미노출(하드 차단).
+                 COUPANG_CARDS_LIVE=false 면 자동 미노출. 저장/다이어리는 기존 result.products 그대로 사용. ── */}
+          <CoupangCardList
+            cards={pickDamageCards(result.typeInfo.type, answers)}
+            landingId="damage_check"
+            heading="이 상태에 맞는 제품"
+          />
 
           {/* ── 다른 진단 안내 (FIX3: hair-quiz 숨김 · 스타일 송객은 아래 카드 1개로 통일) ── */}
           {SHOW_HAIRQUIZ && (

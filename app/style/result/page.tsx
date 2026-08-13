@@ -37,7 +37,9 @@ import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 import { resolveCrossBranch } from "../crossBranch";
-import { getBranchCopy, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE, productName } from "../branchCopy";
+import { getBranchCopy, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE } from "../branchCopy";
+import CoupangCardList from "@/components/CoupangCardList";
+import { pickStyleCards } from "@/lib/coupangCards";
 
 function buildHairTags(answers: StyleAnswers): string[] {
   const tags: string[] = [];
@@ -551,23 +553,10 @@ export default function StyleResultPage() {
                 </div>
               </details>
 
-              {/* 7. 제품 슬롯(맨 아래, P-키→마스터 표기) + 발견템 링크 — 갈래9(차단)는 미노출 */}
-              {bcopy.products.length > 0 && (
-                <>
-                  <TT>이 머리에 맞는 도구</TT>
-                  <div className="flex gap-2">
-                    {bcopy.products.map((pk) => (
-                      <div key={pk} className="flex-1 rounded-xl border border-line bg-surface px-2 py-3 text-center">
-                        <p className="text-[12.5px] font-bold text-ink">{productName(pk)}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <Link href="/items"
-                    onClick={() => trackEvent(EVENT_NAMES.PRODUCT_CLICKED, { landing_id: "style", cta_clicked: "발견템 보러가기", ui: "style_result_products", diagnosis_type: "style" })}
-                    className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
-                    이런 제품은 발견템에서 볼 수 있어요 <span className="flex-none">→</span>
-                  </Link>
-                </>
+              {/* 7. 쿠팡 제휴 제품 카드(맨 아래) — 하드코딩 이름박스를 매칭 실물로 교체(확정48).
+                     결과지에서 바로 쿠팡 연결. 갈래9(차단)는 미노출. COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
+              {gate.level !== "block" && (
+                <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" />
               )}
 
               {/* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */}
