@@ -16,6 +16,8 @@ export type DryTest      = "slow" | "normal" | "fast" | "";
 //   예언 C2는 열펌(heat_perm)만 트리거(매직은 펴는 시술이라 '컬 처짐' 안 맞음). 점수는 둘 다 1.5.
 export type DamageTreatment = "bleach" | "straight_perm" | "heat_perm" | "normal_perm" | "dye" | "root_dye" | "none";
 export type DamageMore      = "none" | "few" | "many";
+// 뿌리염색 주기(뿌리염색 선택 손님에게만 하위질문). 점수: 3개월 0.2 / 한달 0.5 / 2~3주 0.8.
+export type RootDyeInterval = "over_3m" | "m1" | "w2_3" | "";
 
 export interface DamageSurveyAnswers {
   q1_pull:        PullTest;
@@ -27,7 +29,16 @@ export interface DamageSurveyAnswers {
   h_more:         DamageMore;      // 작년에 더 하신 것
   h_bleach_2plus: boolean;         // 탈색 → 2회 이상 (확정: Lv4 강제)
   h_root_gray:    boolean;         // 뿌리염색 → 새치 염색 (확정95, 흰머리 원고 노출)
+  h_root_interval: RootDyeInterval; // 뿌리염색 주기 (뿌리염색 선택 시만) — 새치 주고객 2~3주 반영
+  h_root_over6m:   boolean;         // 뿌리염색 6개월↑ 지속 (+0.5, 합계 최대 1.3)
 }
+
+// 뿌리염색 주기 옵션(뿌리염색 선택 손님 하위질문) — id는 RootDyeInterval와 1:1.
+export const ROOT_DYE_INTERVAL_OPTIONS: { id: Exclude<RootDyeInterval, "">; label: string }[] = [
+  { id: "over_3m", label: "3개월쯤" },
+  { id: "m1",      label: "한 달쯤" },
+  { id: "w2_3",    label: "2~3주쯤" },
+];
 
 export interface SurveyOption {
   id: string;

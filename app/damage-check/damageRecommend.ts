@@ -13,7 +13,7 @@
 // ⚠️ 점수·경계는 PM-임시(손님 10명 검산 후 조정). 전부 const로 격리한다.
 // ============================================================================
 
-import type { DamageSurveyAnswers, PullTest, FrictionTest, DryTest, DamageTreatment } from "./surveyData";
+import type { DamageSurveyAnswers, PullTest, FrictionTest, DryTest, DamageTreatment, RootDyeInterval } from "./surveyData";
 
 export type DamageLevel = 1 | 2 | 3 | 4;
 export type DamageType  = "DRY" | "RIGID" | "HEALTHY"; // 건조형 / 경직형 / 건강모
@@ -50,18 +50,26 @@ export interface DamageResult {
   concernTags:   string[];
 }
 
-// ─── 점수 상수 (PM-임시 · 튜닝 대상) ─────────────────────────────────────────
-const TREAT_SCORE: Record<DamageTreatment, number> = {
-  bleach: 4.5, straight_perm: 1.5, heat_perm: 1.5, normal_perm: 1, dye: 1, root_dye: 1, none: 0,
-};
-const ROOT_DYE_CYCLE_BONUS = 0.5; // 뿌염 주기 가중(6개월↑ 상당) — 회당, 단독 최대 ~1.3
-const MORE_BONUS: Record<"none" | "few" | "many", number> = { none: 0, few: 1, many: 2.5 };
-// 물리테스트 ±보정 (테스트 단독 Lv4 불가 — 상한 합 3.5)
+// ─── 점수 상수 (2026-08-13 확정 — 시술 카테고리별 회수 티어[1회/2회 체감]) ──────────
+//   가산(슬롯 단순합산) → "카테고리별 회수 티어"로 전환(2회가 1회의 2배 아님 = 체감 감소).
+const BLEACH_SCORE = [0, 4.5, 8.0] as const;   // 탈색 0/1/2회+ — 2회+는 천장(8.0=Lv4)
+const PERM_SCORE   = [0, 1.5, 2.25] as const;  // 열펌·매직 0/1/2회
+const DYE_SCORE    = [0, 1.0, 1.5] as const;   // 염색·일반펌 0/1/2회
+const MORE_BONUS: Record<"none" | "few" | "many", number> = { none: 0, few: 0.5, many: 1.2 };
+// 뿌리염색(주기 기반 · 뿌리염색 선택 손님만): 3개월 0.2 / 한달 0.5 / 2~3주 0.8. 6개월↑ +0.5, 최대 1.3.
+//   설문 하위질문(h_root_interval + h_root_over6m)으로 실제 주기를 받는다(새치 주고객 2~3주=0.8).
+//   미응답("")은 방어적으로 한달(0.5). 회수와 무관하게 "주기"라 뿌리염색 있으면 1회만 가산.
+const ROOT_DYE_BY_INTERVAL: Record<RootDyeInterval, number> = { over_3m: 0.2, m1: 0.5, w2_3: 0.8, "": 0.5 };
+const ROOT_DYE_OVER6M_BONUS = 0.5;
+const ROOT_DYE_MAX = 1.3;
+// 물리테스트 ±보정 (스펙 불변 — 유지). 물리 상한 합 3.5 → 물리 단독 Lv3 도달 불가.
 const PULL_ADJ: Record<PullTest, number>     = { snap: 1.5, stretch: 1, elastic: 0, unsure: 0, "": 0 };
 const FRICTION_ADJ: Record<FrictionTest, number> = { tangled: 1, loosens: 0.5, smooth: 0, unsure: 0, "": 0 };
 const DRY_ADJ: Record<DryTest, number>       = { slow: 1, normal: 0, fast: 0, "": 0 }; // 오래(slow)만 손상, 빨리=중립
-// 레벨 컷 (PM-임시)
-const LV2_MIN = 2, LV3_MIN = 4.5, LV4_MIN = 8.5;
+// 레벨 컷 (2026-08-13 확정): Lv1 0~1.5 / Lv2 1.6~4.4 / Lv3 4.5~7.9 / Lv4 8.0+
+const LV2_MIN = 1.6, LV3_MIN = 4.5, LV4_MIN = 8.0;
+// ★ 안전장치: 탈색이 없으면 총점이 7.9를 넘지 않는다(무탈색은 어떤 경우도 Lv4 불가). 문항이 늘어도 천장 유지.
+const NO_BLEACH_CAP = 7.9;
 
 // ─── Level 정의 (확정81 4단계 문구) ──────────────────────────────────────────
 const LEVEL_INFO: Record<DamageLevel, LevelInfo> = {
@@ -109,25 +117,41 @@ const PRODUCTS_RIGID: Product[] = [{ emoji: "🌿", name: "유연 케어 트리�
 const PRODUCTS_HEALTHY: Product[] = [{ emoji: "✨", name: "데일리 보습 라인", description: "지금의 건강한 상태를 유지해줘요", link: "#" }];
 
 // ─── 채점 ────────────────────────────────────────────────────────────────────
-function bleachTwicePlus(a: DamageSurveyAnswers): boolean {
-  return a.h_bleach_2plus || (a.h_recent === "bleach" && a.h_prev === "bleach");
+// 회수 티어 조회 — 회수를 표 인덱스로(상한 clamp). 표: [0회, 1회, 2회+].
+function tier(table: readonly number[], n: number): number {
+  return table[Math.min(Math.max(n, 0), table.length - 1)] ?? 0;
 }
 
 function calcScore(a: DamageSurveyAnswers): number {
-  let s = TREAT_SCORE[a.h_recent] + TREAT_SCORE[a.h_prev] + MORE_BONUS[a.h_more];
-  if (a.h_recent === "root_dye") s += ROOT_DYE_CYCLE_BONUS;
-  if (a.h_prev === "root_dye")   s += ROOT_DYE_CYCLE_BONUS;
+  // 시술 슬롯 2칸(h_recent=마지막, h_prev=그전)에서 카테고리별 회수를 센다.
+  const slots: DamageTreatment[] = [a.h_recent, a.h_prev];
+  const cnt = (pred: (t: DamageTreatment) => boolean) => slots.filter(pred).length;
+
+  // 탈색: "2회 이상" 체크(h_bleach_2plus)가 있으면 2로 고정(천장), 없으면 슬롯 내 회수.
+  const bleachN = a.h_bleach_2plus ? 2 : cnt((t) => t === "bleach");
+  const permN   = cnt((t) => t === "heat_perm" || t === "straight_perm"); // 열펌·매직
+  const dyeN    = cnt((t) => t === "dye" || t === "normal_perm");         // 염색·일반펌
+  const rootN   = cnt((t) => t === "root_dye");                           // 뿌리염색(간격 문항 대기)
+
+  let s = tier(BLEACH_SCORE, bleachN) + tier(PERM_SCORE, permN) + tier(DYE_SCORE, dyeN);
+  // 뿌리염색은 "주기" 점수라 회수와 무관하게 1회만 가산(간격 + 6개월↑ 가중, 최대 1.3).
+  if (rootN > 0) {
+    const base = ROOT_DYE_BY_INTERVAL[a.h_root_interval] ?? 0.5; // 옛 세션 등 미정의 방어
+    s += Math.min(base + (a.h_root_over6m ? ROOT_DYE_OVER6M_BONUS : 0), ROOT_DYE_MAX);
+  }
+  s += MORE_BONUS[a.h_more];
   s += PULL_ADJ[a.q1_pull] + FRICTION_ADJ[a.q2_friction] + DRY_ADJ[a.q3_dry];
+
+  if (bleachN === 0) s = Math.min(s, NO_BLEACH_CAP); // ★ 무탈색 천장 7.9 (Lv4 불가)
   return s;
 }
 
 function calcLevel(a: DamageSurveyAnswers): DamageLevel {
-  if (bleachTwicePlus(a)) return 4; // 탈색 2회+ 강제
-  const s = calcScore(a);
-  if (s < LV2_MIN) return 1;
-  if (s < LV3_MIN) return 2;
-  if (s < LV4_MIN) return 3;
-  return 4;
+  const s = calcScore(a); // 탈색 2회+ 는 점수 8.0으로 자연히 Lv4 도달(별도 강제 불필요)
+  if (s >= LV4_MIN) return 4;
+  if (s >= LV3_MIN) return 3;
+  if (s >= LV2_MIN) return 2;
+  return 1;
 }
 
 // 유형 = 마지막 시술(h_recent) 기준 3버킷 (확정68)

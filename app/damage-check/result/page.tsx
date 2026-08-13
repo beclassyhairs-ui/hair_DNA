@@ -69,6 +69,7 @@ function uid(): string {
 const DEFAULT_ANSWERS: DamageSurveyAnswers = {
   q1_pull: "", q2_friction: "", q3_dry: "",
   h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
+  h_root_interval: "", h_root_over6m: false,
 };
 
 // FIX3: 미사용 서비스 링크 숨김(삭제 아님 · 플래그). 나중에 켤 때 true 한 줄.

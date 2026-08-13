@@ -14,7 +14,9 @@ import {
   SURVEY_QUESTIONS,
   TREATMENT_OPTIONS,
   MORE_OPTIONS,
+  ROOT_DYE_INTERVAL_OPTIONS,
   type DamageSurveyAnswers,
+  type RootDyeInterval,
 } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import TestHeader from "@/components/beauty-ui/TestHeader";
@@ -44,16 +46,19 @@ function TreatmentHistoryStep({
   const [more, setMore]     = useState<string>("none");
   const [bleach2, setBleach2]   = useState(false);
   const [rootGray, setRootGray] = useState(false);
+  const [rootInterval, setRootInterval] = useState<RootDyeInterval>("");
+  const [rootOver6m, setRootOver6m]     = useState(false);
 
   const recentIsNone = recent === "none";
   const hasBleach  = !recentIsNone && (recent === "bleach" || prev === "bleach");
   const hasRootDye = !recentIsNone && (recent === "root_dye" || prev === "root_dye");
-  const canProceed = !disabled && (recentIsNone || (recent !== null && prev !== null));
+  // 뿌리염색 손님은 주기 선택까지 해야 진행(정확 점수 확보). 그 외엔 기존과 동일.
+  const canProceed = !disabled && (recentIsNone || (recent !== null && prev !== null && (!hasRootDye || rootInterval !== "")));
 
   function submit() {
     if (!canProceed) return;
     if (recentIsNone) {
-      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false });
+      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false, h_root_interval: "", h_root_over6m: false });
       return;
     }
     onComplete({
@@ -62,6 +67,8 @@ function TreatmentHistoryStep({
       h_more:   more as DamageSurveyAnswers["h_more"],
       h_bleach_2plus: hasBleach && bleach2,
       h_root_gray:    hasRootDye && rootGray,
+      h_root_interval: hasRootDye ? rootInterval : "",
+      h_root_over6m:   hasRootDye ? rootOver6m : false,
     });
   }
 
@@ -108,6 +115,22 @@ function TreatmentHistoryStep({
         </div>
       )}
 
+      {/* 뿌리염색 주기 — 뿌리염색 선택 손님에게만(새치 주고객 2~3주 반영). 선택해야 진행. */}
+      {hasRootDye && recent !== null && prev !== null && (
+        <div>
+          <p className="mb-2 text-[14px] font-bold text-ink">뿌리 염색은 보통 얼마마다 하세요?</p>
+          <div className="grid grid-cols-3 gap-2">
+            {ROOT_DYE_INTERVAL_OPTIONS.map((o) => (
+              <RoundedOptionButton key={o.id} label={o.label} selected={rootInterval === o.id}
+                disabled={disabled} onSelect={() => setRootInterval(o.id)} />
+            ))}
+          </div>
+          <div className="mt-2">
+            <Chk on={rootOver6m} onToggle={() => setRootOver6m((v) => !v)} label="6개월 넘게 계속 해왔어요" />
+          </div>
+        </div>
+      )}
+
       {!recentIsNone && recent !== null && prev !== null && (
         <div>
           <p className="mb-1 text-[14px] font-bold text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
@@ -137,6 +160,7 @@ export default function DamageCheckSurveyPage() {
   const [answers, setAnswers] = useState<DamageSurveyAnswers>({
     q1_pull: "", q2_friction: "", q3_dry: "",
     h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false,
+    h_root_interval: "", h_root_over6m: false,
   });
 
   const q = SURVEY_QUESTIONS[qIdx]!;
