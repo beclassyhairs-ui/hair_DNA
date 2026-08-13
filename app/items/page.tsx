@@ -15,6 +15,8 @@ import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
 import { readDiaryEntries, readBeautyUserProfile } from "../../lib/beautyProfile";
 import { deriveCoreKeyFromEntries, selectMatchedProducts } from "../../lib/itemsMatch";
 import type { PublicProduct } from "../../lib/products";
+import CoupangCardList from "@/components/CoupangCardList";
+import { allActiveCoupangCards } from "@/lib/coupangCards";
 
 function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: string | null }) {
   const reason = item.recommend_reason || item.usage_guide || "진단 결과와 결이 맞는 발견템이에요.";
@@ -94,6 +96,10 @@ export default function ItemsPage() {
   // /admin/matching-preview가 같은 함수를 써야 미리보기와 실서비스가 어긋나지 않는다.
   const matched = useMemo(() => selectMatchedProducts(items, coreKey), [items, coreKey]);
 
+  // 쿠팡 제휴 카드(config 소스) — DB(/api/items) image_status 필터 밖. LIVE 아니면 빈 배열.
+  // 도매매 35개는 DB에서 draft 라 계속 미노출. 결과지에 떴던 제품을 여기서 다시 찾게 한다.
+  const coupangCards = allActiveCoupangCards();
+
   // 상품 노출(임프레션) — 매칭 리스트가 실제로 렌더되는 상품에 대해 상품당 1회만 기록.
   // 재렌더/필터 변화로 중복 발화하지 않도록 ref Set으로 방어(퍼널의 "상품 노출" 단계).
   const impressed = useRef<Set<number>>(new Set());
@@ -122,6 +128,11 @@ export default function ItemsPage() {
         </p>
       </div>
 
+      {/* 쿠팡 제휴 카드 — 진단에서 추천된 제품을 다시 찾는 공간(추천사유+대가성 문구 포함). */}
+      {coupangCards.length > 0 && (
+        <CoupangCardList cards={coupangCards} landingId="items" heading="진단에서 추천된 제품" />
+      )}
+
       {loading && (
         <div className="flex min-h-[160px] items-center justify-center text-[15px] text-ink-2">
           발견템 불러오는 중…
@@ -134,7 +145,7 @@ export default function ItemsPage() {
         </div>
       )}
 
-      {!loading && !error && matched.length === 0 && (
+      {!loading && !error && matched.length === 0 && coupangCards.length === 0 && (
         <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-10 text-center text-[15px] text-ink-2">
           {coreKey
             ? "지금 모발 타입에 딱 맞는 발견템을 준비하고 있어요. 곧 채워질 예정이에요."

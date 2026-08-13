@@ -48,7 +48,7 @@ const s = (a: StyleAnswers) => ({
   wantWave: a.q13_design === "s_curl" || a.q13_design === "wave", // 웨이브 희망(원하는 디자인)
 });
 
-export const STYLE_CARDS: (CoupangCard & { match: (a: StyleAnswers) => boolean })[] = [
+export const STYLE_CARDS: (CoupangCard & { parked?: boolean; match: (a: StyleAnswers) => boolean })[] = [
   { g: "G06", name: "픽서 스프레이",     emoji: "💨", reason: "롤을 댄 상태에서 뿌리는 용도입니다",   link: "https://link.coupang.com/a/gaIKiJc9dY", match: (a) => { const x = s(a); return x.thin || x.fine; } },
   { g: "G07", name: "볼륨 무스",         emoji: "🫧", reason: "바르고 말리면 뿌리가 섭니다",         link: "https://link.coupang.com/a/gaJdPEb6iW", match: (a) => { const x = s(a); return x.fine || x.thin; } },
   { g: "G11", name: "헤어롤",           emoji: "🧻", reason: "뿌리에 바짝 대는 용도입니다",         link: "https://link.coupang.com/a/gaJKmNaMea", match: (a) => s(a).thin },
@@ -61,7 +61,7 @@ export const STYLE_CARDS: (CoupangCard & { match: (a: StyleAnswers) => boolean }
   { g: "G15", name: "스무딩 밤",         emoji: "🪔", reason: "부피가 부담스러울 때 눌러줍니다",     link: "https://link.coupang.com/a/gaKZwgKmZ2", match: (a) => { const x = s(a); return x.thick || x.coarse; } },
   { g: "G17", name: "컬크림",           emoji: "🌀", reason: "파마 없이 웨이브를 낼 때",           link: "https://link.coupang.com/a/gaLblBcvJY", match: (a) => { const x = s(a); return x.straight && x.wantWave; } },
   { g: "G18", name: "무열 웨이브",       emoji: "〰️", reason: "열 없이 컬을 만듭니다",             link: "https://link.coupang.com/a/gaKcE8FoD6", match: (a) => s(a).wantWave },
-  { g: "G21", name: "잔머리 고정 스틱",   emoji: "🖊️", reason: "묶은 머리 마무리에",               link: "https://link.coupang.com/a/gaLVfhXDiu", match: () => false }, // ★ 노출 보류(비활성): 묶는 습관 신호(문항) 없음 → 전원 노출 시 상위 4칸 잠식. 문항 생기면 활성화. 카드는 유지.
+  { g: "G21", name: "잔머리 고정 스틱",   emoji: "🖊️", reason: "묶은 머리 마무리에",               link: "https://link.coupang.com/a/gaLVfhXDiu", parked: true, match: () => true }, // ★ 노출 보류(parked): 묶는 습관 신호(문항) 없음 → 결과지·발견템 어디서도 미노출. 문항 생기면 parked 해제. 카드는 유지.
   { g: "G05", name: "열보호 미스트",     emoji: "🛡️", reason: "스타일링 전에 한 겹 씌워주세요",     link: "https://link.coupang.com/a/gaIAKxm2mW", match: () => true }, // 고데기·드라이 쓰는 전원
 ];
 
@@ -69,7 +69,7 @@ export const STYLE_CARDS: (CoupangCard & { match: (a: StyleAnswers) => boolean }
 const dyeHistory = (a: DamageSurveyAnswers) =>
   ["dye", "root_dye", "bleach"].includes(a.h_recent) || ["dye", "root_dye", "bleach"].includes(a.h_prev);
 
-export const DAMAGE_CARDS: (CoupangCard & { match: (type: DamageType, a: DamageSurveyAnswers) => boolean })[] = [
+export const DAMAGE_CARDS: (CoupangCard & { parked?: boolean; match: (type: DamageType, a: DamageSurveyAnswers) => boolean })[] = [
   { g: "G02", name: "새치 커버 마스카라", emoji: "🖌️", reason: "뿌리 새치가 올라왔을 때 잠깐 가려줍니다", link: "https://link.coupang.com/a/gaHH5CqEpg", match: (_t, a) => a.h_root_gray === true }, // 맨 위 칸
   { g: "G01", name: "염색모 케어 샴푸",   emoji: "🧴", reason: "염색모용으로 나온 약산성 샴푸입니다",     link: "https://link.coupang.com/a/gaJof2spZ6", match: (_t, a) => a.h_root_gray === true || dyeHistory(a) }, // 새치 최우선, 그 외 염색이력
   { g: "G03", name: "수분 트리트먼트",   emoji: "💧", reason: "염색 뒤 뻑뻑한 느낌이 덜하도록",         link: "https://link.coupang.com/a/gaIqpvrl5E", match: (t) => t === "DRY" },
@@ -80,16 +80,34 @@ export const DAMAGE_CARDS: (CoupangCard & { match: (type: DamageType, a: DamageS
   { g: "G10", name: "디탱글 브러시",     emoji: "🪮", reason: "트리트먼트 바르고 빗을 때 쓰세요",     link: "https://link.coupang.com/a/gaJGqbRAMS", match: () => true }, // 전원(관리 꿀팁 연결)
 ];
 
-/** 스타일 결과지용 — 매칭+우선순위+캡. LIVE 아니면 빈 배열. */
+const strip = ({ g, name, reason, emoji, link }: CoupangCard): CoupangCard => ({ g, name, reason, emoji, link });
+
+/** 스타일 결과지용 — 매칭+우선순위+캡. parked 제외. LIVE 아니면 빈 배열. */
 export function pickStyleCards(a: StyleAnswers): CoupangCard[] {
   if (!COUPANG_CARDS_LIVE) return [];
-  return STYLE_CARDS.filter((c) => c.match(a)).slice(0, COUPANG_MAX_CARDS)
-    .map(({ g, name, reason, emoji, link }) => ({ g, name, reason, emoji, link }));
+  return STYLE_CARDS.filter((c) => !c.parked && c.match(a)).slice(0, COUPANG_MAX_CARDS).map(strip);
 }
 
-/** 데미지 결과지용 — G13 은 애초에 목록에 없어 절대 안 뜸(하드 차단). LIVE 아니면 빈 배열. */
+/** 데미지 결과지용 — G13 은 애초에 목록에 없어 절대 안 뜸(하드 차단). parked 제외. LIVE 아니면 빈 배열. */
 export function pickDamageCards(type: DamageType, a: DamageSurveyAnswers): CoupangCard[] {
   if (!COUPANG_CARDS_LIVE) return [];
-  return DAMAGE_CARDS.filter((c) => c.match(type, a)).slice(0, COUPANG_MAX_CARDS)
-    .map(({ g, name, reason, emoji, link }) => ({ g, name, reason, emoji, link }));
+  return DAMAGE_CARDS.filter((c) => !c.parked && c.match(type, a)).slice(0, COUPANG_MAX_CARDS).map(strip);
+}
+
+/**
+ * 발견템(/items)용 — 전체 활성 카드 카탈로그(스타일+데미지 합집합, g 중복 제거, parked 제외).
+ * /items 는 "나중에 다시 찾기" 브라우즈 공간이라 캡·매칭 없이 활성 전부 보여준다.
+ * ★ DB(/api/items)의 image_status='approved' 필터를 타지 않는다 — config 소스라 필터 밖.
+ * LIVE 아니면 빈 배열(도매매 35개는 DB에서 draft 라 어차피 미노출).
+ */
+export function allActiveCoupangCards(): CoupangCard[] {
+  if (!COUPANG_CARDS_LIVE) return [];
+  const seen = new Set<string>();
+  const out: CoupangCard[] = [];
+  for (const c of [...STYLE_CARDS, ...DAMAGE_CARDS]) {
+    if (c.parked || seen.has(c.g)) continue;
+    seen.add(c.g);
+    out.push(strip(c));
+  }
+  return out;
 }

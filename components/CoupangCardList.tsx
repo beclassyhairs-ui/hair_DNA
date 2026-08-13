@@ -47,7 +47,7 @@ export default function CoupangCardList({
             <span className="text-[22px] leading-none">{c.emoji}</span>
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-ink">{c.name}</p>
-              <p className="mt-0.5 text-[14px] leading-relaxed text-ink-2">{c.reason}</p>
+              <p className="mt-0.5 text-[14px] font-medium leading-relaxed text-ink-2">{c.reason}</p>
             </div>
           </div>
           {/* 사진이 없으므로 버튼을 또렷하게(채운 버튼) — 상품·구매 인지 확보 */}
