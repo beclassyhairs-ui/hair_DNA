@@ -1,7 +1,21 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-13
+> 최종 갱신: 2026-08-14
+
+## 🟢 faceswap 모델 교체(lucataco) + 예열 전면 제거 (2026-08-14)
+
+**원인**: ddvinh1/face-swap-gpu가 58K런 저트래픽이라 GPU 항상 cold → 콜드부팅 ~4분. 사전 예열(2~3분)로는 원리상 못 덮음(부팅 자체가 4분).
+**실측 비교**(동일 셀카+레퍼런스 1회씩, queue=대기/콜드·run=연산):
+- **lucataco/faceswap** ⭐ 채택: queue **0.0s** · run **0.25s** · 총 4.2s · 27.5M런(항상 warm). 스키마 `swap_image`/`target_image`(enhance 없음). ver `9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d`.
+- cdingram/face-swap: queue 0.1s · run 7.2s · 3.1M런. 스키마 `swap_image`/`input_image`. **★ 폴백(lucataco 장애 시 차선)**. ver `d1d6ea8c8be89d664a07a457526f7128109dee7030fdac424788d762c71ed111`.
+- codeplugtech/face-swap: queue 0s지만 run 56s(느림) → 탈락. xiankgx: 스키마 특이·실패. omniedgeio: 404(죽음).
+- **품질**: 세 결과 사실상 동일(같은 inswapper 계열).
+**변경**:
+- `lib/hairSynthModel.ts`·`route.ts`: 모델 lucataco, 입력 `swap_image`/`target_image`, `HAIRSYNTH_ENHANCE` 제거.
+- **예열 전면 제거**: 스타일 설문 Q4 ping·업로드 2차 ping·`STYLE_WARMUP(2)_KEY`·`/api/hair-transform/warmup` 라우트 삭제. (이유: lucataco 상시 warm이라 무의미 + 손님당 예측 3건=비용 3배 → 제거가 명백 이득.) ※ Supabase `warmup_usage` 테이블·함수는 그대로 둠(무해, 삭제 SQL 안 만듦).
+- **유지**: 비동기 폴링·`status`·`cancel`·에러 UI(§0-6)·가드레일(동의403·로그인·일일한도·비용상한·셀카 서버미저장).
+- 🔴 **잔액 경고**: 측정 중 저잔액으로 Replicate가 생성 rate limit을 6/분·버스트1로 축소(429). 손님 합성 throttle 방지 위해 **Replicate 잔액 충전 필요**.
 
 ## 🟡 쿠팡 파트너스 제휴(21개) — 구현 완료·Codex 통과·**LIVE 대기** (2026-08-13)
 
