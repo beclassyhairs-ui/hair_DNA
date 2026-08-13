@@ -19,7 +19,7 @@
 // 소유권 바인딩: (predictionId, userId) HMAC 토큰을 함께 반환한다. status·cancel 은 세션 userId 로
 //   토큰을 재계산해 일치할 때만 처리 → 임의 id 조회(IDOR) 차단. (lib/hairJobToken.ts)
 //
-// 입력 순서 고정: swap_image=손님 셀카(넣을 얼굴) / input_image=레퍼런스 헤어(장면).
+// 입력 순서 고정: swap_image=손님 셀카(넣을 얼굴) / target_image=레퍼런스 헤어(장면). (lucataco 스키마)
 //   ★ 뒤바뀌면 엉뚱한 결과. 셀카는 우리 서버/Blob 에 저장하지 않고 예측 생성 요청에 data URI 로만 실어 보낸다.
 // ============================================================================
 
@@ -37,7 +37,6 @@ import { issueJobToken } from "@/lib/hairJobToken";
 import {
   HAIRSYNTH_MODEL,
   HAIRSYNTH_MODEL_VERSION,
-  HAIRSYNTH_ENHANCE,
   REPLICATE_PREDICTIONS_ENDPOINT,
 } from "@/lib/hairSynthModel";
 
@@ -212,7 +211,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, reason: "reference_fetch_failed" });
     }
 
-    console.log(`[hair-transform] → ${HAIRSYNTH_MODEL} · enhance=${HAIRSYNTH_ENHANCE} | ref ${reference.slot}${reference.isFallback ? "(폴백)" : ""}${reference.isDefault ? "(default)" : ""}`);
+    console.log(`[hair-transform] → ${HAIRSYNTH_MODEL} | ref ${reference.slot}${reference.isFallback ? "(폴백)" : ""}${reference.isDefault ? "(default)" : ""}`);
 
     // 4. Replicate 예측 "생성"만 한다(Prefer:wait 없음). 완료 대기는 클라가 status 폴링.
     if (budgetLeft() <= 2_000) {
@@ -230,7 +229,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           version: HAIRSYNTH_MODEL_VERSION,
-          input: { swap_image: selfieDataUri, input_image: refDataUri, enhance: HAIRSYNTH_ENHANCE },
+          input: { swap_image: selfieDataUri, target_image: refDataUri }, // lucataco 스키마(enhance 없음)
         }),
         signal: AbortSignal.timeout(Math.max(1_000, budgetLeft())),
       });
