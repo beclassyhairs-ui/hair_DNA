@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
-import { STYLE_PHOTO_KEY } from "../constants";
+import { STYLE_PHOTO_KEY, STYLE_WARMUP2_KEY } from "../constants";
 import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
@@ -158,6 +158,17 @@ export default function StyleUploadPage() {
       const cached = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (cached) { setSavedPhoto(cached); setShowGuide(false); }
     } catch { /**/ }
+  }, []);
+
+  // ── faceswap GPU 예열 2차 ── 사진 화면 진입 시 1회 재발사(합성 직전 ~1분). Replicate 공개모델의
+  //   idle 창이 문서화돼 있지 않아(1차 예열이 2~3분을 버틴다는 보장 없음) 합성 직전에 다시 태운다.
+  //   서버 60초 스로틀이 "1차와 60초 이내면 스킵"해줘 낭비를 자동 방지. fire-and-forget(흐름 안 막음).
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(STYLE_WARMUP2_KEY) === "1") return;
+      sessionStorage.setItem(STYLE_WARMUP2_KEY, "1");
+    } catch { /* sessionStorage 불가 시엔 마운트당 1회 시도 */ }
+    void fetch("/api/hair-transform/warmup", { method: "POST" }).catch(() => { /* 무시 */ });
   }, []);
 
   // 동의 게이트: 현재버전 국외이전 동의 보유자만 통과. 아니면 동의화면으로(fail-closed).
