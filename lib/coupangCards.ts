@@ -19,7 +19,7 @@ import type { DamageType } from "@/app/damage-check/damageRecommend";
 import type { DamageSurveyAnswers } from "@/app/damage-check/surveyData";
 
 /** ★ 사장님 승인 스위치 — 21개 링크 검수 후 true 로. false 면 결과지에 하나도 안 뜸(draft). */
-export const COUPANG_CARDS_LIVE = false;
+export const COUPANG_CARDS_LIVE = true;
 
 /** 결과지 하단 최대 노출 수(우선순위 상위부터 잘라 광고전단 느낌 방지). */
 export const COUPANG_MAX_CARDS = 4;
