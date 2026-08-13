@@ -48,6 +48,10 @@ export default function CoupangCardList({
             <div className="min-w-0 flex-1">
               <p className="text-[15px] font-bold text-ink">{c.name}</p>
               <p className="mt-0.5 text-[14px] font-medium leading-relaxed text-ink-2">{c.reason}</p>
+              {/* 이유 2~3줄 — 한 줄 요약보다 한 톤 연하게(ink-3)·줄간격 넉넉·펼쳐둠. */}
+              {c.detail && (
+                <p className="mt-2 text-[13px] leading-[1.7] text-ink-3">{c.detail}</p>
+              )}
             </div>
           </div>
           {/* 사진이 없으므로 버튼을 또렷하게(채운 버튼) — 상품·구매 인지 확보 */}
