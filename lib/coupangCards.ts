@@ -18,11 +18,24 @@ import type { StyleAnswers } from "@/app/style/surveyData";
 import type { DamageType } from "@/app/damage-check/damageRecommend";
 import type { DamageSurveyAnswers } from "@/app/damage-check/surveyData";
 
+// ⚠️⚠️⚠️ 절대 주의 (실수로 끄면 결과지 제품칸이 통째로 사라진다) ⚠️⚠️⚠️
+//   COUPANG_CARDS_LIVE = false 로 바꾸면 pickStyleCards/pickDamageCards 가 [] 를 반환해
+//   "모든 손님, 모든 조합"에서 제품이 0개가 된다(= 커머스 수익 라인 전면 중단).
+//   이 값은 오직 "링크 대량 교체·긴급 내림" 같은 의도된 상황에서만 false 로 내린다.
+//   내릴 때는 반드시 사장님 승인 + 되돌릴 시점을 함께 기록할 것. 리팩터링/자동수정으로 건드리지 말 것.
 /** ★ 사장님 승인 스위치 — 21개 링크 검수 후 true 로. false 면 결과지에 하나도 안 뜸(draft). */
 export const COUPANG_CARDS_LIVE = true;
 
+// 런타임 가드: 라이브인데 실수로 꺼지면 콘솔에 크게 경고(무음 사고 방지).
+if (!COUPANG_CARDS_LIVE && typeof console !== "undefined") {
+  console.warn("[coupangCards] ⚠️ COUPANG_CARDS_LIVE=false — 결과지 전 조합 제품 0개 상태입니다. 의도한 것이 맞는지 확인하세요.");
+}
+
 /** 결과지 하단 최대 노출 수(우선순위 상위부터 잘라 광고전단 느낌 방지). */
 export const COUPANG_MAX_CARDS = 4;
+
+/** 최소 노출 보장 수 — 매칭이 부족한 '보통' 조합도 최소 이만큼은 채운다(FIX-B). */
+export const COUPANG_MIN_CARDS = 3;
 
 /** 대가성 문구(법적 필수) — 공식형. 렌더 컴포넌트가 제품 영역에 가독 크기로 붙인다. */
 export const COUPANG_DISCLOSURE =
@@ -149,16 +162,65 @@ export const DAMAGE_CARDS: (CoupangCard & { parked?: boolean; match: (type: Dama
 
 const strip = ({ g, name, reason, detail, emoji, link }: CoupangCard): CoupangCard => ({ g, name, reason, detail, emoji, link });
 
-/** 스타일 결과지용 — 매칭+우선순위+캡. parked 제외. LIVE 아니면 빈 배열. */
-export function pickStyleCards(a: StyleAnswers): CoupangCard[] {
-  if (!COUPANG_CARDS_LIVE) return [];
-  return STYLE_CARDS.filter((c) => !c.parked && c.match(a)).slice(0, COUPANG_MAX_CARDS).map(strip);
+// ─── FIX-B 최소보장 헬퍼 ────────────────────────────────────────────────────────
+// 매칭축(thin/fine/thick/coarse/curly/wantWave)에 안 걸리는 '보통' 조합이 1~2개로 뜨는 걸 막는다.
+// 폴백은 어느 조합에나 크게 어긋나지 않는 범용 카드만. skip=true 인 항목은 논리충돌(굵은/숱많은 머리에
+//   볼륨류 등)이라 건너뛴다 — "억지로 안 맞는 걸 끼우지 말 것"이라 그만큼 못 채워도 강제하지 않는다.
+type FallbackPick = { g: string; skip?: boolean };
+
+/** 매칭 결과가 min 미만이면 폴백에서 (중복·skip 제외) 채워 최소 노출을 보장. 최대 cap 유지. */
+function topUp(
+  picked: (CoupangCard & { parked?: boolean })[],
+  pool: readonly (CoupangCard & { parked?: boolean })[],
+  fallback: FallbackPick[],
+  min: number, cap: number,
+): (CoupangCard & { parked?: boolean })[] {
+  if (picked.length >= min) return picked;
+  const have = new Set(picked.map((c) => c.g));
+  for (const f of fallback) {
+    if (picked.length >= min || picked.length >= cap) break;
+    if (f.skip || have.has(f.g)) continue;
+    const card = pool.find((c) => c.g === f.g && !c.parked);
+    if (!card) continue;
+    picked.push(card);
+    have.add(f.g);
+  }
+  return picked;
 }
 
-/** 데미지 결과지용 — G13 은 애초에 목록에 없어 절대 안 뜸(하드 차단). parked 제외. LIVE 아니면 빈 배열. */
+/** 스타일 결과지용 — 매칭+우선순위+캡. parked 제외. LIVE 아니면 빈 배열.
+ *  FIX-C①: 컬(웨이브) 희망이면 컬 제품(G17 컬크림·G18 무열웨이브)을 볼륨 제품보다 앞으로.
+ *  FIX-B: 매칭이 부족하면 폴백으로 최소 COUPANG_MIN_CARDS 개 보장. */
+export function pickStyleCards(a: StyleAnswers): CoupangCard[] {
+  if (!COUPANG_CARDS_LIVE) return [];
+  const flags = s(a);
+  let matched = STYLE_CARDS.filter((c) => !c.parked && c.match(a));
+  if (flags.wantWave) {
+    // 컬 제품 먼저(안정적 부분정렬) — 갈래b7처럼 카피는 '컬'인데 제품이 전부 볼륨이던 문제 해소.
+    const curl = new Set(["G17", "G18"]);
+    matched = [...matched.filter((c) => curl.has(c.g)), ...matched.filter((c) => !curl.has(c.g))];
+  }
+  const fallback: FallbackPick[] = [
+    { g: "G12" },                                        // 결 정돈 미스트 — 부스스/정전기, 범용
+    { g: "G26", skip: flags.thick || flags.coarse },     // 볼륨 세럼 — 굵은/숱많은 머리엔 상충 → 제외
+    { g: "G05" },                                        // 열보호 미스트 — 고데기/드라이 쓰는 전원
+  ];
+  const picked = topUp(matched.slice(0, COUPANG_MAX_CARDS), STYLE_CARDS, fallback, COUPANG_MIN_CARDS, COUPANG_MAX_CARDS);
+  return picked.map(strip);
+}
+
+/** 데미지 결과지용 — G13 은 애초에 목록에 없어 절대 안 뜸(하드 차단). parked 제외. LIVE 아니면 빈 배열.
+ *  FIX-B: 건강모 등 2개짜리 조합에 예방 1개를 더해 최소 COUPANG_MIN_CARDS 개 보장. */
 export function pickDamageCards(type: DamageType, a: DamageSurveyAnswers): CoupangCard[] {
   if (!COUPANG_CARDS_LIVE) return [];
-  return DAMAGE_CARDS.filter((c) => !c.parked && c.match(type, a)).slice(0, COUPANG_MAX_CARDS).map(strip);
+  const matched = DAMAGE_CARDS.filter((c) => !c.parked && c.match(type, a));
+  const fallback: FallbackPick[] = [
+    { g: "G10" },  // 디탱글 브러시 — 전원(관리 꿀팁 연결)
+    { g: "G05" },  // 열보호 미스트 — 전원
+    { g: "G01" },  // 약산성 샴푸(데일리·예방) — 건강모 3번째 칸 ※ 카드명은 '염색모 케어'지만 약산성 데일리 성격
+  ];
+  const picked = topUp(matched.slice(0, COUPANG_MAX_CARDS), DAMAGE_CARDS, fallback, COUPANG_MIN_CARDS, COUPANG_MAX_CARDS);
+  return picked.map(strip);
 }
 
 /**
