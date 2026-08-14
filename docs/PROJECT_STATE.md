@@ -1,7 +1,18 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-14
+> 최종 갱신: 2026-08-15
+
+## [구조 수정판] 홈/탭 개편 + '나의 헤어' 통일 + my-diary 가로스크롤 수정 (2026-08-15, 배포 완료 baadd9f)
+
+프론트 전용 UI 개편(Codex 생략·§3, tsc 통과). dev 서버 DOM 실측 검증.
+- **하단 탭 5→3개**(`BottomNav.tsx`): 홈·발견템·나의 헤어. AI진단 허브·고민상담소 탭 제거. active 3탭 기준 정상.
+- **홈 재구성**(`home/page.tsx`): '오늘케어 루틴'·'퀵 진단 →' 배너 제거 → 진단 랜딩 2장(스타일·데미지)이 주인공. '물어보세요' 소통 블록은 `CONSULT_CHANNEL` feature flag(`enabled:false`)로 숨김 — 카카오 채널 개설 후 `href` 주입+`enabled=true`로 켠다(`enabled && href` 둘 다 있어야 렌더 = 갈 곳 없는 노출 차단). 프로필 카드·완성도 게이지 유지.
+- **진단 허브**(`diagnosis/page.tsx`): 직접 URL 접근용 존치, bangs·퀵진단 카드 숨김(스타일·데미지 2종만). 라우트 자체는 생존.
+- **명칭 '나의 헤어' 통일**: 탭 라벨·페이지 타이틀(`my-diary` h1)·저장 버튼(`나의 헤어에 저장`)·result·style/result 모달/버튼 5곳·장식 라벨(`A-Beauty Diary`→`MY HAIR`). **사용자 대면 '다이어리' 0건**(브라우저 확인). 남은 grep은 전부 코드 주석/식별자(비렌더)·데이터 마이그레이션 주석(`surveyData.ts:164`·`styleReference.ts:18` 과거 저장값 방어라 의도적 존치)·`/result`·`/myhair` 레거시 스텁·`showDiaryModal` 변수명.
+- **버그: my-diary 가로 스크롤**: 원인=카드 헤더 `flex justify-between` 좌측 자식 `min-w-0` 부재 → 긴 제목/유형라벨이 뷰포트(375) 밖(right≈422)으로 삐져 카드 `overflow-hidden`에 클리핑·날짜 밀림(4개 카드 공통). 수정=좌측 `min-w-0`+날짜 `shrink-0`+헤더 `gap-2`(overflow-x:hidden 미사용) + 시술이력 입력(`TreatmentHistoryField.tsx:51`) `min-w-0` 하드닝. 검증 375px: 동일 긴 제목 right=422 → offenders=0·pageHScroll=0.
+- 변경 7파일: BottomNav·home·diagnosis·my-diary·result·style/result·TreatmentHistoryField.
+- 🟡 **사업주 후속**: 카카오 채널 개설 시 `home/page.tsx`의 `CONSULT_CHANNEL`에 링크 주입+`enabled=true`로 '물어보세요' 노출.
 
 ## 확정125 — ddvinh1 복귀(enhance=false) + 예열 B안 재이식 + 폴링 5→8분 (2026-08-14, 배포 완료 3ab553f)
 
