@@ -18,6 +18,7 @@ import {
   type StyleAnswers,
 } from "../surveyData";
 import { STYLE_ANSWERS_KEY } from "../constants";
+import { prewarmPrimary } from "../prewarm";
 import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 import TestHeader from "@/components/beauty-ui/TestHeader";
@@ -155,6 +156,11 @@ export default function StyleSurveyPage() {
     setDir(1);
     setAnswers({});
   }, []);
+
+  // ── faceswap GPU 선점 예열(주발사) ── 설문 마운트 시 1회 발사(세션당 1회). 손님이 설문(≈4분)·
+  //   로그인·사진 단계를 지나는 동안 콜드스타트(GPU 부팅 ~4분)를 미리 태워 합성 단계엔 웜이 되게
+  //   한다. fire-and-forget: 실패해도 설문 흐름을 절대 막지 않는다. 일일한도 미차감(§0-6).
+  useEffect(() => { prewarmPrimary(); }, []);
 
   // short/short_bob이면 q14_layer 질문 자체를 화면에서 숨긴다(값은 handleSelect에서 자동 저장)
   const visibleQuestions = useMemo(

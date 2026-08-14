@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, imageUrl });
   } catch (e) {
     // 네트워크/타임아웃 등 일시적 수신 실패 → "processing" 으로 재폴링 유도(출력 URL 은 그대로라 다음
-    //   폴에서 성공 가능). 끝내 회수 못 하면 클라 5분 타임아웃이 마무리한다.
+    //   폴에서 성공 가능). 끝내 회수 못 하면 클라 8분 타임아웃이 마무리한다.
     console.error("[hair-transform/status] 결과 수신 예외(재폴링 유도):", e instanceof Error ? e.message : String(e));
     return NextResponse.json({ ok: false, status: "processing" });
   }

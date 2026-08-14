@@ -3,9 +3,9 @@
 // ============================================================================
 // /style/loading — 비동기 AI 헤어 합성 로딩 페이지 (폴링 구조)
 // - 마운트 즉시 POST /api/hair-transform 로 예측 "착수"(id/token 수신)
-// - 이후 POST /api/hair-transform/status 를 2.5초 간격으로 최대 5분 폴링
+// - 이후 POST /api/hair-transform/status 를 2.5초 간격으로 최대 8분 폴링(확정125: 5→8분)
 // - 새로고침해도 sessionStorage(STYLE_JOB_KEY)의 {id,token,startedAt}로 폴링 재개
-// - 5분 예산 소진 시 /api/hair-transform/cancel 로 예측 취소(비용 중단 목적, 환불 없음) 후 실패 안내
+// - 8분 예산 소진 시 /api/hair-transform/cancel 로 예측 취소(비용 중단 목적, 환불 없음) 후 실패 안내
 // - GPU 콜드스타트(첫 요청 수 분)를 견디는 것이 목적. 동기대기(62s abort) 구조는 폐기.
 // ============================================================================
 
@@ -31,7 +31,11 @@ const STEPS = [
 // faceswap 합성 자체는 빠르지만(웜업 후 수 초), GPU 콜드스타트 시 수 분 걸린다.
 const MIN_LOADING_MS   = 2_800;   // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
 const POLL_INTERVAL_MS = 2_500;   // status 폴링 간격
-const POLL_BUDGET_MS   = 300_000; // 전체 대기 상한(5분) — 콜드스타트 최대 관측 4분36초 + 여유
+// 전체 대기 상한(확정125: 5→8분). 부팅이 5분을 넘긴 실측 사례(대시보드 최악 15분)가 있어 상향.
+// ★ 아래 로딩 문구의 "최대 N분"도 이 상수에서 파생(POLL_BUDGET_MIN) → 표기 상한과 폴링 상한이
+//   절대 갈라지지 않는다(문구만 8분인데 폴링이 5분에 포기하면 안내와 달리 에러를 보게 됨).
+const POLL_BUDGET_MS   = 480_000; // 8분
+const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 const LONG_WAIT_MS     = 20_000;  // 이 시간 넘게 걸리면 "처음 한 번은 오래 걸려요" 안내로 전환
 
@@ -239,7 +243,7 @@ export default function StyleLoadingPage() {
         return;
       }
 
-      // 5분 예산 소진 → 예측 취소 요청(비용 중단, best-effort) 후 실패 안내
+      // 8분 예산 소진 → 예측 취소 요청(비용 중단, best-effort) 후 실패 안내
       console.warn("[AI] ⏱ 폴링 예산 소진 → 예측 취소 요청(비용 중단)");
       try {
         await fetch("/api/hair-transform/cancel", {
@@ -249,7 +253,7 @@ export default function StyleLoadingPage() {
           signal:  AbortSignal.timeout(10_000),
         });
       } catch { /* best-effort */ }
-      recordFail("poll_timeout", "폴링 5분 예산 소진 — 예측 취소 요청");
+      recordFail("poll_timeout", "폴링 8분 예산 소진 — 예측 취소 요청");
       await finishAndRoute();
     }
 
@@ -314,11 +318,12 @@ export default function StyleLoadingPage() {
             </motion.p>
           </AnimatePresence>
 
-          {/* 소요시간 안내 — 20초 넘어가면(콜드스타트) 정직한 문구로 전환 */}
+          {/* 소요시간 안내(확정125) — 평소값 앞·최악값 뒤. "최대 N분"은 POLL_BUDGET_MIN 파생(폴링 상한과 결속).
+              20초 넘어가면(콜드스타트) 문구를 전환하되 최대 시간 표기는 유지. */}
           <p className="max-w-[280px] text-center text-[12px] leading-relaxed text-ink-2">
             {longWait
-              ? "처음 한 번은 준비에 시간이 조금 걸려요 · 창을 닫지 말고 잠시만 더 기다려 주세요"
-              : "보통 몇 초면 끝나요 · 창을 닫지 말고 잠시만 기다려 주세요"}
+              ? `지금 준비 중이에요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요 · 창을 닫지 말고 잠시만 더 기다려 주세요`
+              : `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요 · 창을 닫지 말고 기다려 주세요`}
           </p>
         </div>
 

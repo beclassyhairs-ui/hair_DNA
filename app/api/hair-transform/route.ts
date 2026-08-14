@@ -38,6 +38,7 @@ import {
   HAIRSYNTH_MODEL,
   HAIRSYNTH_MODEL_VERSION,
   REPLICATE_PREDICTIONS_ENDPOINT,
+  buildFaceswapInput,
 } from "@/lib/hairSynthModel";
 
 // 서버측 일일 호출 제한(유저당). 클라 표시(3회)보다 여유를 둔다.
@@ -229,7 +230,8 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           version: HAIRSYNTH_MODEL_VERSION,
-          input: { swap_image: selfieDataUri, target_image: refDataUri }, // lucataco 스키마(enhance 없음)
+          // 입력 스키마는 모델 단일출처의 빌더가 흡수(ddvinh1=input_image+enhance / lucataco=target_image).
+          input: buildFaceswapInput(selfieDataUri, refDataUri),
         }),
         signal: AbortSignal.timeout(Math.max(1_000, budgetLeft())),
       });
