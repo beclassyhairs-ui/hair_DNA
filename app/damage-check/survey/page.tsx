@@ -218,7 +218,8 @@ export default function DamageCheckSurveyPage() {
           <ProgressBar value={((qIdx + 1) / TOTAL) * 100} />
         </TestHeader>
 
-        <div className="flex flex-1 flex-col overflow-y-auto px-5">
+        {/* min-h-0: flex 자식이 콘텐츠보다 커지는 걸 막아 내부 스크롤이 실제로 동작(확정124 UI 버그 수정) */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5">
           <AnimatePresence mode="wait" custom={dir}>
             <motion.div
               key={q.qKey}
@@ -228,7 +229,8 @@ export default function DamageCheckSurveyPage() {
               animate="center"
               exit="exit"
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="flex flex-1 flex-col justify-center py-6"
+              // min-h-full: 짧은 문항은 가운데, 긴 문항(Q4)은 위에서부터 흐르며 끝까지 스크롤(제출 버튼 온전히 노출)
+              className="flex min-h-full flex-col justify-center pt-6 pb-10"
             >
               <div className="mb-6">
                 <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">{q.no}</p>
