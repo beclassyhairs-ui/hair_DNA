@@ -8,7 +8,7 @@
 //   다중선택 폐기 → 시술이력 문항(스타일 styleGate와 같은 설계·별도 구현, 나중 통합).
 // ============================================================================
 
-export type PullTest     = "snap" | "stretch" | "elastic" | "unsure" | "";
+export type PullTest     = "snap" | "stretch" | "elastic" | "firm" | "unsure" | ""; // 확정124: firm(단단=건강) 추가
 export type FrictionTest = "tangled" | "loosens" | "smooth" | "unsure" | "";
 export type DryTest      = "slow" | "normal" | "fast" | "";
 // 시술 종류(확정68·77). 스타일 styleGate.constants의 TreatmentId와 값 정렬(통합 대비).
@@ -73,13 +73,14 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
   // ── Q1: 물리 테스트 — 한 줌 당김 (확정73: "한 줌 잡아서" + "잘 모르겠어요") ─────
   {
     qKey: "q1_pull", kind: "single", no: "Q1", stepTag: "물리 테스트",
-    title: "머리카락 한 줌을 잡아서\n살살 당겨보면?",
+    title: "젖은 머리 한 가닥을 잡고\n살살 당겨보면?",
     hint: "미용사들이 손상도를 볼 때 가장 먼저 하는 테스트예요",
     options: [
-      { id: "snap",    icon: "01", label: "힘없이 툭툭 끊어진다",        desc: "당기자마자 바로 끊어지는 느낌" },
-      { id: "stretch", icon: "02", label: "고무줄처럼 늘어나다 끊어진다", desc: "늘어나긴 하는데 결국 끊어짐" },
-      { id: "elastic", icon: "03", label: "탄력 있게 늘어났다 돌아온다",  desc: "당겨도 원래 길이로 복원됨" },
-      { id: "unsure",  icon: "04", label: "잘 모르겠어요",               desc: "해보기 어렵거나 판단이 안 서요" },
+      { id: "snap",    icon: "01", label: "살짝만 당겨도 톡 끊어져요",       desc: "힘없이 바로 끊어지는 느낌" },
+      { id: "stretch", icon: "02", label: "고무줄처럼 쭉 늘어나다 끊어져요", desc: "늘어나긴 하는데 결국 끊어짐" },
+      { id: "elastic", icon: "03", label: "늘어났다가 다시 돌아와요",       desc: "당기면 늘어나도 원래대로 복원됨" },
+      { id: "firm",    icon: "04", label: "단단해서 잘 안 늘어나요",        desc: "탄탄하게 버티는 느낌" },
+      { id: "unsure",  icon: "05", label: "잘 모르겠어요",                 desc: "해보기 어렵거나 판단이 안 서요" },
     ],
   },
   // ── Q2: 마찰 테스트 — 빗질 (매듭·엉킴) + "잘 모르겠어요" (확정73) ────────────────
@@ -88,7 +89,7 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     title: "트리트먼트 없이 샴푸만 하고\n빗질해보면?",
     hint: "큐티클이 얼마나 살아있는지 알 수 있어요",
     options: [
-      { id: "tangled", icon: "01", label: "엉켜서 잘 안 풀리고 뜯긴다",     desc: "빗질할 때 뭉텅이로 뽑히는 느낌" },
+      { id: "tangled", icon: "01", label: "엉켜서 잘 안 풀리고 빗질이 전혀 안 돼요", desc: "빗이 걸려서 넘어가질 않는 느낌" },
       { id: "loosens", icon: "02", label: "좀 엉키지만 몇 번 빗으면 풀린다", desc: "처음엔 걸리는데 곧 부드러워짐" },
       { id: "smooth",  icon: "03", label: "뽀득거리고 잘 빗긴다",          desc: "빗질이 걸림 없이 매끄러움" },
       { id: "unsure",  icon: "04", label: "잘 모르겠어요",                desc: "해보기 어렵거나 판단이 안 서요" },

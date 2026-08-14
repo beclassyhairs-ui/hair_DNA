@@ -63,8 +63,9 @@ const MORE_BONUS: Record<"none" | "few" | "many", number> = { none: 0, few: 0.5,
 const ROOT_DYE_BY_INTERVAL: Record<RootDyeInterval, number> = { over_3m: 0.2, m1: 0.5, w2_3: 0.8, "": 0.5 };
 const ROOT_DYE_OVER6M_BONUS = 0.5;
 const ROOT_DYE_MAX = 1.3;
-// 물리테스트 ±보정 (스펙 불변 — 유지). 물리 상한 합 3.5 → 물리 단독 Lv3 도달 불가.
-const PULL_ADJ: Record<PullTest, number>     = { snap: 1.5, stretch: 1, elastic: 0, unsure: 0, "": 0 };
+// 물리테스트 ±보정. 확정124: Q1 4단계(firm=단단·건강 −0.3 추가). 물리 상한 합 3.0(snap1.0+tangled1+slow1)
+//   → 물리 단독 Lv3(4.5)·Lv4 도달 불가 유지(확정80·85). firm은 유일한 음수(건강 신호).
+const PULL_ADJ: Record<PullTest, number>     = { snap: 1.0, stretch: 0.7, elastic: 0.3, firm: -0.3, unsure: 0, "": 0 };
 const FRICTION_ADJ: Record<FrictionTest, number> = { tangled: 1, loosens: 0.5, smooth: 0, unsure: 0, "": 0 };
 const DRY_ADJ: Record<DryTest, number>       = { slow: 1, normal: 0, fast: 0, "": 0 }; // 오래(slow)만 손상, 빨리=중립
 // 레벨 컷 (2026-08-13 확정): Lv1 0~1.5 / Lv2 1.6~4.4 / Lv3 4.5~7.9 / Lv4 8.0+
@@ -257,7 +258,12 @@ function calcScore(a: DamageSurveyAnswers): number {
     s += Math.min(base + (a.h_root_over6m ? ROOT_DYE_OVER6M_BONUS : 0), ROOT_DYE_MAX);
   }
   s += MORE_BONUS[a.h_more];
-  s += PULL_ADJ[a.q1_pull] + FRICTION_ADJ[a.q2_friction] + DRY_ADJ[a.q3_dry];
+  // 확정124 당김 코팅 규칙: 마지막 시술이 매직이면 Q1 'firm(단단=건강, −0.3)' 신호를 무시(0).
+  //   매직은 겉을 코팅해 속 손상을 가려 firm을 '건강'으로 오판시킴 → 건강 감점만 무효화.
+  //   ①②③(+보정)과 시술이력 손상 점수는 그대로 신뢰. 매직에만·마지막 슬롯(h_recent)일 때만.
+  let pullAdj = PULL_ADJ[a.q1_pull];
+  if (a.q1_pull === "firm" && a.h_recent === "straight_perm") pullAdj = 0;
+  s += pullAdj + FRICTION_ADJ[a.q2_friction] + DRY_ADJ[a.q3_dry];
 
   if (bleachN === 0) s = Math.min(s, NO_BLEACH_CAP); // ★ 무탈색 천장 7.9 (Lv4 불가)
   return s;
