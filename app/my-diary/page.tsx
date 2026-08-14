@@ -75,7 +75,7 @@ interface DamageDiaryEntry {
   typeLabel:   string;
   headline:    string;
   concernTags: string[];
-  product:     { emoji: string; name: string; description: string; link: string };
+  product?:    { emoji: string; name: string; description: string; link: string }; // FIX-A: 카드 없으면 미저장 가능
 }
 
 // /bangs 결과지가 저장하는 판별자 붙은 엔트리 — 얼굴형/bangStyle 진단 전용 스키마(v3).
@@ -340,25 +340,27 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           </div>
         )}
 
-        <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
-          <div className="flex items-center gap-3 px-3 py-3">
-            <span className="text-2xl">{entry.product.emoji}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
-                {entry.product.name}
-              </p>
-              <p className="truncate text-[13px]" style={{ color: "var(--ink-2)" }}>
-                {entry.product.description}
-              </p>
+        {entry.product && (
+          <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
+            <div className="flex items-center gap-3 px-3 py-3">
+              <span className="text-2xl">{entry.product.emoji}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold" style={{ color: "var(--ink)" }}>
+                  {entry.product.name}
+                </p>
+                <p className="truncate text-[13px]" style={{ color: "var(--ink-2)" }}>
+                  {entry.product.description}
+                </p>
+              </div>
             </div>
+            {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
+            <Link href="/items"
+              className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
+              style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
+              발견템에서 보기 →
+            </Link>
           </div>
-          {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
-          <Link href="/items"
-            className="flex h-9 w-full items-center justify-center text-[13px] font-bold transition-all"
-            style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
-            발견템에서 보기 →
-          </Link>
-        </div>
+        )}
       </div>
     </motion.div>
   );

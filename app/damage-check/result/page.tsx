@@ -109,6 +109,14 @@ export default function DamageCheckResultPage() {
   // 히어로/스탬프 헤드라인: Lv 라벨 (+ 유형, 건강모는 유형 생략)
   const stampTitle = isHealthy ? result.level.label : `${result.level.label} · ${result.typeInfo.label}`;
 
+  // FIX-A: 결과지에 실제로 뜨는 쿠팡카드 = 저장/다이어리에 남길 제품의 단일 출처.
+  //   (과거엔 화면과 무관한 damageRecommend.products[0]을 저장 → 손님이 본 적 없는 제품이 다이어리에 남던 버그.)
+  //   화면과 저장을 같은 배열에서 뽑아 항상 일치시킨다. LIVE=false 등으로 카드가 없으면 제품 없이 저장.
+  const damageCards = pickDamageCards(result.typeInfo.type, answers);
+  const savedProduct = damageCards[0]
+    ? { emoji: damageCards[0].emoji, name: damageCards[0].name, description: damageCards[0].reason, link: damageCards[0].link }
+    : undefined;
+
   useEffect(() => {
     if (!ready) return;
     trackEvent(EVENT_NAMES.REPORT_VIEW, {
@@ -133,7 +141,7 @@ export default function DamageCheckResultPage() {
         concernTags: result.concernTags,
         hairTags: result.concernTags,
         diagnosisSummary: result.level.summary,
-        product: result.products[0],
+        product: savedProduct, // FIX-A: 화면에 뜬 쿠팡카드 기준(없으면 미저장)
       });
       refreshBeautyUserProfileFromDiary();
     } catch { /**/ }
@@ -258,7 +266,7 @@ export default function DamageCheckResultPage() {
                  ★ G13(뿌리 볼륨 파우더)은 DAMAGE_CARDS 목록에 없어 구조적으로 절대 미노출(하드 차단).
                  COUPANG_CARDS_LIVE=false 면 자동 미노출. 저장/다이어리는 기존 result.products 그대로 사용. ── */}
           <CoupangCardList
-            cards={pickDamageCards(result.typeInfo.type, answers)}
+            cards={damageCards}
             landingId="damage_check"
             heading="이 상태에 맞는 제품"
           />
