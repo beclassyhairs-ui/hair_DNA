@@ -3,6 +3,16 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-15
 
+## 완성도 게이지 옵션 A + /items 재시도 + /style 보조링크 (2026-08-15, 배포 완료 36df528·f5c24e0·d879b59)
+
+[구조 수정판] 후속. 프론트 전용(Codex 생략·§3), tsc 통과, dev 서버 DOM 실측 검증.
+- **게이지 옵션 A**(`36df528`, `components/InlineCompletion.tsx`·`CompletionGauge.tsx`): bangs·hairquiz 랜딩을 내렸으므로 완성도 게이지가 숨긴 페이지로 가는 라이브 막대 링크가 되지 않게, 게이지 전용 `VISIBLE_DIAGNOSIS_KINDS=['style','damage']`만 카운트+링크. **lib 공용 `ALL_DIAGNOSIS_KINDS`는 불변**(홈 태그·집계 등 다른 소비처 보존 — 게이지 전용 목록만 좁힘). 검증: /style 랜딩 `0/2`·링크 style·damage만, /damage 랜딩 `완성`(2/2 도달), /bangs·/hair-quiz 라이브 링크 소멸(`hasBangsOrQuiz:false`). CompletionGauge(스타일 결과지)도 "네 가지"→"지금" 문구까지 일관화.
+  - 참고: 데미지 결과지 전용 교차추천 링크("평소 손질 습관 진단 →/hair-quiz")는 이미 `SHOW_HAIRQUIZ=false`로 숨김 상태였음(라이브 broken 아님). 숨긴 페이지로 닿던 유일 라이브 경로가 이 게이지 막대였고, 그걸 이번에 닫음.
+- **/items 재시도**(`f5c24e0`, `app/items/page.tsx`): fetch를 `loadItems()`로 추출, 에러 상태에 "다시 시도 ↻" 버튼(로드 실패→재호출). 검증: 강제 실패→버튼→클릭→재호출 성공→해소.
+- **/style 보조링크**(`d879b59`, `app/style/page.tsx`): 사업주 선택 "새 보조링크 추가" — 기존 재방문 링크(→/home) 유지하고, 다른 진단(손상도)으로 넘어가는 교차 텍스트 링크 신설 "머리 상태부터 볼까요? · 1분 손상도 체크 →" → /damage-check(홈 랜딩과 동일 `diagnosis_card_click` 계측).
+- **폴리시 4건 결론**: /items 재시도·/style 보조링크 = 이번 처리 완료. **폭 430 통일 = 이미 충족**(라이브 페이지 전부 `max-w-[430px]`, 아웃라이어 0 — 유일 예외 레거시 /result는 라이브 동선 아님). **저대비 상향 = 이미 적용**(토큰 `--sub:#6e665b`, `--ink-2=--sub`, BottomNav도 토큰 사용 — 문서 목표 #6B6355와 일치). 두 건은 코드 변경 없음.
+- 🟡 **이월(이번 배포에 없음)**: 로그인 게이트 양쪽 + 나의 헤어 '다운로드' 버그 / faceswap 콜드스타트 확인 / 계측 유출(events anon SELECT) 확인 / B군 폴리시 중 v1 문서가 특정 대상 콕 집으면 추가 처리.
+
 ## [구조 수정판] 홈/탭 개편 + '나의 헤어' 통일 + my-diary 가로스크롤 수정 (2026-08-15, 배포 완료 baadd9f)
 
 프론트 전용 UI 개편(Codex 생략·§3, tsc 통과). dev 서버 DOM 실측 검증.
