@@ -17,6 +17,7 @@ import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
 import { incrementUsage } from "@/lib/dailyLimit";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
+import { ensureLoggedInOrRedirect } from "@/lib/authGate";
 import { clearAccountId, trackEvent } from "@/lib/eventTracking";
 import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
@@ -115,14 +116,12 @@ export default function StyleLoadingPage() {
       // 셀카 없으면 업로드로(결과지로 진행하지 않음)
       if (!photo) { router.replace("/style/upload"); return; }
 
-      // ── Phase B 로그인 게이트 ──
+      // ── Phase B 로그인 게이트 (공용 authGate 헬퍼로 치환 — 동작 100% 불변) ──
+      //   게이트 조건(isLoginRequiredBeforeSynthesis)·return_to(/style/loading)·clearAccountId·
+      //   fail-closed 전부 기존과 동일. 서버 401 강제와 upload 동의 게이트는 별개로 그대로 유지.
       if (isLoginRequiredBeforeSynthesis()) {
-        let loggedIn = false;
-        try {
-          const me = await fetch("/api/auth/me", { cache: "no-store" }).then(r => r.json());
-          loggedIn = Boolean(me?.loggedIn);
-        } catch { loggedIn = false; }
-        if (!loggedIn) { goRelogin(); return; }
+        const ok = await ensureLoggedInOrRedirect("/style/loading", { onRedirect: clearAccountId });
+        if (!ok) return;
       }
 
       // ── 새로고침 재개: 진행 중 작업이 있으면 그걸 이어서 폴링한다(중복 착수·중복 차감 방지) ──

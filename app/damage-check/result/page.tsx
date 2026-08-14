@@ -23,6 +23,8 @@ import {
   readDiaryEntries,
 } from "../../../lib/beautyProfile";
 import { deriveCoreKeyFromEntries } from "../../../lib/itemsMatch";
+import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
+import { ensureLoggedInOrRedirect } from "@/lib/authGate";
 import InlineCompletion from "@/components/InlineCompletion";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
 import HairTypeHero from "../../components/HairTypeHero";
@@ -91,9 +93,24 @@ export default function DamageCheckResultPage() {
   const [answers,   setAnswers]   = useState<DamageSurveyAnswers>(DEFAULT_ANSWERS);
   const [coreKey,   setCoreKey]   = useState<string | null>(null);
   const [ready,     setReady]     = useState(false);
+  const [authOk,    setAuthOk]    = useState(false);
   const [saved,     setSaved]     = useState(false);
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
+
+  // ── 로그인 게이트(결과 보기 직전) — 스타일과 공용 authGate 공유. 미로그인이면 /login/consent로,
+  //   로그인 후 이 결과 페이지로 복귀(return_to=/damage-check/result). 로그인 꺼진 상태면 게이트 없음.
+  //   확인 전에는 아래 렌더 가드가 결과를 감춰 플래시·우회를 막는다. ──
+  useEffect(() => {
+    if (!KAKAO_LOGIN_ENABLED) { setAuthOk(true); return; }
+    let alive = true;
+    (async () => {
+      const ok = await ensureLoggedInOrRedirect("/damage-check/result");
+      if (alive && ok) setAuthOk(true);
+      // ok=false면 헬퍼가 이미 /login/consent로 리다이렉트(이 컴포넌트 언마운트)
+    })();
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -118,7 +135,7 @@ export default function DamageCheckResultPage() {
     : undefined;
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !authOk) return; // 로그인 통과(결과 실제 노출) 후에만 report_view 기록
     trackEvent(EVENT_NAMES.REPORT_VIEW, {
       landing_id: LANDING_ID,
       diagnosis_type: LANDING_ID,
@@ -126,7 +143,7 @@ export default function DamageCheckResultPage() {
       concern_tags: result.concernTags,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, [ready, authOk]);
 
   function handleSaveAndGoHome() {
     try {
@@ -185,7 +202,8 @@ export default function DamageCheckResultPage() {
     });
   }
 
-  if (!ready) return <main className="min-h-screen" />;
+  // 데이터 준비 + 로그인 확인 전에는 결과를 렌더하지 않는다(플래시·익명 우회 차단).
+  if (!ready || !authOk) return <main className="min-h-screen" />;
 
   return (
     <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-ink" style={{ touchAction: "pan-y" }}>
