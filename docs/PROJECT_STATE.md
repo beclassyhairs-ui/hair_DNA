@@ -3,6 +3,44 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-14
 
+## 결과지 덤프 검토 → 결과지 제품/카피 수정 3건 (2026-08-14, 라이브 검증 완료·커밋 대기)
+
+데미지·스타일 결과지 전수 덤프 검수 후 사업주 지시로 3건 수정(프론트/매칭 전용 → Codex 대상 아님). dev 서버로 실제 렌더 검증 완료.
+- **FIX-A(저장≠표시 버그)**: 데미지 결과지가 화면엔 쿠팡카드를 띄우면서 홈/다이어리엔 `damageRecommend.products[0]`(화면에 없는 제품)을 저장하던 문제 → 화면에 뜬 쿠팡카드 첫 장 기준으로 저장. `app/damage-check/result/page.tsx`(damageCards 단일 출처) + `app/my-diary/page.tsx`(product 옵셔널·미저장 가드).
+- **FIX-B(제품 1~2개 조합 메움)**: 매칭축 6종에 안 걸리는 '보통' 조합이 1~2개로 뜨던 문제 → `lib/coupangCards.ts` topUp()로 **최소 3개 보장**(COUPANG_MIN_CARDS=3). 폴백은 범용카드만, 상충(굵은/숱많은 머리에 볼륨류)은 skip. 검증: 건강모 2→3, 직모·보통 1→3, 곱슬·보통 2→3.
+- **FIX-C①(카피↔제품)**: 갈래b7(직모+컬희망) 등 wantWave면 컬 제품(G17/G18)을 볼륨보다 앞으로(`pickStyleCards` 부분정렬). 검증: b7 컬크림·무열웨이브가 1·2번째로.
+- **FIX-C②(카피 오출)**: 갈래b2 예언이 웨이브 손님에게도 "C컬 해달라고…"로 나가던 것 → `resolveDoor()`로 웨이브/S컬 문장 분기(`branchCopy.ts`+`style/result/page.tsx`). 검증: 웨이브→"웨이브 넣었는데…".
+- **확인(가드)**: `COUPANG_CARDS_LIVE=false` 시 전 조합 0개 → 경고 배너 주석 + 런타임 console.warn 추가.
+- **미커밋**: 위 5개 코드 파일 + 이 문서. 커밋 승인 대기(3개로 분리 제안). 별도 콘텐츠 작업 2건(관리꿀팁 개인화·예언 도달률)은 사업주가 별도 진행.
+
+## 🔴 합성 모델 라이선스 전수 조사 — lucataco 기각 + inswapper 계열 전체 상업 불가 (2026-08-14)
+
+**사업주 판정: lucataco 기각.** ① 라이선스 "Research & Non-commercial only"(상업 서비스 불가) ② GFPGAN 상시 내장 미화(원본 대비 15~20년 젊어짐 → 나이별 레퍼런스 무력화). 선택 = (C) 추가 탐색. 우선순위 **라이선스 > 미화 없음 > 속도**(4분만 아니면 10~30초 수용).
+
+**🔴 최대 발견 — inswapper_128(InsightFace) 원본이 비상업 전용**: 코드는 MIT지만 **사전학습 가중치(inswapper 계열)는 non-commercial research only**, 상업 이용은 InsightFace 유료 별도 라이선스(contact@insightface.ai) 필요. → 우리가 검토한 **lucataco·cdingram·codeplugtech·ddvinh1 전부 inswapper 래퍼**(미화 비교테스트에서 3개 출력 거의 동일 = 같은 계열 실증) → **계열 전체가 상업 사용 불가.** Replicate `license_url` 전부 null(상업 허가 명시 없음).
+- **ddvinh1**: `enhance` 토글(기본 false) 있어 미화는 끌 수 있으나 **inswapper라 라이선스로 막힘** → 롤백해도 법적 문제 미해결.
+- **HairFastGAN(헤어 트랜스퍼 대안)**: 코드 MIT지만 가중치가 **StyleGAN2(NVIDIA NC)+FFHQ(비상업)** 파생 → **자체호스팅해도 상업 불가.** 헤어트랜스퍼 계열도 라이선스로는 해법 아님.
+
+**상업 가능(명시) 대안 — 전부 관리형 API**:
+- **Easel AI advanced-face-swap**(fal.ai): 상업 OK·$0.05/run·user/scene 보존·`upscale`/`detailer` 토글(미화 제어 가능). ⚠️ **deprecated·no longer supported**(프로덕션 리스크).
+- **Akool** faceswap API: 상업(Pro Max+ 플랜)·피부결 보존·보정 선택적(강제 아님). 구독/엔터프라이즈 과금·검증 필요.
+- **Segmind** faceswap v2~v5/ai-face-swap: 상업 플랫폼·종량제. 내부 모델 inswapper 여부·가중치 라이선스 미확인.
+- **fofr/face-swap-with-ideogram**(Replicate, 우리 토큰으로 테스트 가능): Ideogram-character+Nano Banana(Gemini) 조합 → **라이선스는 깨끗**(둘 다 상업 API)하나 **생성형이라 정체성 흔들림·미화 우려**.
+- **InsightFace 직접 상업 라이선스 구매**: 기존 빠른/싼 파이프라인을 합법화. 비용 미상.
+
+**현재 라이브**: lucataco가 프로덕션 라이브(유입 0). 법적 리스크는 실재하나 유입 0이라 당장 낮음. **상업 오픈(유튜브) 전 반드시 교체.** 롤백 의견: ddvinh1 회귀는 inswapper라 법적 이득 0 + 콜드스타트 4분 재발 → **무의미**. 긴급 롤백보다 (a)공개 미노출/미홍보 유지 → (b)상업 API 확정·배선·테스트 → (c)오픈 순서 권장.
+- **다음(사업주 판정 후)**: 상업 API 1~2개 선정 → 실제 미화 정도 비교테스트(각 API 키 필요, fofr는 즉시 가능) → 교체는 §11 Codex 교차검증 후.
+
+### 의존성 트리 정밀 감사 결과 (2026-08-14, 병렬 리서치 4건)
+겉 라이선스(Apache/MIT)만 봐선 안 됨 — 얼굴 임베딩에 InsightFace(antelopev2/buffalo_l/ArcFace) 의존 시 오염(InstantID 사례). GitHub 원문 인용으로 전수 확인:
+- **얼굴 스왑/ID 개인화 계열 거의 전부 탈락**: InstantID·PuLID(SDXL+FLUX)·IP-Adapter-FaceID·Arc2Face·PhotoMaker **v2**·InfiniteYou·Face-Adapter → 전부 antelopev2/buffalo_l 의존. (IP-Adapter-FaceID·InfiniteYou는 가중치 자체도 NC.)
+- **자체호스팅 클린 예외 2개**: ① **PhotoMaker v1** — Apache 코드+가중치, CLIP 전용, InsightFace 無(단 CLIP 기반이라 정체성 약함/생성형). ② **Stable-Hair(v1)** — Apache 코드, InsightFace 無·StyleGAN 無, 헤어만 편집·얼굴 보존(미화 없음에 최적). 유일 blocker=배포 가중치가 FFHQ 학습 → 상업 데이터 재학습 시 클린.
+- **StyleGAN/FFHQ 헤어트랜스퍼(HairFastGAN·Barbershop·Style-Your-Hair·HairCLIP)**: NVIDIA NC + FFHQ NC로 **가중치 오염 + 얼굴 전체 재생성→미화**. 이중 부적합.
+- **상업-클린 정답은 "스왑"이 아니라 "지시편집(instruction-edit)"**: **Gemini 2.5 Flash Image(Nano Banana)** 유료 API(상업OK·InsightFace無·정체성 최고·~$0.039/장·2~5s, 단 SynthID 워터마크) / **Qwen-Image-Edit(Apache-2.0 자체호스팅 완전 클린)** / FLUX.1 Kontext(dev 비상업·pro/max API 상업). 손님 사진을 직접 편집→실제 얼굴/피부 보존, 미화는 프롬프트로 억제.
+- **관리형 스왑 API**: Akool(상업OK지만 내부 inswapper 의심·보정 불투명), Segmind(inswapper 기반=회피대상), fal Easel(상업OK·비inswapper 추정이나 확인 엔드포인트 deprecated+보정 pass).
+- **핵심 결론**: 오픈 페이스스왑 생태계는 사실상 전부 InsightFace(비상업)에 물려 있음. 실현 경로 = (A)지시편집 파운데이션(Gemini/Qwen/Flux), (B)InsightFace 상업 라이선스 구매(기존 파이프라인 합법화), (C)Stable-Hair v1 재학습 자체호스팅. **권고 방향(사업주 판정·§11 대상): A의 Gemini Nano Banana 파일럿 + Qwen 자체호스팅 폴백.**
+
+
 ## 🟢 faceswap 모델 교체(lucataco) + 예열 전면 제거 (2026-08-14)
 
 **원인**: ddvinh1/face-swap-gpu가 58K런 저트래픽이라 GPU 항상 cold → 콜드부팅 ~4분. 사전 예열(2~3분)로는 원리상 못 덮음(부팅 자체가 4분).
