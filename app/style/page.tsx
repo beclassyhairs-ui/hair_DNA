@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -133,6 +134,16 @@ export default function StyleLandingPage() {
             <p className="text-center text-aux text-sub">
               약 2분 소요 · 무료 · 사진은 결과 생성에 사용돼요
             </p>
+
+            {/* 보조링크(신규 2026-08-15) — 다른 진단(손상도)으로 넘어가는 교차 진입.
+                주 CTA와 경합하지 않게 텍스트 링크로. (홈의 진단 랜딩 2장과 같은 이벤트로 계측) */}
+            <Link
+              href="/damage-check"
+              onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: "damage", source: "style_landing_secondary" })}
+              className="block min-h-[44px] py-2 text-center text-aux text-sub transition-colors active:text-ink"
+            >
+              머리 상태부터 볼까요? · 1분 손상도 체크 →
+            </Link>
 
             {/* 재방문 링크 — Secondary 버튼. /home으로 안내 */}
             <Button href="/home" variant="secondary" fullWidth>
