@@ -27,6 +27,8 @@ interface HubItem {
   feat?: boolean;
 }
 
+// 2026-08-15: 허브는 하단 탭에서 내려 직접 URL 접근용으로만 존치. bangs·퀵진단(hair_quiz)
+//   카드는 숨긴다(스타일·데미지 2종만 노출). 링크·라우트 자체는 살아 있어 직접 접근은 가능.
 const DIAGNOSIS_HUB_ITEMS: HubItem[] = [
   {
     type: "style",
@@ -42,20 +44,6 @@ const DIAGNOSIS_HUB_ITEMS: HubItem[] = [
     desc: "미용실 가기 전 1분 팩트체크",
     href: "/damage-check",
     image: "/landing/damage-hero.jpg",
-  },
-  {
-    type: "bangs",
-    label: "인생 앞머리 찾기",
-    desc: "얼굴형 기반 앞머리 스타일 진단",
-    href: "/bangs",
-    image: "/landing/bangs-hero.jpg",
-  },
-  {
-    type: "hair_quiz",
-    label: "머리가 미용실에서만 예쁜 이유",
-    desc: "3문항 퀵 진단",
-    href: "/hair-quiz",
-    image: "/landing/quiz-hero.jpg",
   },
 ];
 

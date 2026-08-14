@@ -2,8 +2,9 @@
 
 // ============================================================================
 // 어뷰티 공용 하단 탭바 (WORKORDER-02 토큰화).
-// AI진단(/diagnosis) · 고민상담소(/consulting) · 오늘케어(/home) · 발견템(/items) ·
-// 마이헤어(/my-diary) 5대 메뉴. (마이헤어 목적지: 구 /myhair 더미 → /my-diary 실체로 통일)
+// 홈(/home) · 발견템(/items) · 나의 헤어(/my-diary) 3대 메뉴.
+//   (2026-08-15 구조 개편: AI진단 허브·고민상담소 탭 제거 — 홈이 진단 랜딩 2장을 직접 품고,
+//    상담 창구는 카카오 채널 개설 후 홈 블록으로 노출. /diagnosis 허브는 직접 URL 접근용으로만 존치.)
 // 변경: 이모지 → Lucide 단색 1세트(stroke 1.8), 무지개·골드 폐지 →
 //       비활성 --ink-2 / 활성만 --ink(색이 아니라 명도로 구분).
 // ============================================================================
@@ -11,8 +12,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Sparkles,
-  MessageCircle,
   Home,
   ShoppingBag,
   User,
@@ -20,11 +19,9 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
-  { href: "/diagnosis", icon: Sparkles, label: "AI진단" },
-  { href: "/consulting", icon: MessageCircle, label: "고민상담소" },
-  { href: "/home", icon: Home, label: "오늘케어" },
+  { href: "/home", icon: Home, label: "홈" },
   { href: "/items", icon: ShoppingBag, label: "발견템" },
-  { href: "/my-diary", icon: User, label: "마이헤어" }, // 실체(진짜 기록) 페이지로 통일. 구 /myhair(더미)는 /my-diary로 리다이렉트.
+  { href: "/my-diary", icon: User, label: "나의 헤어" }, // 실체(진짜 기록) 페이지. 구 /myhair(더미)는 /my-diary로 리다이렉트.
 ];
 
 export default function BottomNav() {

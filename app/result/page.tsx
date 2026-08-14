@@ -286,7 +286,7 @@ export default function ResultPage() {
                 onClick={() => setShowDiaryModal(true)}
                 className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/5 text-base font-medium text-cream/80 transition-colors hover:border-gold/40 hover:text-gold-light active:scale-[0.98]"
               >
-                🤍 내 다이어리에 저장하고 평생 소장하기
+                🤍 나의 헤어에 저장하고 평생 소장하기
               </button>
             )}
             <div className="flex gap-3">
@@ -568,7 +568,7 @@ function DiaryModal({ onClose }: { onClose: () => void }) {
             🤍
           </div>
           <h2 className="font-serif text-2xl font-bold text-cream">
-            내 다이어리에 저장하기
+            나의 헤어에 저장하기
           </h2>
           <p className="mt-3 text-base leading-relaxed text-cream/65">
             진단 결과를 영구 보관하고<br />

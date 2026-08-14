@@ -121,8 +121,8 @@ function SaveDiaryModal({
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[28px] border-t border-white/60 bg-white/95 shadow-xl px-6 pb-10 pt-5 backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-surface" />
-        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">A-Beauty Diary</p>
-        <h3 className="mt-2 text-h2 text-ink">내 다이어리에 저장하고 평생 소장하기</h3>
+        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">MY HAIR</p>
+        <h3 className="mt-2 text-h2 text-ink">나의 헤어에 저장하고 평생 소장하기</h3>
         <p className="mt-2 text-[15px] text-ink-2 leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
         </p>
@@ -141,7 +141,7 @@ function SaveDiaryModal({
                 style={{ border: "2px solid transparent", borderTopColor: "currentColor", borderRightColor: "rgba(255,255,255,0.25)" }}
                 animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
               />
-            : "다이어리에 저장하기"}
+            : "나의 헤어에 저장"}
         </button>
         <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-[15px] text-ink-2 hover:text-ink">
           나중에 저장하기
@@ -572,10 +572,10 @@ export default function StyleResultPage() {
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
                 className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-base font-bold text-ink transition-all hover:bg-surface active:scale-[0.98]">
-                사진 다운받기 (다이어리 저장 후 가능)
+                사진 다운받기 (나의 헤어 저장 후 가능)
               </button>
               <p className="text-center text-[13px] text-ink-2 -mt-1">
-                다이어리에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
+                나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
               </p>
               {/* 공유(③)가 재진단(④)보다 우선 — 좌측 우선 배치 */}
               <div className="flex gap-2.5">

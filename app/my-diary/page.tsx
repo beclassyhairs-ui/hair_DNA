@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// /my-diary — 내 헤어 다이어리 (UUID 배열 저장 + 리스트 + 모달 + 제품카드)
+// /my-diary — 나의 헤어 (진단 기록: UUID 배열 저장 + 리스트 + 모달 + 제품카드)
 // ============================================================================
 
 import { useEffect, useState } from "react";
@@ -167,7 +167,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-// ─── 다이어리 카드 ────────────────────────────────────────────────────────────
+// ─── 기록 카드 ────────────────────────────────────────────────────────────
 
 async function downloadImage(url: string, styleName: string) {
   try {
@@ -205,8 +205,8 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
 
       <div style={{ background: "var(--card)" }}>
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               Style {index + 1}
             </p>
@@ -214,7 +214,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               {entry.styleName}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {/* After 이미지 썸네일 */}
@@ -298,7 +298,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
   );
 }
 
-// ─── 손상도 진단 다이어리 카드 ────────────────────────────────────────────────
+// ─── 손상도 진단 기록 카드 ────────────────────────────────────────────────
 
 function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: number }) {
   const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
@@ -313,8 +313,8 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
       <div style={{ background: "var(--card)" }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손상도 진단 · {entry.resultCode}
             </p>
@@ -322,7 +322,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
               {entry.levelLabel} · {entry.typeLabel}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         <p className="px-4 pb-3 text-[13px] leading-relaxed" style={{ color: "var(--ink)" }}>
@@ -366,7 +366,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
   );
 }
 
-// ─── 손질 습관 진단(hair-quiz) 다이어리 카드 ──────────────────────────────────
+// ─── 손질 습관 진단(hair-quiz) 기록 카드 ──────────────────────────────────
 
 function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index: number }) {
   const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
@@ -382,8 +382,8 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
       <div style={{ background: "var(--card)" }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
             </p>
@@ -391,7 +391,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
               {entry.title}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {entry.diagnosisSummary && (
@@ -415,7 +415,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
   );
 }
 
-// ─── 인생앞머리 진단 다이어리 카드 ────────────────────────────────────────────
+// ─── 인생앞머리 진단 기록 카드 ────────────────────────────────────────────
 
 // 사진첩 썸네일 — 파일이 없을 수 있으므로 로드 실패 시 깨진 이미지 대신 이모지로 폴백
 function DiaryImageThumb({ label, url }: { label: string; url: string }) {
@@ -451,8 +451,8 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
     >
       <div className="h-px w-full" style={{ background: "var(--line)" }} />
       <div style={{ background: "var(--card)" }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+        <div className="flex items-center justify-between gap-2 px-4 py-3">
+          <div className="min-w-0">
             <p className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
@@ -460,7 +460,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
               {entry.primaryBangLabel}
             </p>
           </div>
-          <p className="text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-[13px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         <p className="px-4 pb-2 text-[13px] leading-relaxed" style={{ color: "var(--ink)" }}>
@@ -529,10 +529,10 @@ export default function MyDiaryPage() {
       {/* 이미지 확대 모달 (fixed 오버레이 — 셸 위에 뜸) */}
       {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
 
-      {/* 명조 페이지 제목 (5-B 톤). 하단탭 "마이헤어" 목적지 = 이 실체 페이지 */}
+      {/* 명조 페이지 제목 (5-B 톤). 하단탭 "나의 헤어" 목적지 = 이 실체 페이지 */}
       <header className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-h1 text-ink">내 헤어 다이어리</h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-h1 text-ink">나의 헤어</h1>
           {entries.length > 0 && (
             <p className="mt-1 text-aux text-sub">진단 이력 {entries.length}건</p>
           )}

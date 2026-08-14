@@ -1,23 +1,33 @@
 "use client";
 
 // ============================================================================
-// 어뷰티(A-Beauty) — 홈 대시보드 (`/home`)  [아이보리 리뱀프 3단계]
-// 디자인 SSOT: docs/ui-spec.html §5 / §7.
-//   · 흰 카드는 프로필 1장뿐 — 완성도 게이지·루틴·퀵배너는 카드 벗겨 배경 위에 플랫.
-//   · 프로필 카드 = 텍스처 스와치 + 최근 진단 기준·날짜 + 타입명(명조) + 태그(≤4).
-//   · 색은 아이보리+차콜 2톤. 색은 스와치(사진)가 담당.
-//   · 0P·진행률% 제거(루틴은 순수 체크 리스트).
+// 어뷰티(A-Beauty) — 홈 (`/home`)
+// 2026-08-15 구조 개편:
+//   · '오늘케어 루틴' 섹션 제거, '퀵 진단 →' 배너 제거.
+//   · 홈의 주인공 = 진단 랜딩 2장(스타일·데미지) 카드.
+//   · '물어보세요' 소통 창구 블록은 feature flag(CONSULT_CHANNEL)로 숨김 —
+//     카카오 채널 개설 후 링크 주입 + enabled=true. 갈 곳 없는 상태로는 절대 노출 안 함.
+//   · 프로필 카드(최근 진단 요약/빈 상태)·완성도 게이지는 유지.
 //
 // 진단·매칭 로직은 건드리지 않는다 — coreKey는 기존 deriveCoreKeyFromEntries를
-// 그대로 재사용(/items와 동일)해 스와치만 고른다. 폰트 "크기"는 현행 토큰 유지.
+// 그대로 재사용(/items와 동일)해 스와치만 고른다.
 // ============================================================================
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AppShell from "../components/layout/AppShell";
 import HairTypeImage from "../components/HairTypeImage";
 import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
 import { trackEvent } from "../../lib/trackEvent";
+
+// ─── 물어보세요(소통 창구) feature flag ──────────────────────────────────────
+// 카카오 채널 개설 전까지 숨긴다. 개설 후 href에 채널 링크를 넣고 enabled=true로 켠다.
+// enabled && href 둘 다 있어야 렌더 → "눌렀는데 갈 곳 없음"을 원천 차단.
+const CONSULT_CHANNEL = {
+  enabled: false,
+  href: "", // 예: "https://pf.kakao.com/_xxxxx"
+};
 import {
   readDiaryEntries,
   readBeautyUserProfile,
@@ -153,93 +163,101 @@ function InlineCompletion({ completed }: { completed: DiagnosisKind[] }) {
   );
 }
 
-// ─── 위젯 3: 오늘의 루틴 — 플랫 리스트 (카드 아님, 0P·진행률% 제거) ────────────────
+// ─── 위젯 3: 진단 랜딩 2장 카드 (홈의 주인공) ────────────────────────────────────
 
-type RoutineStepId = "scalp_volume_dry" | "tip_essence_light" | "bangs_line_fixing";
+interface LandingCard {
+  type: string;
+  label: string;
+  desc: string;
+  href: string;
+  image: string;
+}
 
-const PERSONALIZED_ROUTINE: { id: RoutineStepId; label: string }[] = [
-  { id: "scalp_volume_dry", label: "두피 쪽은 완전히 말려 정수리 볼륨 살리기" },
-  { id: "tip_essence_light", label: "모발 끝에만 가벼운 에센스 바르기" },
-  { id: "bangs_line_fixing", label: "앞머리 라인은 픽싱 제품으로 얇게 고정하기" },
+const HOME_LANDINGS: LandingCard[] = [
+  {
+    type: "style",
+    label: "AI 헤어 스타일 분석",
+    desc: "얼굴형 기반 인생 헤어스타일 찾기",
+    href: "/style",
+    image: "/landing/style-hero.jpg",
+  },
+  {
+    type: "damage",
+    label: "손상도 체크",
+    desc: "미용실 가기 전 1분 팩트체크",
+    href: "/damage-check",
+    image: "/landing/damage-hero.jpg",
+  },
 ];
 
-function RoutineList() {
-  const [checked, setChecked] = useState<Record<RoutineStepId, boolean>>({
-    scalp_volume_dry: false,
-    tip_essence_light: false,
-    bangs_line_fixing: false,
-  });
+// 히어로 썸네일 — 사진 없거나 로드 실패면 렌더 안 함(텍스트 카드로 폴백).
+function LandingThumb({ src }: { src: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="relative aspect-[4/5] w-20 shrink-0 overflow-hidden rounded-xl">
+      <Image
+        src={src}
+        alt=""
+        aria-hidden
+        fill
+        sizes="80px"
+        priority
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
 
-  const toggleStep = (id: RoutineStepId) => {
-    setChecked((prev) => {
-      const nextChecked = !prev[id];
-      trackEvent("diary_checkin", {
-        stepId: id,
-        checked: nextChecked,
-        source: "home_personalized_routine",
-      });
-      return { ...prev, [id]: nextChecked };
-    });
-  };
-
+function DiagnosisLandings() {
   return (
     <section>
-      <h2 className="font-serif text-emphasis font-semibold text-ink">오늘의 루틴</h2>
-      <ul className="mt-2">
-        {PERSONALIZED_ROUTINE.map((step) => {
-          const isChecked = checked[step.id];
-          return (
-            <li key={step.id} className="border-b border-line last:border-b-0">
-              <button
-                onClick={() => toggleStep(step.id)}
-                className="flex w-full items-start gap-3 py-3 text-left"
-              >
-                <span
-                  className={`mt-0.5 flex h-[21px] w-[21px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
-                    isChecked ? "border-ink bg-ink" : "border-line bg-transparent"
-                  }`}
-                >
-                  {isChecked && (
-                    <svg viewBox="0 0 24 24" fill="none" strokeWidth={3} className="h-3 w-3 text-bg">
-                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                </span>
-                <span
-                  className={`flex-1 text-body leading-snug transition-opacity ${
-                    isChecked ? "text-ink-3 line-through" : "text-ink"
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <h2 className="font-serif text-emphasis font-semibold text-ink">어떤 진단부터 시작할까요?</h2>
+      <div className="mt-3 space-y-3">
+        {HOME_LANDINGS.map((item) => (
+          <Link
+            key={item.type}
+            href={item.href}
+            onClick={() =>
+              trackEvent("diagnosis_card_click", { diagnosisType: item.type, source: "home_landing" })
+            }
+            className="flex items-center gap-4 rounded-2xl bg-card p-4 shadow-soft transition-colors active:bg-soft"
+          >
+            <LandingThumb src={item.image} />
+            <div className="min-w-0 flex-1">
+              <p className="text-emphasis font-bold text-ink">{item.label}</p>
+              <p className="mt-1 text-body leading-snug text-sub">{item.desc}</p>
+            </div>
+            <span aria-hidden className="shrink-0 text-h2 text-ink-2">→</span>
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }
 
-// ─── 위젯 4: 1분 퀵 진단 배너 (보조 CTA · 카드 벗김) ──────────────────────────────
+// ─── 위젯 4: 물어보세요(소통 창구) — feature flag로 숨김 ───────────────────────────
+// 카카오 채널 개설 후에만 노출(CONSULT_CHANNEL.enabled && href). 그 전엔 렌더 자체를 안 함.
 
-function QuickDiagnosisBanner() {
+function ConsultBlock() {
+  if (!CONSULT_CHANNEL.enabled || !CONSULT_CHANNEL.href) return null;
   return (
-    <Link
-      href="/hair-quiz"
-      onClick={() =>
-        trackEvent("quick_diagnosis_start", { diagnosisType: "salon_only", source: "home_quick_banner" })
-      }
-      className="flex items-center justify-between gap-3 border-t border-line pt-4 active:opacity-70"
+    <a
+      href={CONSULT_CHANNEL.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => trackEvent("consult_channel_click", { source: "home_consult_block" })}
+      className="flex items-center justify-between gap-3 rounded-2xl bg-soft p-4 transition-colors active:opacity-80"
     >
       <div className="min-w-0">
-        <p className="text-aux text-sub">아직 안 해본 진단이 있어요</p>
-        <p className="mt-0.5 text-body font-medium leading-snug text-ink">
-          내 머리가 미용실에서만 예쁜 이유, 3문항으로 확인하기
+        <p className="text-emphasis font-bold text-ink">궁금한 걸 물어보세요</p>
+        <p className="mt-1 text-body leading-snug text-sub">
+          내 모발·시술 고민, 현직 디자이너에게 편하게 물어보세요.
         </p>
       </div>
-      <span className="shrink-0 text-aux text-sub">퀵 진단 →</span>
-    </Link>
+      <span aria-hidden className="shrink-0 text-h2 text-ink-2">→</span>
+    </a>
   );
 }
 
@@ -251,9 +269,9 @@ export default function HomePage() {
   return (
     <AppShell>
       <HairProfileCard profile={profile} coreKey={coreKey} tags={tags} />
+      <DiagnosisLandings />
       <InlineCompletion completed={completed} />
-      <RoutineList />
-      <QuickDiagnosisBanner />
+      <ConsultBlock />
 
       <Link
         href="/my-diary"
