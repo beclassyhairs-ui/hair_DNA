@@ -172,6 +172,20 @@ export function getBranchCopy(key: string): BranchCopy {
   return BRANCH_COPY[key] ?? BRANCH_COPY.b8!;
 }
 
+// ── FIX-C②: 갈래2(곱슬+컬 희망) 예언을 '원하는 디자인'에 맞춰 가른다 ──
+//   기존 door 는 "C컬 해달라고 했는데…" 하나뿐이라, 웨이브를 고른 손님에게도 C컬 문구가 나갔다.
+//   기본(C컬)은 BRANCH_COPY.b2.door 그대로 두고, 웨이브/S컬만 아래 문장으로 대체한다.
+const B2_DOOR_BY_DESIGN: Record<string, string> = {
+  wave:   "웨이브 넣었는데 부스스하고 지저분하게 나온 적 있다면 — 바로 이것 때문이에요.",
+  s_curl: "S웨이브 넣었는데 부스스하고 지저분하게 나온 적 있다면 — 바로 이것 때문이에요.",
+};
+
+/** 예언(door) 해석 — 갈래2만 원하는 디자인(q13_design)별로 분기, 그 외는 원문 door 그대로. */
+export function resolveDoor(key: string, design: string | undefined, copy: BranchCopy): string {
+  if (key === "b2" && design && B2_DOOR_BY_DESIGN[design]) return B2_DOOR_BY_DESIGN[design]!;
+  return copy.door;
+}
+
 /** 제품 P-키 → 화면 표기(마스터). 없는 키는 빈 문자열. */
 export function productName(pkey: string): string {
   return PRODUCT_MASTER[pkey] ?? "";

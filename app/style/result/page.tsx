@@ -37,7 +37,7 @@ import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
 import { resolveCrossBranch } from "../crossBranch";
-import { getBranchCopy, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE } from "../branchCopy";
+import { getBranchCopy, resolveDoor, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE } from "../branchCopy";
 import CoupangCardList from "@/components/CoupangCardList";
 import { pickStyleCards } from "@/lib/coupangCards";
 
@@ -510,7 +510,7 @@ export default function StyleResultPage() {
               {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
               <TT>혹시, 이런 적 있다면</TT>
               <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                <Rich html={bcopy.door} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
+                <Rich html={resolveDoor(branch.primary, answers.q13_design, bcopy)} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
               </GlassCard>
 
               {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
