@@ -3,6 +3,17 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-14
 
+## 확정125 — ddvinh1 복귀(enhance=false) + 예열 B안 재이식 + 폴링 5→8분 (2026-08-14, 배포 완료 3ab553f)
+
+**현재 라이브 모델 = ddvinh1/face-swap-gpu · enhance=false.** lucataco의 GFPGAN 상시 미화(원본 대비 15~20년 젊어짐)가 50·60 타겟에 치명 → 미화 끌 수 있는 ddvinh1로 복귀, 콜드스타트(~4분)는 선점 예열로 숨김. 라이선스 상태는 lucataco와 동일(둘 다 inswapper) → 방침 변경 없음. **배포 후 며칠 완료율 실측으로 재평가**(로딩 이탈 크면 §롤백으로 lucataco 복귀).
+- **모델 교체**: `lib/hairSynthModel.ts` MODEL/VERSION(`d766886c…2971d`)/`HAIRSYNTH_ENHANCE=false` + **입력 빌더 `buildFaceswapInput`**(ddvinh1=`input_image`/lucataco=`target_image` 흡수). `route.ts`가 빌더 사용. **롤백 스위치**: 이 파일 MODEL/VERSION/빌더만 lucataco(`9a4298…843d20d`, `target_image`, enhance 없음)로 바꾸면 라우트·예열 자동 정합 = 몇 분 작업.
+- **예열 재이식(B안)**: `app/api/hair-transform/warmup/route.ts`(신규) + `app/style/prewarm.ts`(신규). 주발사=/style/survey 마운트 1회(`STYLE_PREWARM_KEY` 타임스탬프), 보조발사=/style/upload 마운트·직전 180초 초과 시. keepalive. 서버 **90초 쿨다운(실패에도 유지=잔액 태우기 방어 핵심)**·모든 경로 **204**·`default_style.jpg` 2장·전역 `warmup_usage` 상한(5000/일) 재사용·same-origin. **손님 일일한도 미차감**. 세션 초기화(/style 랜딩) 시 플래그 삭제.
+- **폴링 5→8분**: `loading/page.tsx` `POLL_BUDGET_MS=480_000`. 로딩 "최대 N분" 문구를 같은 상수(`POLL_BUDGET_MIN`)에서 파생 → 표기 상한↔폴링 상한 결속. 문구="보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 8분까지…"(평소값 앞·최악값 뒤). cancel·status 주석도 8분 정합. 토큰은 만료 없는 stateless capability라 8분 안전.
+- **검수**: Codex 통과(1차 warmup 쿨다운 실패-무력화 지적 → 실패에도 쿨다운 유지로 수정 후 재검수 통과). `tsc --noEmit` 통과. 입력키·버전해시 Replicate 공식 스키마 일치 확인.
+- **확정(안 함)**: 로그아웃 버튼·탈퇴 UI 미제작(세션 유지 선호/이메일 접수로 커버). 재이용은 카카오ID 일일한도+비용상한으로 방어됨.
+- 🟡 **배포 후 사업주 검증(§5)**: ①콜드 상태 손님속도(설문4분+) 완주 → 수십초 내 결과 + 미화 없는지 눈 판정 ②빠른속도(30초)로도 에러 없이 8분 폴링 받는지 ③Replicate 대시보드: 설문 진입 워밍 1건 → 실합성 warm(queue~0) 도는지.
+- 🔴 **블로커(이월)**: Replicate 잔액 충전(저잔액 시 rate limit 6/분 축소 — 유입 전 필수). `public/references` 삭제분(mature png 3·.gitkeep·default_style.jpg) 커밋 금지 — 이번 커밋도 제 11개 파일만 스테이징해 제외함.
+
 ## 확정124 — Q1 4단계·Q2 문구·매직 코팅·UI 겹침 (2026-08-14, 로컬 검증 완료·커밋/배포 승인 대기)
 
 데미지 물리테스트 개편 + 결과지 UI 버그 수정 4건. 로컬 렌더 검증 완료.
