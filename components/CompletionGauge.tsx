@@ -13,12 +13,14 @@
 
 import { useEffect, useState } from "react";
 import {
-  ALL_DIAGNOSIS_KINDS,
   DIAGNOSIS_KIND_LABEL,
   getCompletedKinds,
   readDiaryEntries,
   type DiagnosisKind,
 } from "@/lib/beautyProfile";
+
+// 2026-08-15(옵션 A): 현재 노출 중인 진단만 센다(bangs·hairquiz 랜딩 내림). lib 공용 목록은 불변.
+const VISIBLE_DIAGNOSIS_KINDS: DiagnosisKind[] = ["style", "damage"];
 
 export default function CompletionGauge({ className = "" }: { className?: string }) {
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
@@ -27,8 +29,8 @@ export default function CompletionGauge({ className = "" }: { className?: string
     setCompleted(getCompletedKinds(readDiaryEntries()));
   }, []);
 
-  const total = ALL_DIAGNOSIS_KINDS.length; // 4
-  const doneCount = completed.length;
+  const total = VISIBLE_DIAGNOSIS_KINDS.length; // 2 (현재 노출: style·damage)
+  const doneCount = completed.filter((k) => VISIBLE_DIAGNOSIS_KINDS.includes(k)).length;
   const percent = Math.round((doneCount / total) * 100);
   const isComplete = doneCount >= total;
 
@@ -48,9 +50,9 @@ export default function CompletionGauge({ className = "" }: { className?: string
         )}
       </div>
 
-      {/* 4칸 진행바 — 칸 수 = 진단 종류 수 */}
-      <div className="mt-2.5 flex gap-1.5" role="img" aria-label={`4개 중 ${doneCount}개 완료`}>
-        {ALL_DIAGNOSIS_KINDS.map((kind) => {
+      {/* 진행바 — 칸 수 = 현재 노출 중인 진단 종류 수 */}
+      <div className="mt-2.5 flex gap-1.5" role="img" aria-label={`${total}개 중 ${doneCount}개 완료`}>
+        {VISIBLE_DIAGNOSIS_KINDS.map((kind) => {
           const filled = completed.includes(kind);
           return (
             <span
@@ -64,7 +66,7 @@ export default function CompletionGauge({ className = "" }: { className?: string
 
       <p className="mt-2 text-aux text-ink-2">
         {isComplete
-          ? "네 가지 진단을 모두 마쳤어요. 추천이 가장 정확해집니다."
+          ? "지금 진단을 모두 마쳤어요. 추천이 가장 정확해집니다."
           : `진단 ${total}종 중 ${doneCount}개 완료 · 더 채울수록 추천이 정확해져요`}
       </p>
     </section>

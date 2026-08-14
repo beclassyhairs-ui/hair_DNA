@@ -8,12 +8,16 @@
 //
 // L-03: 아직 안 한 진단 칸은 해당 랜딩으로 바로 이동하는 링크가 된다(새 UI 없이
 // 기존 게이지 칸만 링크화). 이동은 completion_nav_click 이벤트로 계측한다.
+//
+// 2026-08-15(옵션 A): 게이지는 "현재 노출 중인 진단"만 카운트·링크한다(VISIBLE_DIAGNOSIS_KINDS).
+//   bangs·hairquiz 랜딩을 홈/허브에서 내렸으므로, 게이지 막대가 숨긴 페이지로 가는 라이브 링크가
+//   되지 않게 style·damage 2종만 센다. lib의 공용 ALL_DIAGNOSIS_KINDS는 다른 소비처(홈 태그·집계)가
+//   있어 건드리지 않고, 여기 게이지 전용 목록만 좁힌다. → 완성 2/2 도달 가능.
 // ============================================================================
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ALL_DIAGNOSIS_KINDS,
   DIAGNOSIS_KIND_LABEL,
   getCompletedKinds,
   readDiaryEntries,
@@ -29,15 +33,21 @@ const KIND_ROUTE: Record<DiagnosisKind, string> = {
   hairquiz: "/hair-quiz",
 };
 
+// 게이지가 세고 링크하는 "현재 노출 중인" 진단 목록. bangs·hairquiz는 랜딩을 내려 제외.
+// (재노출 시 여기에 다시 추가하면 게이지·완성도 분모가 함께 따라온다.)
+const VISIBLE_DIAGNOSIS_KINDS: DiagnosisKind[] = ["style", "damage"];
+
 export default function InlineCompletion({ className = "" }: { className?: string }) {
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
 
   useEffect(() => {
+    // 집계는 공용 getCompletedKinds를 재사용하되, 게이지 표시는 노출 중인 종류로만 좁힌다.
     setCompleted(getCompletedKinds(readDiaryEntries()));
   }, []);
 
-  const total = ALL_DIAGNOSIS_KINDS.length; // 4
-  const doneCount = completed.length;
+  const visibleDone = completed.filter((k) => VISIBLE_DIAGNOSIS_KINDS.includes(k));
+  const total = VISIBLE_DIAGNOSIS_KINDS.length; // 2 (현재 노출: style·damage)
+  const doneCount = visibleDone.length;
   const isComplete = doneCount >= total;
 
   return (
@@ -47,7 +57,7 @@ export default function InlineCompletion({ className = "" }: { className?: strin
     >
       <span className="shrink-0">프로필 완성도</span>
       <div className="flex max-w-[120px] flex-1 items-center gap-1">
-        {ALL_DIAGNOSIS_KINDS.map((kind) => {
+        {VISIBLE_DIAGNOSIS_KINDS.map((kind) => {
           const filled = completed.includes(kind);
           const label = DIAGNOSIS_KIND_LABEL[kind];
           // 완료한 칸: 정적 막대. 아직 안 한 칸: 랜딩으로 이동하는 링크(탭 영역 확대).
