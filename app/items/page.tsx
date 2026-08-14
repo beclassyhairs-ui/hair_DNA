@@ -8,7 +8,7 @@
 // 매칭: diaryEntries에서 도출한 유저 coreKey ↔ 상품 fit_hair_types/avoid_hair_types.
 // ============================================================================
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import AppShell from "../components/layout/AppShell";
 import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
@@ -71,16 +71,10 @@ export default function ItemsPage() {
   const [coreKey, setCoreKey] = useState<string | null>(null);
   const [name, setName] = useState("고객");
 
-  useEffect(() => {
-    // 클라이언트에서만 접근 가능한 진단 데이터로 매칭 키/이름을 준비한다.
-    try {
-      setCoreKey(deriveCoreKeyFromEntries(readDiaryEntries()));
-      const profile = readBeautyUserProfile();
-      if (profile?.name) setName(profile.name);
-    } catch {
-      /* localStorage 접근 불가 시 기본값 유지 */
-    }
-
+  // 발견템 로드 — 실패 시 에러 상태의 "다시 시도" 버튼이 이 함수를 재호출한다(재시도).
+  const loadItems = useCallback(() => {
+    setLoading(true);
+    setError(null);
     fetch("/api/items")
       .then(async (res) => {
         const body = await res.json().catch(() => null);
@@ -91,6 +85,19 @@ export default function ItemsPage() {
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    // 클라이언트에서만 접근 가능한 진단 데이터로 매칭 키/이름을 준비한다.
+    try {
+      setCoreKey(deriveCoreKeyFromEntries(readDiaryEntries()));
+      const profile = readBeautyUserProfile();
+      if (profile?.name) setName(profile.name);
+    } catch {
+      /* localStorage 접근 불가 시 기본값 유지 */
+    }
+
+    loadItems();
+  }, [loadItems]);
 
   // 노출 규칙은 lib/itemsMatch.selectMatchedProducts 한 곳에만 있다 —
   // /admin/matching-preview가 같은 함수를 써야 미리보기와 실서비스가 어긋나지 않는다.
@@ -140,8 +147,16 @@ export default function ItemsPage() {
       )}
 
       {!loading && error && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-[15px] text-red-500">
-          발견템을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-center">
+          <p className="text-[15px] text-red-500">
+            발견템을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
+          </p>
+          <button
+            onClick={loadItems}
+            className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-[15px] font-semibold text-red-500 transition-colors active:bg-red-50"
+          >
+            다시 시도 ↻
+          </button>
         </div>
       )}
 
