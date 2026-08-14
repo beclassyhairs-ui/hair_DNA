@@ -3,6 +3,17 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-15
 
+## 로그인 게이트(데미지 추가·공용화) + 나의 헤어 다운로드 수정 (2026-08-15, 배포 완료 9eeb61b·1eefacc)
+
+UX 2건, 성격이 달라 커밋 분리. push 승인 후 배포.
+- **① 로그인 게이트**(`9eeb61b`): 공용 `lib/authGate.ts` `ensureLoggedInOrRedirect(returnTo,{onRedirect})` 신설 — `/api/auth/me` 확인, 미로그인/조회실패는 fail-closed로 `/login/consent?return_to=…`. 두 흐름 공유.
+  - **스타일**: `style/loading` 인라인 클라 체크만 헬퍼로 치환(**동작 100% 불변** — 게이트 조건 `isLoginRequiredBeforeSynthesis`·`return_to=/style/loading`·`clearAccountId`·fail-closed 그대로). **불가침 유지**: 서버 강제(`api/hair-transform` 401)·`style/upload` 동의 게이트·`goRelogin`(401 핸들러) 미변경.
+  - **데미지**: `/damage-check/result` **마운트 가드**(returnTo=`/damage-check/result`). `authOk` 확인 전 결과 미렌더(플래시·직접URL 우회 차단), `report_view`도 통과 후에만 기록. (클라 표시 게이트 — 데미지는 서버 합성/비용 없어 보호 대상이 로그인 캡처뿐.)
+  - **Codex 3항목 통과**: ①데미지 익명우회 없음 ②스타일 3중 방어 불변 ③return_to 복귀 정상. 검증: 미로그인 결과 직접진입 → 미노출 → `/login/consent` 리다이렉트·return_to 확인. tsc 통과.
+- **② 다운로드**(`1eefacc`, `app/my-diary/page.tsx`): 원인=저장 대상이 **data URI**라 URL만료·CORS 아님 → 실패는 저장 방식(iOS 사파리 `a[download]` 무시 + click 직후 동기 `revokeObjectURL` 조기취소). 수정=`navigator.canShare({files})` 시 **Web Share(파일)**로 '사진에 추가'(iOS, AbortError는 조용히), 미지원은 **`a[download]`+revoke 10초 지연**. data URI라 화면단(Codex 불필요).
+  - 검증: 인앱 헤드리스 Chromium(share 미지원)=경로② 실행 확인(앵커 클릭·파일명·blob href·revoke 즉시호출 0). 🟡 **iOS 사파리 Web Share 경로·안드로이드 실기기 = 사업주 폰 확인 몫**(headless엔 `navigator.share` 없음).
+- 🟢 이월 정리: 로그인 게이트·다운로드 버그 닫힘. 남은 이월 = faceswap 콜드스타트 확인 / 계측 유출(events anon SELECT — 조회 SQL 6블록 사업주 전달됨, 실행 대기).
+
 ## 완성도 게이지 옵션 A + /items 재시도 + /style 보조링크 (2026-08-15, 배포 완료 36df528·f5c24e0·d879b59)
 
 [구조 수정판] 후속. 프론트 전용(Codex 생략·§3), tsc 통과, dev 서버 DOM 실측 검증.
