@@ -222,11 +222,12 @@ export default function DamageCheckResultPage() {
             </p>
           </section>
 
-          {/* ── 예언 (C2) — 열펌 AND (뿌리+새치) 겹칠 때만 (확정116) ── */}
+          {/* ── 예언(門) — 시술이력 14종 중 첫 매칭 (예언 → 아하 → 관리 3덩어리) ── */}
           {result.prophecy && (
             <section className="rounded-2xl border border-line border-l-4 border-l-ink bg-card p-5">
               <p className="text-[16px] font-extrabold leading-relaxed text-ink">{result.prophecy}</p>
               {result.prophecyAha && <p className="mt-2 text-body leading-relaxed text-sub">{result.prophecyAha}</p>}
+              {result.prophecyTip && <p className="mt-3 border-t border-line pt-3 text-body leading-relaxed text-ink">{result.prophecyTip}</p>}
             </section>
           )}
 

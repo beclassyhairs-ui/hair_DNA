@@ -43,8 +43,9 @@ export interface DamageResult {
   level:         LevelInfo;
   typeInfo:      TypeInfo;
   score:         number;
-  prophecy:      string | null; // C2 예언(조건 충족 시만 · 확정116)
-  prophecyAha:   string | null;
+  prophecy:      string | null; // 예언(門) — 시술이력 기반 14종 중 우선순위 첫 하나(2026-08-13 지시서)
+  prophecyAha:   string | null; // 아하 — 왜 그런지
+  prophecyTip:   string | null; // 관리 — 그럼 어떻게 (3번째 덩어리)
   grayHairStory: string | null; // 흰머리 원고(새치 체크 시만 · 확정104)
   products:      Product[];
   concernTags:   string[];
@@ -103,11 +104,125 @@ const TYPE_INFO: Record<DamageType, TypeInfo> = {
 const GRAY_HAIR_STORY =
   "흰머리는 검은 머리에서 색만 빠진 게 아닙니다. 머리카락 안에 있던 멜라닌 색소가 없어진 채로 자라 나온 겁니다. 그런데 이 색소는 색만 내던 게 아니라, 자극이 들어올 때 단백질 대신 맞아주던 방패이기도 했습니다. 그 방패 없이 나온 머리라, 흰머리는 염색하기 전부터 이미 약한 구조입니다. 여기에 나이가 더해지면 겉을 감싸던 기름 성분도 줄어, 굵고 뻣뻣한데 뻑뻑하게 느껴집니다. 굵어진 게 아니라 기름기가 빠져 거칠어진 겁니다. 게다가 흰머리는 색이 잘 안 들어가 새치 염색약은 더 세게, 시간도 더 오래, 3~4주마다 반복됩니다. 그래서 새치 염색을 오래 하신 분들의 머리는 단백질이 부족하다기보다, 기름기가 빠져나간 상태에 가깝습니다. 여기서 트리트먼트를 잡으시는데, 넣어준 기름 성분은 물로 헹구는 자리에서 상당 부분 다시 씻겨 나갑니다. 염색은 3~4주에 한 번이지만 머리는 그 사이 스무 번을 감고, 기름기는 시간이 아니라 감을 때 씻겨 나갑니다. 그래서 채우는 것보다, 덜 씻겨 나가게 하는 게 먼저입니다. 그 바깥 기름 성분의 이름이 18-MEA이고, 원래 손님 머리에 있던 겁니다. 그래서 18-MEA가 들어간 약산성 샴푸를 권해드립니다. 한 번 감아보시면 뻑뻑한 느낌이 덜한 걸 바로 아실 겁니다.";
 
-// ─── C2 예언 (확정116 · 열펌 AND (뿌리염색+새치) 겹칠 때만) ───────────────────
-const PROPHECY_C2 =
-  "펌한 지 얼마 안 됐는데 컬이 금방 축 처지지 않던가요? 자주 하는 새치 염색으로 속이 약해진 머리에 열펌이 더해져서 그런 걸로 보입니다.";
-const PROPHECY_C2_AHA =
-  "열펌은 컬을, 새치 염색은 결을 갉아먹거든요. 둘이 겹치면 배로 빨리 옵니다.";
+// ─── 예언(門) 14종 — 2026-08-13 지시서 원문 그대로. 문장 재작성 금지. ─────────────
+//   노출 규칙(selectProphecy): ① 1~10번(두 시술 겹침) 위에서부터 첫 매칭. ② 안 걸리면
+//     "마지막 시술" 기준 11~14번 폴백(빈칸 방지 · 지시서 [2] 보강). 시술 전무면 미노출.
+//   ⚠️ 8번(긴 길이×반복시술): 데미지 설문에 길이 문항이 없어 match=false 유지(오픈 급해 문항 추가 안 함).
+//      6번(셀프염색): 시술 선택지에 '셀프염색'이 없어 match=false 유지. 둘 다 문구는 보존(문항 생기면 조건만).
+//   ⚠️ 1번은 "열펌"이라 못 박지 않는다(일반펌도 걸림) — 지시서 §4-4.
+interface ProphecyCtx {
+  perm: boolean; heat: boolean; magic: boolean;
+  rootDye: boolean; fullDye: boolean; anyDye: boolean; bleach: boolean;
+}
+function prophecyCtx(a: DamageSurveyAnswers): ProphecyCtx {
+  const slots: DamageTreatment[] = [a.h_recent, a.h_prev].filter((t) => t !== "none");
+  const has = (t: DamageTreatment) => slots.includes(t);
+  const bleach = has("bleach") || a.h_bleach_2plus; // 탈색 2회+ 체크도 탈색 있음으로 취급
+  return {
+    perm: has("heat_perm") || has("normal_perm"),
+    heat: has("heat_perm"),
+    magic: has("straight_perm"),
+    rootDye: has("root_dye"),
+    fullDye: has("dye"),
+    anyDye: has("root_dye") || has("dye"),
+    bleach,
+  };
+}
+
+interface ProphecyEntry { id: number; door: string; aha: string; tip: string; match: (c: ProphecyCtx) => boolean; }
+
+const PROPHECIES: ProphecyEntry[] = [
+  { id: 1, // 펌 × 뿌리염색
+    door: "펌한 지 얼마 안 되셨는데, 뿌리 쪽 볼륨이 먼저 가라앉는 느낌이 들지 않던가요?",
+    aha:  "염색약이 뿌리에 닿으면 펌으로 잡아둔 결합이 느슨해집니다. 그래서 컬 전체가 늘어져 보이고, 약이 닿은 부분은 펌 유지력이 약해질 수 있어요.",
+    tip:  "펌을 먼저 하고 염색을 하면 염색약이 닿은 부분이 가라앉을 수 있고, 염색을 먼저 하고 펌을 하면 색이 퇴색될 수 있습니다. 가장 좋은 건 두 시술 사이에 기간을 두는 거예요. 너무 자주 겹쳐서 하시면 어느 쪽도 예쁘게 나오기 어렵습니다.",
+    match: (c) => c.perm && c.rootDye },
+  { id: 2, // 매직 × 뿌리염색
+    door: "매직을 하셔서 겉보기엔 매끈한데, 감을 때나 말릴 때 보면 부스스하고 손에 많이 걸리지 않던가요?",
+    aha:  "매직은 결을 펴서 정돈돼 보이게 하는 거지, 머릿결이 진짜 좋아진 건 아니에요. 새치 염색이 반복되면 속은 계속 상하는데 겉이 매끈해서 헷갈리게 만듭니다.",
+    tip:  "젖었을 때 손으로 만져보시고 상했다는 느낌이 드시면, 머릿결 관리는 필수고 잦은 시술은 자제하시는 게 좋습니다. 머릿결이 좋아진 것 같아서 시술을 또 하시면 위험해요.",
+    match: (c) => c.magic && c.rootDye },
+  { id: 3, // 뿌리염색 × 전체염색
+    door: "염색하고 나서, 생각보다 색이 빨리 빠지고 금방 밝아지지 않던가요?",
+    aha:  "손상된 머리는 색은 잘 들어갑니다. 색감도 잘 잡히고요. 다만 원래 색으로 돌아오는 시간이 빨라져요. 상할수록 유지 기간이 짧아집니다.",
+    tip:  "색을 오래 두시려고 염색을 자주 하시면, 그럴수록 유지 기간이 더 짧아지는 쪽으로 갑니다. 차라리 컬러 샴푸나 보색 샴푸로 색상 유지력을 늘려가시는 게 효과적이에요.",
+    match: (c) => c.rootDye && c.fullDye },
+  { id: 4, // 염색 × 열펌
+    door: "펌하고 났더니 머리색이 오히려 밝아 보이거나 상해 보이지 않던가요?",
+    aha:  "가장 마지막에 한 시술이 이전 시술에 영향을 끼칩니다. 염색 후에 열펌을 하면 색이 퇴색돼서 원래 가지고 있던 밝기로 돌아가려는 습성이 있어요. 머리색이 밝아지면 컬도 부스스해 보일 수 있습니다.",
+    tip:  "두 시술을 같이 하셔야 한다면, 열펌을 먼저 하시고 나중에 염색으로 색감만 입혀주는 게 좋습니다. 색감만 넣는 토닝 염색으로 조절하시면 손상을 줄이면서 색을 낼 수 있어요.",
+    match: (c) => c.fullDye && c.heat },
+  { id: 5, // 염색 × 매직
+    door: "매직하고 났는데 결은 매끈해졌는데, 색이 더 밝아 보이고 상해 보이지 않던가요?",
+    aha:  "매직은 퇴색이 심합니다. 색이 빠져서 상해 보이는 건 감출 수가 없어요.",
+    tip:  "이 경우도 매직을 먼저 하시고 나중에 색감만 입혀주는 순서가 낫습니다. 밝기를 조절하는 염색보다 색감을 넣어주는 토닝 쪽이 부담이 적어요.",
+    match: (c) => c.fullDye && c.magic },
+  { id: 6, // 셀프염색 × 미용실 염색 — ⚠️ 셀프염색 문항 없음 → 구조상 미노출(문구 보존)
+    door: "앞쪽이나 헤어라인부터 색이 얼룩덜룩하지 않던가요?",
+    aha:  "뿌리 염색을 직접 하시거나 여기저기 다른 미용실에서 받으시면, 레벨 톤이 한두 톤씩 어긋나면서 얼룩이 쌓이게 됩니다.",
+    tip:  "자기 레벨을 기억해두시는 편이 가장 편해요. 평소 8레벨로 하셨다면 직접 쓰시는 약도 8레벨로 맞추시는 게 좋고, 미용실에서도 미리 말씀해두시면 얼룩질 확률이 많이 줄어듭니다. 혹시 블랙을 하신다면, 그 부분은 다시 밝아지지 않습니다.",
+    match: () => false },
+  { id: 7, // 열펌 × 매직
+    door: "펌을 하시고 나중에 매직을 하셨는데, 끝머리가 지저분하거나 유난히 엉키는 느낌이 들지 않던가요?",
+    aha:  "잦은 열펌과 화학 시술은 결합을 많이 끊기게 합니다. 매직으로 깔끔하게 펴도 끝머리는 부스스하게 올라올 확률이 있어요.",
+    tip:  "그렇게 부스스해지거나 회색빛으로 보이는 부분은 어느 정도 정리해주면서 다듬어 가셔야 합니다. 매직을 하셔서 머리가 깔끔해 보인다고 다시 컬을 넣으시면, 기존 시술에 영향을 받아 좋은 결과가 안 나올 수 있어요.",
+    match: (c) => c.heat && c.magic },
+  { id: 8, // 긴 길이 × 반복 시술 — ⚠️ 길이 문항 없음 → 구조상 미노출(문구 보존)
+    door: "기를수록 끝이 더 상해 보이고 얇아 보이지 않던가요?",
+    aha:  "긴 머리 끝은 몇 년치 시술이 쌓인 자리예요.",
+    tip:  "어느 정도 정리해주면서 지저분한 부분을 다듬고 가셔야 오히려 효과적으로 기를 수 있습니다.",
+    match: () => false },
+  { id: 9, // 탈색 × 매직
+    door: "탈색하고 매직을 하셨는데, 오히려 매직 효과가 잘 안 났던 적 있지 않던가요?",
+    aha:  "탈색모에 하는 매직은 복구 매직이라고 하는 고난도 시술입니다. 디자이너에 따라 결과 차이가 크고, 약이 잘못 들어가면 되돌릴 수 없는 결과가 나올 수 있어요.",
+    tip:  "하시게 된다면 pH를 잘 아는 분께 받으셔야 합니다.",
+    match: (c) => c.bleach && c.magic },
+  { id: 10, // 탈색 × 열펌
+    door: "탈색한 머리에 펌을 하셨다면, 컬이 아예 안 나오거나 부스스해지지 않던가요?",
+    aha:  "탈색모에 열펌은 사실상 불가능합니다. 컬을 걸어둘 뼈대가 남아 있지 않아서요.",
+    tip:  "지금은 새로 뭘 얹기보다, 있는 걸 지키면서 정리하는 쪽이 결과가 빠릅니다.",
+    match: (c) => c.bleach && c.heat },
+  { id: 11, // 펌만
+    door: "펌하고 한 달쯤 지나면, 컬이 늘어지기보다 지저분하고 부스스해 보이지 않던가요?",
+    aha:  "원래 곱슬기가 있는 머리에 펌으로 컬이 한 겹 더 얹히면, 두 개가 섞이면서 부스스해 보일 수 있어요.",
+    tip:  "트리트먼트나 마스크로 관리해주시고, 말리실 때 끝까지 완전히 건조해주시면 훨씬 깔끔한 컬을 유지하실 수 있습니다.",
+    match: (c) => c.perm }, // '다른 시술 없음' 제거(폴백 겸함) — 실제 선택은 selectProphecy가 마지막 시술로
+  { id: 12, // 매직만
+    door: "매직하고 시간이 지나면 뿌리 쪽부터 다시 뜨지 않던가요?",
+    aha:  "새로 자라 나오는 뿌리는 원래 성질 그대로 올라옵니다.",
+    tip:  "전체를 다시 펴기보다 뿌리만 정리하시는 편이 머릿결에 훨씬 낫고요. 그 사이에는 곱슬기를 완화해주는 케라틴 미스트 같은 제품을 쓰시는 것도 좋은 방법입니다.",
+    match: (c) => c.magic }, // '다른 시술 없음' 제거(폴백 겸함)
+  { id: 13, // 염색만
+    door: "염색하고 두세 주 지나면 색이 확 빠져 보이지 않던가요?",
+    aha:  "색은 감을 때마다 조금씩 빠져나갑니다.",
+    tip:  "염색을 다시 하시는 것보다 컬러 샴푸로 사이를 버티시는 게 머릿결에는 훨씬 낫습니다.",
+    match: (c) => c.anyDye }, // '다른 시술 없음' 제거(폴백 겸함)
+  { id: 14, // 탈색만
+    door: "탈색하고 나서 머리가 유난히 잘 엉키고, 젖으면 늘어나지 않던가요?",
+    aha:  "탈색은 색소를 빼내면서 머리 속을 비워냅니다. 비워진 자리는 다시 채워지지 않아요.",
+    tip:  "지금은 새로 뭘 얹기보다 있는 걸 지키면서 정리하는 쪽이 결과가 빠릅니다.",
+    match: (c) => c.bleach }, // '다른 시술 없음' 제거(폴백 겸함)
+];
+
+/**
+ * 예언 선택: ① 1~10번(두 시술 겹침)을 위에서부터 검사해 첫 매칭. ② 안 걸리면 "마지막 시술"
+ * 기준으로 11~14번 중 하나를 폴백으로 띄운다(2026-08-13 지시서 [2] 보강 — 빈칸 방지).
+ *   마지막=열펌/일반펌→11, 매직→12, 전체염색/뿌리염색→13, 탈색→14. 시술 전무면 null.
+ *   ★ 11~14의 "다른 시술 없음" 조건은 제거(이제 폴백 역할 겸함) — selectProphecy가 직접 고른다.
+ */
+function selectProphecy(a: DamageSurveyAnswers): ProphecyEntry | null {
+  const c = prophecyCtx(a);
+  const paired = PROPHECIES.filter((p) => p.id <= 10).find((p) => p.match(c));
+  if (paired) return paired;
+  // 폴백: 마지막에 한 시술(h_recent 우선, none이면 h_prev)로 단일 예언 매핑.
+  const last = a.h_recent !== "none" ? a.h_recent : a.h_prev;
+  const fallbackId =
+    last === "heat_perm" || last === "normal_perm" ? 11 :
+    last === "straight_perm" ? 12 :
+    last === "dye" || last === "root_dye" ? 13 :
+    last === "bleach" ? 14 : null;
+  return fallbackId ? PROPHECIES.find((p) => p.id === fallbackId) ?? null : null;
+}
 
 // ─── 제품 (§5 · 정수리·볼륨 제외 · 새치 마스카라 최상단 · 18-MEA 간판) ───────────
 const P_18MEA: Product = { emoji: "🧴", name: "18-MEA 약산성 샴푸", description: "채우는 게 아니라, 안 빼앗기는 겁니다.", link: "#" };
@@ -179,11 +294,8 @@ export function diagnoseDamage(a: DamageSurveyAnswers): DamageResult {
   const level = calcLevel(a);
   const type  = pickType(level, a);
 
-  // C2 예언: 열펌(heat_perm) AND (뿌리염색 & 새치 체크) 둘 다 겹칠 때만 (확정116·61).
-  //   FIX2: 매직(straight_perm)은 펴는 시술이라 '컬 처짐' 예언 대상 아님 — 열펌만.
-  const hasHeatPerm = a.h_recent === "heat_perm" || a.h_prev === "heat_perm";
-  const hasGrayRootDye = (a.h_recent === "root_dye" || a.h_prev === "root_dye") && a.h_root_gray;
-  const showProphecy = hasHeatPerm && hasGrayRootDye;
+  // 예언(門): 시술이력 14종 중 위에서부터 첫 매칭 하나(2026-08-13 지시서). 시술 전무면 null.
+  const prophecy = selectProphecy(a);
 
   // 제품: 유형별 + 새치 체크 시 마스카라 최상단 (§5)
   const base = type === "DRY" ? PRODUCTS_DRY : type === "RIGID" ? PRODUCTS_RIGID : PRODUCTS_HEALTHY;
@@ -194,8 +306,9 @@ export function diagnoseDamage(a: DamageSurveyAnswers): DamageResult {
     level:         LEVEL_INFO[level],
     typeInfo:      TYPE_INFO[type],
     score,
-    prophecy:      showProphecy ? PROPHECY_C2 : null,
-    prophecyAha:   showProphecy ? PROPHECY_C2_AHA : null,
+    prophecy:      prophecy ? prophecy.door : null,
+    prophecyAha:   prophecy ? prophecy.aha : null,
+    prophecyTip:   prophecy ? prophecy.tip : null,
     grayHairStory: a.h_root_gray ? GRAY_HAIR_STORY : null,
     products,
     concernTags:   buildConcernTags(level, type),
