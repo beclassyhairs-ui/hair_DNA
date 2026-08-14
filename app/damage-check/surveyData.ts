@@ -29,6 +29,7 @@ export interface DamageSurveyAnswers {
   h_more:         DamageMore;      // 작년에 더 하신 것
   h_bleach_2plus: boolean;         // 탈색 → 2회 이상 (확정: Lv4 강제)
   h_root_gray:    boolean;         // 뿌리염색 → 새치 염색 (확정95, 흰머리 원고 노출)
+  h_self_dye?:    boolean;         // 염색/뿌리염색 → 집에서 직접(셀프염색) (예언 6번 트리거 · 점수 영향 없음). 옛 세션 호환 위해 옵셔널.
   h_root_interval: RootDyeInterval; // 뿌리염색 주기 (뿌리염색 선택 시만) — 새치 주고객 2~3주 반영
   h_root_over6m:   boolean;         // 뿌리염색 6개월↑ 지속 (+0.5, 합계 최대 1.3)
 }

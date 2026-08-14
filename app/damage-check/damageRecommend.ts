@@ -108,11 +108,12 @@ const GRAY_HAIR_STORY =
 //   노출 규칙(selectProphecy): ① 1~10번(두 시술 겹침) 위에서부터 첫 매칭. ② 안 걸리면
 //     "마지막 시술" 기준 11~14번 폴백(빈칸 방지 · 지시서 [2] 보강). 시술 전무면 미노출.
 //   ⚠️ 8번(긴 길이×반복시술): 데미지 설문에 길이 문항이 없어 match=false 유지(오픈 급해 문항 추가 안 함).
-//      6번(셀프염색): 시술 선택지에 '셀프염색'이 없어 match=false 유지. 둘 다 문구는 보존(문항 생기면 조건만).
+//   6번(셀프염색): 염색/뿌리염색 하위체크 h_self_dye로 활성(2026-08-14). selfDye AND anyDye. 점수 영향 없음.
 //   ⚠️ 1번은 "열펌"이라 못 박지 않는다(일반펌도 걸림) — 지시서 §4-4.
 interface ProphecyCtx {
   perm: boolean; heat: boolean; magic: boolean;
   rootDye: boolean; fullDye: boolean; anyDye: boolean; bleach: boolean;
+  selfDye: boolean; // 집에서 직접(셀프염색) 체크 — 6번 트리거
 }
 function prophecyCtx(a: DamageSurveyAnswers): ProphecyCtx {
   const slots: DamageTreatment[] = [a.h_recent, a.h_prev].filter((t) => t !== "none");
@@ -126,6 +127,7 @@ function prophecyCtx(a: DamageSurveyAnswers): ProphecyCtx {
     fullDye: has("dye"),
     anyDye: has("root_dye") || has("dye"),
     bleach,
+    selfDye: a.h_self_dye === true, // 옛 세션(undefined)은 false
   };
 }
 
@@ -157,11 +159,11 @@ const PROPHECIES: ProphecyEntry[] = [
     aha:  "매직은 퇴색이 심합니다. 색이 빠져서 상해 보이는 건 감출 수가 없어요.",
     tip:  "이 경우도 매직을 먼저 하시고 나중에 색감만 입혀주는 순서가 낫습니다. 밝기를 조절하는 염색보다 색감을 넣어주는 토닝 쪽이 부담이 적어요.",
     match: (c) => c.fullDye && c.magic },
-  { id: 6, // 셀프염색 × 미용실 염색 — ⚠️ 셀프염색 문항 없음 → 구조상 미노출(문구 보존)
+  { id: 6, // 셀프염색 × 미용실 염색 — 셀프 체크(h_self_dye) AND (전체염색 OR 뿌리염색)
     door: "앞쪽이나 헤어라인부터 색이 얼룩덜룩하지 않던가요?",
     aha:  "뿌리 염색을 직접 하시거나 여기저기 다른 미용실에서 받으시면, 레벨 톤이 한두 톤씩 어긋나면서 얼룩이 쌓이게 됩니다.",
     tip:  "자기 레벨을 기억해두시는 편이 가장 편해요. 평소 8레벨로 하셨다면 직접 쓰시는 약도 8레벨로 맞추시는 게 좋고, 미용실에서도 미리 말씀해두시면 얼룩질 확률이 많이 줄어듭니다. 혹시 블랙을 하신다면, 그 부분은 다시 밝아지지 않습니다.",
-    match: () => false },
+    match: (c) => c.selfDye && c.anyDye }, // ⚠️ 1~5번보다 아래 — 펌·매직 겹치면 그쪽이 먼저(순서 고정)
   { id: 7, // 열펌 × 매직
     door: "펌을 하시고 나중에 매직을 하셨는데, 끝머리가 지저분하거나 유난히 엉키는 느낌이 들지 않던가요?",
     aha:  "잦은 열펌과 화학 시술은 결합을 많이 끊기게 합니다. 매직으로 깔끔하게 펴도 끝머리는 부스스하게 올라올 확률이 있어요.",

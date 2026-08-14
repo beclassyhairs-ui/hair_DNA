@@ -46,19 +46,22 @@ function TreatmentHistoryStep({
   const [more, setMore]     = useState<string>("none");
   const [bleach2, setBleach2]   = useState(false);
   const [rootGray, setRootGray] = useState(false);
+  const [selfDye, setSelfDye]   = useState(false); // 염색/뿌리염색 → 집에서 직접(셀프염색)
   const [rootInterval, setRootInterval] = useState<RootDyeInterval>("");
   const [rootOver6m, setRootOver6m]     = useState(false);
 
   const recentIsNone = recent === "none";
   const hasBleach  = !recentIsNone && (recent === "bleach" || prev === "bleach");
   const hasRootDye = !recentIsNone && (recent === "root_dye" || prev === "root_dye");
+  // 셀프 체크 노출 대상: 염색 또는 뿌리염색을 어느 슬롯에서든 골랐을 때(한 번만).
+  const hasAnyDye  = !recentIsNone && (recent === "dye" || recent === "root_dye" || prev === "dye" || prev === "root_dye");
   // 뿌리염색 손님은 주기 선택까지 해야 진행(정확 점수 확보). 그 외엔 기존과 동일.
   const canProceed = !disabled && (recentIsNone || (recent !== null && prev !== null && (!hasRootDye || rootInterval !== "")));
 
   function submit() {
     if (!canProceed) return;
     if (recentIsNone) {
-      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false, h_root_interval: "", h_root_over6m: false });
+      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false, h_self_dye: false, h_root_interval: "", h_root_over6m: false });
       return;
     }
     onComplete({
@@ -67,6 +70,7 @@ function TreatmentHistoryStep({
       h_more:   more as DamageSurveyAnswers["h_more"],
       h_bleach_2plus: hasBleach && bleach2,
       h_root_gray:    hasRootDye && rootGray,
+      h_self_dye:     hasAnyDye && selfDye,
       h_root_interval: hasRootDye ? rootInterval : "",
       h_root_over6m:   hasRootDye ? rootOver6m : false,
     });
@@ -108,10 +112,11 @@ function TreatmentHistoryStep({
         </div>
       )}
 
-      {!recentIsNone && (hasBleach || hasRootDye) && recent !== null && prev !== null && (
+      {!recentIsNone && (hasBleach || hasRootDye || hasAnyDye) && recent !== null && prev !== null && (
         <div className="space-y-2">
           {hasBleach  && <Chk on={bleach2}  onToggle={() => setBleach2((v) => !v)}  label="탈색은 2번 이상 했어요" />}
           {hasRootDye && <Chk on={rootGray} onToggle={() => setRootGray((v) => !v)} label="뿌리염색은 새치 염색이에요" />}
+          {hasAnyDye  && <Chk on={selfDye}  onToggle={() => setSelfDye((v) => !v)}  label="집에서 직접 하신 적 있어요" />}
         </div>
       )}
 

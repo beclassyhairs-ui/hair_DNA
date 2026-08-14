@@ -125,6 +125,8 @@ export const STYLE_CARDS: (CoupangCard & { parked?: boolean; match: (a: StyleAns
 const dyeHistory = (a: DamageSurveyAnswers) =>
   ["dye", "root_dye", "bleach"].includes(a.h_recent) || ["dye", "root_dye", "bleach"].includes(a.h_prev);
 
+// TODO(셀프염색 제품 · 2026-08-14): 셀프염색 체크(a.h_self_dye) 손님용 pH 밸런서·염색 보조제 카드 자리.
+//   현재 쿠팡 21종에 해당 제품이 없어 미연결. 사장님이 링크를 따면 아래에 카드 추가 + match:(_t,a)=>a.h_self_dye===true.
 export const DAMAGE_CARDS: (CoupangCard & { parked?: boolean; match: (type: DamageType, a: DamageSurveyAnswers) => boolean })[] = [
   { g: "G02", name: "새치 커버 마스카라", emoji: "🖌️",
     reason: "뿌리 새치가 올라왔을 때 잠깐 가려줍니다",
