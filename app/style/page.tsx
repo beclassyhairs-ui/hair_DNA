@@ -9,7 +9,6 @@ import {
   STYLE_GENERATED_KEY,
   STYLE_PHOTO_KEY,
   STYLE_UNLOCKED_KEY,
-  STYLE_PREWARM_KEY,
 } from "./constants";
 import { getRemainingUses, canUseToday, DAILY_MAX } from "@/lib/dailyLimit";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
@@ -28,7 +27,6 @@ export default function StyleLandingPage() {
       sessionStorage.removeItem(STYLE_PHOTO_KEY);
       sessionStorage.removeItem(STYLE_GENERATED_KEY);
       sessionStorage.removeItem(STYLE_UNLOCKED_KEY);
-      sessionStorage.removeItem(STYLE_PREWARM_KEY); // 새 진단 시작 → 예열 플래그도 초기화(다음 발사 허용)
     } catch { /**/ }
     setRemaining(getRemainingUses());
     // 유입/조회 — 핵심 진단(/style) 랜딩 진입 1회

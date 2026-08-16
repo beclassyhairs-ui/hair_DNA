@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import StyleSessionPing from "./StyleSessionPing";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
 
@@ -25,5 +26,6 @@ export const metadata: Metadata = {
 };
 
 export default function StyleLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  // ③ 세션핑 90초 — /style 구역 전체에 상주하며 GPU 예열 유지(하위 라우트 전환에도 안 끊김).
+  return <><StyleSessionPing />{children}</>;
 }

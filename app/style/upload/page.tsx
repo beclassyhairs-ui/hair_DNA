@@ -17,7 +17,6 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import guideImg from "@/public/images/guide/guide-full.png";
 import { STYLE_PHOTO_KEY } from "../constants";
-import { prewarmSecondary } from "../prewarm";
 import { hasOverseasConsent, consentGateHref } from "@/lib/consentGate";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
@@ -161,9 +160,7 @@ export default function StyleUploadPage() {
     } catch { /**/ }
   }, []);
 
-  // ── faceswap GPU 선점 예열(보조발사) ── 사진 화면 진입 시, 직전 발사(주로 설문 마운트)가 180초를
-  //   넘었을 때만 재점화한다(유휴 ~5분에 GPU 재수면 대비). 서버 90초 쿨다운이 최종 방어. fire-and-forget.
-  useEffect(() => { prewarmSecondary(); }, []);
+  // (faceswap GPU 예열은 /style 레이아웃의 세션핑 하트비트(StyleSessionPing)가 전담 — 보조발사 제거.)
 
   // 동의 게이트: 현재버전 국외이전 동의 보유자만 통과. 아니면 동의화면으로(fail-closed).
   useEffect(() => {
