@@ -15,6 +15,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { STYLE_ANSWERS_KEY, STYLE_DEBUG_ERROR_KEY, STYLE_FAIL_REASON_KEY, STYLE_GENERATED_KEY, STYLE_JOB_KEY, STYLE_LIMIT_KEY, STYLE_PHOTO_KEY } from "../constants";
 import { toSheetAnswers } from "../recommend";
 import type { StyleAnswers } from "../surveyData";
+import { LENGTH_LABEL_MAP } from "../surveyData";
+import { resolveCrossBranch } from "../crossBranch";
+import { getBranchCopy } from "../branchCopy";
 import { incrementUsage } from "@/lib/dailyLimit";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 import { ensureLoggedInOrRedirect } from "@/lib/authGate";
@@ -23,11 +26,65 @@ import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
+// 진행단계 라벨(로딩바 위) — 파트1. 사진 분석 → 얼굴형 → 스타일 → 마무리(마지막에서 정지).
 const STEPS = [
-  "사진을 확인하고 있어요",
-  "원하시는 스타일을 입히는 중이에요",
-  "자연스럽게 다듬어 마무리하는 중이에요",
+  "사진 분석 중…",
+  "얼굴형 확인 중…",
+  "스타일 입히는 중…",
+  "마무리 중…",
 ];
+
+// ── 파트1: 로딩 중 손님 본인 진단 순차 공개 ──────────────────────────────────
+// 목적: 대기시간을 손님 진단으로 채우고, 아래 결과지를 볼 가치를 예고(미열독 방지).
+// 규칙: 실제 설문 8문항만 사용. 없는 항목(두피·유수분 등) 생성 금지. 값 결측 시 그 줄만
+//   일반 문구로 대체(빈칸·에러 노출 금지). 손상톤은 결과지 판정 스탬프를 그대로 재사용
+//   ("N단계" 임의 생성 금지). 카카오 닉네임은 서버가 PII로 미반환 → 이름 없는 문구 고정.
+const LAYER_LABEL:     Record<string, string> = { heavy: "무거운", medium: "소프트", light: "허쉬" };
+const DESIGN_LABEL:    Record<string, string> = { straight: "생머리", c_curl: "C컬", s_curl: "S컬", wave: "웨이브" };
+const THICKNESS_LABEL: Record<string, string> = { coarse: "두꺼운", medium_thickness: "보통", fine: "얇은" };
+const DENSITY_LABEL:   Record<string, string> = { thick_density: "많은", medium_density: "보통", thin_density: "적은" };
+const CURL_LABEL:      Record<string, string> = { straight_hair: "직모", wavy_hair: "반곱슬", curly_hair_mid: "곱슬", curly_hair: "악성곱슬" };
+const HISTORY_COUNT_LABEL: Record<string, string> = { count_1_2: "1~2회", count_3_4: "3~4회", count_5_6: "5~6회", count_7plus: "7회 이상" };
+
+function buildDiagnosisReveal(a: StyleAnswers): string[] {
+  const lines: string[] = [];
+
+  // 1) 진단 헤드 — 기장/레이어/웨이브(설문 라벨 그대로)
+  const len   = a.q11_length ? LENGTH_LABEL_MAP[a.q11_length] : undefined;
+  const layer = a.q14_layer  ? LAYER_LABEL[a.q14_layer]       : undefined;
+  const wave  = a.q13_design ? DESIGN_LABEL[a.q13_design]     : undefined;
+  lines.push(len && layer && wave
+    ? `고르신 스타일 — ${len} 길이에 ${layer} 레이어, ${wave}네요`
+    : "고르신 스타일을 살펴보고 있어요");
+
+  // 2) 굵기
+  const th = a.q7_thickness ? THICKNESS_LABEL[a.q7_thickness] : undefined;
+  lines.push(th ? `사진 속 모발을 보니 — ${th} 편이에요` : "사진 속 모발을 살펴보고 있어요");
+
+  // 3) 숱
+  const den = a.q8_density ? DENSITY_LABEL[a.q8_density] : undefined;
+  lines.push(den ? `숱은 ${den} 쪽이시고요` : "모발 밀도를 확인하고 있어요");
+
+  // 4) 곱슬
+  const curl = a.q3_curl ? CURL_LABEL[a.q3_curl] : undefined;
+  lines.push(curl ? `곱슬기는 ${curl}에 가까우시네요` : "곱슬기를 확인하고 있어요");
+
+  // 5) 시술 이력 → 손상톤(결과지 판정 스탬프 그대로 재사용). 시술횟수(q10)는 현재 설문에
+  //    없어 대개 폴백되고, 손상톤은 시술이력(q8a_recent 등)으로 계산된 결과 판정에서 온다.
+  let tone = "";
+  try { tone = getBranchCopy(resolveCrossBranch(a).primary).stamp; } catch { tone = ""; }
+  const cnt = a.q10_history_count ? HISTORY_COUNT_LABEL[a.q10_history_count] : undefined;
+  lines.push(tone
+    ? (cnt ? `1년에 시술 ${cnt} · ${tone}` : `시술 이력을 살펴보니 · ${tone}`)
+    : "시술 이력을 살펴보고 있어요");
+
+  // 6~8) 처방 예고 — 아래 결과지로 끌어당기기
+  lines.push("이 스타일, 이 모발에 '되는 이유'가 따로 있어요");
+  lines.push("20년차 디자이너가 딱 맞는 처방을 정리하는 중…");
+  lines.push("미용실에서 이 말만 하면 실패 안 하는 팁도 담을게요");
+
+  return lines;
+}
 
 // faceswap 합성 자체는 빠르지만(웜업 후 수 초), GPU 콜드스타트 시 수 분 걸린다.
 const MIN_LOADING_MS   = 2_800;   // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
@@ -39,15 +96,6 @@ const POLL_BUDGET_MS   = 480_000; // 8분
 const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 const LONG_WAIT_MS     = 20_000;  // 이 시간 넘게 걸리면 "처음 한 번은 오래 걸려요" 안내로 전환
-
-const HAIR_TIPS = [
-  "드라이 마지막 10초는 찬바람으로 마무리하세요. 큐티클이 닫히며 윤기가 살고, 아침에 잡은 스타일이 저녁까지 유지됩니다.",
-  "샴푸 전 건식 브러싱 2분이면 두피 노폐물이 떠오르고 모발 엉킴이 풀려, 같은 샴푸로도 세정력이 훨씬 높아집니다.",
-  "트리트먼트가 두피에 닿으면 모공을 막아 탈모를 유발합니다. 반드시 귀 아래 모발에만 얇게 도포하세요.",
-  "열 스타일링 전 열 보호제는 선택이 아닌 필수입니다. 180°C 고온 한 번이 모발 단백질 구조를 영구 손상시킵니다.",
-  "샴푸 시 손끝으로 두피를 30초 마사지하면 혈액순환이 활성화되어 모발 성장 주기 자체가 달라집니다.",
-  "펌·컬러 후 48시간은 황금 시간입니다. 이 시간 안에 모발이 젖으면 웨이브가 풀리거나 색이 빠질 수 있어요.",
-];
 
 const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
@@ -65,21 +113,33 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export default function StyleLoadingPage() {
   const router     = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
-  const [tipIdx,  setTipIdx]  = useState(0);
+  const [revealLines, setRevealLines] = useState<string[]>([]);
+  const [revealIdx,   setRevealIdx]   = useState(0);
   const [longWait, setLongWait] = useState(false);
   const calledRef  = useRef(false); // 중복 호출 방지
 
-  // 텍스트 스텝 로테이션 (시각 연출 — API 와 독립).
+  // 진행단계 라벨 로테이션 (시각 연출 — API 와 독립, 마지막 단계에서 정지).
   useEffect(() => {
-    const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 1_100);
+    const t = setInterval(() => setStepIdx(i => Math.min(i + 1, STEPS.length - 1)), 2_000);
     return () => clearInterval(t);
   }, []);
 
-  // 꿀팁 롤링 (2.5초 간격)
+  // 파트1: 세션 답변으로 진단 순차 공개 줄을 구성(마운트 1회). 답변 없으면 일반 안내 1줄.
   useEffect(() => {
-    const t = setInterval(() => setTipIdx(i => (i + 1) % HAIR_TIPS.length), 2_500);
-    return () => clearInterval(t);
+    let a: StyleAnswers = {};
+    try {
+      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      if (raw) a = JSON.parse(raw) as StyleAnswers;
+    } catch { a = {}; }
+    setRevealLines(Object.keys(a).length > 0 ? buildDiagnosisReveal(a) : ["진단 결과를 준비하고 있어요"]);
   }, []);
+
+  // 진단 공개 줄 롤링 (3초 간격, 마지막 줄 뒤 루프).
+  useEffect(() => {
+    if (revealLines.length === 0) return;
+    const t = setInterval(() => setRevealIdx(i => (i + 1) % revealLines.length), 3_000);
+    return () => clearInterval(t);
+  }, [revealLines.length]);
 
   // 20초 넘게 걸리면 콜드스타트 안내로 문구 전환.
   useEffect(() => {
@@ -317,45 +377,49 @@ export default function StyleLoadingPage() {
             </motion.p>
           </AnimatePresence>
 
-          {/* 소요시간 안내(확정125) — 평소값 앞·최악값 뒤. "최대 N분"은 POLL_BUDGET_MIN 파생(폴링 상한과 결속).
-              20초 넘어가면(콜드스타트) 문구를 전환하되 최대 시간 표기는 유지. */}
-          <p className="max-w-[280px] text-center text-[12px] leading-relaxed text-ink-2">
+          {/* 소요시간 안내(확정125·파트1④) — 평소값 앞·최악값 뒤. "최대 N분"은 POLL_BUDGET_MIN 파생.
+              ★ 문구 정합(사업주 결정: 문구만): 같은 탭에서 이 화면을 잠깐 벗어났다 돌아오면
+                sessionStorage(STYLE_JOB_KEY) 로 폴링이 재개된다(실제 동작). 탭을 완전히 닫으면
+                끊기므로 "나갔다 와도"가 아니라 "다시 돌아오셔도 이어서" 로만 약속한다(과약속 금지).
+                진짜 백그라운드 완성(탭 종료 후 복귀)은 서버 원장 필요 → 오픈 후 과제. */}
+          <p className="max-w-[300px] text-center text-[13px] leading-relaxed text-ink-2">
             {longWait
-              ? `지금 준비 중이에요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요 · 창을 닫지 말고 잠시만 더 기다려 주세요`
-              : `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요 · 창을 닫지 말고 기다려 주세요`}
+              ? `시간이 조금 걸리고 있어요 · 이 화면을 잠깐 벗어났다 다시 돌아오셔도 이어서 진행돼요 · 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`
+              : `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`}
           </p>
         </div>
 
-        {/* ── 하단 60% — 헤어 꿀팁 콘텐츠 ── */}
+        {/* ── 하단 60% — 파트1: 손님 본인 진단 순차 공개(대기시간을 진단으로 채우고 결과지 예고) ── */}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden px-5 pb-6">
           <div className="flex-none">
-            <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-ink-2">
-              기다리는 동안 읽는 헤어 꿀팁
+            <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-[0.22em] text-ink-2">
+              AI가 읽고 있는 내 모발
             </p>
 
-            <GlassCard className="relative flex min-h-[72px] items-center px-5 py-4">
+            <GlassCard className="relative flex min-h-[92px] items-center justify-center px-5 py-5">
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={tipIdx}
-                  initial={{ opacity: 0, y: 6 }}
+                <motion.p
+                  key={revealIdx}
+                  initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-start gap-3"
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.45 }}
+                  className="text-center text-[16px] font-semibold leading-relaxed text-ink"
                 >
-                  <span className="mt-1 flex-none h-1 w-1 rounded-full bg-ink-2" />
-                  <p className="text-[12px] leading-relaxed text-ink-2">{HAIR_TIPS[tipIdx]}</p>
-                </motion.div>
+                  {revealLines[revealIdx] ?? "진단 결과를 준비하고 있어요"}
+                </motion.p>
               </AnimatePresence>
             </GlassCard>
 
-            <div className="mt-2.5 flex justify-center gap-1.5">
-              {HAIR_TIPS.map((_, i) => (
-                <span key={i}
-                  className={`inline-block h-1 rounded-full transition-all duration-300 ${i === tipIdx ? "w-4 bg-ink/70" : "w-1 bg-line"}`}
-                />
-              ))}
-            </div>
+            {revealLines.length > 1 && (
+              <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+                {revealLines.map((_, i) => (
+                  <span key={i}
+                    className={`inline-block h-1 rounded-full transition-all duration-300 ${i === revealIdx ? "w-4 bg-ink/70" : "w-1 bg-line"}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
