@@ -33,12 +33,11 @@ import { USER_COOKIE, verifyUserToken } from "@/lib/userAuth";
 import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 import { hasCurrentOverseasConsent } from "@/lib/consentServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { issueJobToken } from "@/lib/hairJobToken";
+import { issueJobToken, verifyJobToken } from "@/lib/hairJobToken";
 import {
-  HAIRSYNTH_MODEL,
-  HAIRSYNTH_MODEL_VERSION,
   REPLICATE_PREDICTIONS_ENDPOINT,
-  buildFaceswapInput,
+  selectModel,
+  HAIRSYNTH_FALLBACK_ENABLED,
 } from "@/lib/hairSynthModel";
 
 // 서버측 일일 호출 제한(유저당). 클라 표시(3회)보다 여유를 둔다.
@@ -168,13 +167,38 @@ export async function POST(req: NextRequest) {
     // 2. 요청 파싱
     let userPhoto: string;
     let answers: StyleAnswers;
+    let fallback = false;       // ⑤ true 면 폴백 모델(lucataco)로 착수 — 클라가 8분 콜드 미스 후에만 보낸다.
+    let originalId = "";        // 폴백 자격 증표: 같은 유저의 원본(ddvinh1) kickoff prediction id
+    let originalToken = "";     //                그 원본 job 의 소유권 토큰(HMAC)
     try {
       const body = await req.json();
       userPhoto = body.userPhoto as string;
       answers = (body.answers ?? {}) as StyleAnswers;
+      fallback = body.fallback === true;
+      originalId = typeof body.originalId === "string" ? body.originalId : "";
+      originalToken = typeof body.originalToken === "string" ? body.originalToken : "";
     } catch {
       return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
     }
+
+    // ⑤ 폴백 자격 검증(서버) — 클라가 보낸 fallback:true 를 그대로 신뢰하지 않는다(Codex 반영):
+    //   ① 킬스위치가 꺼져 있으면 폴백 무시 → ddvinh1 로만 착수(미화 재노출 즉시 차단 가능).
+    //   ② 켜져 있어도 "같은 유저 소유의 정상 원본 kickoff 토큰"이 있어야만 폴백 허용 → 임의로
+    //      fallback:true 만 던져 lucataco 를 직접 쓰는 모델정책 우회를 차단(원본 kickoff 는 이미 과금됨).
+    //   (한계·수용: 무상태 토큰이라 "8분 경과"·replay 까지는 못 막는다 — 비용은 일일한도로 상한.
+    //    정확한 멱등/경과검증은 hair_jobs 원장 도입 시. 킬스위치로 즉시 무력화는 가능.)
+    let useFallback = false;
+    if (fallback && HAIRSYNTH_FALLBACK_ENABLED) {
+      const originalOk = await verifyJobToken(sessionSecret, originalId, bindUserId, originalToken);
+      if (!originalOk) {
+        console.warn("[hair-transform] ⑤ 폴백 자격 검증 실패 — 원본 job 토큰 불일치");
+        return NextResponse.json({ ok: false, reason: "bad_request" }, { status: 400 });
+      }
+      useFallback = true;
+    }
+
+    // 모델 선택은 단일출처(selectModel)에서만 — 라우트엔 버전 해시·입력 스키마를 두지 않는다.
+    const model = selectModel(useFallback);
     if (!userPhoto) {
       return NextResponse.json({ ok: false, reason: "missing_photo" }, { status: 400 });
     }
@@ -212,7 +236,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, reason: "reference_fetch_failed" });
     }
 
-    console.log(`[hair-transform] → ${HAIRSYNTH_MODEL} | ref ${reference.slot}${reference.isFallback ? "(폴백)" : ""}${reference.isDefault ? "(default)" : ""}`);
+    console.log(`[hair-transform] → ${model.slug}${useFallback ? " (⑤ 폴백)" : ""} | ref ${reference.slot}${reference.isFallback ? "(폴백)" : ""}${reference.isDefault ? "(default)" : ""}`);
 
     // 4. Replicate 예측 "생성"만 한다(Prefer:wait 없음). 완료 대기는 클라가 status 폴링.
     if (budgetLeft() <= 2_000) {
@@ -229,9 +253,9 @@ export async function POST(req: NextRequest) {
           // ★ Prefer:wait 제거 — 즉시 예측 객체(status=starting)를 받고 반환한다.
         },
         body: JSON.stringify({
-          version: HAIRSYNTH_MODEL_VERSION,
+          version: model.version,
           // 입력 스키마는 모델 단일출처의 빌더가 흡수(ddvinh1=input_image+enhance / lucataco=target_image).
-          input: buildFaceswapInput(selfieDataUri, refDataUri),
+          input: model.buildInput(selfieDataUri, refDataUri),
         }),
         signal: AbortSignal.timeout(Math.max(1_000, budgetLeft())),
       });
@@ -258,9 +282,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 5. 소유권 바인딩 토큰 발급 후 즉시 반환(예약 유지, 환불 없음).
+    //   ★ fallbackUsed: 실제로 폴백(lucataco)으로 착수했는지를 클라에 알린다(Codex 반영). 킬스위치가
+    //     꺼져 fallback 요청이 ddvinh1 로 처리된 경우 false → 클라는 이를 보고 폴링 예산(8분)·안내·
+    //     job 영속 상태를 정한다(폴백 예산 2분으로 콜드 ddvinh1 을 조기취소하는 회귀 방지).
     const token = await issueJobToken(sessionSecret, predId, bindUserId);
-    console.log(`[hair-transform] ✅ 예측 생성: ${predId} (status=${pred.status}) — 클라 폴링 대기`);
-    return NextResponse.json({ ok: true, id: predId, token });
+    console.log(`[hair-transform] ✅ 예측 생성: ${predId} (status=${pred.status}, fallbackUsed=${useFallback}) — 클라 폴링 대기`);
+    return NextResponse.json({ ok: true, id: predId, token, fallbackUsed: useFallback });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const reason = e instanceof Error && e.name === "TimeoutError" ? "poll_timeout" : "exception";

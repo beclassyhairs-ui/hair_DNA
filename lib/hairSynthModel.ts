@@ -46,6 +46,45 @@ export function buildFaceswapInput(
   return { swap_image: swapImage, input_image: hairImage, enhance: HAIRSYNTH_ENHANCE };
 }
 
+// ─── ⑤ 폴백 모델(lucataco) — 8분 콜드스타트 미스 시 "결과 우선"(사업주 결정 2026-08-16) ──────
+// ★ 주의(§11 반론·영구 기록): lucataco 는 GFPGAN 상시 미화로 원본 대비 15~20년 젊게 만든다 →
+//   나이별 레퍼런스 무력화가 애초에 ddvinh1 을 택한 이유였다(과거 사업주 판정: lucataco 기각).
+//   이 폴백은 그 드문(세션핑 90초가 막지 못한) 콜드 미스에서만 발동하며, 미화된 결과를 내보낸다
+//   — 사업주 재판정: "에러보다 결과". 라이선스는 둘 다 inswapper 계열로 동일(새 리스크 없음).
+//   lucataco 는 상시 warm(queue~0)이라 폴백은 초 단위로 끝난다(콜드 재발 없음).
+export const HAIRSYNTH_FALLBACK_MODEL = "lucataco/faceswap";
+
+export const HAIRSYNTH_FALLBACK_MODEL_VERSION =
+  "9a4298548422074c3f57258c5d544497314ae4112df80d116f0d2109e843d20d";
+
+/**
+ * ★ 폴백 긴급 킬스위치(독립 롤백). false 로 두면 라우트가 fallback 요청을 무시하고 ddvinh1 로만
+ *   착수한다(미화 재노출이 문제되면 이 한 줄로 즉시 폴백을 끈다 — Codex 반영 2026-08-16).
+ */
+export const HAIRSYNTH_FALLBACK_ENABLED = true as const;
+
+/** 폴백(lucataco) 입력 — target_image 스키마, enhance 파라미터 없음. */
+export function buildFallbackFaceswapInput(
+  swapImage: string,
+  hairImage: string,
+): Record<string, unknown> {
+  return { swap_image: swapImage, target_image: hairImage };
+}
+
+/**
+ * kickoff 라우트가 쓸 (버전, 입력빌더) 를 폴백 여부 하나로 고른다 — 라벨↔실물 재분리 방지를 위해
+ * 모델 선택을 이 단일출처 한 곳에서만 한다(라우트에 버전 해시·스키마를 흩지 않는다).
+ */
+export function selectModel(fallback: boolean): {
+  slug: string;
+  version: string;
+  buildInput: (swapImage: string, hairImage: string) => Record<string, unknown>;
+} {
+  return fallback
+    ? { slug: HAIRSYNTH_FALLBACK_MODEL, version: HAIRSYNTH_FALLBACK_MODEL_VERSION, buildInput: buildFallbackFaceswapInput }
+    : { slug: HAIRSYNTH_MODEL, version: HAIRSYNTH_MODEL_VERSION, buildInput: buildFaceswapInput };
+}
+
 /** Replicate 예측 생성 엔드포인트. */
 export const REPLICATE_PREDICTIONS_ENDPOINT = "https://api.replicate.com/v1/predictions";
 

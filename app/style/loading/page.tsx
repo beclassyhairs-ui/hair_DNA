@@ -96,6 +96,8 @@ const POLL_BUDGET_MS   = 480_000; // 8분
 const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 const LONG_WAIT_MS     = 20_000;  // 이 시간 넘게 걸리면 "처음 한 번은 오래 걸려요" 안내로 전환
+// ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
+const FALLBACK_POLL_BUDGET_MS = 120_000;
 
 const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
@@ -106,7 +108,13 @@ function normFailReason(r: string | undefined): string {
   return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
 }
 
-interface JobRef { id: string; token: string; startedAt: number; }
+interface JobRef {
+  id: string;
+  token: string;
+  startedAt: number;
+  fallback?: boolean;          // 실제 폴백(lucataco) 사용 여부 — 예산(2분)·안내 표시 결정
+  fallbackAttempted?: boolean; // 세션당 폴백 1회 가드 — 킬스위치 상태와 무관하게 재착수 시 true
+}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -116,6 +124,7 @@ export default function StyleLoadingPage() {
   const [revealLines, setRevealLines] = useState<string[]>([]);
   const [revealIdx,   setRevealIdx]   = useState(0);
   const [longWait, setLongWait] = useState(false);
+  const [fallbackActive, setFallbackActive] = useState(false); // ⑤ 폴백 진행 중 안내용
   const calledRef  = useRef(false); // 중복 호출 방지
 
   // 진행단계 라벨 로테이션 (시각 연출 — API 와 독립, 마지막 단계에서 정지).
@@ -153,6 +162,7 @@ export default function StyleLoadingPage() {
     calledRef.current = true;
 
     const runStart = Date.now();
+    let fellBack = false; // ⑤ 루카타코 폴백은 세션당 최대 1회(무한 재시도 방지)
 
     // 최소 표시 시간 채운 뒤 결과지로 이동(정상/실패/타임아웃 공통 종착).
     async function finishAndRoute() {
@@ -200,7 +210,16 @@ export default function StyleLoadingPage() {
       if (job) {
         // 재개 경로: 이전 상태(결과/에러/한도)만 정리하고 바로 폴링. incrementUsage 재호출 안 함.
         clearPrevResultKeys();
-        await pollUntilDone(job);
+        // ⑤ Fix: 재개(새로고침) 시 폴백 1회 가드·예산을 job 에서 복원한다.
+        //   · fallbackAttempted → fellBack 복원(킬스위치 OFF로 ddvinh1 재착수된 job 이어도 2차 폴백 차단).
+        //   · fallback(실제 lucataco) → 폴백 예산(2분)·안내. 아니면 정상 8분.
+        if (job.fallbackAttempted) fellBack = true;
+        if (job.fallback) {
+          setFallbackActive(true);
+          await pollUntilDone(job, FALLBACK_POLL_BUDGET_MS);
+        } else {
+          await pollUntilDone(job);
+        }
         return;
       }
 
@@ -264,8 +283,9 @@ export default function StyleLoadingPage() {
     }
 
     // ── 폴링 루프: 성공/실패/타임아웃까지 ─────────────────────────────────────
-    async function pollUntilDone(job: JobRef) {
-      const deadline = job.startedAt + POLL_BUDGET_MS;
+    //   budgetMs: 기본 8분(신규/재개). ⑤ 폴백은 짧은 예산(FALLBACK_POLL_BUDGET_MS)으로 호출.
+    async function pollUntilDone(job: JobRef, budgetMs: number = POLL_BUDGET_MS) {
+      const deadline = job.startedAt + budgetMs;
       while (Date.now() < deadline) {
         let data: { ok?: boolean; imageUrl?: string; status?: string; reason?: string; debugError?: string } | null = null;
         try {
@@ -302,7 +322,7 @@ export default function StyleLoadingPage() {
         return;
       }
 
-      // 8분 예산 소진 → 예측 취소 요청(비용 중단, best-effort) 후 실패 안내
+      // 예산 소진 → 예측 취소 요청(비용 중단, best-effort)
       console.warn("[AI] ⏱ 폴링 예산 소진 → 예측 취소 요청(비용 중단)");
       try {
         await fetch("/api/hair-transform/cancel", {
@@ -312,8 +332,88 @@ export default function StyleLoadingPage() {
           signal:  AbortSignal.timeout(10_000),
         });
       } catch { /* best-effort */ }
-      recordFail("poll_timeout", "폴링 8분 예산 소진 — 예측 취소 요청");
+
+      // ⑤ 루카타코 폴백 — ddvinh1 이 예산(8분)을 넘긴 드문 콜드 미스에서 1회만 상시-warm 모델로
+      //   재착수해 "에러 대신 결과"를 노린다(사업주 결정). 폴백 자신의 예산 소진 시엔 fellBack 가드로
+      //   더 이상 재시도하지 않고 아래 실패 안내로 종착한다.
+      if (!fellBack) {
+        fellBack = true;
+        const handled = await runFallback(job);
+        if (handled) return;
+      }
+
+      recordFail("poll_timeout", "폴링 예산 소진(폴백 포함) — 예측 취소 요청");
       await finishAndRoute();
+    }
+
+    // ── ⑤ 폴백 착수: lucataco 로 새 kickoff 후 짧은 예산으로 폴링 ──────────────
+    //   반환 true = 이 함수가 종착 처리를 마쳤다(결과 라우팅/한도안내/리다이렉트/폴백폴링).
+    //          false = 폴백 착수 자체가 실패 → 호출측이 poll_timeout 으로 마무리한다.
+    //   과금: 폴백도 일반 kickoff 와 동일하게 서버가 1회 예약(환불 없음). 콜드 미스는 드물고
+    //         일일한도(7)로 완충된다 — 기존 "재시도 시 1회 더 차감" 정책과 정합.
+    async function runFallback(originalJob: JobRef): Promise<boolean> {
+      const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
+      if (!photo) return false;
+      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
+      let answers: StyleAnswers = {};
+      try { answers = raw ? (JSON.parse(raw) as StyleAnswers) : {}; } catch { answers = {}; }
+
+      setFallbackActive(true);
+      try {
+        incrementUsage(); // 클라 표시용(서버 예약이 실제 강제)
+        console.log("[AI] ⑤ 폴백 착수(lucataco)...");
+        const res = await fetch("/api/hair-transform", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          // 원본(ddvinh1) job 증표를 함께 보낸다 — 서버가 "같은 유저의 정상 kickoff" 를 검증해야
+          //   폴백을 허용한다(임의 lucataco 직접호출 차단·Codex 반영).
+          body:    JSON.stringify({ userPhoto: photo, answers, fallback: true, originalId: originalJob.id, originalToken: originalJob.token }),
+          signal:  AbortSignal.timeout(PER_POLL_TIMEOUT + 15_000),
+        });
+
+        if (res.status === 401) { goRelogin(); return true; }
+
+        const data = await res.json() as {
+          ok: boolean; id?: string; token?: string; fallbackUsed?: boolean; reason?: string; message?: string; debugError?: string;
+        };
+
+        if (res.status === 403 && data.reason === "consent_required") {
+          window.location.href = `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
+          return true;
+        }
+
+        if (res.status === 429 || data.reason === "daily_limit") {
+          const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
+          try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
+          void trackEvent("hair_transform_fail", { reason: "daily_limit", source: "style_fallback" });
+          await finishAndRoute();
+          return true;
+        }
+
+        if (data.ok && data.id && data.token) {
+          // ★ 서버가 실제로 폴백(lucataco)으로 착수했는지(fallbackUsed)를 기준으로 예산·상태를 정한다.
+          //   킬스위치 OFF 로 ddvinh1 로 처리됐으면(false) 폴백 예산(2분)이 아니라 정상 8분으로 폴링하고
+          //   "다른 방식" 안내·job 폴백표시도 끈다(콜드 ddvinh1 을 2분에 조기취소하는 회귀 방지·Codex 반영).
+          const usedFallback = data.fallbackUsed === true;
+          // fallbackAttempted 는 킬스위치 상태와 무관하게 항상 true(1회 가드) — fallback(실제 모델)과 분리해
+          //   영속화하여, 새로고침으로 재개돼도 2차 폴백을 막는다(Codex 반영).
+          const fbJob: JobRef = { id: data.id, token: data.token, startedAt: Date.now(), fallback: usedFallback, fallbackAttempted: true };
+          try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(fbJob)); } catch { /**/ }
+          setFallbackActive(usedFallback);
+          void trackEvent("hair_transform_fallback", { source: "style", used: usedFallback });
+          console.log(`[AI] ⑤ 재착수 성공(fallbackUsed=${usedFallback}), 폴링 시작:`, data.id);
+          await pollUntilDone(fbJob, usedFallback ? FALLBACK_POLL_BUDGET_MS : POLL_BUDGET_MS);
+          return true;
+        }
+
+        // 폴백 착수 자체 실패 → 호출측이 poll_timeout 으로 마무리
+        console.warn("[AI] ⑤ 폴백 착수 실패:", data.reason ?? "(reason 없음)");
+        return false;
+      } catch (e) {
+        console.error("[AI] ⑤ 폴백 예외:", e);
+        Sentry.captureException(e);
+        return false;
+      }
     }
 
     function clearPrevResultKeys() {
@@ -383,7 +483,9 @@ export default function StyleLoadingPage() {
                 끊기므로 "나갔다 와도"가 아니라 "다시 돌아오셔도 이어서" 로만 약속한다(과약속 금지).
                 진짜 백그라운드 완성(탭 종료 후 복귀)은 서버 원장 필요 → 오픈 후 과제. */}
           <p className="max-w-[300px] text-center text-[13px] leading-relaxed text-ink-2">
-            {longWait
+            {fallbackActive
+              ? "완성이 조금 늦어져 다른 방식으로 마무리하고 있어요 · 곧 나와요"
+              : longWait
               ? `시간이 조금 걸리고 있어요 · 이 화면을 잠깐 벗어났다 다시 돌아오셔도 이어서 진행돼요 · 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`
               : `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`}
           </p>
