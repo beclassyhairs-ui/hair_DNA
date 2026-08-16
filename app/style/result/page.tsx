@@ -50,6 +50,21 @@ function buildHairTags(answers: StyleAnswers): string[] {
   return tags.length > 0 ? tags : ["#건강모"];
 }
 
+// 결과지 훅/배지용 — 모질을 짧은 한글 라벨로(최대 2개, · 로 연결). 스타일 결과지엔 손상 '단계' 숫자가
+// 없으므로(그건 데미지 결과지 소관) 모질 특성 위주로 요약한다. 손상 차단이면 맨 앞에 '손상 모발'.
+function readableHairLabel(answers: StyleAnswers): string {
+  const parts: string[] = [];
+  if (answers.q3_curl === "curly_hair") parts.push("심한 곱슬");
+  else if (answers.q3_curl === "curly_hair_mid") parts.push("곱슬");
+  else if (answers.q3_curl === "wavy_hair") parts.push("반곱슬");
+  if (answers.q7_thickness === "fine") parts.push("가는 모발");
+  else if (answers.q7_thickness === "coarse") parts.push("굵은 모발");
+  if (answers.q8_density === "thin_density") parts.push("볼륨 처짐");
+  if (isDamageBlock(answers)) parts.unshift("손상 모발");
+  if (parts.length === 0) return "건강한 모발";
+  return parts.slice(0, 2).join(" · ");
+}
+
 // UUID 생성 (저장 시 고유 ID)
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -189,13 +204,14 @@ function failMessage(reason: string | null): { title: string; hint: string; butt
 }
 
 function BeforeAfterSection({
-  photo, generatedUrl, failReason, limitMessage, onRetry,
+  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
   failReason:   string | null;
   limitMessage: string | null;
   onRetry:      () => void;
+  hairLabel?:   string | null;
 }) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -254,6 +270,12 @@ function BeforeAfterSection({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white">After</span>
         </div>
+        {/* 진단 배지 — 사진만 보고 스크롤 안 하는 손님에게도 모질 진단이 눈에 박히게(파트2 ⑤). */}
+        {generatedUrl && hairLabel && (
+          <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+            {hairLabel}
+          </div>
+        )}
         {generatedUrl && (
           <div className="pointer-events-none absolute inset-0 rounded-2xl"
             style={{ boxShadow: "inset 0 0 0 1.5px rgba(255,255,255,0.25)" }} />
@@ -406,6 +428,9 @@ export default function StyleResultPage() {
   const [ready,      setReady]      = useState(false);
   const [showSave,   setShowSave]   = useState(false);
   const [completeTracked, setCompleteTracked] = useState(false);
+  // 파트2 버튼 계단식 — 진단·처방(①)과 케어 제품(②)을 버튼으로 단계 공개.
+  const [showDiagnosis, setShowDiagnosis] = useState(false);
+  const [showProducts,  setShowProducts]  = useState(false);
 
 
   // 세션 데이터 즉시 로드 (폴링 없음)
@@ -490,83 +515,112 @@ export default function StyleResultPage() {
           <CompletionGauge className="mb-4" />
 
           {/* 1. Before/After — 캡션 확정(농담성 문구 금지, 확정 138). 차단이어도 After는 그대로 노출. */}
-          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} />
+          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} />
           <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
 
-          {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 */}
+          {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 — 사진 결과의 헤드라인(항상 노출) */}
           <div className="mt-4 text-center">
-            <p className="text-[12px] text-ink-2">내가 고른 스타일</p>
-            <p className="mt-0.5 text-[24px] font-extrabold tracking-tight text-ink">{entry.name}</p>
-            {entry.subtitle && <p className="mt-0.5 text-[13px] text-ink-2">{entry.subtitle}</p>}
+            <p className="text-[13px] text-ink-2">내가 고른 스타일</p>
+            <p className="mt-0.5 text-[26px] font-extrabold tracking-tight text-ink">{entry.name}</p>
+            {entry.subtitle && <p className="mt-1 text-[14px] text-ink-2">{entry.subtitle}</p>}
             <VerdictStamp level={gate.level} stamp={bcopy.stamp} />
           </div>
 
-          {/* 게이트 주의 — 노란줄 + 데미지 CTA(차단은 스탬프로 이미 표시) */}
+          {/* 게이트 주의 — 안전 안내라 버튼 뒤에 숨기지 않고 항상 노출 */}
           {gate.level === "caution" && <div className="mt-4"><CautionNotice /></div>}
 
+          {/* 파트2 훅 — 스크롤 없이 보이는 위치에서 '왜 어울리는지 / 뭘 주문해야 실패 안 하는지'를
+              아래 버튼으로 끌어내린다(50·60은 스크롤을 안 하고 사진만 보고 끝내는 문제 직격). */}
+          <div className="mt-5 rounded-2xl border border-line bg-surface px-4 py-3.5 text-center">
+            <p className="text-[15.5px] font-semibold leading-relaxed text-ink">
+              내 모발은 <b className="font-extrabold">{readableHairLabel(answers)}</b> — 이 스타일이 왜 어울리는지, 미용실에서 뭘 주문해야 실패 안 하는지 아래에 담았어요
+            </p>
+          </div>
+
           <div className="mt-4 space-y-5 transition-all duration-700">
-            <div className="space-y-1">
 
-              {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
-              <TT>혹시, 이런 적 있다면</TT>
-              <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                <Rich html={resolveDoor(branch.primary, answers.q13_design, bcopy)} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
-              </GlassCard>
+            {/* 큰 버튼 ① — 진단·처방 열기(누르면 아래 진단 섹션이 펼쳐진다) */}
+            {!showDiagnosis && (
+              <button
+                onClick={() => { setShowDiagnosis(true); trackEvent("result_diagnosis_open", { source: "style" }); }}
+                className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border px-5 py-4 text-[17px] font-extrabold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+                <span aria-hidden>📋</span> 20년차 디자이너의 내 진단 결과 보기
+              </button>
+            )}
 
-              {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
-              <TT>왜 그랬던 걸까요</TT>
-              <div className="rounded-xl border border-line bg-surface px-4 py-3">
-                <Rich html={bcopy.aha} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
-              </div>
-              <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">자세히 보기</summary>
-                <div className="border-t border-line px-4 py-3"><Rich html={bcopy.detail} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" /></div>
-              </details>
+            {/* 진단·처방 섹션 — 버튼①을 눌러야 열린다 */}
+            {showDiagnosis && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-1">
 
-              {/* 5. 평소 관리 꿀팁(주인공, 펼침, 문단 통째) + 정수리 루틴 접기(갈래 3·5·10 공용 or 부가) */}
-              <TT>평소엔 이렇게 해보세요</TT>
-              <GlassCard tone="soft" className="px-5 py-4">
-                <Rich html={bcopy.tip} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-              </GlassCard>
-              {(branch.scalpRoutineCard || SCALP_ROUTINE_BRANCHES.includes(branch.primary)) && (
+                {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
+                <TT>혹시, 이런 적 있다면</TT>
+                <GlassCard className="border-l-4 border-l-ink px-5 py-4">
+                  <Rich html={resolveDoor(branch.primary, answers.q13_design, bcopy)} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
+                </GlassCard>
+
+                {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
+                <TT>왜 그랬던 걸까요</TT>
+                <div className="rounded-xl border border-line bg-surface px-4 py-3">
+                  <Rich html={bcopy.aha} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
+                </div>
                 <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{SCALP_ROUTINE.title}</summary>
-                  <div className="border-t border-line px-4 py-3">
-                    <ol className="list-decimal space-y-1.5 pl-5">
-                      {SCALP_ROUTINE.steps.map((s, i) => (
-                        <li key={i} className="text-[13.5px] leading-relaxed text-ink"><Rich html={s} /></li>
-                      ))}
-                    </ol>
-                    <p className="mt-2 text-[12.5px] text-ink-2">{SCALP_ROUTINE.note}</p>
+                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">자세히 보기</summary>
+                  <div className="border-t border-line px-4 py-3"><Rich html={bcopy.detail} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" /></div>
+                </details>
+
+                {/* 5. 평소 관리 꿀팁(주인공, 펼침, 문단 통째) + 정수리 루틴 접기(갈래 3·5·10 공용 or 부가) */}
+                <TT>평소엔 이렇게 해보세요</TT>
+                <GlassCard tone="soft" className="px-5 py-4">
+                  <Rich html={bcopy.tip} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                </GlassCard>
+                {(branch.scalpRoutineCard || SCALP_ROUTINE_BRANCHES.includes(branch.primary)) && (
+                  <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{SCALP_ROUTINE.title}</summary>
+                    <div className="border-t border-line px-4 py-3">
+                      <ol className="list-decimal space-y-1.5 pl-5">
+                        {SCALP_ROUTINE.steps.map((s, i) => (
+                          <li key={i} className="text-[13.5px] leading-relaxed text-ink"><Rich html={s} /></li>
+                        ))}
+                      </ol>
+                      <p className="mt-2 text-[12.5px] text-ink-2">{SCALP_ROUTINE.note}</p>
+                    </div>
+                  </details>
+                )}
+
+                {/* 6. 시술 참고(접힘) — 대표 + 흡수된 갈래 스텝 */}
+                <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">시술 생각이 있으시다면</summary>
+                  <div className="space-y-2 border-t border-line px-4 py-3">
+                    <Rich html={bcopy.procedure} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                    {branch.absorbed.map((k) => (
+                      <Rich key={k} html={getBranchCopy(k).procedure} className="block whitespace-pre-line text-[13px] leading-relaxed text-ink-2" />
+                    ))}
                   </div>
                 </details>
-              )}
 
-              {/* 6. 시술 참고(접힘) — 대표 + 흡수된 갈래 스텝 */}
-              <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">시술 생각이 있으시다면</summary>
-                <div className="space-y-2 border-t border-line px-4 py-3">
-                  <Rich html={bcopy.procedure} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-                  {branch.absorbed.map((k) => (
-                    <Rich key={k} html={getBranchCopy(k).procedure} className="block whitespace-pre-line text-[13px] leading-relaxed text-ink-2" />
-                  ))}
-                </div>
-              </details>
-
-              {/* 7. 쿠팡 제휴 제품 카드(맨 아래) — 하드코딩 이름박스를 매칭 실물로 교체(확정48).
-                     결과지에서 바로 쿠팡 연결. 갈래9(차단)는 미노출. COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
-              {gate.level !== "block" && (
-                <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" />
-              )}
-
-              {/* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */}
-              {gate.level === "block" && (
-                <Link href="/damage-check"
-                  className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[13px] font-semibold text-ink-2 transition-colors hover:text-ink">
-                  정밀 손상 진단 받아보기 <span className="flex-none">→</span>
-                </Link>
-              )}
-            </div>
+                {/* 큰 버튼 ② — 케어 제품 열기(진단 읽고 나면 등장). 차단(block)은 제품 대신 데미지 안내. */}
+                {gate.level !== "block" ? (
+                  !showProducts ? (
+                    <button
+                      onClick={() => { setShowProducts(true); trackEvent("result_products_open", { source: "style" }); }}
+                      className="mt-5 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border px-5 py-4 text-[17px] font-extrabold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+                      <span aria-hidden>🛍</span> 내 모발에 딱 맞는 케어 제품 보기
+                    </button>
+                  ) : (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mt-5">
+                      {/* 7. 쿠팡 제휴 제품 카드 — 매칭 실물(확정48). COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
+                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" />
+                    </motion.div>
+                  )
+                ) : (
+                  /* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */
+                  <Link href="/damage-check"
+                    className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[14px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                    정밀 손상 진단 받아보기 <span className="flex-none">→</span>
+                  </Link>
+                )}
+              </motion.div>
+            )}
 
             {/* 저장 + 공유 */}
             <GlassCard className="space-y-2.5 px-5 py-5">
