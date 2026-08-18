@@ -3,6 +3,17 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-16
 
+## 🔴 D-2 전체 재검수 + 라운드1 수정 4건 (2026-08-16, **배포 완료 `497d53f..4359e50`**)
+
+병렬 서브에이전트 7건(■1~■6 + Codex 적대검수)으로 확정사항 전수 대조 → `docs/LAUNCH_AUDIT_2026-08-16.md` 생성. **치명 보안 취약점 0건**, 🔴 2 + 🟡 11 발견. 이 중 오픈 전 필수(라운드1) 4건 수정·배포. **Codex 3라운드 검수**(1·2라운드 "수정 필요" → 재수정 → 3라운드 핵심 통과).
+
+- **🔴-02 결과지 직접진입 가짜진단 차단(`feedba5`)**: 설문 데이터(answers) 없이 `/style/result`·`/damage-check/result` 직접 진입 시 기본값(bob/medium/straight, DEFAULT_ANSWERS)으로 "진단받은 척"하던 화면 → answers 빈값이면 랜딩 리다이렉트. 세션조작(JSON "null"·배열) 방어 포함. style은 `Object.keys(answers).length>0` 단일조건, damage는 `hasSurveyData` 별도추적(로그인 확인 후 리다이렉트).
+- **🟡-09·10 폴백 강제우회 차단 + quota 순서(`b2d2e05`)**: ⑤ 폴백(lucataco 미화모델)을 콜드미스 없이 강제하던 사업정책 우회 차단. ①`primaryAttestation`(신규 별도서명, 원본 kickoff만 발급 → 폴백 체이닝 구조적 차단) ②`verifyFallbackEligibility`(Replicate 직접조회, succeeded 거부·failed/canceled는 completed_at-created_at 7분+·진행중은 created_at 7분+로 즉시cancel 우회 차단) ③quota 차감을 전체 검증 뒤로 이동. 잔여(hair_jobs 원장 도입 시): attestation 1회소비 원자적클레임·폴백검증 rate limit.
+- **🟡-08 warmup burst 방어(`ae5d09b`)**: 인스턴스-로컬 쿨다운이 서버리스 다중인스턴스 앞 무력 → 신규 SQL `try_acquire_warmup_cooldown`(단일행 원자적 UPDATE...RETURNING)로 90초당 1회 직렬화. **🔴 사업주: `supabase/warmup_global_cooldown_schema.sql`을 SQL Editor에서 직접 실행해야 발동**(미실행 시 fail-open, 회귀 없음).
+- **문서(`4359e50`)**: 감사 보고서 + 라운드1 수정 반영.
+- 🟡 **남은 감사 발견분(라운드2+ 이월, 9건)**: 🔴-01(inswapper 라이선스 — 코드 아닌 사업판단) / 🟡-01 저장버튼 어포던스 / 🟡-02 로딩 20초~8분 고정문구 / 🟡-03 "20년차 디자이너"↔"25년 원장" 연차·직함 불일치 / 🟡-04 결과지 폰트 이원화(style 26/17px vs damage 22/16px) / 🟡-05 모질배지 줄바꿈 위험 / 🟡-06 미커밋 삭제 88건(mature PNG 4장 의도확인) / 🟡-07 debug-sentry 라우트 잔존 / 🟡-11 에러 사유별 문구 뭉뚱그림.
+- ⚠️ **미커밋 삭제 88건 여전히 유지**(라운드1 3커밋에 딸려가지 않게 pathspec 커밋 확인). public/references .gitkeep 84 + mature/short_bob PNG 4 — 커밋 금지 유지.
+
 ## 🔴 런칭 필수 UX(파트1·2·③·④·⑤·⑥) + ddvinh1 세션핑 실측 (2026-08-16, **배포 완료 `56a2783..0fdfe2f`**)
 
 사업주 런칭 체크리스트 구현. 프론트 4커밋 + 백엔드 2커밋(Codex 4라운드 통과). 커밋 `d57b4e0`·`4178ef8`·`0f3052c`·`a11dd72`. **push·Vercel 배포 완료** — 라이브 스모크 통과(/style 200, POST /api/hair-transform 401 login_required, default_style.jpg 200, 신규 마커 "AI가 읽고 있는 내 모발" 노출·옛 "헤어 꿀팁" 소멸로 새 빌드 확정).
