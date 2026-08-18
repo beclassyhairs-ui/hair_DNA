@@ -26,8 +26,13 @@
 //
 // 남용 방어(미인증 공개 엔드포인트):
 //   1) 동일 출처(Origin/Referer) 요청만 통과 — 브라우저 크로스사이트 남용 차단.
-//   2) 인스턴스별 90초 쿨다운 — 쿨다운 내 요청은 예측 생성 없이 스킵(잔액 태우기 방어의 핵심).
-//   3) 전역 일일 상한(bump_warmup_usage) — 다중 인스턴스 우회까지 하드캡(비용 상한). fail-open.
+//   2) 인스턴스별 90초 쿨다운 — 쿨다운 내 요청은 예측 생성 없이 스킵(1차 필터, 무료·DB 왕복 없음).
+//   3) 전역(다중 인스턴스) 원자적 쿨다운(try_acquire_warmup_cooldown) — 2026-08-16 D-2 감사 ③:
+//      인스턴스별 변수는 서버리스 동시 인스턴스 앞에서 무력하다(Origin 위조 후 burst 요청을
+//      서로 다른 콜드 인스턴스가 나눠 받으면 각자 쿨다운을 통과해버림) → DB 단일 행에 원자적으로
+//      직렬화해, 몇 대의 인스턴스가 동시에 맞아도 90초당 "딱 1번"만 실제 예열이 나가게 한다.
+//      SQL 미실행 시 fail-open(2번 인스턴스별 쿨다운만 적용, 기존과 동일 — 회귀 없음).
+//   4) 전역 일일 상한(bump_warmup_usage) — 다중 인스턴스 우회까지 하드캡(비용 상한). fail-open.
 //   완전한 IP별 rate-limit 은 인프라 레벨이 필요 → 🔴 사장님: Vercel Firewall 권장.
 // ============================================================================
 
@@ -51,6 +56,7 @@ const WARMUP_DAILY_MAX = 5_000;
 
 // 인스턴스별 쿨다운 — 90초 내 재요청은 실제 발사 스킵. (Date.now 는 라우트 런타임에서 정상 사용.)
 const WARM_COOLDOWN_MS = 90_000;
+const WARM_COOLDOWN_SECONDS = Math.round(WARM_COOLDOWN_MS / 1000); // 전역 RPC 는 초 단위 인자
 let lastWarmAt = 0;
 
 // 모든 응답은 본문 없는 204 — 손님(클라)은 결과를 읽지 않는다(fire-and-forget). 성공·스킵·실패 무구분.
@@ -79,8 +85,24 @@ export async function POST(req: NextRequest) {
   if (!key) return noContent();
 
   const now = Date.now();
-  if (now - lastWarmAt < WARM_COOLDOWN_MS) return noContent(); // 쿨다운 내 → 예측 생성 없이 스킵
+  if (now - lastWarmAt < WARM_COOLDOWN_MS) return noContent(); // 1차: 인스턴스별 쿨다운(무료 필터)
   lastWarmAt = now;
+
+  // 2차: 전역(다중 인스턴스) 원자적 쿨다운 — burst 가 인스턴스별 필터를 우회해 90초 창을
+  //   무력화하는 것을 막는다(2026-08-16 D-2 감사 ③). RPC 미배포/오류 시 fail-open(1차 필터만 적용,
+  //   기존과 동일 — 회귀 없음).
+  try {
+    const { data: acquired, error } = await supabaseAdmin.rpc("try_acquire_warmup_cooldown", {
+      p_cooldown_seconds: WARM_COOLDOWN_SECONDS,
+    });
+    if (error) {
+      console.error("[hair-transform/warmup] 전역쿨다운 RPC 오류(전역보호 미적용):", error.message);
+    } else if (acquired !== true) {
+      return noContent(); // 다른 인스턴스가 최근 90초 내 이미 예열을 획득 → 스킵
+    }
+  } catch (e) {
+    console.error("[hair-transform/warmup] 전역쿨다운 예외(전역보호 미적용):", e instanceof Error ? e.message : String(e));
+  }
 
   // 전역 일일 상한(손님 일일한도와 완전 별개). RPC 미배포/오류 시 fail-open(상한만 미적용).
   try {
