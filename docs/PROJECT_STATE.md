@@ -1,7 +1,17 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-16
+> 최종 갱신: 2026-08-18
+
+## 🟦 결과지 V2 블록 조립 리팩터링 — Phase 1.0 착수 (2026-08-18, **진행 중 · 미배포**)
+
+지시서 「결과지 V2 블록 조립 리팩터링」(PM방 3라운드 교차검증본) Phase 1.0. `/style/result`·`/damage-check/result` 진단 엔진·결과지 렌더를 "답 하나하나가 결과지 곳곳에 살아있는 블록 조립 구조"로 전환. **설문 스키마·DB 불변, styleGate.ts 동결(§8-6), Production 배포 금지.**
+
+- **산출물 A `V2_PRECHECK.md`(커밋됨)**: §1 실물확인 12항목 코드 직접 대조 완료. 결론: 지시문 가정 코드와 거의 일치. 정정 1건(**Style엔 stampTitle 개념 없음** — 공유=간판명 entry.name, 화면 스탬프=갈래 카피 bcopy.stamp / Damage만 `level.label · typeInfo.label` 파생). 주의 3건(예언 11~14 폴백 겸용·레거시 q10_history_count 존치·styleGate 동결).
+- **PM 승인 확정(2026-08-18)**: ① Style stampTitle 정정 수용(스탬프 유지 규정은 Damage만) ② Gray 블록 = 예언 뒤(현행)로 Phase 1.0 확정, **순서배열 기반 렌더 필수**(추후 한 줄 교체), §12 안건 유지 ③ secondary 예언 = Phase1.0 첫 매칭 1개 유지 + riskFamily 태깅은 스키마만, 실노출 1.5 flag ④ **레거시 q10_history_count는 Coverage 기록만·이번 Phase 제거/수정 금지(게이트 영향, invariant 위반 우려) → Phase 2 이관**.
+- **§8 invariant 하네스 작성(커밋됨)**: `tests/invariant/engine-invariants.ts`(INV1~6 + 자가생성 스냅샷 damage 13·style 10) + `tests/tsconfig.invariant.json`(TS→CJS, 프레임워크 무설치) + `package.json` `test:invariant` + `.gitignore` `tests/.build/`. INV1 탈색2회+→Lv4 / INV2 무탈색 Lv4불가+CAP7.9 / INV3 물리단독 Lv3불가 / INV4 확정124 매직코팅(score 기반) / INV5 숏·숏보브+s_curl→wave / INV6 styleGate pass/caution/block 불변.
+- 🔴 **미완(다음 세션 첫 행동, 순서 고정)**: 이 세션은 node/npm 실행이 sandbox에서 전면 차단돼(git만 통과) **하네스 컴파일·green·baseline 스냅샷 기록을 못 함.** 다음 세션은 **① 리팩터링 전 무변경 main에서 `npm run test:invariant` 1회 실행 → INV1~6 green 확인 + `tests/invariant/engine.snapshot.json` baseline 기록·커밋** 을 §5/§6 어떤 편집보다 먼저 수행한다. red면 테스트 수정 말고 즉시 PM 보고(현재 코드가 확정 규칙과 다르다는 뜻). 그 후 **§7 copy registry 구조 수립**부터.
+- ℹ️ **확정124 정정**: 아래 "확정124 …커밋/배포 승인 대기" 항목은 **낡음** — Q1 firm·매직 코팅은 실제 코드(`damageRecommend.ts:68,265`, `surveyData.ts:11,82`)에 이미 반영·라이브(747021e 이후). 대기 아님.
 
 ## 🔴 어드민 신규 2건 + 정리 1건 (2026-08-16, **배포 완료 `3657477..c02cf08`**)
 
