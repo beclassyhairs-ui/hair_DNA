@@ -22,9 +22,11 @@ import {
   stagesFrom,
   breakdownBy,
   purchasesPer10kViews,
+  distinctUsersOf,
   kstTodayStart,
   type FunnelRow,
 } from "../../../../lib/funnelAggregate";
+import { EVENT_NAMES } from "../../../../lib/eventTracking";
 
 // 화면 필터와 1:1 대응하는 기간 옵션.
 // (route.ts는 Next가 허용하는 export만 둬야 하므로 밖으로 내보내지 않는다)
@@ -163,6 +165,8 @@ export async function GET(req: Request) {
       eventCount: rows.length,
       truncated,
       stages,
+      /** 결과지 도달(report_view) 고유 유저 — 퍼널 5단계 밖이라 같은 rows에서 별도 집계(① 요약 타일용). */
+      reportViews: distinctUsersOf(rows, EVENT_NAMES.REPORT_VIEW),
       purchasesPer10kViews: purchasesPer10kViews(stages),
       bySource:   breakdownBy(rows, (r) => r.source),
       byCampaign: breakdownBy(rows, (r) => r.utm_campaign),

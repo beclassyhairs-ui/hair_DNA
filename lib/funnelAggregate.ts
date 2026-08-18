@@ -125,3 +125,15 @@ export function purchasesPer10kViews(stages: StageStat[]): number | null {
   const purchases = stages[4]?.users ?? 0;
   return views > 0 ? (purchases / views) * 10000 : null;
 }
+
+/**
+ * 특정 이벤트의 고유 유저(anonymous_id) 수. 퍼널 5단계에 없는 이벤트(예: report_view=결과지 도달)를
+ * 이미 읽어온 rows 에서 추가 쿼리 없이 세기 위한 헬퍼 — 요약 타일(①)이 소비한다.
+ */
+export function distinctUsersOf(rows: FunnelRow[], eventName: string): number {
+  const set = new Set<string>();
+  for (const r of rows) {
+    if (r.event_name === eventName && r.anonymous_id) set.add(r.anonymous_id);
+  }
+  return set.size;
+}

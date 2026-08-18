@@ -43,6 +43,7 @@ interface FunnelResponse {
   eventCount: number;
   truncated: boolean;
   stages: StageStat[];
+  reportViews: number;
   purchasesPer10kViews: number | null;
   bySource: Breakdown[];
   byCampaign: Breakdown[];
@@ -166,8 +167,34 @@ export default function FunnelPanel() {
 
       {data && (
         <>
+          {/* ① 요약 타일 한 줄 — 맨 위 한눈 KPI. 아래 상세 퍼널과 같은 기간 필터·같은 집계(고유 유저) 사용.
+              지표 정의를 각 타일에 작게 명시(무엇을 세는지). 결과지 도달=report_view(5단계 밖 별도 집계). */}
+          <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+            {[
+              { label: "총 방문",     users: data.stages[0]?.users ?? 0, def: "landing_view 고유" },
+              { label: "진단 시작",   users: data.stages[1]?.users ?? 0, def: "diagnosis_start 고유" },
+              { label: "진단 완료",   users: data.stages[2]?.users ?? 0, def: "diagnosis_complete 고유" },
+              { label: "결과지 도달", users: data.reportViews,           def: "report_view 고유" },
+              { label: "구매 클릭",   users: data.stages[4]?.users ?? 0, def: "purchase_click 고유", accent: true },
+            ].map((t) => (
+              <div
+                key={t.label}
+                className={`rounded-2xl border px-4 py-3.5 ${t.accent ? "border-gold/25 bg-gold/[0.07]" : "border-white/10 bg-white/[0.03]"}`}
+              >
+                <p className={`text-[11px] font-medium ${t.accent ? "text-gold-light/70" : "text-cream/50"}`}>{t.label}</p>
+                <p className={`mt-1.5 font-sans text-2xl font-semibold tabular-nums ${t.accent ? "text-gold-light" : "text-cream"}`}>
+                  {num(t.users)}<span className="ml-0.5 text-xs font-normal text-cream/30">명</span>
+                </p>
+                <p className="mt-0.5 text-[10px] leading-tight text-cream/30">{t.def}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-cream/35">
+            같은 사람이 여러 번 눌러도 1명으로 셉니다(고유 방문자 기준). 기간은 위 필터를 따릅니다.
+          </p>
+
           {/* 핵심 계수 — 이 화면의 존재 이유 */}
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-gold/25 bg-gold/[0.07] px-5 py-4">
               <p className="text-xs font-medium text-gold-light/70">조회수 1만당 구매</p>
               <p className="mt-2 font-sans text-3xl font-semibold tabular-nums text-gold-light">
