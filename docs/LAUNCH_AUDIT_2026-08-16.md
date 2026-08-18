@@ -10,7 +10,7 @@
 | 등급 | 개수 | 상태 |
 |---|---|---|
 | 🔴 즉시 조치 / 사업주 재확인 | 2 | 🔴-02 ✅수정완료 · 🔴-01 사업판단 대기 |
-| 🟡 런칭 전 권장 | 11 | 🟡-01·02·03·05·08·09·10·11 ✅수정완료 · 3건 남음(🟡-04·06·07) |
+| 🟡 런칭 전 권장 | 11 | 🟡-01·02·03·05·07·08·09·10·11 ✅수정완료 · 2건 남음(🟡-04·06) |
 | ⚪ 코스메틱 / 백로그 | 다수 | — |
 
 ### ✅ 라운드1 수정 완료 (2026-08-16 배포, `497d53f..ae5d09b`, Codex 3라운드 검수 통과)
@@ -459,9 +459,9 @@ from pg_policy where polrelid = 'public.events'::regclass;
 | TODO/FIXME in production code | 소수 — 향후 확장 주석, 기능 결손 아님 |
 | 하드코딩 테스트 값 | **0건** |
 
-### 🟡-07. debug-sentry 라우트 잔존
+### ~~🟡-07~~ ✅ debug-sentry 라우트 잔존 → 삭제 완료 (`c02cf08`)
 
-`app/api/admin/debug-sentry/route.ts` — Sentry 연동 확인용 `throw new Error`. ADMIN_SECRET 게이트 뒤라 위험 낮으나, 연동 확인 끝났으면 삭제 권장.
+`app/api/admin/debug-sentry/route.ts` — Sentry 연동 확인용 `throw new Error`. **판정**: Sentry는 실연동(설정 4파일 + loading이 실장애를 프로덕션 보고 중), debug-sentry는 그 실연동의 고아 진단 하네스(사이드바·링크 참조 0). 실장애가 이미 실코드로 보고되니 중복 → **route+page 2개 삭제, 실연동은 유지**(라운드3, 2026-08-16 배포 `3657477..c02cf08`).
 
 ### 도달 불가 코드 참고
 

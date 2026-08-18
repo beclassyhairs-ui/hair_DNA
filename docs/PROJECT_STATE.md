@@ -3,6 +3,14 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-08-16
 
+## 🔴 어드민 신규 2건 + 정리 1건 (2026-08-16, **배포 완료 `3657477..c02cf08`**)
+
+화면단·조회 전용(Codex 생략·§3). 순수 로직 node 실검증(tsc/next build는 세션 권한 제약으로 미실행 — Vercel 빌드가 최종 타입 게이트).
+- **① 대시보드 요약 KPI 타일(`eacdd47`)**: /admin 상단(FunnelPanel 최상단)에 5개 한눈 KPI(총 방문·진단 시작·진단 완료·결과지 도달·구매 클릭). 기존 퍼널 기간 필터·고유 유저 집계 재사용. 결과지 도달(report_view)만 `funnelAggregate.distinctUsersOf`로 이미 읽은 rows에서 추가 집계 — 새 쿼리·SQL 0. 각 타일 지표 정의 명시.
+- **② 쿠팡 링크 점검 페이지(`6217c9a`)**: `/admin/coupang-check` 신설. `lib/coupangCards.ts`(STYLE+DAMAGE) 직결 → 제품 변경 자동 반영. g 병합 21종(G05 양면 배지·G21 보류 표시), '열기'(새 탭)+'확인함'(localStorage). COUPANG_CARDS_LIVE 상태 배너. AdminSidebar '링크 점검' 탭.
+- **③ debug-sentry 삭제(`c02cf08`, 🟡-07)**: Sentry 실연동(설정 4파일+loading 프로덕션 보고) 확인 → 고아 진단 하네스(route+page)만 삭제, 실연동 유지.
+- 검증: distinctUsersOf(중복/null 제거)·카드 병합(21종·양면·보류·정렬) node PASS. 어드민 페이지 브라우저 렌더는 로컬 ADMIN_SECRET 미설정으로 미확인(미들웨어 500).
+
 ## 🔴 D-2 재검수 라운드2(UI/UX) 6건 (2026-08-16, **배포 완료 `de9e5da..23a6e98`**)
 
 감사 ■5 기준 UI/UX 묶음 수정. 커밋 6개 분리(화면단이라 Codex 생략·§3, next dev 컴파일 200·에러 0 검증).
