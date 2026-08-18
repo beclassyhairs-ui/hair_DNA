@@ -14,14 +14,17 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   ShoppingBag,
-  User,
+  FileText,
   type LucideIcon,
 } from "lucide-react";
 
+// 🟡-⑥: '나의 헤어' 아이콘을 사람(User)에서 결과지 카드(FileText)로 교체 — 사람 실루엣이 아래
+//   랜딩 사진(얼굴·헤어)과 겹쳐 헷갈리던 문제. 홈의 '지난 진단 기록 보기'도 같은 FileText 를 써서
+//   "내 결과지"라는 연결을 시각적으로 통일한다.
 const NAV_ITEMS: { href: string; icon: LucideIcon; label: string }[] = [
   { href: "/home", icon: Home, label: "홈" },
   { href: "/items", icon: ShoppingBag, label: "발견템" },
-  { href: "/my-diary", icon: User, label: "나의 헤어" }, // 실체(진짜 기록) 페이지. 구 /myhair(더미)는 /my-diary로 리다이렉트.
+  { href: "/my-diary", icon: FileText, label: "나의 헤어" }, // 실체(진짜 기록) 페이지. 구 /myhair(더미)는 /my-diary로 리다이렉트.
 ];
 
 export default function BottomNav() {

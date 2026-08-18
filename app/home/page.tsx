@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { FileText } from "lucide-react";
 import AppShell from "../components/layout/AppShell";
 import HairTypeImage from "../components/HairTypeImage";
 import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
@@ -275,8 +276,10 @@ export default function HomePage() {
 
       <Link
         href="/my-diary"
-        className="flex min-h-[44px] items-center justify-center py-2 text-center text-aux text-sub transition-colors active:text-ink"
+        className="flex min-h-[44px] items-center justify-center gap-1.5 py-2 text-center text-aux text-sub transition-colors active:text-ink"
       >
+        {/* 🟡-⑥: 나의 헤어 탭과 동일한 결과지(FileText) 아이콘 — "내 결과지" 시각 통일. */}
+        <FileText size={15} strokeWidth={1.8} aria-hidden />
         지난 진단 기록 보기 →
       </Link>
     </AppShell>
