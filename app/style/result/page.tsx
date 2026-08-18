@@ -171,34 +171,46 @@ function SaveDiaryModal({
 // Phase B: 잠금(blur) 오버레이 제거 — 결과지 진입 전 이미 로그인을 마쳤으므로 항상 공개한다.
 
 // 실패 사유 코드 → 손님 안내(한국어 평서문·에러코드/영어 없음·50·60이 읽는 문장).
-// 얼굴 미검출은 자주 나므로 "다시 찍어주세요", 그 외 일시/서버 문제는 "잠시 후 다시".
+// 🟡-11: "지금 잠시 붐볐어요"로 뭉뚱그리던 것을 "손님이 다음에 뭘 하면 되는지"가 다른
+//   사유끼리 분리한다. 각 사유마다 title·hint·button(다음 행동)이 실제로 달라야 한다.
 function failMessage(reason: string | null): { title: string; hint: string; button: string } {
-  if (reason === "face_not_detected") {
+  // ① 얼굴/사진 내용 문제 — 사진을 바꿔야 풀린다(재시도만으론 안 됨).
+  //   서버는 얼굴 미검출·안전필터를 content_flagged 로 내려준다(status classifyReplicateError).
+  if (reason === "content_flagged" || reason === "face_not_detected") {
     return {
       title:  "얼굴이 잘 안 보여요",
-      hint:   "밝은 곳에서 얼굴이 정면으로 나오게 다시 찍어주세요.",
-      button: "다시 찍기",
+      hint:   "밝은 곳에서 얼굴이 정면으로 크게 나오게, 앞머리로 눈·이마를 가리지 않고 다시 찍어주세요.",
+      button: "사진 다시 찍기",
     };
   }
-  if (reason === "content_flagged") {
+  // ② 사진 파일 자체 문제(누락·형식·용량) — 다른 사진을 고르면 된다.
+  if (reason === "missing_photo" || reason === "invalid_photo_format") {
     return {
-      title:  "이 사진은 처리할 수 없어요",
-      hint:   "다른 사진으로 다시 시도해 주세요.",
-      button: "다시 찍기",
+      title:  "사진을 다시 선택해 주세요",
+      hint:   "사진이 제대로 안 올라갔어요. 다른 사진으로 다시 골라주세요.",
+      button: "사진 다시 선택",
     };
   }
-  if (reason === "poll_timeout") {
-    // 콜드스타트로 준비가 5분을 넘긴 경우. 두 번째부터는 GPU가 켜져 있어 금방 나온다.
+  // ③ 네트워크 끊김 — 손님 쪽 연결 문제. 연결을 확인하는 게 다음 행동.
+  if (reason === "network") {
     return {
-      title:  "준비에 시간이 너무 오래 걸렸어요",
-      hint:   "다시 눌러주시면 이번엔 금방 나옵니다.",
+      title:  "연결이 잠깐 끊겼어요",
+      hint:   "와이파이나 데이터 연결을 확인하신 뒤 다시 시도해 주세요.",
       button: "다시 시도",
     };
   }
-  // api_error·exception·network·no_output·reference_fetch_failed 등 일시/서버 문제
+  // ④ 시간 초과(콜드스타트) — 첫 요청이 GPU를 깨우느라 오래 걸린 경우. 두 번째는 금방.
+  if (reason === "poll_timeout") {
+    return {
+      title:  "준비에 시간이 너무 오래 걸렸어요",
+      hint:   "다시 눌러주시면 이번엔 금방 나와요. 잠깐만 기다려 주세요.",
+      button: "다시 시도",
+    };
+  }
+  // ⑤ 그 외 일시/서버 문제(api_error·no_output·reference_fetch_failed·exception 등) — 잠시 후 재시도.
   return {
     title:  "지금 잠시 붐볐어요",
-    hint:   "잠시 후 다시 시도해 주세요.",
+    hint:   "잠시 후 다시 시도하면 정상적으로 완성돼요.",
     button: "다시 시도",
   };
 }
