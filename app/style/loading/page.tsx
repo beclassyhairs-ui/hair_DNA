@@ -103,6 +103,8 @@ const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
   "reference_fetch_failed", "poll_timeout", "api_error", "no_output", "exception",
   "content_flagged", "consent_required", "login_required", "network",
+  "fallback_not_eligible", // ② 서버가 폴백 자격(원본 콜드미스 여부)을 재확인해 거부한 경우. 정상
+                           // 8분 대기 플로우에서는 발생하지 않는다(즉시 우회 시도 방어용 코드).
 ]);
 function normFailReason(r: string | undefined): string {
   return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
@@ -112,8 +114,11 @@ interface JobRef {
   id: string;
   token: string;
   startedAt: number;
-  fallback?: boolean;          // 실제 폴백(lucataco) 사용 여부 — 예산(2분)·안내 표시 결정
-  fallbackAttempted?: boolean; // 세션당 폴백 1회 가드 — 킬스위치 상태와 무관하게 재착수 시 true
+  fallback?: boolean;             // 실제 폴백(lucataco) 사용 여부 — 예산(2분)·안내 표시 결정
+  fallbackAttempted?: boolean;    // 세션당 폴백 1회 가드 — 킬스위치 상태와 무관하게 재착수 시 true
+  primaryAttestation?: string;    // ② 이 job이 "진짜 원본(primary)"이었다는 서버 발급 증표. 폴백
+                                   //   job은 이 값을 절대 받지 않는다 — 폴백을 "원본" 삼아 또 다른
+                                   //   폴백을 체이닝하는 시도를 서버가 구조적으로 거부하게 한다.
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -246,7 +251,8 @@ export default function StyleLoadingPage() {
         if (res.status === 401) { goRelogin(); return; }
 
         const data = await res.json() as {
-          ok: boolean; id?: string; token?: string; reason?: string; message?: string; debugError?: string;
+          ok: boolean; id?: string; token?: string; primaryAttestation?: string;
+          reason?: string; message?: string; debugError?: string;
         };
 
         if (res.status === 403 && data.reason === "consent_required") {
@@ -263,7 +269,10 @@ export default function StyleLoadingPage() {
         }
 
         if (data.ok && data.id && data.token) {
-          const started: JobRef = { id: data.id, token: data.token, startedAt: Date.now() };
+          const started: JobRef = {
+            id: data.id, token: data.token, startedAt: Date.now(),
+            primaryAttestation: data.primaryAttestation, // ② 이 job(원본)을 나중에 폴백 자격증표로 쓴다.
+          };
           try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(started)); } catch { /**/ }
           console.log("[AI] 착수 성공, 폴링 시작:", data.id);
           await pollUntilDone(started);
@@ -365,16 +374,21 @@ export default function StyleLoadingPage() {
         const res = await fetch("/api/hair-transform", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          // 원본(ddvinh1) job 증표를 함께 보낸다 — 서버가 "같은 유저의 정상 kickoff" 를 검증해야
-          //   폴백을 허용한다(임의 lucataco 직접호출 차단·Codex 반영).
-          body:    JSON.stringify({ userPhoto: photo, answers, fallback: true, originalId: originalJob.id, originalToken: originalJob.token }),
+          // 원본(ddvinh1) job의 "진짜 원본" 증표를 함께 보낸다 — 서버가 이 증표(폴백 job은 절대
+          //   받지 못함)와 원본의 실제 콜드미스 여부(경과시간)를 둘 다 검증해야 폴백을 허용한다
+          //   (임의 lucataco 직접호출·폴백→폴백 체이닝 차단·Codex 라운드1 반영).
+          body:    JSON.stringify({
+            userPhoto: photo, answers, fallback: true,
+            originalId: originalJob.id, originalAttestation: originalJob.primaryAttestation,
+          }),
           signal:  AbortSignal.timeout(PER_POLL_TIMEOUT + 15_000),
         });
 
         if (res.status === 401) { goRelogin(); return true; }
 
         const data = await res.json() as {
-          ok: boolean; id?: string; token?: string; fallbackUsed?: boolean; reason?: string; message?: string; debugError?: string;
+          ok: boolean; id?: string; token?: string; primaryAttestation?: string; fallbackUsed?: boolean;
+          reason?: string; message?: string; debugError?: string;
         };
 
         if (res.status === 403 && data.reason === "consent_required") {
@@ -397,7 +411,14 @@ export default function StyleLoadingPage() {
           const usedFallback = data.fallbackUsed === true;
           // fallbackAttempted 는 킬스위치 상태와 무관하게 항상 true(1회 가드) — fallback(실제 모델)과 분리해
           //   영속화하여, 새로고침으로 재개돼도 2차 폴백을 막는다(Codex 반영).
-          const fbJob: JobRef = { id: data.id, token: data.token, startedAt: Date.now(), fallback: usedFallback, fallbackAttempted: true };
+          const fbJob: JobRef = {
+            id: data.id, token: data.token, startedAt: Date.now(),
+            fallback: usedFallback, fallbackAttempted: true,
+            // 킬스위치 OFF로 실제로는 ddvinh1(원본)로 처리됐다면(usedFallback=false) 서버가 정상적으로
+            //   primaryAttestation을 발급한다 — 이 job이 나중에 진짜 폴백의 원본이 될 수 있다(정상).
+            //   실제 폴백(lucataco)로 처리됐다면 서버가 애초에 발급하지 않으므로 항상 undefined.
+            primaryAttestation: data.primaryAttestation,
+          };
           try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(fbJob)); } catch { /**/ }
           setFallbackActive(usedFallback);
           void trackEvent("hair_transform_fallback", { source: "style", used: usedFallback });

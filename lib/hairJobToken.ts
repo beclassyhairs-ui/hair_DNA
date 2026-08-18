@@ -58,3 +58,34 @@ export async function verifyJobToken(
   const expected = await hmacHex(secret, `${JOB_PAYLOAD}:${predictionId}:${userId}`);
   return safeEqual(token, expected);
 }
+
+// ── ⑤ 폴백 전용 "원본(primary) 증표" ────────────────────────────────────────
+// 문제(2026-08-16 D-2 감사 Codex 라운드1 — 높음): issueJobToken 은 predictionId 가 ddvinh1(원본)
+//   job 인지 lucataco(폴백) job 인지 구분하지 않는다. 그래서 방금 만든 폴백 job 의 일반 소유권
+//   토큰을 그대로 "원본 증표"로 재제출하면, 폴백을 낳은 폴백(체이닝)이 계속 가능했다.
+// 해결: 별도 서명 네임스페이스(PRIMARY_ATTEST_PAYLOAD)로 "이 predictionId 는 실제로 원본
+//   (ddvinh1) kickoff 로 발급됐다"만 증명하는 독립 증표를 만든다. 폴백 kickoff 는 이 증표를
+//   절대 발급받지 못하므로, 폴백 job 의 일반 토큰을 아무리 재사용해도 이 증표를 위조할 수 없다
+//   (시크릿 없이는 서명 불가) — 체이닝이 토큰 네임스페이스 자체로 구조적으로 막힌다.
+const PRIMARY_ATTEST_PAYLOAD = "abeauty-hairjob-primary-v1";
+
+/** 원본(ddvinh1) kickoff 성공 시에만 발급 — 폴백 kickoff 는 절대 이 증표를 발급받지 않는다. */
+export async function issuePrimaryAttestation(
+  secret: string,
+  predictionId: string,
+  userId: string,
+): Promise<string> {
+  return hmacHex(secret, `${PRIMARY_ATTEST_PAYLOAD}:${predictionId}:${userId}`);
+}
+
+/** 폴백 자격 검증에서 사용: 이 predictionId 가 "진짜 원본"이었는지 확인. */
+export async function verifyPrimaryAttestation(
+  secret: string,
+  predictionId: string,
+  userId: string,
+  attestation: string,
+): Promise<boolean> {
+  if (!predictionId || !userId || !attestation) return false;
+  const expected = await hmacHex(secret, `${PRIMARY_ATTEST_PAYLOAD}:${predictionId}:${userId}`);
+  return safeEqual(attestation, expected);
+}
