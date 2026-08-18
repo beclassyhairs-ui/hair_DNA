@@ -95,9 +95,25 @@ const POLL_INTERVAL_MS = 2_500;   // status 폴링 간격
 const POLL_BUDGET_MS   = 480_000; // 8분
 const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
-const LONG_WAIT_MS     = 20_000;  // 이 시간 넘게 걸리면 "처음 한 번은 오래 걸려요" 안내로 전환
 // ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
 const FALLBACK_POLL_BUDGET_MS = 120_000;
+
+// 🟡-02 경과 초 → "N분 N초째" (50·60 가독: 콜론 mm:ss 대신 한글 분/초).
+function formatElapsedKo(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m > 0 ? `${m}분 ${s}초째` : `${s}초째`;
+}
+
+// 🟡-02 경과 구간별 안심 문구 — 20초~8분 사이 최소 4번 새 문구로 바뀌어 "멈춘 화면" 인지를 없앤다.
+//   폴링/8분 예산과 무관한 '표시 전용'(경과 초만 보고 문구를 고른다).
+function waitReassurance(elapsedSec: number, budgetMin: number): string {
+  if (elapsedSec < 20)  return `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${budgetMin}분까지 걸릴 수 있어요`;
+  if (elapsedSec < 60)  return "정성껏 만들고 있어요 · 이 화면을 잠깐 벗어났다 다시 돌아오셔도 이어서 진행돼요";
+  if (elapsedSec < 180) return "지금 열심히 그리는 중이에요 · 조금만 더 기다려 주세요";
+  if (elapsedSec < 300) return `이용자가 많아 시간이 걸리고 있어요 · 최대 ${budgetMin}분까지 기다리면 완성돼요`;
+  return "거의 마무리 단계예요 · 조금만 더 기다려 주세요";
+}
 
 const KNOWN_FAIL_REASONS = new Set([
   "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
@@ -128,7 +144,7 @@ export default function StyleLoadingPage() {
   const [stepIdx, setStepIdx] = useState(0);
   const [revealLines, setRevealLines] = useState<string[]>([]);
   const [revealIdx,   setRevealIdx]   = useState(0);
-  const [longWait, setLongWait] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState(0); // 🟡-02 진행감: 화면에서 매초 바뀌는 유일한 숫자
   const [fallbackActive, setFallbackActive] = useState(false); // ⑤ 폴백 진행 중 안내용
   const calledRef  = useRef(false); // 중복 호출 방지
 
@@ -155,10 +171,11 @@ export default function StyleLoadingPage() {
     return () => clearInterval(t);
   }, [revealLines.length]);
 
-  // 20초 넘게 걸리면 콜드스타트 안내로 문구 전환.
+  // 🟡-02 경과 초 카운터 — 매초 1씩 증가(표시 전용, 폴링/8분 예산과 완전 독립).
+  //   20초~8분 구간에서 화면이 "멈춘 듯" 보이던 문제를, 매초 바뀌는 숫자 + 경과별 점진 문구로 해소.
   useEffect(() => {
-    const t = setTimeout(() => setLongWait(true), LONG_WAIT_MS);
-    return () => clearTimeout(t);
+    const t = setInterval(() => setElapsedSec((s) => s + 1), 1_000);
+    return () => clearInterval(t);
   }, []);
 
   // ── 마운트 즉시 착수 + 폴링 ─────────────────────────────────────────────────
@@ -506,10 +523,16 @@ export default function StyleLoadingPage() {
           <p className="max-w-[300px] text-center text-[13px] leading-relaxed text-ink-2">
             {fallbackActive
               ? "완성이 조금 늦어져 다른 방식으로 마무리하고 있어요 · 곧 나와요"
-              : longWait
-              ? `시간이 조금 걸리고 있어요 · 이 화면을 잠깐 벗어났다 다시 돌아오셔도 이어서 진행돼요 · 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`
-              : `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${POLL_BUDGET_MIN}분까지 걸릴 수 있어요`}
+              : waitReassurance(elapsedSec, POLL_BUDGET_MIN)}
           </p>
+
+          {/* 🟡-02 매초 바뀌는 경과 표시 — 20초 지나서야 등장(그 전엔 곧 끝나므로 불필요·조바심 방지).
+              화면에서 유일하게 매초 변하는 숫자라 "멈춘 듯" 느낌을 없앤다. 폴링과 무관한 표시 전용. */}
+          {!fallbackActive && elapsedSec >= 20 && (
+            <p className="text-center text-[12px] font-medium tabular-nums text-ink-2/80">
+              {formatElapsedKo(elapsedSec)} 준비 중
+            </p>
+          )}
         </div>
 
         {/* ── 하단 60% — 파트1: 손님 본인 진단 순차 공개(대기시간을 진단으로 채우고 결과지 예고) ── */}
