@@ -282,9 +282,11 @@ function BeforeAfterSection({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-3 pt-10">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-white">After</span>
         </div>
-        {/* 진단 배지 — 사진만 보고 스크롤 안 하는 손님에게도 모질 진단이 눈에 박히게(파트2 ⑤). */}
+        {/* 진단 배지 — 사진만 보고 스크롤 안 하는 손님에게도 모질 진단이 눈에 박히게(파트2 ⑤).
+            🟡-05: "손상 모발 · 볼륨 처짐"처럼 긴 라벨이 320px에서 pill을 깨거나 줄바꿈 되던 문제 →
+            한 줄 고정(whitespace-nowrap) + 사진폭 넘으면 …(truncate) + max-width 로 카드 안에 가둠. */}
         {generatedUrl && hairLabel && (
-          <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+          <div className="pointer-events-none absolute left-2 top-2 max-w-[calc(100%-1rem)] truncate whitespace-nowrap rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
             {hairLabel}
           </div>
         )}
