@@ -231,7 +231,8 @@ export default function DamageCheckResultPage() {
           ← 다시 하기
         </Link>
         <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-sub">진단 결과지</span>
-        <button onClick={handleKakaoShare} className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+        {/* 🟡-01 어포던스: 텍스트만이던 헤더 공유를 옅은 테두리 pill로 — 누를 수 있음을 명확히. */}
+        <button onClick={handleKakaoShare} className="rounded-full border border-line px-3 py-1 text-[14px] font-medium text-sub transition-colors hover:bg-surface hover:text-ink active:scale-[0.98]">
           {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>

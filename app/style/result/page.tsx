@@ -640,11 +640,12 @@ export default function StyleResultPage() {
               </motion.div>
             )}
 
-            {/* 저장 + 공유 */}
+            {/* 저장 + 공유 — 🟡-01 어포던스: 텍스트처럼 보이던 것을 테두리로 '버튼'임을 명확히.
+                저장하기=아웃라인(하단 고정 채움 CTA와 위계 구분), 공유/재진단=옅은 테두리 보조버튼. */}
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
-                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-base font-bold text-ink transition-all hover:bg-surface active:scale-[0.98]">
-                사진 다운받기 (나의 헤어 저장 후 가능)
+                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-base font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
+                <span aria-hidden>⬇️</span> 사진 다운받기 (나의 헤어 저장 후 가능)
               </button>
               <p className="text-center text-[13px] text-ink-2 -mt-1">
                 나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
@@ -661,11 +662,11 @@ export default function StyleResultPage() {
                     if (navigator.share) navigator.share({ title: "어뷰티 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
-                  className="flex h-12 flex-1 items-center justify-center rounded-full text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   공유하기
                 </button>
                 <Link href="/style/survey"
-                  className="flex h-12 flex-1 items-center justify-center rounded-full text-[15px] font-medium text-ink-2 transition-all hover:text-ink">
+                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   다시 진단하기
                 </Link>
               </div>
