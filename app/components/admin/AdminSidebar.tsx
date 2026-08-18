@@ -54,6 +54,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: "/admin/coupang-check",
+    label: "링크 점검",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.75} className="h-5 w-5">
+        <path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
 ] as const;
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
