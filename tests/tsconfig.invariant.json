@@ -1,0 +1,21 @@
+{
+  "//": "invariant 테스트 전용 — TS를 CommonJS로 컴파일해 node로 실행(프레임워크 무설치).",
+  "//run": "npm run test:invariant  (또는 UPDATE_SNAPSHOT=1 로 스냅샷 갱신)",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "rootDir": "..",
+    "outDir": "./.build",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noEmit": false,
+    "isolatedModules": false,
+    "resolveJsonModule": true,
+    "incremental": false,
+    "types": ["node"]
+  },
+  "include": ["invariant/**/*.ts"]
+}
