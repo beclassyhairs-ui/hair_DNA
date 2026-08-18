@@ -439,7 +439,13 @@ export default function StyleResultPage() {
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (p) setPhoto(p);
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      if (a) setAnswers(JSON.parse(a) as StyleAnswers);
+      if (a) {
+        const parsed: unknown = JSON.parse(a);
+        // 세션 조작(JSON "null"·배열 등) 방어 — 순수 객체가 아니면 무시하고 기본값({}) 유지.
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          setAnswers(parsed as StyleAnswers);
+        }
+      }
       // ★ AI 이미지 — 한 번만 읽기 (loading 페이지가 완성 후 넘겨줌)
       const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
       console.log("[Result] sessionStorage STYLE_GENERATED_KEY 값:", g ?? "(없음)");
@@ -481,7 +487,19 @@ export default function StyleResultPage() {
     router.push("/style/upload");
   }
 
-  if (!ready) return <main className="min-h-screen bg-surface" />;
+  // ★ 직접 URL 진입(설문·업로드를 안 거친 상태) 가드 — 2026-08-16 D-2 감사 🔴-02.
+  //   진단 데이터(answers)가 전혀 없으면 기본값(bob/medium/straight)으로 "진단받은 척"하는
+  //   결과지를 보여주지 않고 랜딩으로 돌려보낸다. answers 하나만 기준으로 삼는다(Codex 라운드1
+  //   반영) — getStyleEntry/evaluateStyleGate/resolveCrossBranch 가 전부 answers 파생이라,
+  //   photo·failReason 등 다른 플래그만 있고 answers 가 비어있어도 같은 가짜 진단이 나온다.
+  //   정상 플로우는 설문 완료 시점부터 answers 가 항상 세션에 남아있다(성공·실패·한도초과 공통).
+  const hasResultData = Object.keys(answers).length > 0;
+
+  useEffect(() => {
+    if (ready && !hasResultData) router.replace("/style");
+  }, [ready, hasResultData, router]);
+
+  if (!ready || !hasResultData) return <main className="min-h-screen bg-surface" />;
 
   const entry  = getStyleEntry(answers);
   const report = getHairTypeReport(answers);   // 디버그 패널·REPORT_VIEW 추적용(hairTypeKey 등)

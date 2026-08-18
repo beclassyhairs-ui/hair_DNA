@@ -97,6 +97,9 @@ export default function DamageCheckResultPage() {
   const [saved,     setSaved]     = useState(false);
   const [copied,    setCopied]    = useState(false);
   const [kakaoSent, setKakaoSent] = useState(false);
+  // ★ 직접 URL 진입(설문 미완료) 가드 — 2026-08-16 D-2 감사 🔴-02. 세션에 실제 설문 데이터가
+  //   있었는지를 별도로 추적한다(answers 자체는 항상 DEFAULT_ANSWERS로 초기화돼 있어 구분 못 함).
+  const [hasSurveyData, setHasSurveyData] = useState(false);
 
   // ── 로그인 게이트(결과 보기 직전) — 스타일과 공용 authGate 공유. 미로그인이면 /login/consent로,
   //   로그인 후 이 결과 페이지로 복귀(return_to=/damage-check/result). 로그인 꺼진 상태면 게이트 없음.
@@ -115,11 +118,24 @@ export default function DamageCheckResultPage() {
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem(DAMAGE_SURVEY_KEY);
-      if (raw) setAnswers(JSON.parse(raw) as DamageSurveyAnswers);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        // 세션 조작(JSON "null"/빈 객체/배열) 방어 — 값이 있는 순수 객체일 때만 유효로 인정.
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Object.keys(parsed).length > 0) {
+          setAnswers(parsed as DamageSurveyAnswers);
+          setHasSurveyData(true);
+        }
+      }
     } catch { /**/ }
     try { setCoreKey(deriveCoreKeyFromEntries(readDiaryEntries())); } catch { /**/ }
     setReady(true);
   }, []);
+
+  // 진단 데이터 없이 결과지에 직접 진입한 경우 — 기본값(DEFAULT_ANSWERS)으로 "진단받은 척"하는
+  //   결과를 보여주지 않고 랜딩으로 돌려보낸다(로그인 확인이 끝난 뒤에만 — 로그인 리다이렉트와 경합 방지).
+  useEffect(() => {
+    if (ready && authOk && !hasSurveyData) router.replace("/damage-check");
+  }, [ready, authOk, hasSurveyData, router]);
 
   const result: DamageResult = diagnoseDamage(answers);
   const isHealthy = result.typeInfo.type === "HEALTHY";
@@ -135,7 +151,7 @@ export default function DamageCheckResultPage() {
     : undefined;
 
   useEffect(() => {
-    if (!ready || !authOk) return; // 로그인 통과(결과 실제 노출) 후에만 report_view 기록
+    if (!ready || !authOk || !hasSurveyData) return; // 로그인 통과 + 실제 설문 데이터 있을 때만 report_view 기록
     trackEvent(EVENT_NAMES.REPORT_VIEW, {
       landing_id: LANDING_ID,
       diagnosis_type: LANDING_ID,
@@ -143,7 +159,7 @@ export default function DamageCheckResultPage() {
       concern_tags: result.concernTags,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, authOk]);
+  }, [ready, authOk, hasSurveyData]);
 
   function handleSaveAndGoHome() {
     try {
@@ -202,8 +218,9 @@ export default function DamageCheckResultPage() {
     });
   }
 
-  // 데이터 준비 + 로그인 확인 전에는 결과를 렌더하지 않는다(플래시·익명 우회 차단).
-  if (!ready || !authOk) return <main className="min-h-screen" />;
+  // 데이터 준비 + 로그인 확인 + 실제 설문 데이터 확인 전에는 결과를 렌더하지 않는다
+  //   (플래시·익명 우회·직접 URL 진입 가짜 진단 전부 차단).
+  if (!ready || !authOk || !hasSurveyData) return <main className="min-h-screen" />;
 
   return (
     <main className="mx-auto min-h-screen max-w-[430px] pb-40 text-ink" style={{ touchAction: "pan-y" }}>
