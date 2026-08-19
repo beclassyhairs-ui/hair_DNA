@@ -29,7 +29,12 @@ const VERBATIM_MARKERS = ["원문 그대로", "원문 전문", "원문 보존"];
 
 /** TS 문자열 리터럴 이스케이프를 되돌린다(비교용). */
 function unescapeSource(src: string): string {
-  return src.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+  return src
+    .replace(/\\n/g, "\n") // b6.detail 등 문단 구분이 \n\n 으로 들어 있다
+    .replace(/\\t/g, "\t")
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\\\/g, "\\");
 }
 
 export interface VerbatimMismatch {
