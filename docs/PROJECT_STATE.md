@@ -21,16 +21,19 @@
   - **`npm run copy:check` 신설**: 구조(블록 11개 존재·id 중복) + evidenceKeys 실존 + 환경 게이트 3status×3환경 자체검증. tsc CJS→node, 프레임워크 무설치(invariant 하네스와 동일 방식). ⚠️ `@/` 별칭 금지 — tsc가 emit된 require를 재작성 안 해 node가 못 찾는다(실제로 1차 실행에서 터짐). **`copy-drafts` 내부는 상대경로만.**
   - **§7 미규정 2건(추측 대신 명시)**: ① `id` 문자열 형식 — `<domain>.<block>.<slug>`를 저장소 규약으로 고정 ② `text` 필드 — §7-1 목록은 "필수 **메타데이터**"라 본문이 없어 payload로 추가. 둘 다 README에 §7 미규정임을 적어둠.
   - **경계 준수**: 엔진 파일 무변경(`damageRecommend.ts`·`crossBranch.ts`·`branchCopy.ts`·`styleGate.ts`), resolver·렌더 배선 없음, 설문 스키마·DB 불변. 검증 = `copy:check` 구조 OK + **`test:invariant` 8/8 PASS**(구조 추가가 엔진 안 건드렸음 증명).
-- 🔴 **다음 세션 첫 행동(순서 고정)**: **① 카피 채우기 착수 → ② resolver 배선 → ③ production 게이트 활성화.**
-  - **① 카피 채우기** (블록별 landing은 각 블록 파일 헤더 주석에 기재됨):
-    - `damage/elasticity` ← **Q1 당김 5값**(`snap·stretch·elastic·firm·unsure`) — 현재 결과지 렌더 0건이라 **전량 신규**
-    - `damage/friction` ← **Q2 마찰 4값**(`tangled·loosens·smooth·unsure`) ⚠️ **지시는 "Q2 3값"이었으나 코드 실제는 4값** — `unsure`(잘 모르겠어요)는 신호 없음이라 카피 필요 여부를 사업주가 정해야 한다(3값이면 unsure 제외). 현행 `MANAGEMENT_TIP`(확정94, 전원 동일 고정노출)이 이 블록으로 이동 = 재배치.
-    - `damage/drying` ← **Q3 건조 3값**(`slow·normal·fast`) — 확정115(오래=손상)·확정117(빨리=중립, 손상 단정 금지) 준수 필수
-    - `damage/cause` ← **`h_recent` 6종 원인 블록**(`dye·root_dye·bleach·straight_perm·heat_perm·normal_perm`) — 현행 `TYPE_INFO` 3종(DRY/RIGID/HEALTHY) causeExplain을 6종 세분화. **탈색이 dye와 함께 DRY로 뭉쳐 있어 고위험 분기 신설 필요.**
-    - `damage/gray` ← `GRAY_HAIR_STORY`(확정104 원문, 재배치) / `damage/risk` ← 예언 14종×(door·aha·tip) 42문장(2026-08-13 지시서 **원문, 재작성 금지**)
-    - `style/*` ← **Primary Insight**(§6-3)·**absorbed**(§6-5) + 현행 `BRANCH_COPY` b1~b10×7필드 70슬롯·`SCALP_ROUTINE` 8·`CAUTION_NOTICE`·`B2_DOOR_BY_DESIGN` 2 이관
-  - **② resolver 배선** — 구조가 소비자 계약을 확정했으므로 타입은 그대로 쓰면 된다. ③ 게이트 활성화는 위 "활성화 2줄".
-  - **참고(카피 슬롯 전수, 2026-08-19 코드 실측)**: 기존 카피 약 160슬롯 — Damage 76(LEVEL_INFO 12·TYPE_INFO 6·GRAY 1·예언 42·MANAGEMENT_TIP 1·procedureRef 2·제품 12) / Style 89(BRANCH_COPY 70·PRODUCT_MASTER 8·SCALP_ROUTINE 8·B2_DOOR 2·CAUTION 1). 여기에 위 신규분이 더해진다.
+- ✅ **§7 카피 채우기 완료 (2026-08-19, `9997344`·`08f383b`·`4a9df26`·`cb260d8`) — 139 entry, 미배치 0**: damage 6블록 64 + style 6블록 75. **재배치 121 · 파생 4 · 신규 14 · 전건 `status:"draft"`**(승인 전 production 렌더 차단). 검증 = `copy:check` OK(**원문 대조 115건 불일치 0**, refId 3건 해석 3건) + `test:invariant` **8/8 PASS**(엔진 무변경).
+  - **PM 확정 — unsure 처리(2026-08-19)**: Q1·Q2 `unsure`는 **블록 숨김 금지, 짧은 안내 문구 제공.** 근거 = "잘 모르겠어요"를 고르는 손님은 자가진단을 어려워하는 분(주 고객 50~60대에 많음)이라, 답했는데 항목이 사라지면 "내 답을 안 읽었나" 하는 허전함이 생겨 V2 목적("내 답을 다 읽었구나")과 정반대가 된다. 두 문항 **동일 3단 구조**(답 확인 → 재확인 방법 → 비중 작음 안심)로 통일. 손상 단정·겁주기 금지. ⚠️ **지시는 "Q2 3값"이었으나 코드 실제 4값**(unsure 포함) — 4값으로 확정.
+  - **§6 보정(2026-08-19 PM) 3건 반영**: ① **`insight` 블록 신설**(§7-1 style 목록에 추가) — §6-3 Primary Insight(stamp·door·aha)를 담을 칸이 원래 목록에 없었다. ② **`refId` 참조 도입** — `CopyEntry`를 `text | refId` 유니온으로 바꿔 둘 다 갖거나 둘 다 없는 상태를 타입이 막는다. b3/b6/b10 aha는 hair-structure에서 **복사가 아니라 참조**(같은 문장 두 벌 = 원문 대조 두 벌 + 한쪽만 빨간펜 시 화면 분기). 참조 체인 금지·끊긴 참조는 `check` FAIL. ③ **걸침 슬롯은 "주된 목적" 한 곳에 두고 sourceRef에 걸침 명시** — b3 procedure→curl-fit / b5 procedure·b10 detail→volume / b6 procedure→cut / b8 3슬롯→insight(폴백·범용).
+  - **엔진에 맞춘 판단 2건**: ① `damage.elasticity.firm_after_magic`(파생) — `firm`(−0.3)은 유일한 건강 신호인데 확정124 코팅 규칙이 마지막 시술=매직이면 그 −0.3을 무효화한다. 한 문장만 두면 매직 손님 화면에 "좋은 신호"가 뜨는데 엔진은 가산을 안 주는 어긋남이 생겨 분기했다. ② `damage.cause.bleach`(신규) — 현행 `TYPE_INFO`가 탈색을 전체염색과 함께 DRY로 뭉치는데 탈색은 색을 **빼내는** 시술이라 출발선이 다르다. §5-4 고위험 분기로 신설.
+  - **검사 하네스 보강**: `verbatim.ts` 신설 — "원문 그대로" **주장을 기계 대조**한다(원본 파일 텍스트 containment). ⚠️ 원본 읽기 실패를 `catch`로 삼키면 검사기 버그가 "전건 불일치"로 위장되므로 **즉시 throw**한다(실제로 이 함정에 한 번 빠져 44/44 거짓 실패가 났다). `\n`·`\t` unescape 포함(b6.detail 문단 구분).
+  - 🟡 **미충족 1건 — §6-5(2) C컬/S컬/웨이브 내용 차등**: 규정은 "door 치환이 아니라 내용이 실제로 달라야 함(시작점·크기·순서)"인데 현행 원문은 `B2_DOOR_BY_DESIGN` door 한 줄만 갈릴 뿐 시작점·크기·순서가 동일하다. **원문에 없는 신규라 사장님 빨간펜 대상** → PM 지시로 이번에 쓰지 않음. **Phase 2 또는 사장님 원고 조달 후 착수.** (`copy-drafts/style/curl-fit.ts` 상단에 명시)
+  - **레지스트리 밖으로 둔 것**: `products`(P-키 배열 9개) — `PRODUCT_MASTER` 참조라 카피 텍스트가 아님. PM 승인.
+- 🔴 **다음 세션 첫 행동(순서 고정)**: **① resolver 배선 → ② production 게이트 활성화 → ③ §7-3 전수 덤프.** (카피 채우기는 2026-08-19 완료 — 체크 해제.)
+  - **① resolver**: 구조가 소비자 계약을 확정했으므로 `CopyEntry`·`resolveText()`를 그대로 쓴다. 블록별 노출 조건은 각 블록 파일 헤더 주석과 `evidenceKeys`에 기록돼 있다. ⚠️ 예언 11~14는 단독 매칭과 폴백을 겸하므로 riskFamily dedupe에서 따로 취급.
+  - **② 게이트 활성화(2줄)**: `check.ts`의 `RESOLVER_WIRED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5.
+  - **③ §7-3 전수 덤프**: `RESULT_ENUMERATION_V2.md`/`DAMAGE_ENUMERATION_V2.md`. "전수" 정의 = copy entry 100% + resolver branch·state·riskFamily·grayFlag·volumeState 100% + unique rendered signature 전량. **Cartesian 전량 실행이 비현실적이면 exhaustive라 표기하지 말고 실행 개수·생성 방식·seed·미커버를 명시할 것.**
+  - **블록별 최종 분포(139)**: `style/insight` 30 · `style/volume` 19 · `style/curl-fit` 12 · `style/safety` 7 · `style/cut` 4 · `style/hair-structure` 3(전부 refId 참조) / `damage/risk` 42 · `damage/cause` 7 · `damage/elasticity` 6 · `damage/friction` 5 · `damage/drying` 3 · `damage/gray` 1.
+  - **§7-2 최우선 정독 검수 대상(`신규` 14건)** — 사장님 빨간펜은 여기 집중: Q1 5값+unsure 안내(elasticity 5) · Q2 4값+unsure 안내(friction 4) · Q3 3값(drying 3) · **`damage.cause.bleach`**(탈색 고유 판단, 원문 대응 문장 없음) · `style.volume.balanced`(§6-4가 신규로 명시한 BALANCED 축소 카피).
 - ℹ️ **확정124 정정**: 아래 "확정124 …커밋/배포 승인 대기" 항목은 **낡음** — Q1 firm·매직 코팅은 실제 코드(`damageRecommend.ts:68,265`, `surveyData.ts:11,82`)에 이미 반영·라이브(747021e 이후). 대기 아님.
 
 ## 🟠 손상 엔진 v2 — 질문지·점수 개편 (2026-08-19 안건 등록, **착수 전 · 별건**)
