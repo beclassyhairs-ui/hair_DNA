@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "gen:references": "node scripts/gen-references-manifest.mjs",
-    "test:invariant": "tsc -p tests/tsconfig.invariant.json && node tests/.build/tests/invariant/engine-invariants.js"
+    "test:invariant": "tsc -p tests/tsconfig.invariant.json && node tests/.build/tests/invariant/engine-invariants.js",
+    "copy:check": "tsc -p copy-drafts/tsconfig.check.json && node copy-drafts/.build/copy-drafts/check.js"
   },
   "dependencies": {
     "@mediapipe/face_mesh": "^0.4.1633559619",

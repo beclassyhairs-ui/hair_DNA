@@ -32,6 +32,9 @@ next-env.d.ts
 # invariant 테스트 빌드 산출물 (tsc CJS 컴파일 결과 — 스냅샷 json 은 커밋)
 /tests/.build/
 
+# copy registry 구조 검사 빌드 산출물 (npm run copy:check)
+/copy-drafts/.build/
+
 # logs
 dev.log
 dev.err.log

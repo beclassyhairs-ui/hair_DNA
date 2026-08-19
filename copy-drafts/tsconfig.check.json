@@ -1,0 +1,22 @@
+{
+  "//": "copy registry 구조 검사 전용 — TS를 CommonJS로 컴파일해 node로 실행(프레임워크 무설치).",
+  "//run": "npm run copy:check",
+  "//paths": "@/ 별칭을 일부러 두지 않는다 — tsc가 emit한 require를 재작성하지 않아 node가 못 찾는다. copy-drafts 내부는 상대경로만 쓴다.",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "rootDir": "..",
+    "outDir": "./.build",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": false,
+    "isolatedModules": false,
+    "resolveJsonModule": true,
+    "incremental": false,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}
