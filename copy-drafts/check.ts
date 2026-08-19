@@ -16,7 +16,9 @@ import { ALL_BLOCKS, allEntries, assertRegistryShape, registryStats } from "./re
 import { allowedEvidenceKeys } from "./evidenceKeys";
 import { isRenderable, renderableStatuses } from "./env";
 import { findUnapprovedReachable } from "./guard";
+import { findVerbatimMismatches } from "./verbatim";
 import type { CopyEntry } from "./types";
+import { join } from "path";
 
 const problems: string[] = [];
 const notes: string[] = [];
@@ -58,6 +60,16 @@ for (const block of ALL_BLOCKS) {
   }
 }
 
+// ─── 3-b) "원문 그대로" 주장 기계 검증 ──────────────────────────────────────
+// 손으로 옮긴 재배치 카피에 오타가 굳지 않도록 원본 파일과 문자열 대조한다.
+// __dirname = <root>/copy-drafts/.build/copy-drafts → 3단계 올라가야 레포 루트다
+// (outDir=copy-drafts/.build, rootDir=레포 루트라 출력 경로가 한 겹 더 깊다).
+const repoRoot = join(__dirname, "..", "..", "..");
+const verbatim = findVerbatimMismatches(repoRoot);
+for (const m of verbatim.mismatches) {
+  problems.push(`${m.id}: 원문 대조 실패 — 원본 파일에서 동일 문자열을 못 찾음 (${m.sourceRef})`);
+}
+
 // ─── 4) 리포트 ──────────────────────────────────────────────────────────────
 const stats = registryStats();
 
@@ -81,6 +93,7 @@ console.log(`  블록: ${ALL_BLOCKS.length}개 (style ${ALL_BLOCKS.filter((b) =>
 console.log(`  entry: ${stats.total}개`);
 console.log(`  status: draft ${stats.byStatus.draft} · owner_reviewed ${stats.byStatus.owner_reviewed} · approved ${stats.byStatus.approved}`);
 console.log(`  sourceGrade: 재배치 ${stats.bySourceGrade.재배치} · 파생 ${stats.bySourceGrade.파생} · 신규 ${stats.bySourceGrade.신규}`);
+console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verbatim.mismatches.length}건`);
 console.log("\n  블록별 entry 수:");
 for (const b of stats.byBlock) console.log(`    ${b.domain}/${b.block}: ${b.count}`);
 
