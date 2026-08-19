@@ -52,10 +52,14 @@ function sty(partial: StyleAnswers): StyleAnswers {
 // §8 하드 invariant (판정 불변 — 확정 근거 재현)
 // ============================================================================
 
-// 1. 탈색 2회+ (h_bleach_2plus) → 무조건 Lv4
+// 1. 탈색 2회+ (h_bleach_2plus) → 무조건 Lv4 (Q1 답·물리테스트와 무관하게 강제)
 test("INV1 탈색 2회+ → Lv4", () => {
   const r = diagnoseDamage(dmg({ h_recent: "bleach", h_bleach_2plus: true }));
   assert.strictEqual(r.level.level, 4, `기대 Lv4, 실제 Lv${r.level.level} (score=${r.score})`);
+  // ★ 반례(옛 엔진 미검출): firm(−0.3) → 점수 8.0−0.3=7.7 → 강제 없으면 Lv3로 낙하했다.
+  //   Lv4 강제 규칙(calcLevel bleachCount>=2)이 이 조합을 Lv4로 고정하는지 직접 증명한다.
+  const firm = diagnoseDamage(dmg({ h_recent: "bleach", h_bleach_2plus: true, q1_pull: "firm" }));
+  assert.strictEqual(firm.level.level, 4, `firm 반례 기대 Lv4, 실제 Lv${firm.level.level} (score=${firm.score})`);
 });
 
 // 2. 무탈색 → 물리 최악 + 강한 시술이력이어도 Lv4 도달 불가 (NO_BLEACH_CAP=7.9)
@@ -128,6 +132,7 @@ const DAMAGE_PERSONAS: Record<string, DamageSurveyAnswers> = {
   d_bleach_l3:      dmg({ h_recent: "bleach", h_prev: "none" }),                          // L3_DRY (4.5)
   d_perm_l3:        dmg({ h_recent: "heat_perm", h_prev: "straight_perm", h_more: "many", q1_pull: "snap", q2_friction: "tangled" }), // RIGID 고점
   d_bleach2_l4:     dmg({ h_recent: "bleach", h_bleach_2plus: true }),                    // L4_DRY
+  d_bleach2_firm:   dmg({ h_recent: "bleach", h_bleach_2plus: true, q1_pull: "firm" }),   // INV1 반례: firm이어도 Lv4 강제
   d_none_l2:        dmg({ q1_pull: "snap", q2_friction: "tangled", h_recent: "none", h_prev: "none", h_more: "many" }), // none+Lv2 흡수→DRY
   d_root_gray:      dmg({ h_recent: "root_dye", h_root_gray: true, h_root_interval: "w2_3", h_root_over6m: true }),     // 새치
   d_self_dye:       dmg({ h_recent: "dye", h_prev: "root_dye", h_self_dye: true, h_root_interval: "m1" }),             // 예언6

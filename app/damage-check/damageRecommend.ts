@@ -240,13 +240,19 @@ function tier(table: readonly number[], n: number): number {
   return table[Math.min(Math.max(n, 0), table.length - 1)] ?? 0;
 }
 
+// 탈색 회수: "2회 이상" 체크(h_bleach_2plus)가 있으면 2로 고정(천장), 없으면 슬롯 내 회수.
+//   calcScore(점수)·calcLevel(INV1 Lv4 강제) 두 경로가 같은 정의를 공유하도록 단일화.
+function bleachCount(a: DamageSurveyAnswers): number {
+  const slots: DamageTreatment[] = [a.h_recent, a.h_prev];
+  return a.h_bleach_2plus ? 2 : slots.filter((t) => t === "bleach").length;
+}
+
 function calcScore(a: DamageSurveyAnswers): number {
   // 시술 슬롯 2칸(h_recent=마지막, h_prev=그전)에서 카테고리별 회수를 센다.
   const slots: DamageTreatment[] = [a.h_recent, a.h_prev];
   const cnt = (pred: (t: DamageTreatment) => boolean) => slots.filter(pred).length;
 
-  // 탈색: "2회 이상" 체크(h_bleach_2plus)가 있으면 2로 고정(천장), 없으면 슬롯 내 회수.
-  const bleachN = a.h_bleach_2plus ? 2 : cnt((t) => t === "bleach");
+  const bleachN = bleachCount(a);
   const permN   = cnt((t) => t === "heat_perm" || t === "straight_perm"); // 열펌·매직
   const dyeN    = cnt((t) => t === "dye" || t === "normal_perm");         // 염색·일반펌
   const rootN   = cnt((t) => t === "root_dye");                           // 뿌리염색(간격 문항 대기)
@@ -270,7 +276,12 @@ function calcScore(a: DamageSurveyAnswers): number {
 }
 
 function calcLevel(a: DamageSurveyAnswers): DamageLevel {
-  const s = calcScore(a); // 탈색 2회+ 는 점수 8.0으로 자연히 Lv4 도달(별도 강제 불필요)
+  // ★ INV1 강제 규칙(§8 · 확정124 매직 코팅과 동형 논리): 탈색 2회+ 는 Q1 답·물리테스트와
+  //   무관하게 최종 Lv4로 고정한다. "특정 시술(2회+ 탈색)에서는 firm의 '건강' 신호를 신뢰하지 않는다."
+  //   점수 감점이 아니라 레벨 강제 — 반례(firm −0.3으로 8.0−0.3=7.7 → Lv3 낙하)를 원천 차단.
+  //   무탈색·탈색 1회 등 다른 경로는 이 분기를 타지 않으므로 점수·판정 완전 불변.
+  if (bleachCount(a) >= 2) return 4;
+  const s = calcScore(a);
   if (s >= LV4_MIN) return 4;
   if (s >= LV3_MIN) return 3;
   if (s >= LV2_MIN) return 2;

@@ -63,6 +63,14 @@
     "prophecy": "탈색하고 나서 머리가 유난히 잘 엉키고, 젖",
     "grayStory": false
   },
+  "damage.d_bleach2_firm": {
+    "resultCode": "L4_DRY",
+    "score": 7.7,
+    "level": 4,
+    "type": "DRY",
+    "prophecy": "탈색하고 나서 머리가 유난히 잘 엉키고, 젖",
+    "grayStory": false
+  },
   "damage.d_none_l2": {
     "resultCode": "L2_DRY",
     "score": 3.2,
