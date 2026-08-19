@@ -158,6 +158,26 @@ const volume: StyleCopyBlockModule = {
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl"],
     },
 
+    // ── 걸침 배치 (§6 보정 2) — 주된 목적으로 한 곳, sourceRef에 걸침 명시 ──
+    {
+      id: "style.volume.b5_procedure",
+      text: "전체펌보다 정수리 부분펌이 이 머리의 정석입니다.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef:
+        "BRANCH_COPY.b5.procedure 원문 그대로 (갈래5) · 걸침: 볼륨 목적의 펌이 주(主), 펌 설계는 부수 — §6 보정 2에 따라 volume 배치",
+      evidenceKeys: ["q7_thickness", "q8_density", "q11_length"],
+    },
+    {
+      id: "style.volume.b10_detail",
+      text: "그래서 이 머리는 공식이 하나예요. 가운데 양감을 줄여서 무게를 빼고, 정수리를 살리는 겁니다. 숱이 많다고 무조건 쳐내면 정수리는 그대로 눌린 채 끝만 비어 보입니다.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef:
+        "BRANCH_COPY.b10.detail 원문 그대로 (갈래10) · 걸침: 정수리 볼륨이 주(主), 양감 커트는 수단 — §6 보정 2에 따라 volume 배치",
+      evidenceKeys: ["q8_density", "q7_thickness", "q3_curl"],
+    },
+
     // ── §6-4 BALANCED 축소 카피 — 명시적으로 허용된 신규 1건 ─────────────────
     // "볼륨 위험 규칙 하나도 미활성 시에만 BALANCED로 1~2문장 축소" (§6-4)
     {

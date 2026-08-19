@@ -33,6 +33,15 @@ const cut: StyleCopyBlockModule = {
       evidenceKeys: [...B4_KEYS],
     },
     {
+      id: "style.cut.b6_procedure",
+      text: "겉머리를 쳐내면 결이 중간에 잘려 더 날립니다. 겉결은 그대로 두고 안쪽 양감만 조절하는 게 답이에요. 그리고 과한 웨이브는 이 머리에 독입니다. 컬이 필요하시면 어깨선 아래쪽으로만 들어가야 해요. 그 위로 컬이 올라오면 머리가 훨씬 더 커 보입니다.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef:
+        "BRANCH_COPY.b6.procedure 원문 그대로 (갈래6) · 걸침: 커트 판단(양감 조절)이 주(主), 컬 위치 제한은 부수 — §6 보정 2에 따라 cut 배치",
+      evidenceKeys: [...B6_KEYS],
+    },
+    {
       id: "style.cut.b10_procedure",
       text: "겉은 건드리지 않고 속(중간)의 부피만 덜어내는 커트가 잘 맞는 머리입니다.",
       status: "draft",

@@ -12,7 +12,7 @@
 //    통과시키지 않고 **미검증 상태임을 명시**한다(§7-3: exhaustive라고 표기 금지).
 // ============================================================================
 
-import { ALL_BLOCKS, allEntries, assertRegistryShape, registryStats } from "./registry";
+import { ALL_BLOCKS, allEntries, assertRegistryShape, registryStats, resolveText } from "./registry";
 import { allowedEvidenceKeys } from "./evidenceKeys";
 import { isRenderable, renderableStatuses } from "./env";
 import { findUnapprovedReachable } from "./guard";
@@ -94,6 +94,11 @@ console.log(`  entry: ${stats.total}개`);
 console.log(`  status: draft ${stats.byStatus.draft} · owner_reviewed ${stats.byStatus.owner_reviewed} · approved ${stats.byStatus.approved}`);
 console.log(`  sourceGrade: 재배치 ${stats.bySourceGrade.재배치} · 파생 ${stats.bySourceGrade.파생} · 신규 ${stats.bySourceGrade.신규}`);
 console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verbatim.mismatches.length}건`);
+{
+  const refEntries = allEntries().filter((e) => e.text === undefined);
+  const resolved = refEntries.filter((e) => resolveText(e) !== null).length;
+  console.log(`  refId 참조: ${refEntries.length}건 · 원본 해석 성공 ${resolved}건`);
+}
 console.log("\n  블록별 entry 수:");
 for (const b of stats.byBlock) console.log(`    ${b.domain}/${b.block}: ${b.count}`);
 

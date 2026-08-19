@@ -100,6 +100,17 @@ const curlFit: StyleCopyBlockModule = {
       evidenceKeys: [...B7_KEYS],
     },
 
+    // ── 걸침 배치 (§6 보정 2) — 주된 목적으로 한 곳, sourceRef에 걸침 명시 ──
+    {
+      id: "style.curl_fit.b3_procedure",
+      text: "편다면 정수리는 빼고 펴는 설계가 답입니다. 전체 매직은 이 머리의 최악수예요.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef:
+        "BRANCH_COPY.b3.procedure 원문 그대로 (갈래3) · 걸침: 펴기 시술 설계가 주(主), 정수리 볼륨은 부수 — §6 보정 2에 따라 curl-fit 배치",
+      evidenceKeys: ["q8_density", "q7_thickness", "q3_curl", "q13_design"],
+    },
+
     // ── 디자인별 door 분기 (FIX-C②) ────────────────────────────────────────
     {
       id: "style.curl_fit.b2_door_wave",

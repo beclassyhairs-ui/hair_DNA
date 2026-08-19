@@ -12,6 +12,7 @@ import type { CopyBlockModule, CopyEntry, CopyStatus, SourceGrade } from "./type
 import { STYLE_BLOCKS, DAMAGE_BLOCKS } from "./types";
 import { currentCopyEnv, isRenderable, type CopyEnv } from "./env";
 
+import styleInsight from "./style/insight";
 import styleVolume from "./style/volume";
 import styleHairStructure from "./style/hair-structure";
 import styleCurlFit from "./style/curl-fit";
@@ -27,6 +28,7 @@ import damageRisk from "./damage/risk";
 
 /** §7-1 저장 구조 그대로. 블록 누락은 assertRegistryShape()이 잡는다. */
 export const ALL_BLOCKS: readonly CopyBlockModule[] = [
+  styleInsight,
   styleVolume,
   styleHairStructure,
   styleCurlFit,
@@ -48,6 +50,18 @@ export function allEntries(): CopyEntry[] {
 /** id → entry. 없으면 undefined(하류가 빈칸을 알아채도록 던지지 않는다). */
 export function getEntry(id: string): CopyEntry | undefined {
   return allEntries().find((e) => e.id === id);
+}
+
+/**
+ * entry의 실제 본문. refId entry면 원본을 한 단계 따라간다(§6 보정 1).
+ * 체인(참조의 참조)은 허용하지 않는다 — 원본이 어디인지 흐려지기 때문.
+ * 끊어진 참조는 null. assertRegistryShape()이 별도로 잡는다.
+ */
+export function resolveText(entry: CopyEntry): string | null {
+  if (entry.text !== undefined) return entry.text;
+  const target = getEntry(entry.refId);
+  if (!target || target.text === undefined) return null;
+  return target.text;
 }
 
 /** 이 환경에서 렌더 가능한 entry만. production이면 approved만 통과(§7-1). */
@@ -89,6 +103,17 @@ export function assertRegistryShape(): string[] {
   const seen = new Map<string, number>();
   for (const e of allEntries()) seen.set(e.id, (seen.get(e.id) ?? 0) + 1);
   for (const [id, n] of seen) if (n > 1) problems.push(`id 중복 ${n}건: ${id}`);
+
+  // refId 무결성(§6 보정 1): 가리키는 대상이 실재하고, 그 대상이 본문을 가져야 한다.
+  for (const e of allEntries()) {
+    if (e.text !== undefined) continue;
+    const target = getEntry(e.refId);
+    if (!target) {
+      problems.push(`${e.id}: refId "${e.refId}" 대상이 레지스트리에 없음`);
+    } else if (target.text === undefined) {
+      problems.push(`${e.id}: refId "${e.refId}"가 또 참조라 체인이 생김 — 원본을 직접 가리켜야 함`);
+    }
+  }
 
   return problems;
 }

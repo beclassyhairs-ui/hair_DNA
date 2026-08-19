@@ -63,10 +63,15 @@ export function findVerbatimMismatches(repoRoot: string): {
     }).join("\n"),
   );
 
-  const targets = allEntries().filter((e) => VERBATIM_MARKERS.some((m) => e.sourceRef.includes(m)));
+  // refId entry는 본문을 갖지 않는다 — 원본 쪽에서 이미 대조되므로 여기서 제외한다.
+  //   (참조를 따라가 또 검사하면 같은 문자열을 두 번 세면서 "검사 건수"만 부풀린다.
+  //    참조가 끊기지 않았는지는 registry.assertRegistryShape()이 따로 본다.)
+  const targets = allEntries().filter(
+    (e) => e.text !== undefined && VERBATIM_MARKERS.some((m) => e.sourceRef.includes(m)),
+  );
 
   const mismatches = targets
-    .filter((e) => !haystack.includes(e.text))
+    .filter((e) => !haystack.includes(e.text as string))
     .map((e) => ({ id: e.id, sourceRef: e.sourceRef }));
 
   return { checked: targets.length, mismatches };

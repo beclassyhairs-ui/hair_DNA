@@ -11,7 +11,7 @@
 
 ```
 copy-drafts/
-  style/   volume · hair-structure · curl-fit · cut · safety
+  style/   insight · volume · hair-structure · curl-fit · cut · safety
   damage/  elasticity · friction · drying · cause · gray · risk
 
   types.ts         copy entry 타입 (필수 메타데이터)
@@ -37,6 +37,23 @@ copy-drafts/
 
 - **`id` 형식은 §7이 규정하지 않았다.** `<domain>.<block>.<slug>`를 이 저장소 규약으로 고정한다. 전역 고유이며 `check`가 중복을 잡는다.
 - **`text`도 §7 목록에 없다.** §7-1이 나열한 것은 "필수 메타데이터"이고, 그 메타데이터가 수식하는 대상이 본문이므로 payload로 함께 둔다.
+`insight`는 §6 보정 1(2026-08-19 PM)로 §7-1 목록에 추가됐다 — §6-3 Primary Insight(stamp·door·aha)를 담을 칸이 원래 목록에 없었다.
+
+### 참조 entry (`refId`)
+
+같은 문장이 두 블록에서 필요할 때 **문장을 복사하지 않는다.** 원본은 한 곳에 두고 다른 블록은 id로 가리킨다.
+
+```ts
+{ id: "style.hair_structure.b3_aha_ref",
+  refId: "style.insight.b3_aha",   // text 없음 — 원본 본문을 상속
+  status, sourceGrade, sourceRef, evidenceKeys }
+```
+
+- `text`와 `refId`는 **둘 중 하나만** 가진다(타입이 강제).
+- `registry.resolveText(entry)`가 참조를 한 단계 따라간다. **체인(참조의 참조)은 금지** — 원본 위치가 흐려지므로 `check`가 FAIL로 잡는다.
+- 원문 대조는 **원본 쪽에서만** 수행한다. 참조를 따라가 또 검사하면 같은 문자열을 두 번 세면서 검사 건수만 부풀린다.
+- 복사본을 만들면 안 되는 이유: 사장님이 한쪽만 빨간펜을 넣었을 때 화면에 서로 다른 문장이 나간다.
+
 - `evidenceKeys`는 **실존하는 설문 답 키**여야 한다. damage는 `DamageSurveyAnswers` 인터페이스와 컴파일타임 결속, style은 `STYLE_SURVEY` 질문 id와 런타임 대조(`StyleAnswers`가 `Record<string,string>`이라 타입 결속이 불가능하다). 빈 배열 = 설문 답에 의존하지 않는 무조건 노출.
 
 ## 3. sourceGrade — 검수 부담 등급 (§7-2)
