@@ -12,7 +12,9 @@
 //    통과시키지 않고 **미검증 상태임을 명시**한다(§7-3: exhaustive라고 표기 금지).
 // ============================================================================
 
-import { ALL_BLOCKS, allEntries, assertRegistryShape, registryStats, resolveText } from "./registry";
+import { ALL_BLOCKS, allEntries, assertRegistryShape, getEntry, registryStats, resolveText } from "./registry";
+import { allReachableCopyIds, resolveDamage, resolveStyle } from "./resolver";
+import type { DamageSurveyAnswers } from "../app/damage-check/surveyData";
 import { allowedEvidenceKeys } from "./evidenceKeys";
 import { isRenderable, renderableStatuses } from "./env";
 import { findUnapprovedReachable } from "./guard";
@@ -70,21 +72,95 @@ for (const m of verbatim.mismatches) {
   problems.push(`${m.id}: 원문 대조 실패 — 원본 파일에서 동일 문자열을 못 찾음 (${m.sourceRef})`);
 }
 
+// ─── 3-c) resolver 검증 ─────────────────────────────────────────────────────
+// (a) resolver가 가리키는 id가 전부 레지스트리에 있는가 — 빈칸 조기 발견
+// (b) 레지스트리에 있는데 resolver가 절대 도달 못 하는 entry(죽은칸)는 없는가
+// (c) 실제로 돌려봤을 때 issue 없이 블록이 나오는가
+const reachable = allReachableCopyIds();
+for (const id of reachable) {
+  if (!getEntry(id)) problems.push(`resolver가 없는 id를 가리킴: ${id}`);
+}
+
+{
+  const reachableSet = new Set(reachable);
+  // 예언 8번은 엔진에서 match=() => false라 구조상 도달 불가 — 알려진 예외다.
+  const orphans = allEntries()
+    .map((x) => x.id)
+    .filter((id) => !reachableSet.has(id) && !id.includes(".p08_"));
+  if (orphans.length > 0) {
+    problems.push(`resolver가 도달 못 하는 죽은 entry ${orphans.length}건: ${orphans.join(", ")}`);
+  }
+}
+
+const smoke = (() => {
+  const dmg = (p: Partial<DamageSurveyAnswers>): DamageSurveyAnswers => ({
+    q1_pull: "", q2_friction: "", q3_dry: "",
+    h_recent: "none", h_prev: "none", h_more: "none",
+    h_bleach_2plus: false, h_root_gray: false, h_self_dye: false,
+    h_root_interval: "", h_root_over6m: false, ...p,
+  });
+
+  const cases: { name: string; run: () => { issues: { detail: string }[]; blocks: { block: string; entries: unknown[] }[] } }[] = [
+    { name: "damage 탈색2회+ firm(INV1 반례)", run: () => resolveDamage(dmg({ h_recent: "bleach", h_bleach_2plus: true, q1_pull: "firm" }), "development") },
+    { name: "damage 매직+firm(확정124 코팅)", run: () => resolveDamage(dmg({ h_recent: "straight_perm", q1_pull: "firm", q2_friction: "unsure", q3_dry: "fast" }), "development") },
+    { name: "damage 뿌리염색+새치", run: () => resolveDamage(dmg({ h_recent: "root_dye", h_root_gray: true, h_root_interval: "w2_3", q1_pull: "unsure", q2_friction: "tangled" }), "development") },
+    { name: "damage 시술전무(예언 없음)", run: () => resolveDamage(dmg({ q1_pull: "elastic", q2_friction: "smooth", q3_dry: "normal" }), "development") },
+    { name: "style 곱슬×펴기(b1)", run: () => resolveStyle({ q3_curl: "curly_hair", q13_design: "straight", q7_thickness: "medium_thickness", q8_density: "medium_density", q11_length: "bob" }, "development") },
+    { name: "style 무난 폴백(b8)", run: () => resolveStyle({ q3_curl: "straight_hair", q13_design: "straight", q7_thickness: "medium_thickness", q8_density: "medium_density", q11_length: "bob" }, "development") },
+    { name: "style 게이트 차단(§6-6 나머지 블록 유지)", run: () => resolveStyle({ q3_curl: "straight_hair", q13_design: "c_curl", q7_thickness: "fine", q8_density: "thin_density", q11_length: "chest", q8a_recent: "bleach", q8_bleach_2plus: "1" }, "development") },
+  ];
+
+  let ok = 0;
+  for (const c of cases) {
+    const r = c.run();
+    if (r.issues.length > 0) {
+      for (const i of r.issues) problems.push(`resolver 스모크 "${c.name}": ${i.detail}`);
+    } else ok += 1;
+  }
+  return { total: cases.length, ok };
+})();
+
+// 게이트 차단이어도 모질/궁합/커트가 살아 있는지 직접 확인(§6-6)
+{
+  const blocked = resolveStyle(
+    { q3_curl: "straight_hair", q13_design: "c_curl", q7_thickness: "fine", q8_density: "thin_density", q11_length: "chest", q8a_recent: "bleach", q8_bleach_2plus: "1" },
+    "development",
+  );
+  if (blocked.gateLevel !== "block") {
+    problems.push("§6-6 확인 불가: 차단 케이스가 block으로 판정되지 않음");
+  } else {
+    const safety = blocked.blocks.find((b) => b.block === "safety");
+    const others = blocked.blocks.filter((b) => ["hair-structure", "curl-fit", "cut"].includes(b.block));
+    if (!safety || safety.entries.length === 0) problems.push("§6-6 위반: 차단인데 safety 블록이 비었음");
+    if (others.every((b) => b.entries.length === 0)) {
+      problems.push("§6-6 위반: 차단이라고 모질/궁합/커트가 통째로 비었음 (b9가 결과 전체를 덮는 옛 동작)");
+    }
+    const volume = blocked.blocks.find((b) => b.block === "volume");
+    if (!volume || volume.entries.length === 0) problems.push("§6-4 위반: volume 블록이 비었음(항상 존재해야 함)");
+  }
+}
+
 // ─── 4) 리포트 ──────────────────────────────────────────────────────────────
 const stats = registryStats();
 
 // ─── 5) production 승인 게이트 상태 ─────────────────────────────────────────
 // resolver 미배선 = reachable 집합 계산 불가. 빈 집합으로 "통과"시키면 거짓 신호다.
-const RESOLVER_WIRED = false; // resolver 배선 시 true로 바꾸고 도달 집합을 넘긴다.
-if (!RESOLVER_WIRED) {
-  notes.push(
-    "production 승인 게이트: 미검증 (resolver 미배선 → reachable 집합 계산 불가).\n" +
-      "    guard.assertProductionCopyReady(reachableIds)는 구현·자체검증 완료 상태이며,\n" +
-      "    resolver가 생기는 즉시 도달 집합만 넘기면 발동한다. 지금은 통과로 간주하지 않는다.",
-  );
-} else {
-  const failures = findUnapprovedReachable([]);
-  if (failures.length > 0) problems.push(`production 승인 게이트 위반 ${failures.length}건`);
+// resolver는 작성 완료 — allReachableCopyIds()로 도달 집합을 계산할 수 있다(136건).
+// 다만 게이트 "활성화"(빌드 연결)는 별도 단계라 아직 켜지 않았다. 지금 켜면 draft 139건이
+// 전부 걸려 빌드가 멈춘다 — 사장님 승인 전에는 그게 정상 동작이지만, 켜는 시점은
+// 사업주가 정한다. 아래는 켰을 때 무엇이 걸리는지 **미리 보여주기만** 한다.
+const GATE_ENFORCED = false; // 활성화: 여기 true + package.json prebuild에 copy:check 체인
+{
+  const failures = findUnapprovedReachable(reachable);
+  if (GATE_ENFORCED) {
+    if (failures.length > 0) problems.push(`production 승인 게이트 위반 ${failures.length}건`);
+  } else {
+    notes.push(
+      `production 승인 게이트: 계산됨·미적용. 도달 가능 ${reachable.length}건 중 ` +
+        `승인(approved) 아님 ${failures.length}건 → 지금 켜면 production 빌드가 FAIL한다(의도된 동작).\n` +
+        "    켜는 법: check.ts의 GATE_ENFORCED=true + package.json prebuild에 copy:check 체인(README §5).",
+    );
+  }
 }
 
 // ─── 출력 ───────────────────────────────────────────────────────────────────
@@ -99,6 +175,7 @@ console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verba
   const resolved = refEntries.filter((e) => resolveText(e) !== null).length;
   console.log(`  refId 참조: ${refEntries.length}건 · 원본 해석 성공 ${resolved}건`);
 }
+console.log(`  resolver 도달 가능 id: ${reachable.length}건 · 스모크 ${smoke.ok}/${smoke.total} 통과`);
 console.log("\n  블록별 entry 수:");
 for (const b of stats.byBlock) console.log(`    ${b.domain}/${b.block}: ${b.count}`);
 
