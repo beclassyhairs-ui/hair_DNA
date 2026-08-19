@@ -42,14 +42,26 @@ export const ALL_BLOCKS: readonly CopyBlockModule[] = [
   damageRisk,
 ];
 
+// 레지스트리는 정적 데이터라 한 번만 펼쳐 캐시한다.
+//   전수 덤프가 수만~수십만 번 해석을 돌리는데, 매 조회마다 flatMap+find를 하면
+//   O(entry수)가 곱해져 실행 시간이 분 단위로 늘어난다.
+let _entries: CopyEntry[] | null = null;
+let _byId: Map<string, CopyEntry> | null = null;
+
 /** 레지스트리 전체 entry (§7-3 ① 전수 정의의 모수). */
 export function allEntries(): CopyEntry[] {
-  return ALL_BLOCKS.flatMap((b) => b.entries as CopyEntry[]);
+  if (_entries === null) _entries = ALL_BLOCKS.flatMap((b) => b.entries as CopyEntry[]);
+  return _entries;
 }
 
 /** id → entry. 없으면 undefined(하류가 빈칸을 알아채도록 던지지 않는다). */
 export function getEntry(id: string): CopyEntry | undefined {
-  return allEntries().find((e) => e.id === id);
+  if (_byId === null) {
+    _byId = new Map();
+    // 중복 id가 있으면 첫 번째가 남는다 — 중복 자체는 assertRegistryShape()이 잡는다.
+    for (const e of allEntries()) if (!_byId.has(e.id)) _byId.set(e.id, e);
+  }
+  return _byId.get(id);
 }
 
 /**
