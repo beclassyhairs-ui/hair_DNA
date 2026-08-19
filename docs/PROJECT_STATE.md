@@ -28,9 +28,13 @@
   - **검사 하네스 보강**: `verbatim.ts` 신설 — "원문 그대로" **주장을 기계 대조**한다(원본 파일 텍스트 containment). ⚠️ 원본 읽기 실패를 `catch`로 삼키면 검사기 버그가 "전건 불일치"로 위장되므로 **즉시 throw**한다(실제로 이 함정에 한 번 빠져 44/44 거짓 실패가 났다). `\n`·`\t` unescape 포함(b6.detail 문단 구분).
   - 🟡 **미충족 1건 — §6-5(2) C컬/S컬/웨이브 내용 차등**: 규정은 "door 치환이 아니라 내용이 실제로 달라야 함(시작점·크기·순서)"인데 현행 원문은 `B2_DOOR_BY_DESIGN` door 한 줄만 갈릴 뿐 시작점·크기·순서가 동일하다. **원문에 없는 신규라 사장님 빨간펜 대상** → PM 지시로 이번에 쓰지 않음. **Phase 2 또는 사장님 원고 조달 후 착수.** (`copy-drafts/style/curl-fit.ts` 상단에 명시)
   - **레지스트리 밖으로 둔 것**: `products`(P-키 배열 9개) — `PRODUCT_MASTER` 참조라 카피 텍스트가 아님. PM 승인.
-- 🔴 **다음 세션 첫 행동(순서 고정)**: **① resolver 배선 → ② production 게이트 활성화 → ③ §7-3 전수 덤프.** (카피 채우기는 2026-08-19 완료 — 체크 해제.)
-  - **① resolver**: 구조가 소비자 계약을 확정했으므로 `CopyEntry`·`resolveText()`를 그대로 쓴다. 블록별 노출 조건은 각 블록 파일 헤더 주석과 `evidenceKeys`에 기록돼 있다. ⚠️ 예언 11~14는 단독 매칭과 폴백을 겸하므로 riskFamily dedupe에서 따로 취급.
-  - **② 게이트 활성화(2줄)**: `check.ts`의 `RESOLVER_WIRED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5.
+- ✅ **① resolver 배선 완료 (2026-08-19, `3a57f1d`) — 엔진 무변경**: `copy-drafts/resolver/` 5파일. registry 139 entry를 손님 답 → 결과지 블록으로 연결한다. 엔진(`diagnoseDamage`·`resolveCrossBranch`·`evaluateStyleGate`) **출력만 읽고 판정을 재계산하지 않는다.** `styleGate.ts` 무수정(§8-6).
+  - **검증**: 도달 가능 id **136** + 도달 불가 3(예언 8번, 엔진 `match:()=>false`) = 139 — **레지스트리에 있는데 resolver가 못 닿는 죽은칸 0건**(CLAUDE.md §8 기계 확인). 스모크 **7/7**(INV1 반례·확정124 코팅·새치·시술전무·b1·b8 폴백·게이트 차단). `test:invariant` **8/8 PASS**.
+  - **예언 id 취득 방식**: 엔진의 `selectProphecy`가 module-private라 결과에 예언 **문자열**만 있고 id가 없다. 엔진에 export 추가는 경계 밖이라, **risk 카피가 원문과 한 글자도 다르지 않음이 기계로 증명된 점**(verbatim 불일치 0)을 이용해 문자열 역방향 조회로 원본 entry를 되찾는다. 같은 문장이 2개 entry에 있으면 모호해지므로 issue로 승격 — 현재 0건.
+  - 🔴 **§6-6 임시 우회 (PM 승인 2026-08-19) — 손상 엔진 v2에서 정식 수정할 별건 안건**: `resolveCrossBranch`는 gate가 block이면 `primary:"b9", absorbed:[]`를 돌려주고 **실제 발동한 모질 갈래 목록을 버린다**(`crossBranch.ts:94-96`). §6-6은 차단이어도 모질/궁합/커트를 정상 출력하라고 하므로, resolver가 **시술이력 키만 비운 탐침 입력으로 같은 함수를 한 번 더 호출**해 갈래를 재취득한다. 성립 근거 = 갈래 발동 조건(`crossBranch.ts:67-78`)이 `q3_curl·q13_design·q8_density·q7_thickness·q11_length`만 읽고 시술이력 키는 안 읽음(코드 확인). `scalpRoutineCard`는 시술이력을 읽으므로 실제 호출값 사용. **PM 판단**: 결과가 엔진 수정과 동일하고 런칭 직전이라 엔진 동결(8/8 안전망 보존)이 우선 → 우회 유지. **정식 해법 = crossBranch가 block에서도 firedList를 함께 반환(엔진 1줄) → 손상 엔진 v2에 묶어 처리**(어차피 그때 엔진을 건드린다). ⚠️ **코드의 🔴 탐침 경고 주석 유지 필수** — 누가 시술이력을 읽는 갈래 조건을 추가하면 우회가 조용히 깨진다.
+  - **차단 시 insight를 비우고 safety가 대표 판정을 대신한다**(PM 승인). b9의 stamp·door·aha가 §6-6에 따라 이미 safety에 있어서다.
+- 🔴 **다음 작업(순서 고정)**: **② production 게이트 활성화 → ③ §7-3 전수 덤프.**
+  - **② 게이트 활성화(2줄)**: `check.ts`의 `GATE_ENFORCED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5. **현재 상태**: 게이트는 계산은 되고 적용만 안 된 상태로, `copy:check`가 "도달 136건 중 승인 아님 136건 → 지금 켜면 production 빌드 FAIL"을 미리 알려준다(전건 draft라 정상). **사장님 승인(status→approved)이 먼저다.**
   - **③ §7-3 전수 덤프**: `RESULT_ENUMERATION_V2.md`/`DAMAGE_ENUMERATION_V2.md`. "전수" 정의 = copy entry 100% + resolver branch·state·riskFamily·grayFlag·volumeState 100% + unique rendered signature 전량. **Cartesian 전량 실행이 비현실적이면 exhaustive라 표기하지 말고 실행 개수·생성 방식·seed·미커버를 명시할 것.**
   - **블록별 최종 분포(139)**: `style/insight` 30 · `style/volume` 19 · `style/curl-fit` 12 · `style/safety` 7 · `style/cut` 4 · `style/hair-structure` 3(전부 refId 참조) / `damage/risk` 42 · `damage/cause` 7 · `damage/elasticity` 6 · `damage/friction` 5 · `damage/drying` 3 · `damage/gray` 1.
   - **§7-2 최우선 정독 검수 대상(`신규` 14건)** — 사장님 빨간펜은 여기 집중: Q1 5값+unsure 안내(elasticity 5) · Q2 4값+unsure 안내(friction 4) · Q3 3값(drying 3) · **`damage.cause.bleach`**(탈색 고유 판단, 원문 대응 문장 없음) · `style.volume.balanced`(§6-4가 신규로 명시한 BALANCED 축소 카피).
@@ -46,6 +50,8 @@
 - **(4) 죽어있는 예언 8 부활**: 길이 문항이 생기면 예언 8번의 match 조건이 성립 → 활성화. (2026-08-14 "6·8번 문항 추가 안 함" 보류 결정의 해제 조건이 이번 (2)로 충족됨.)
 
 **등급 체계 확정(변경 없음)**: **4단계 유지.** 명칭 = **1 건강 / 2 약손상 / 3 손상 / 4 극손상**.
+
+**함께 처리할 엔진 수정 1건(2026-08-19 추가)**: 🔴 **`crossBranch`가 gate=block일 때도 firedList를 반환하도록 1줄 수정.** 현재는 `primary:"b9", absorbed:[]`로 갈래 목록을 버려서(`crossBranch.ts:94-96`) §6-6("차단이어도 모질/궁합/커트 정상 출력")을 못 지킨다. resolver가 탐침 입력으로 우회 중이며(`copy-drafts/resolver/style.ts` 🔴 주석), 이 개편 때 엔진을 어차피 건드리므로 그때 정식 수정하고 우회를 제거한다. **우회 제거 전에는 시술이력을 읽는 갈래 발동 조건을 추가하면 안 된다** — 탐침이 조용히 깨진다.
 
 **연관**: INV1 Lv4 강제(`da79bae`)는 이 개편 이후에도 유지되어야 하는 하드 invariant다 — 점수 체계가 바뀌어도 `calcLevel`의 `bleachCount>=2 → 4` 분기는 점수와 독립이라 자동 보존되나, §8 invariant 재실행으로 확인한다. 개편 시 스냅샷 23+1행은 **의도적 대량 변경**이 예상되므로 `UPDATE_SNAPSHOT=1` 전에 변경분을 전수 검토한다.
 
