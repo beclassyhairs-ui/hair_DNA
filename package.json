@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/gen-references-manifest.mjs",
+    "prebuild": "node scripts/gen-references-manifest.mjs && npm run copy:check",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

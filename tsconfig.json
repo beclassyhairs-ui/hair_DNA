@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "esnext"],
+    // target 미지정 시 ES5로 떨어져 Set/Map/Generator 순회가 전부 TS2802로 막힌다.
+    //   copy-drafts(resolver·레지스트리)가 결과지 페이지에서 import되면서 루트 타입검사
+    //   대상이 됐고, 그때 드러난 문제다. Next 14가 스캐폴딩하는 기본값과 동일하게 맞춘다.
+    //   (출력 코드는 SWC가 만들므로 이 값은 사실상 타입검사 기준선 역할이다.)
+    "target": "es2017",
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,

@@ -15,6 +15,11 @@ import { motion } from "framer-motion";
 import { DAMAGE_SURVEY_KEY } from "../constants";
 import { diagnoseDamage, type DamageResult } from "../damageRecommend";
 import type { DamageSurveyAnswers } from "../surveyData";
+import { TREATMENT_OPTIONS } from "../surveyData";
+// 결과지 V2: 카피는 copy-drafts 레지스트리가 단일 출처. 이 페이지는 resolver가 고른
+//   블록을 순서대로 그리기만 한다(판정 로직은 여전히 damageRecommend 소관).
+import { resolveDamage } from "@/copy-drafts/resolver";
+import type { ResolvedBlock } from "@/copy-drafts/resolver";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
 import { trackEvent as trackHomeEvent } from "../../../lib/trackEvent";
 import {
@@ -77,15 +82,16 @@ const DEFAULT_ANSWERS: DamageSurveyAnswers = {
 // FIX3: 미사용 서비스 링크 숨김(삭제 아님 · 플래그). 나중에 켤 때 true 한 줄.
 const SHOW_HAIRQUIZ = false; // hair-quiz(평소 손질 습관 진단) 미출시 → 숨김
 
-// 평소 관리 꿀팁 = 주인공 블록 (확정94, 그대로)
-const MANAGEMENT_TIP =
-  "트리트먼트는 바른 다음 빗으로 골고루 빗질해서 결 정돈까지 돼야 효과가 난다. 손 빗질만으론 부족하다.";
+// ⚠️ 옛 MANAGEMENT_TIP·procedureRef 상수는 제거됐다(2026-08-20 결과지 V2 배선).
+//   카피는 전부 copy-drafts 레지스트리가 단일 출처이고, 이 페이지는 resolver가 고른
+//   블록을 순서대로 그리기만 한다. MANAGEMENT_TIP은 damage.friction.brush_tip으로
+//   이관돼 전원 고정이 아니라 Q2 신호가 있는 손님에게만 나간다.
 
-// [접힘] 시술 참고 — 레벨 기준 (AI 초안 · 빨간펜 대상)
-function procedureRef(level: number): string {
-  return level >= 3
-    ? "지금은 새 시술을 얹기보다, 남은 손상 부위를 정리하면서 기르는 쪽이 결과가 더 빠릅니다."
-    : "지금은 원하시는 시술 대부분 무리 없는 상태예요. 다만 시술이 쌓일수록 선택지가 줄어드니, 간격을 두시는 걸 권해드립니다.";
+/** 스탬프용 시술 라벨 — 설문 옵션 라벨을 그대로 쓰고 괄호 보충만 떼어낸다(신규 카피 아님). */
+function lastTreatmentLabel(a: DamageSurveyAnswers): string {
+  const last = a.h_recent !== "none" ? a.h_recent : a.h_prev;
+  if (last === "none") return "";
+  return TREATMENT_OPTIONS.find((o) => o.id === last)?.label.replace(/\s*\(.*\)/, "") ?? "";
 }
 
 export default function DamageCheckResultPage() {
@@ -138,9 +144,23 @@ export default function DamageCheckResultPage() {
   }, [ready, authOk, hasSurveyData, router]);
 
   const result: DamageResult = diagnoseDamage(answers);
-  const isHealthy = result.typeInfo.type === "HEALTHY";
-  // 히어로/스탬프 헤드라인: Lv 라벨 (+ 유형, 건강모는 유형 생략)
-  const stampTitle = isHealthy ? result.level.label : `${result.level.label} · ${result.typeInfo.label}`;
+  // ★ V2 스탬프: 옛 "건조형/경직형" 유형 딱지를 뗀다(2026-08-20 확정).
+  //   손님이 읽는 건 유형 분류가 아니라 "몇 단계 · 무엇 때문에"라서, 레벨 + 마지막 시술로 바꿨다.
+  //   ⚠️ stampTitle은 화면 말고도 다이어리 headline·카카오 공유·navigator.share가 함께 쓴다.
+  //     문자열 내용만 바뀌고 그 4개 소비처는 그대로 유지된다.
+  const treatLabel = lastTreatmentLabel(answers);
+  const stampTitle = treatLabel ? `${result.level.label} · ${treatLabel}` : result.level.label;
+
+  // 블록 조립 — 순서(cause → risk → gray → 당김 → 엉킴 → 건조)는 resolver가 정한다.
+  const resolution = resolveDamage(answers);
+  const block = (name: string): ResolvedBlock | undefined =>
+    resolution.blocks.find((b) => b.block === name && b.entries.length > 0);
+  const causeBlock = block("cause");
+  const riskBlock  = block("risk");
+  const grayBlock  = block("gray");
+  const physical   = ["elasticity", "friction", "drying"]
+    .map(block)
+    .filter((b): b is ResolvedBlock => b !== undefined);
 
   // FIX-A: 결과지에 실제로 뜨는 쿠팡카드 = 저장/다이어리에 남길 제품의 단일 출처.
   //   (과거엔 화면과 무관한 damageRecommend.products[0]을 저장 → 손님이 본 적 없는 제품이 다이어리에 남던 버그.)
@@ -258,46 +278,69 @@ export default function DamageCheckResultPage() {
             </p>
           </section>
 
-          {/* ── 예언(門) — 시술이력 14종 중 첫 매칭 (예언 → 아하 → 관리 3덩어리) ── */}
-          {result.prophecy && (
-            <section className="rounded-2xl border border-line border-l-4 border-l-ink bg-card p-5">
-              <p className="text-[16px] font-extrabold leading-relaxed text-ink">{result.prophecy}</p>
-              {result.prophecyAha && <p className="mt-2 text-body leading-relaxed text-sub">{result.prophecyAha}</p>}
-              {result.prophecyTip && <p className="mt-3 border-t border-line pt-3 text-body leading-relaxed text-ink">{result.prophecyTip}</p>}
+          {/* ── ① 주된 원인 — 마지막 시술 기준(h_recent 6종 + 시술없음) ──
+                 시술이력이 손상을 정하므로 물리테스트보다 앞에 온다(2026-08-20 원칙). */}
+          {causeBlock && (
+            <section className="card-soft space-y-2 p-5">
+              <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">
+                {treatLabel ? `주된 원인 — ${treatLabel}` : "지금 상태"}
+              </p>
+              {causeBlock.entries.map((e) => (
+                <p key={e.id} className="mt-1 whitespace-pre-line text-body leading-relaxed text-ink">{e.text}</p>
+              ))}
             </section>
           )}
 
-          {/* ── 유형 설명 (건강모는 원인 카드 대신 톤만) ── */}
-          <section className="card-soft space-y-2 p-5">
-            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">
-              {isHealthy ? "지금 상태" : `주된 원인 — ${result.typeInfo.label}`}
-            </p>
-            <p className="mt-1 whitespace-pre-line text-body leading-relaxed text-ink">{result.typeInfo.causeExplain}</p>
-          </section>
+          {/* ── ② 예언(門) — 시술이력 14종 중 첫 매칭. door → aha → tip 3덩어리 ── */}
+          {riskBlock && (
+            <section className="rounded-2xl border border-line border-l-4 border-l-ink bg-card p-5">
+              {riskBlock.entries.map((e, i) => (
+                <p
+                  key={e.id}
+                  className={
+                    i === 0 ? "text-[16px] font-extrabold leading-relaxed text-ink"
+                    : i === 1 ? "mt-2 text-body leading-relaxed text-sub"
+                    : "mt-3 border-t border-line pt-3 text-body leading-relaxed text-ink"
+                  }
+                >
+                  {e.text}
+                </p>
+              ))}
+            </section>
+          )}
 
-          {/* ── 평소 관리 꿀팁 (주인공, 확정94) — 결과지에서 제일 넓은 블록 ── */}
-          <section className="card-soft space-y-2 p-5">
-            <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">평소 관리 꿀팁</p>
-            <p className="mt-1 text-[16px] font-semibold leading-relaxed text-ink">{MANAGEMENT_TIP}</p>
-          </section>
-
-          {/* ── 흰머리 원고 (확정104) — 새치 체크 손님만 (관리 영역 접힘) ── */}
-          {result.grayHairStory && (
+          {/* ── ③ 흰머리 원고 (확정104) — 새치 체크 손님만 (접힘) ── */}
+          {grayBlock && (
             <details className="overflow-hidden rounded-2xl border border-line bg-card">
               <summary className="cursor-pointer p-5 text-body font-bold text-ink">새치 염색을 오래 하셨다면 — 꼭 읽어보세요</summary>
-              <div className="border-t border-line px-5 pb-5 pt-3">
-                <p className="text-body leading-relaxed text-ink">{result.grayHairStory}</p>
+              <div className="border-t border-line px-5 pb-5 pt-3 space-y-3">
+                {grayBlock.entries.map((e) => (
+                  <p key={e.id} className="text-body leading-relaxed text-ink">{e.text}</p>
+                ))}
               </div>
             </details>
           )}
 
-          {/* ── [접힘] 시술 참고 (AI 초안 · 빨간펜 대상) ── */}
-          <details className="overflow-hidden rounded-2xl border border-line bg-card">
-            <summary className="cursor-pointer p-5 text-body font-bold text-ink">시술 생각이 있으시다면</summary>
-            <div className="border-t border-line px-5 pb-5 pt-3">
-              <p className="text-body leading-relaxed text-ink">{procedureRef(result.level.level)}</p>
-            </div>
-          </details>
+          {/* ── ④ 직접 확인해보신 것 — 물리테스트 3종.
+                 손상을 "정의"하는 게 아니라 참고 신호라서 원인·예언 뒤에 놓고,
+                 헤더 문구로도 참고 성격을 드러낸다(2026-08-20 원칙). ── */}
+          {physical.length > 0 && (
+            <section className="card-soft space-y-3 p-5">
+              <div>
+                <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">직접 확인해보신 것</p>
+                <p className="mt-1 text-[13px] leading-relaxed text-sub">
+                  아래는 참고로 함께 보는 신호예요. 단계는 시술 이력을 기준으로 판단했습니다.
+                </p>
+              </div>
+              <div className="space-y-3 border-t border-line pt-3">
+                {physical.flatMap((b) =>
+                  b.entries.map((e) => (
+                    <p key={e.id} className="text-body leading-relaxed text-ink">{e.text}</p>
+                  )),
+                )}
+              </div>
+            </section>
+          )}
 
           {/* ── 제품 (맨 아래) — 쿠팡 제휴 매칭 카드로 교체(확정48). 결과지에서 바로 쿠팡 연결.
                  ★ G13(뿌리 볼륨 파우더)은 DAMAGE_CARDS 목록에 없어 구조적으로 절대 미노출(하드 차단).

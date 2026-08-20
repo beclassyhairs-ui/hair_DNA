@@ -211,7 +211,7 @@ const stats = registryStats();
 // 다만 게이트 "활성화"(빌드 연결)는 별도 단계라 아직 켜지 않았다. 지금 켜면 draft 139건이
 // 전부 걸려 빌드가 멈춘다 — 사장님 승인 전에는 그게 정상 동작이지만, 켜는 시점은
 // 사업주가 정한다. 아래는 켰을 때 무엇이 걸리는지 **미리 보여주기만** 한다.
-const GATE_ENFORCED = false; // 활성화: 여기 true + package.json prebuild에 copy:check 체인
+const GATE_ENFORCED = true; // 활성화됨(2026-08-20) — prebuild가 copy:check를 체인한다
 {
   const failures = findUnapprovedReachable(reachable);
   if (GATE_ENFORCED) {

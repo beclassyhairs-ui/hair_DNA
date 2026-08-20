@@ -36,8 +36,10 @@ import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
-import { resolveCrossBranch } from "../crossBranch";
-import { getBranchCopy, resolveDoor, SCALP_ROUTINE, SCALP_ROUTINE_BRANCHES, CAUTION_NOTICE } from "../branchCopy";
+// 결과지 V2: 카피는 copy-drafts 레지스트리가 단일 출처. branchCopy 직접 참조는 걷어냈다
+//   (라이브 원본 파일 자체는 그대로 두고, 이 페이지가 더 이상 읽지 않을 뿐이다).
+import { resolveStyle } from "@/copy-drafts/resolver";
+import type { ResolvedBlock, ResolvedCopy } from "@/copy-drafts/resolver";
 import CoupangCardList from "@/components/CoupangCardList";
 import { pickStyleCards } from "@/lib/coupangCards";
 
@@ -327,11 +329,17 @@ function VerdictStamp({ level, stamp }: { level: "pass" | "caution" | "block"; s
   );
 }
 
-// 게이트 주의 — 노란 안내줄 + 데미지 송객 CTA(링크만, 문구 기존 유지)
-function CautionNotice() {
+// 게이트 안전 안내(주의·차단) — 문구는 resolver의 safety 블록에서 온다.
+//   ⚠️ 안전 안내라 버튼 뒤에 숨기지 않고 **항상 노출**한다(펼침 토글 밖에서 렌더).
+function SafetyNotice({ entries }: { entries: ResolvedCopy[] }) {
+  if (entries.length === 0) return null;
   return (
     <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
-      <p className="text-[14px] font-semibold text-amber-800">{CAUTION_NOTICE}</p>
+      <div className="space-y-1.5">
+        {entries.map((e) => (
+          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] font-semibold leading-relaxed text-amber-900" />
+        ))}
+      </div>
       <Link href="/damage-check"
         className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-amber-700 underline underline-offset-2">
         정밀 손상 진단 받아보기 →
@@ -518,8 +526,31 @@ export default function StyleResultPage() {
   const entry  = getStyleEntry(answers);
   const report = getHairTypeReport(answers);   // 디버그 패널·REPORT_VIEW 추적용(hairTypeKey 등)
   const gate   = evaluateStyleGate(answers);   // 판정 스탬프·주의/차단
-  const branch = resolveCrossBranch(answers);  // 대표 갈래 + 흡수 + 부가카드
-  const bcopy  = getBranchCopy(branch.primary);
+  // ⚠️ 옛 resolveCrossBranch 직접 호출은 걷어냈다 — 갈래 선정·흡수·정수리 카드 판단은
+  //   이제 resolveStyle 안에서 일어나고, 이 페이지는 그 결과(blocks)만 그린다.
+  //   판정 로직(crossBranch.ts) 자체는 무수정이다.
+
+  // ── 블록 조립 ── resolver가 어떤 문장을 낼지 다 정한다. 이 페이지는 그리기만 한다.
+  const resolution = resolveStyle(answers);
+  const sblock = (name: string): ResolvedBlock | undefined =>
+    resolution.blocks.find((b) => b.block === name && b.entries.length > 0);
+
+  const insight = sblock("insight");
+  // 스탬프는 insight의 stamp entry. 차단이면 insight가 비고 safety의 b9_stamp가 그 자리를 대신한다(§6-6).
+  const stampEntry =
+    insight?.entries.find((e) => e.id.endsWith("_stamp")) ??
+    sblock("safety")?.entries.find((e) => e.id.endsWith("_stamp"));
+  const insightBody = (insight?.entries ?? []).filter((e) => !e.id.endsWith("_stamp"));
+
+  // 차단 상태의 시술 지시 — 블록 경계를 넘어 한 카드로 모은다.
+  //   전제 문구(blocked_procedure_prefix)가 앞에 오고 conditional 문장들이 뒤따른다.
+  const conditionalCard: ResolvedCopy[] = resolution.blocks.flatMap((b) =>
+    b.entries.filter((e) => e.conditional || e.id === "style.safety.blocked_procedure_prefix"),
+  );
+  const isConditional = (e: ResolvedCopy) =>
+    e.conditional === true || e.id === "style.safety.blocked_procedure_prefix";
+  /** 위 접힘 카드로 뺀 문장은 원래 블록에서 빼고 그린다(같은 문장 두 번 방지). */
+  const bodyOf = (b: ResolvedBlock | undefined) => (b?.entries ?? []).filter((e) => !isConditional(e));
 
   return (
     <SilkBackground>
@@ -555,11 +586,14 @@ export default function StyleResultPage() {
             <p className="text-[13px] text-ink-2">내가 고른 스타일</p>
             <p className="mt-0.5 text-[26px] font-extrabold tracking-tight text-ink">{entry.name}</p>
             {entry.subtitle && <p className="mt-1 text-[14px] text-ink-2">{entry.subtitle}</p>}
-            <VerdictStamp level={gate.level} stamp={bcopy.stamp} />
+            {stampEntry && <VerdictStamp level={gate.level} stamp={stampEntry.text} />}
           </div>
 
           {/* 게이트 주의 — 안전 안내라 버튼 뒤에 숨기지 않고 항상 노출 */}
-          {gate.level === "caution" && <div className="mt-4"><CautionNotice /></div>}
+          {/* 게이트 안전 안내 — pass면 빈 배열이라 자동 미노출. 차단이어도 아래 분석 블록은 그대로 나간다(§6-6). */}
+          <div className="mt-4">
+            <SafetyNotice entries={bodyOf(sblock("safety")).filter((e) => !e.id.endsWith("_stamp"))} />
+          </div>
 
           {/* 파트2 훅 — 스크롤 없이 보이는 위치에서 '왜 어울리는지 / 뭘 주문해야 실패 안 하는지'를
               아래 버튼으로 끌어내린다(50·60은 스크롤을 안 하고 사진만 보고 끝내는 문제 직격). */}
@@ -584,51 +618,120 @@ export default function StyleResultPage() {
             {showDiagnosis && (
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-1">
 
-                {/* 3. 예언 — 조건문 톤(현재 단정 금지) */}
-                <TT>혹시, 이런 적 있다면</TT>
-                <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                  <Rich html={resolveDoor(branch.primary, answers.q13_design, bcopy)} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
-                </GlassCard>
+                {/* 3. 대표 판정 — 예언(door) + 아하(aha). §6-3에 따라 "결과 전체 결정"이
+                       아니라 "대표 한 줄 + 이래서 그렇습니다"로 역할이 줄었다. */}
+                {insightBody.length > 0 && (
+                  <>
+                    <TT>혹시, 이런 적 있다면</TT>
+                    <GlassCard className="border-l-4 border-l-ink px-5 py-4">
+                      <Rich html={insightBody[0]!.text} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
+                    </GlassCard>
+                    {insightBody.length > 1 && (
+                      <>
+                        <TT>왜 그랬던 걸까요</TT>
+                        <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                          {insightBody.slice(1).map((e) => (
+                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14.5px] font-semibold leading-relaxed text-ink" />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
 
-                {/* 4. 아하 — 핵심 1줄 + 자세히 보기 접기 */}
-                <TT>왜 그랬던 걸까요</TT>
-                <div className="rounded-xl border border-line bg-surface px-4 py-3">
-                  <Rich html={bcopy.aha} className="text-[14.5px] font-semibold leading-relaxed text-ink" />
-                </div>
-                <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">자세히 보기</summary>
-                  <div className="border-t border-line px-4 py-3"><Rich html={bcopy.detail} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" /></div>
-                </details>
+                {/* 4. 모질 구조 — §6-5(1). 굵기×숱 판단. */}
+                {bodyOf(sblock("hair-structure")).length > 0 && (
+                  <>
+                    <TT>내 모발 구조</TT>
+                    <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                      {bodyOf(sblock("hair-structure")).map((e) => (
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                      ))}
+                    </div>
+                  </>
+                )}
 
-                {/* 5. 평소 관리 꿀팁(주인공, 펼침, 문단 통째) + 정수리 루틴 접기(갈래 3·5·10 공용 or 부가) */}
-                <TT>평소엔 이렇게 해보세요</TT>
-                <GlassCard tone="soft" className="px-5 py-4">
-                  <Rich html={bcopy.tip} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-                </GlassCard>
-                {(branch.scalpRoutineCard || SCALP_ROUTINE_BRANCHES.includes(branch.primary)) && (
+                {/* 5. 볼륨 — §6-4. primary가 무엇이든 항상 존재한다.
+                       정수리 루틴(scalp_step*)은 순서가 있는 절차라 번호 목록으로 따로 그린다. */}
+                {(() => {
+                  const vol = bodyOf(sblock("volume"));
+                  if (vol.length === 0) return null;
+                  const steps = vol.filter((e) => e.id.includes(".scalp_step"));
+                  const title = vol.find((e) => e.id.endsWith(".scalp_title"));
+                  const note  = vol.find((e) => e.id.endsWith(".scalp_note"));
+                  const rest  = vol.filter((e) => !e.id.includes(".scalp_"));
+                  return (
+                    <>
+                      <TT>볼륨은 이렇게 봅니다</TT>
+                      {rest.length > 0 && (
+                        <GlassCard tone="soft" className="space-y-2 px-5 py-4">
+                          {rest.map((e) => (
+                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                          ))}
+                        </GlassCard>
+                      )}
+                      {steps.length > 0 && (
+                        <details className="mt-2 overflow-hidden rounded-xl border border-line">
+                          <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{title?.text ?? "정수리 드라이 · 순서 그대로"}</summary>
+                          <div className="border-t border-line px-4 py-3">
+                            <ol className="list-decimal space-y-1.5 pl-5">
+                              {steps.map((e) => (
+                                <li key={e.id} className="text-[13.5px] leading-relaxed text-ink"><Rich html={e.text} /></li>
+                              ))}
+                            </ol>
+                            {note && <p className="mt-2 text-[12.5px] text-ink-2">{note.text}</p>}
+                          </div>
+                        </details>
+                      )}
+                    </>
+                  );
+                })()}
+
+                {/* 6. 스타일 궁합 — §6-5(2). 곱슬 × 희망 디자인. */}
+                {bodyOf(sblock("curl-fit")).length > 0 && (
+                  <>
+                    <TT>이 스타일과의 궁합</TT>
+                    <GlassCard tone="soft" className="space-y-2 px-5 py-4">
+                      {bodyOf(sblock("curl-fit")).map((e) => (
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                      ))}
+                    </GlassCard>
+                  </>
+                )}
+
+                {/* 7. 커트 설계(접힘) — §6-5(3). 미용실 주문 멘트. */}
+                {bodyOf(sblock("cut")).length > 0 && (
                   <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{SCALP_ROUTINE.title}</summary>
-                    <div className="border-t border-line px-4 py-3">
-                      <ol className="list-decimal space-y-1.5 pl-5">
-                        {SCALP_ROUTINE.steps.map((s, i) => (
-                          <li key={i} className="text-[13.5px] leading-relaxed text-ink"><Rich html={s} /></li>
-                        ))}
-                      </ol>
-                      <p className="mt-2 text-[12.5px] text-ink-2">{SCALP_ROUTINE.note}</p>
+                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</summary>
+                    <div className="space-y-2 border-t border-line px-4 py-3">
+                      {bodyOf(sblock("cut")).map((e) => (
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                      ))}
                     </div>
                   </details>
                 )}
 
-                {/* 6. 시술 참고(접힘) — 대표 + 흡수된 갈래 스텝 */}
-                <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                  <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">시술 생각이 있으시다면</summary>
-                  <div className="space-y-2 border-t border-line px-4 py-3">
-                    <Rich html={bcopy.procedure} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-                    {branch.absorbed.map((k) => (
-                      <Rich key={k} html={getBranchCopy(k).procedure} className="block whitespace-pre-line text-[13px] leading-relaxed text-ink-2" />
-                    ))}
-                  </div>
-                </details>
+                {/* 8. 회복 후 시술 참고(접힘) — 차단 상태에서만.
+                       (시술 안전 안내 자체는 토글 밖 SafetyNotice가 항상 노출한다 — §6-6) 시술 지시를 숨기지 않고
+                       "지금 하라"로 읽히지 않게 조건부로 묶는다. 블록 경계를 넘어 한 카드로 모은다. */}
+                {conditionalCard.length > 0 && (
+                  <details className="mt-2 overflow-hidden rounded-xl border border-line border-dashed">
+                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">회복 후 시술 참고</summary>
+                    <div className="space-y-2 border-t border-line px-4 py-3">
+                      {conditionalCard.map((e) => (
+                        <Rich
+                          key={e.id}
+                          html={e.text}
+                          className={
+                            e.id === "style.safety.blocked_procedure_prefix"
+                              ? "block whitespace-pre-line text-[13.5px] font-semibold leading-relaxed text-ink-2"
+                              : "block whitespace-pre-line text-[14px] leading-relaxed text-ink"
+                          }
+                        />
+                      ))}
+                    </div>
+                  </details>
+                )}
 
                 {/* 큰 버튼 ② — 케어 제품 열기(진단 읽고 나면 등장). 차단(block)은 제품 대신 데미지 안내. */}
                 {gate.level !== "block" ? (

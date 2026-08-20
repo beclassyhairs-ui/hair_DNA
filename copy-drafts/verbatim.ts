@@ -37,6 +37,13 @@ function unescapeSource(src: string): string {
     .replace(/\\\\/g, "\\");
 }
 
+// ⚠️ 한계(2026-08-20 배선에서 실제로 부딪힌 지점): 이 검사는 **라이브 소스에 원본이
+//   남아 있는 카피만** 보증한다. 레지스트리를 단일 출처로 만들면서 옛 상수를 지우면
+//   대조할 대상이 사라지므로, 그 카피는 sourceRef에서 "원문 그대로" 마커를 떼고
+//   검사 대상에서 빠진다(삭제 직전까지 통과했다는 사실은 커밋 이력에 남는다).
+//   앞으로 branchCopy.ts처럼 원본 파일을 통째로 지울 때 이 문제가 한 번에 커진다 —
+//   그때는 동결 사본 방식을 도입할지 사업주 판단을 받는다.
+
 export interface VerbatimMismatch {
   id: string;
   sourceRef: string;
