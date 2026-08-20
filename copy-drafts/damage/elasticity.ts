@@ -47,7 +47,9 @@ const elasticity: DamageCopyBlockModule = {
       text: "단단해서 잘 안 늘어난다고 하셨어요. 모발이 힘을 그대로 버티고 있는, 좋은 신호로 보입니다.",
       status: "draft",
       sourceGrade: "신규",
-      sourceRef: "신규 — Q1 firm(−0.3, 유일한 건강 신호) 문장화",
+      // ⚠️ 이 문장만 firm을 "좋은 신호"라고 말한다. 이력이 가벼운 손님에게만 도달해야 하며,
+      //   Lv3 이상 화면에 뜨면 안 된다(check.ts가 유효 입력공간 전수로 보장한다).
+      sourceRef: "신규 — Q1 firm(−0.3, 유일한 건강 신호) 문장화. 탈색·누적·매직 없는 가벼운 이력 전용",
       evidenceKeys: ["q1_pull"],
     },
     {
@@ -57,6 +59,22 @@ const elasticity: DamageCopyBlockModule = {
       sourceGrade: "파생",
       sourceRef: "확정124 — 매직 코팅 규칙(firm의 −0.3 무효화)을 카피로 확장",
       evidenceKeys: ["q1_pull", "h_recent"],
+    },
+    {
+      id: "damage.elasticity.firm_after_bleach",
+      text: "단단해서 잘 안 늘어난다고 하셨어요. 다만 탈색을 하신 머리에서는 이 단단함을 건강한 신호로 읽지 않습니다. 속이 비면서 뻣뻣해진 것도 손끝에는 비슷하게 느껴지기 때문이에요. 판단은 시술 이력 쪽을 더 크게 보고 있습니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef: "PM 확정 2026-08-20 — 탈색 이력(1회 포함)이면 firm을 좋은 신호로 말하지 않는다. 확정124 매직 코팅 논리의 일반화",
+      evidenceKeys: ["q1_pull", "h_recent", "h_prev", "h_bleach_2plus"],
+    },
+    {
+      id: "damage.elasticity.firm_heavy_history",
+      text: "단단해서 잘 안 늘어난다고 하셨어요. 다만 시술이 여러 번 쌓인 머리에서는 이 단단함만으로 안심하기는 어렵습니다. 겉이 버텨주는 것과 속이 튼튼한 건 다를 수 있어서요. 이 항목은 참고로만 두고 보시는 게 좋겠습니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef: "PM 확정 2026-08-20 — 시술 누적 많음(h_more=many 또는 두 슬롯 모두 시술)이면 firm 신중 분기",
+      evidenceKeys: ["q1_pull", "h_recent", "h_prev", "h_more"],
     },
     {
       id: "damage.elasticity.unsure",

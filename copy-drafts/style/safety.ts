@@ -60,10 +60,22 @@ const safety: StyleCopyBlockModule = {
     },
     {
       id: "style.safety.b9_tip",
-      text: "지금은 새 시술을 얹지 않는 게 관리의 전부입니다. 고데기나 드라이 온도를 한 단계만 낮춰도 남은 머리가 버텨요. 끝부터 조금씩 정리해 가면서 기르시면 생각보다 빨리 돌아옵니다.",
+      // 오너 빨간펜(2026-08-20): "얹지 않는 게 관리의 전부입니다" → 자제 권유 톤으로 완화.
+      //   단정형이 지시처럼 읽혀 손님이 위축된다는 지적. 라이브 원본(branchCopy.ts)은
+      //   건드리지 않고 레지스트리 카피만 고친다.
+      text: "지금은 새 시술을 조금 미뤄두시는 게 가장 확실한 관리예요. 고데기나 드라이 온도를 한 단계만 낮춰도 남은 머리가 훨씬 버텨줍니다. 끝부터 조금씩 정리해 가면서 기르시면 생각보다 빨리 돌아와요.",
       status: "draft",
       sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b9.tip 원문 그대로",
+      sourceRef: "BRANCH_COPY.b9.tip + 오너 빨간펜 2026-08-20 (자제 톤으로 완화)",
+      evidenceKeys: [...GATE_KEYS],
+    },
+    {
+      id: "style.safety.blocked_procedure_prefix",
+      text: "지금은 자제를 권해드리지만, 머릿결이 돌아온 뒤에 하시게 된다면 이렇게 잡으시면 됩니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef:
+        "PM 확정 2026-08-20 — 게이트 차단 시 procedure(시술 지시)를 숨기지 않고 조건부로 전환하는 전제 문구. safety의 '자제 권유'와 궁합/커트의 '시술 설계'가 같은 화면에서 충돌하던 문제 해소",
       evidenceKeys: [...GATE_KEYS],
     },
     {

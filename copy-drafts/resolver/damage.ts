@@ -26,8 +26,33 @@ const PULL_MAP: Record<string, string> = {
   firm: "damage.elasticity.firm",
   unsure: "damage.elasticity.unsure",
 };
-/** firm은 마지막 시술이 매직이면 다른 문장을 쓴다(확정124 코팅 규칙과 정합). */
+// ─── firm 분기 (PM 확정 2026-08-20) ─────────────────────────────────────────
+// 원칙: **손상 판단의 우선순위는 시술이력 > 물리테스트다.** 물리테스트는 손상을
+//   "정의"하지 않고 참고 신호일 뿐이다. 그래서 시술 누적이 있는 손님에게는
+//   당김테스트의 건강 신호(firm)를 믿지 않는다 — 확정124 매직 코팅 논리의 일반화.
+// 우선순위: 탈색 > 매직 > 누적많음 > 가벼운 이력.
+//   탈색이 매직보다 앞인 이유는 "탈색 손님은 무조건 최악 전제"(PM 확정)라서다.
+const PULL_FIRM_AFTER_BLEACH = "damage.elasticity.firm_after_bleach";
 const PULL_FIRM_AFTER_MAGIC = "damage.elasticity.firm_after_magic";
+const PULL_FIRM_HEAVY = "damage.elasticity.firm_heavy_history";
+
+/** 탈색 이력(1회 포함). 엔진 bleachCount와 같은 정의를 답에서 직접 읽는다. */
+function hasBleachHistory(a: DamageSurveyAnswers): boolean {
+  return a.h_recent === "bleach" || a.h_prev === "bleach" || a.h_bleach_2plus === true;
+}
+
+/** 시술 누적 많음: 작년에 많이 했거나, 두 슬롯이 모두 시술로 차 있음. */
+function hasHeavyHistory(a: DamageSurveyAnswers): boolean {
+  return a.h_more === "many" || (a.h_recent !== "none" && a.h_prev !== "none");
+}
+
+/** firm(단단함) 답에 어떤 문장을 쓸지 — 이력이 가벼울 때만 "좋은 신호"가 나간다. */
+function pickFirmCopy(a: DamageSurveyAnswers): string {
+  if (hasBleachHistory(a)) return PULL_FIRM_AFTER_BLEACH;
+  if (a.h_recent === "straight_perm") return PULL_FIRM_AFTER_MAGIC;
+  if (hasHeavyHistory(a)) return PULL_FIRM_HEAVY;
+  return PULL_MAP.firm!;
+}
 
 const FRICTION_MAP: Record<string, string> = {
   tangled: "damage.friction.tangled",
@@ -116,10 +141,7 @@ export function resolveDamage(answers: DamageSurveyAnswers, env?: CopyEnv): Dama
 
   // ① 물리테스트 3블록 — 미응답("")은 읽을 답이 없으므로 아무것도 내지 않는다.
   //    "잘 모르겠어요"(unsure)는 **답을 한 것**이라 반드시 안내 문구가 나간다(PM 확정).
-  const pullId =
-    answers.q1_pull === "firm" && answers.h_recent === "straight_perm"
-      ? PULL_FIRM_AFTER_MAGIC
-      : PULL_MAP[answers.q1_pull];
+  const pullId = answers.q1_pull === "firm" ? pickFirmCopy(answers) : PULL_MAP[answers.q1_pull];
 
   const frictionIds: string[] = [];
   const frictionId = FRICTION_MAP[answers.q2_friction];
@@ -145,13 +167,16 @@ export function resolveDamage(answers: DamageSurveyAnswers, env?: CopyEnv): Dama
     lookupRisk(riskIndex, result.prophecyTip, "tip", issues),
   ].filter((x): x is string => x !== null);
 
+  // 블록 순서(PM 확정 2026-08-20): 시술이력이 손상을 정하고 물리테스트는 참고 신호다.
+  //   그 우선순위가 화면 순서로도 드러나게 원인 → 예언 → 새치 → 물리 3종 순으로 낸다.
+  //   배열 기반이라 순서 변경은 이 배열 한 줄 교체로 끝난다.
   const blocks: ResolvedBlock[] = [
+    collectBlock("damage", "cause", causeId ? [causeId] : [], e, issues),
+    collectBlock("damage", "risk", riskIds, e, issues),
+    collectBlock("damage", "gray", grayIds, e, issues),
     collectBlock("damage", "elasticity", pullId ? [pullId] : [], e, issues),
     collectBlock("damage", "friction", frictionIds, e, issues),
     collectBlock("damage", "drying", dryId ? [dryId] : [], e, issues),
-    collectBlock("damage", "cause", causeId ? [causeId] : [], e, issues),
-    collectBlock("damage", "gray", grayIds, e, issues),
-    collectBlock("damage", "risk", riskIds, e, issues),
   ];
 
   return {
@@ -182,7 +207,9 @@ export function damageReachableIds(): string[] {
 
   return [
     ...Object.values(PULL_MAP),
+    PULL_FIRM_AFTER_BLEACH,
     PULL_FIRM_AFTER_MAGIC,
+    PULL_FIRM_HEAVY,
     ...Object.values(FRICTION_MAP),
     FRICTION_TIP,
     ...Object.values(DRY_MAP),

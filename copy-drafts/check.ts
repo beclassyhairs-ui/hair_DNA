@@ -14,6 +14,7 @@
 
 import { ALL_BLOCKS, allEntries, assertRegistryShape, getEntry, registryStats, resolveText } from "./registry";
 import { allReachableCopyIds, resolveDamage, resolveStyle } from "./resolver";
+import { damageSpace } from "./enumerate/space";
 import type { DamageSurveyAnswers } from "../app/damage-check/surveyData";
 import { allowedEvidenceKeys } from "./evidenceKeys";
 import { isRenderable, renderableStatuses } from "./env";
@@ -24,6 +25,7 @@ import { join } from "path";
 
 const problems: string[] = [];
 const notes: string[] = [];
+let firmScanCount = 0;
 
 // ─── 1) 구조 ────────────────────────────────────────────────────────────────
 problems.push(...assertRegistryShape());
@@ -120,6 +122,66 @@ const smoke = (() => {
   return { total: cases.length, ok };
 })();
 
+// ── PM 확정 2026-08-20 검수 반영분 4종 ──────────────────────────────────────
+{
+  // ① "좋은 신호" firm 카피가 Lv3 이상 화면에 뜰 수 없음 — 유효 입력공간 전수로 보장.
+  //    스모크 몇 건이 아니라 전수인 이유: 이 문구가 극손상 손님에게 뜨는 게 이번 검수의
+  //    최대 결함이었고, 조합 하나만 새면 그대로 재발하기 때문이다.
+  const GOOD_SIGNAL = "damage.elasticity.firm";
+  let scanned = 0;
+  const leaks: string[] = [];
+  for (const a of damageSpace()) {
+    scanned += 1;
+    if (a.q1_pull !== "firm") continue; // firm 답에서만 이 카피가 나올 수 있다
+    const r = resolveDamage(a, "development");
+    if (r.severity.level >= 3 && r.reachedIds.includes(GOOD_SIGNAL)) {
+      leaks.push(`Lv${r.severity.level} score=${r.score} h_recent=${a.h_recent} h_prev=${a.h_prev} more=${a.h_more}`);
+    }
+  }
+  if (leaks.length > 0) {
+    problems.push(`Lv3+ 화면에 "좋은 신호" firm 카피 노출 ${leaks.length}건 (예: ${leaks[0]})`);
+  }
+  firmScanCount = scanned;
+
+  // ② refId 중복 노출 0 — 같은 문장이 한 화면에 두 번 나가지 않아야 한다(b3/b6/b10).
+  for (const [name, ans] of [
+    ["b10", { q3_curl: "straight_hair", q13_design: "straight", q7_thickness: "fine", q8_density: "thick_density", q11_length: "bob" }],
+    ["b3", { q3_curl: "wavy_hair", q13_design: "straight", q7_thickness: "fine", q8_density: "thick_density", q11_length: "bob" }],
+    ["b6", { q3_curl: "straight_hair", q13_design: "straight", q7_thickness: "coarse", q8_density: "thick_density", q11_length: "bob" }],
+  ] as [string, Record<string, string>][]) {
+    const r = resolveStyle(ans, "development");
+    const texts = r.blocks.flatMap((b) => b.entries.map((x) => x.text));
+    const dup = texts.filter((t, i) => texts.indexOf(t) !== i);
+    if (dup.length > 0) problems.push(`${name} 손님 화면에 중복 문장 ${dup.length}건`);
+  }
+
+  // ③ 차단 시 전제 문구가 시술 지시 앞에 놓이고, 지시 문장에 conditional 표시가 붙는지.
+  const blocked = resolveStyle(
+    { q3_curl: "straight_hair", q13_design: "c_curl", q7_thickness: "fine", q8_density: "thin_density", q11_length: "chest", q8a_recent: "bleach", q8b_prev: "bleach", q8_bleach_2plus: "1" },
+    "development",
+  );
+  const allEntriesFlat = blocked.blocks.flatMap((b) => b.entries);
+  const procs = allEntriesFlat.filter((x) => x.id.endsWith("_procedure") && !x.id.startsWith("style.safety."));
+  if (procs.length > 0) {
+    if (!allEntriesFlat.some((x) => x.id === "style.safety.blocked_procedure_prefix")) {
+      problems.push("차단인데 시술 지시 앞 전제 문구가 없음(§ 수정3)");
+    }
+    if (!procs.every((x) => x.conditional === true)) {
+      problems.push("차단 시 시술 지시 문장에 conditional 표시가 빠짐(§ 수정3)");
+    }
+  }
+
+  // ④ 새치 반복 뿌리염색 손님이 Lv2에 도달하고, Lv1 요약문을 받지 않는지.
+  const gray = resolveDamage(
+    { q1_pull: "unsure", q2_friction: "loosens", q3_dry: "", h_recent: "root_dye", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: true, h_self_dye: true, h_root_interval: "w2_3", h_root_over6m: false },
+    "development",
+  );
+  if (gray.severity.level < 2) problems.push(`새치 반복 손님 기대 Lv2+, 실제 Lv${gray.severity.level} (INV7)`);
+  if (gray.severity.summary.includes("거의 안 했거나")) {
+    problems.push("새치 반복 손님에게 Lv1 요약문('시술을 거의 안 했거나…')이 나감");
+  }
+}
+
 // 게이트 차단이어도 모질/궁합/커트가 살아 있는지 직접 확인(§6-6)
 {
   const blocked = resolveStyle(
@@ -176,6 +238,7 @@ console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verba
   console.log(`  refId 참조: ${refEntries.length}건 · 원본 해석 성공 ${resolved}건`);
 }
 console.log(`  resolver 도달 가능 id: ${reachable.length}건 · 스모크 ${smoke.ok}/${smoke.total} 통과`);
+console.log(`  "좋은 신호" firm 누출 검사: 유효 입력공간 ${firmScanCount.toLocaleString()}건 전수 · 누출 0`);
 console.log("\n  블록별 entry 수:");
 for (const b of stats.byBlock) console.log(`    ${b.domain}/${b.block}: ${b.count}`);
 

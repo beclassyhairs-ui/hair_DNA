@@ -11,7 +11,7 @@ import { resolveCrossBranch, type BranchKey } from "../../app/style/crossBranch"
 import { evaluateStyleGate } from "../../app/style/styleGate";
 import type { StyleAnswers } from "../../app/style/surveyData";
 import type { CopyEnv } from "../env";
-import { collectBlock, defaultEnv } from "./collect";
+import { collectBlock, defaultEnv, newSeenOrigins } from "./collect";
 import type { Resolution, ResolutionIssue, ResolvedBlock } from "./types";
 
 // ─── 갈래 → 블록별 copy id 표 ───────────────────────────────────────────────
@@ -87,6 +87,8 @@ const SAFETY_BLOCK = [
   "style.safety.b9_stamp", "style.safety.b9_door", "style.safety.b9_aha",
   "style.safety.b9_detail", "style.safety.b9_tip", "style.safety.b9_procedure",
 ];
+/** 차단 시 시술 지시 문장 앞에 놓이는 전제 문구(§ 수정3). */
+const BLOCKED_PROCEDURE_PREFIX = "style.safety.blocked_procedure_prefix";
 
 // ─── 갈래 도출 ──────────────────────────────────────────────────────────────
 
@@ -170,14 +172,42 @@ export function resolveStyle(answers: StyleAnswers, env?: CopyEnv): StyleResolut
   const safetyIds =
     gateLevel === "block" ? SAFETY_BLOCK : gateLevel === "caution" ? SAFETY_CAUTION : [];
 
+  // 같은 화면에 같은 문장이 두 번 나가지 않게 원본 id를 추적한다(§ 수정2).
+  //   insight가 먼저 나가므로 b3/b6/b10의 aha는 insight에서 1회만 나가고,
+  //   hair-structure의 refId 참조는 건너뛴다. 차단으로 insight가 비면 참조가 살아난다.
+  const seen = newSeenOrigins();
+
   const blocks: ResolvedBlock[] = [
-    collectBlock("style", "insight", insightIds, e, issues),
-    collectBlock("style", "volume", volumeIds, e, issues),
-    collectBlock("style", "hair-structure", pick(HAIR_STRUCTURE), e, issues),
-    collectBlock("style", "curl-fit", pick(CURL_FIT), e, issues),
-    collectBlock("style", "cut", pick(CUT), e, issues),
-    collectBlock("style", "safety", safetyIds, e, issues),
+    collectBlock("style", "insight", insightIds, e, issues, seen),
+    collectBlock("style", "volume", volumeIds, e, issues, seen),
+    collectBlock("style", "hair-structure", pick(HAIR_STRUCTURE), e, issues, seen),
+    collectBlock("style", "curl-fit", pick(CURL_FIT), e, issues, seen),
+    collectBlock("style", "cut", pick(CUT), e, issues, seen),
+    collectBlock("style", "safety", safetyIds, e, issues, seen),
   ];
+
+  // ── 차단 시 시술 지시를 조건부로 전환(§ 수정3) ──────────────────────────
+  //   숨기지 않는다. "지금 하라"가 아니라 "회복 뒤에 하신다면"으로 프레임만 바꾼다.
+  //   전제 문구는 화면에 한 번만 놓이고(첫 procedure 앞), 나머지 지시 문장에는
+  //   conditional 표시를 달아 렌더러가 같은 묶음으로 그리게 한다.
+  if (gateLevel === "block") {
+    let prefixPlaced = false;
+    for (const b of blocks) {
+      if (b.block !== "curl-fit" && b.block !== "cut") continue;
+      const procIdx = b.entries.findIndex((x) => x.id.endsWith("_procedure"));
+      if (procIdx === -1) continue;
+      for (const entry of b.entries) {
+        if (entry.id.endsWith("_procedure")) entry.conditional = true;
+      }
+      if (!prefixPlaced) {
+        const prefix = collectBlock("style", b.block, [BLOCKED_PROCEDURE_PREFIX], e, issues, seen);
+        if (prefix.entries.length > 0) {
+          b.entries.splice(procIdx, 0, ...prefix.entries);
+          prefixPlaced = true;
+        }
+      }
+    }
+  }
 
   return {
     gateLevel,
@@ -205,6 +235,7 @@ export function styleReachableIds(): string[] {
     ...flat(CUT),
     ...SAFETY_CAUTION,
     ...SAFETY_BLOCK,
+    BLOCKED_PROCEDURE_PREFIX,
   ];
 }
 

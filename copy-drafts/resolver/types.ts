@@ -15,6 +15,13 @@ export interface ResolvedCopy {
   sourceGrade: SourceGrade;
   /** refId entry였으면 원본 id. 직접 본문을 가진 entry면 undefined. */
   via?: string;
+  /**
+   * 게이트 차단 상태에서 나가는 시술 지시 문장(§ 수정3 · PM 확정 2026-08-20).
+   * 지금 하라는 뜻이 아니라 "회복 후에 하신다면"이라는 조건부다.
+   * 바로 앞에 `style.safety.blocked_procedure_prefix` 전제 문구가 놓인다.
+   * 렌더러는 이 표시가 붙은 문장을 단정형 지시처럼 보이지 않게 묶어서 그려야 한다.
+   */
+  conditional?: boolean;
 }
 
 export interface ResolvedBlock {
