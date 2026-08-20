@@ -80,17 +80,33 @@
     "grayStory": false
   },
   "damage.d_root_gray": {
-    "resultCode": "L1_DRY",
+    "resultCode": "L2_DRY",
     "score": 1.3,
-    "level": 1,
+    "level": 2,
     "type": "DRY",
     "prophecy": "염색하고 두세 주 지나면 색이 확 빠져 보이",
     "grayStory": true
   },
-  "damage.d_self_dye": {
+  "damage.d_root_repeat": {
+    "resultCode": "L2_DRY",
+    "score": 0.5,
+    "level": 2,
+    "type": "DRY",
+    "prophecy": "염색하고 두세 주 지나면 색이 확 빠져 보이",
+    "grayStory": false
+  },
+  "damage.d_root_sparse": {
     "resultCode": "L1_DRY",
-    "score": 1.5,
+    "score": 0.2,
     "level": 1,
+    "type": "DRY",
+    "prophecy": "염색하고 두세 주 지나면 색이 확 빠져 보이",
+    "grayStory": false
+  },
+  "damage.d_self_dye": {
+    "resultCode": "L2_DRY",
+    "score": 1.5,
+    "level": 2,
     "type": "DRY",
     "prophecy": "염색하고 나서, 생각보다 색이 빨리 빠지고 ",
     "grayStory": false

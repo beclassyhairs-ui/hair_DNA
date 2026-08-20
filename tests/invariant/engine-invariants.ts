@@ -117,6 +117,30 @@ test("INV6 styleGate 대표 판정 불변", () => {
   assert.strictEqual(blockS.level,  "block",   `고점수 기대 block, 실제 ${blockS.level} (score=${blockS.score})`);
 });
 
+// 7. 새치 반복 뿌리염색 → 최소 Lv2 (2026-08-20 확정 · INV1과 동형)
+//    뿌리염색 주기 가중은 최대 1.3이라 단독으로는 LV2_MIN(1.6)에 못 닿는다.
+//    점수가 아니라 레벨을 강제하므로 어떤 점수 조합에서도 뚫리지 않아야 한다.
+test("INV7 새치 반복 뿌리염색 → 최소 Lv2", () => {
+  // 짧은 주기(2~3주) 단독 — 점수는 0.8뿐이지만 Lv2여야 한다.
+  const w2 = diagnoseDamage(dmg({ h_recent: "root_dye", h_root_interval: "w2_3" }));
+  assert.ok(w2.level.level >= 2, `2~3주 주기 기대 Lv2+, 실제 Lv${w2.level.level} (score=${w2.score})`);
+  // 한 달 주기 단독
+  const m1 = diagnoseDamage(dmg({ h_recent: "root_dye", h_root_interval: "m1" }));
+  assert.ok(m1.level.level >= 2, `한 달 주기 기대 Lv2+, 실제 Lv${m1.level.level} (score=${m1.score})`);
+  // 6개월↑ 지속(주기 자체는 3개월)
+  const long = diagnoseDamage(dmg({ h_recent: "root_dye", h_root_interval: "over_3m", h_root_over6m: true }));
+  assert.ok(long.level.level >= 2, `6개월↑ 지속 기대 Lv2+, 실제 Lv${long.level.level} (score=${long.score})`);
+  // firm(건강 신호)이 붙어도 강제가 뚫리지 않는지 — INV1과 같은 반례 형태
+  const firm = diagnoseDamage(dmg({ h_recent: "root_dye", h_root_interval: "w2_3", q1_pull: "firm" }));
+  assert.ok(firm.level.level >= 2, `firm 반례 기대 Lv2+, 실제 Lv${firm.level.level} (score=${firm.score})`);
+  // ★ 경계: 3개월 주기 + 장기지속 아님은 반복이 아니라 강제 대상이 아니다(과잉 적용 방지).
+  const sparse = diagnoseDamage(dmg({ h_recent: "root_dye", h_root_interval: "over_3m" }));
+  assert.strictEqual(sparse.level.level, 1, `3개월 주기 단독은 강제 대상 아님, 실제 Lv${sparse.level.level}`);
+  // ★ 뿌리염색이 아예 없으면 이 분기를 타면 안 된다(무관 경로 불변 증명).
+  const noRoot = diagnoseDamage(dmg({ h_recent: "dye", h_root_interval: "w2_3", h_root_over6m: true }));
+  assert.strictEqual(noRoot.level.level, 1, `뿌리염색 없으면 강제 없음, 실제 Lv${noRoot.level.level}`);
+});
+
 // ============================================================================
 // 스냅샷 — 기존 판정(resultCode/score/level/prophecy, 갈래) 전후 동일 증명
 //   파일 없으면 기록(record), 있으면 비교. 의도된 변경은 UPDATE_SNAPSHOT=1 로만.
@@ -135,6 +159,8 @@ const DAMAGE_PERSONAS: Record<string, DamageSurveyAnswers> = {
   d_bleach2_firm:   dmg({ h_recent: "bleach", h_bleach_2plus: true, q1_pull: "firm" }),   // INV1 반례: firm이어도 Lv4 강제
   d_none_l2:        dmg({ q1_pull: "snap", q2_friction: "tangled", h_recent: "none", h_prev: "none", h_more: "many" }), // none+Lv2 흡수→DRY
   d_root_gray:      dmg({ h_recent: "root_dye", h_root_gray: true, h_root_interval: "w2_3", h_root_over6m: true }),     // 새치
+  d_root_repeat:    dmg({ h_recent: "root_dye", h_root_interval: "m1" }),                 // INV7: 점수 0.5인데 최소 Lv2 강제
+  d_root_sparse:    dmg({ h_recent: "root_dye", h_root_interval: "over_3m" }),            // INV7 경계: 강제 대상 아님(Lv1 유지)
   d_self_dye:       dmg({ h_recent: "dye", h_prev: "root_dye", h_self_dye: true, h_root_interval: "m1" }),             // 예언6
   d_magic_firm:     dmg({ h_recent: "straight_perm", q1_pull: "firm" }),                  // 확정124
   d_bleach_heat:    dmg({ h_recent: "heat_perm", h_prev: "bleach" }),                     // 예언10

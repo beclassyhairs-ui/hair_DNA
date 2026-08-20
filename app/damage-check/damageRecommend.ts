@@ -275,6 +275,15 @@ function calcScore(a: DamageSurveyAnswers): number {
   return s;
 }
 
+// 새치 반복 뿌리염색: 뿌리염색 이력 + 반복 신호(짧은 주기 또는 6개월↑ 지속).
+//   "주기"가 짧다는 건 같은 자리에 약이 계속 겹쳐 닿는다는 뜻이라, 점수가 낮아도
+//   방치 상태로 보지 않는다. 3개월 주기만 있고 장기 지속도 아니면 반복으로 치지 않는다.
+function isRepeatedRootDye(a: DamageSurveyAnswers): boolean {
+  const hasRootDye = a.h_recent === "root_dye" || a.h_prev === "root_dye";
+  if (!hasRootDye) return false;
+  return a.h_root_interval === "w2_3" || a.h_root_interval === "m1" || a.h_root_over6m === true;
+}
+
 function calcLevel(a: DamageSurveyAnswers): DamageLevel {
   // ★ INV1 강제 규칙(§8 · 확정124 매직 코팅과 동형 논리): 탈색 2회+ 는 Q1 답·물리테스트와
   //   무관하게 최종 Lv4로 고정한다. "특정 시술(2회+ 탈색)에서는 firm의 '건강' 신호를 신뢰하지 않는다."
@@ -282,10 +291,16 @@ function calcLevel(a: DamageSurveyAnswers): DamageLevel {
   //   무탈색·탈색 1회 등 다른 경로는 이 분기를 타지 않으므로 점수·판정 완전 불변.
   if (bleachCount(a) >= 2) return 4;
   const s = calcScore(a);
-  if (s >= LV4_MIN) return 4;
-  if (s >= LV3_MIN) return 3;
-  if (s >= LV2_MIN) return 2;
-  return 1;
+  const base: DamageLevel = s >= LV4_MIN ? 4 : s >= LV3_MIN ? 3 : s >= LV2_MIN ? 2 : 1;
+
+  // ★ INV7 강제 규칙(2026-08-20 확정 · INV1과 동형 절차): 새치 반복 뿌리염색은 최소 Lv2.
+  //   뿌리염색 주기 가중은 최대 1.3이라 단독으로는 LV2_MIN(1.6)에 닿지 못한다. 그래서
+  //   2~3주마다 새치를 덮는 손님이 "시술을 거의 안 했거나 오래됐습니다"(Lv1 요약문)를
+  //   받는 어긋남이 생겼다. 점수 가중치는 그대로 두고 **최소 레벨만 올린다**
+  //   (가중치를 건드리면 다른 조합 판정이 연쇄로 흔들린다).
+  //   이미 다른 요인으로 Lv2 이상이면 그대로 두고, 탈색 Lv4 강제와도 충돌하지 않는다.
+  if (base < 2 && isRepeatedRootDye(a)) return 2;
+  return base;
 }
 
 // 유형 = 마지막 시술(h_recent) 기준 3버킷 (확정68)
