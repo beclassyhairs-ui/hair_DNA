@@ -47,7 +47,6 @@ export type EvidenceKey = DamageEvidenceKey | StyleEvidenceKey;
 interface CopyEntryMeta<E extends EvidenceKey = EvidenceKey> {
   /** 레지스트리 전역 고유 id. 규약: `<domain>.<block>.<slug>` (§7이 형식을 규정하지 않아 이 저장소 규약으로 고정 — README 참조) */
   id: string;
-  status: CopyStatus;
   sourceGrade: SourceGrade;
   /** 원문 추적자. 예: "b10-aha", "확정124", "예언8". 신규는 근거 메모. */
   sourceRef: string;
@@ -65,8 +64,12 @@ interface CopyEntryMeta<E extends EvidenceKey = EvidenceKey> {
  *   갈라진다. 예: b3/b6/b10의 aha 원본은 style.insight, hair-structure는 refId 재사용.
  */
 export type CopyEntry<E extends EvidenceKey = EvidenceKey> =
-  | (CopyEntryMeta<E> & { text: string; refId?: never })
-  | (CopyEntryMeta<E> & { text?: never; refId: string });
+  | (CopyEntryMeta<E> & { text: string; refId?: never; status: CopyStatus })
+  // ★ 참조 entry는 status를 **가질 수 없다**(2026-08-20 PM 확정).
+  //   승인 상태를 따로 들고 있으면 원본만 승인하고 참조를 빠뜨렸을 때 조용히 빈칸이 된다.
+  //   참조는 원본을 가리키는 포인터이지 복사본이 아니므로 status도 원본에서 상속한다
+  //   (registry.resolveStatus). 타입이 아예 막아서 어긋날 수가 없다.
+  | (CopyEntryMeta<E> & { text?: never; refId: string; status?: never });
 
 export type StyleCopyEntry = CopyEntry<StyleEvidenceKey>;
 export type DamageCopyEntry = CopyEntry<DamageEvidenceKey>;

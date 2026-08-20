@@ -216,10 +216,15 @@ const GATE_ENFORCED = false; // 활성화: 여기 true + package.json prebuild�
   const failures = findUnapprovedReachable(reachable);
   if (GATE_ENFORCED) {
     if (failures.length > 0) problems.push(`production 승인 게이트 위반 ${failures.length}건`);
-  } else {
+  } else if (failures.length > 0) {
     notes.push(
       `production 승인 게이트: 계산됨·미적용. 도달 가능 ${reachable.length}건 중 ` +
         `승인(approved) 아님 ${failures.length}건 → 지금 켜면 production 빌드가 FAIL한다(의도된 동작).\n` +
+        "    켜는 법: check.ts의 GATE_ENFORCED=true + package.json prebuild에 copy:check 체인(README §5).",
+    );
+  } else {
+    notes.push(
+      `production 승인 게이트: 계산됨·미적용이지만 **켤 준비 완료** — 도달 가능 ${reachable.length}건 전건 승인(approved).\n` +
         "    켜는 법: check.ts의 GATE_ENFORCED=true + package.json prebuild에 copy:check 체인(README §5).",
     );
   }

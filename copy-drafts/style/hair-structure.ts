@@ -24,7 +24,6 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.b3_aha_ref",
       refId: "style.insight.b3_aha",
-      status: "draft",
       sourceGrade: "재배치",
       sourceRef: "BRANCH_COPY.b3.aha 참조 (원본=style.insight.b3_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl", "q13_design"],
@@ -32,7 +31,6 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.b6_aha_ref",
       refId: "style.insight.b6_aha",
-      status: "draft",
       sourceGrade: "재배치",
       sourceRef: "BRANCH_COPY.b6.aha 참조 (원본=style.insight.b6_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
       evidenceKeys: ["q8_density", "q7_thickness"],
@@ -40,7 +38,6 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.b10_aha_ref",
       refId: "style.insight.b10_aha",
-      status: "draft",
       sourceGrade: "재배치",
       sourceRef: "BRANCH_COPY.b10.aha 참조 (원본=style.insight.b10_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl"],

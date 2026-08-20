@@ -12,7 +12,7 @@
 //    "검증했다"는 거짓 신호가 되기 때문이다(§7-3의 미커버 명시 원칙과 동일).
 // ============================================================================
 
-import { getEntry } from "./registry";
+import { getEntry, resolveStatus } from "./registry";
 import type { CopyStatus } from "./types";
 
 export interface CopyGateFailure {
@@ -31,8 +31,10 @@ export function findUnapprovedReachable(reachableIds: Iterable<string>): CopyGat
       failures.push({ id, status: null, reason: "missing_from_registry" });
       continue;
     }
-    if (entry.status !== "approved") {
-      failures.push({ id, status: entry.status, reason: "not_approved" });
+    // 참조 entry는 원본에서 상속한 실효 상태로 판정한다.
+    const status = resolveStatus(entry);
+    if (status !== "approved") {
+      failures.push({ id, status, reason: "not_approved" });
     }
   }
   return failures;

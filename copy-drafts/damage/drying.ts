@@ -16,7 +16,7 @@ const drying: DamageCopyBlockModule = {
     {
       id: "damage.drying.slow",
       text: "감고 나서 다 마르는 데 한참 걸린다고 하셨어요. 모발이 물을 머금었다가 잘 내보내지 못하는 상태로 보입니다. 겉면이 열려 있으면 물이 쉽게 들어오고 늦게 나갑니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q3 slow(+1.0) 문장화. 확정115(오래=손상) 방향 준수",
       evidenceKeys: ["q3_dry"],
@@ -24,7 +24,7 @@ const drying: DamageCopyBlockModule = {
     {
       id: "damage.drying.normal",
       text: "마르는 시간이 보통이라고 하셨어요. 모발이 물을 머금는 정도가 무난한 걸로 보입니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q3 normal(0) 문장화",
       evidenceKeys: ["q3_dry"],
@@ -32,7 +32,7 @@ const drying: DamageCopyBlockModule = {
     {
       id: "damage.drying.fast",
       text: "금방 마른다고 하셨어요. 이건 좋고 나쁨을 가르는 신호는 아닙니다. 모발이 가늘거나 숱이 많지 않아도 빨리 마르기 때문에, 이 항목만으로는 판단하지 않습니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q3 fast(0) 문장화. 확정117(빨리=중립, 손상 단정 금지) 준수",
       evidenceKeys: ["q3_dry"],

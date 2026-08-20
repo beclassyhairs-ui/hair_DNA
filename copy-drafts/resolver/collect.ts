@@ -7,7 +7,7 @@
 //   ③ 환경 게이트를 적용한다(production은 approved만 — §7-1)
 // ============================================================================
 
-import { getEntry, resolveText } from "../registry";
+import { getEntry, resolveStatus, resolveText } from "../registry";
 import { currentCopyEnv, isRenderable, type CopyEnv } from "../env";
 import type { CopyDomain } from "../types";
 import type { ResolvedBlock, ResolvedCopy, ResolutionIssue } from "./types";
@@ -50,7 +50,13 @@ export function collectBlock(
     // §7-1 환경 규칙: production은 approved만. dev/preview는 draft·owner_reviewed도 렌더.
     //   production에서 draft가 걸러져 블록이 비는 건 정상 동작이며, 애초에 그런 상태로
     //   빌드가 나가지 못하도록 막는 건 guard.assertProductionCopyReady 쪽 역할이다.
-    if (!isRenderable(entry.status, env)) continue;
+    // 참조 entry는 원본에서 상속한 실효 상태로 게이트를 통과한다.
+    const status = resolveStatus(entry);
+    if (status === null) {
+      issues.push({ kind: "broken_ref", detail: `${block}: "${id}" 의 승인 상태를 원본에서 못 가져옴` });
+      continue;
+    }
+    if (!isRenderable(status, env)) continue;
 
     // 원본 문장의 실제 주인 id — 직접 본문을 가진 entry면 자기 자신, 참조면 원본.
     const originId = entry.text === undefined ? entry.refId : entry.id;
@@ -62,7 +68,7 @@ export function collectBlock(
     entries.push({
       id: entry.id,
       text,
-      status: entry.status,
+      status,
       sourceGrade: entry.sourceGrade,
       ...(entry.text === undefined ? { via: entry.refId } : {}),
     });

@@ -76,9 +76,25 @@ export function resolveText(entry: CopyEntry): string | null {
   return target.text;
 }
 
+/**
+ * entry의 실효 승인 상태. 참조 entry는 자기 status를 갖지 않고 **원본에서 상속**한다.
+ * 원본만 승인하고 참조를 빠뜨리는 사고를 구조적으로 없애기 위함(2026-08-20 PM 확정).
+ * 끊어진 참조는 null — assertRegistryShape()이 별도로 잡는다.
+ */
+export function resolveStatus(entry: CopyEntry): CopyStatus | null {
+  if (entry.text !== undefined) return entry.status;
+  const target = getEntry(entry.refId);
+  if (!target || target.text === undefined) return null;
+  return target.status;
+}
+
 /** 이 환경에서 렌더 가능한 entry만. production이면 approved만 통과(§7-1). */
 export function renderableEntries(env: CopyEnv = currentCopyEnv()): CopyEntry[] {
-  return allEntries().filter((e) => isRenderable(e.status, env));
+  // 참조 entry는 자기 status가 없으므로 원본에서 상속한 실효 상태로 판단한다.
+  return allEntries().filter((e) => {
+    const st = resolveStatus(e);
+    return st !== null && isRenderable(st, env);
+  });
 }
 
 export interface RegistryStats {
@@ -93,7 +109,9 @@ export function registryStats(): RegistryStats {
   const byStatus: Record<CopyStatus, number> = { draft: 0, owner_reviewed: 0, approved: 0 };
   const bySourceGrade: Record<SourceGrade, number> = { 재배치: 0, 파생: 0, 신규: 0 };
   for (const e of entries) {
-    byStatus[e.status] += 1;
+    // 참조 entry는 원본에서 상속한 실효 상태로 센다.
+    const st = resolveStatus(e);
+    if (st !== null) byStatus[st] += 1;
     bySourceGrade[e.sourceGrade] += 1;
   }
   return {

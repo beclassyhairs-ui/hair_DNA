@@ -21,7 +21,7 @@ const friction: DamageCopyBlockModule = {
     {
       id: "damage.friction.tangled",
       text: "감고 나면 빗질이 전혀 안 된다고 하셨어요. 모발 겉면이 거칠어져 서로 걸리는 상태로 보입니다. 억지로 빗어 내리면 걸린 자리부터 끊어지니, 끝쪽부터 조금씩 나눠 푸시는 게 안전합니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q2 tangled(+1.0) 문장화. 확정124에서 문구가 '뜯긴다'→'빗질이 전혀 안 돼요'로 완화된 톤을 따름",
       evidenceKeys: ["q2_friction"],
@@ -29,7 +29,7 @@ const friction: DamageCopyBlockModule = {
     {
       id: "damage.friction.loosens",
       text: "몇 번 빗으면 풀린다고 하셨어요. 겉면이 조금 거칠어졌지만, 아직 크게 걸리는 단계는 아닌 걸로 보입니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q2 loosens(+0.5) 문장화",
       evidenceKeys: ["q2_friction"],
@@ -37,7 +37,7 @@ const friction: DamageCopyBlockModule = {
     {
       id: "damage.friction.smooth",
       text: "빗질이 부드럽게 넘어간다고 하셨어요. 모발 겉면이 잘 정돈돼 있는 걸로 보입니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "신규 — Q2 smooth(0) 문장화",
       evidenceKeys: ["q2_friction"],
@@ -45,7 +45,7 @@ const friction: DamageCopyBlockModule = {
     {
       id: "damage.friction.unsure",
       text: "잘 모르겠다고 하셨어요. 감고 나서 물기를 턴 뒤 빗을 한 번 통과시켜 보시면 가장 잘 보입니다. 이 항목은 판단에서 비중이 작으니, 편하게 다음에 확인해보셔도 됩니다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "신규",
       sourceRef: "PM 확정 2026-08-19 — unsure 블록 숨김 금지, 안내 문구 제공. Q1 unsure와 동일 구조",
       evidenceKeys: ["q2_friction"],
@@ -53,9 +53,9 @@ const friction: DamageCopyBlockModule = {
     {
       id: "damage.friction.brush_tip",
       text: "트리트먼트는 바른 다음 빗으로 골고루 빗질해서 결 정돈까지 돼야 효과가 난다. 손 빗질만으론 부족하다.",
-      status: "draft",
+      status: "approved",
       sourceGrade: "재배치",
-      sourceRef: "확정94 MANAGEMENT_TIP 원문 — 전원 고정노출에서 Q2 신호자(tangled·loosens)에게로 이동",
+      sourceRef: "확정94 MANAGEMENT_TIP 원문 그대로 — 문장 불변, 노출 조건만 전원 고정에서 Q2 신호자(tangled·loosens)로 이동",
       evidenceKeys: ["q2_friction"],
     },
   ],
