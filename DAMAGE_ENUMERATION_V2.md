@@ -23,8 +23,8 @@ Cartesian 전체에 대한 전수가 아니다.
 
 | 항목 | 값 |
 |---|---|
-| damage 도달 가능 id | 61 |
-| 실행에서 실제 도달 | 61 (100.0%) |
+| damage 도달 가능 id | 63 |
+| 실행에서 실제 도달 | 63 (100.0%) |
 | 미도달 | 0 |
 
 ## ② resolver state 커버리지
@@ -43,7 +43,7 @@ Phase 1.0은 첫 매칭 1개만 노출한다. 따라서 이 축은 **커버리�
 
 | 항목 | 값 |
 |---|---|
-| 고유 signature 수 | **11,183** |
+| 고유 signature 수 | **11,639** |
 | signature 정의 | `resultCode + 도달한 copy id 순서열` |
 
 ## 해석 issue
@@ -72,7 +72,9 @@ Phase 1.0은 첫 매칭 1개만 노출한다. 따라서 이 축은 **커버리�
 
 - `damage.elasticity.elastic`
 - `damage.elasticity.firm`
+- `damage.elasticity.firm_after_bleach`
 - `damage.elasticity.firm_after_magic`
+- `damage.elasticity.firm_heavy_history`
 - `damage.elasticity.snap`
 - `damage.elasticity.stretch`
 - `damage.elasticity.unsure`

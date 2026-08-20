@@ -33,14 +33,31 @@
   - **예언 id 취득 방식**: 엔진의 `selectProphecy`가 module-private라 결과에 예언 **문자열**만 있고 id가 없다. 엔진에 export 추가는 경계 밖이라, **risk 카피가 원문과 한 글자도 다르지 않음이 기계로 증명된 점**(verbatim 불일치 0)을 이용해 문자열 역방향 조회로 원본 entry를 되찾는다. 같은 문장이 2개 entry에 있으면 모호해지므로 issue로 승격 — 현재 0건.
   - 🔴 **§6-6 임시 우회 (PM 승인 2026-08-19) — 손상 엔진 v2에서 정식 수정할 별건 안건**: `resolveCrossBranch`는 gate가 block이면 `primary:"b9", absorbed:[]`를 돌려주고 **실제 발동한 모질 갈래 목록을 버린다**(`crossBranch.ts:94-96`). §6-6은 차단이어도 모질/궁합/커트를 정상 출력하라고 하므로, resolver가 **시술이력 키만 비운 탐침 입력으로 같은 함수를 한 번 더 호출**해 갈래를 재취득한다. 성립 근거 = 갈래 발동 조건(`crossBranch.ts:67-78`)이 `q3_curl·q13_design·q8_density·q7_thickness·q11_length`만 읽고 시술이력 키는 안 읽음(코드 확인). `scalpRoutineCard`는 시술이력을 읽으므로 실제 호출값 사용. **PM 판단**: 결과가 엔진 수정과 동일하고 런칭 직전이라 엔진 동결(8/8 안전망 보존)이 우선 → 우회 유지. **정식 해법 = crossBranch가 block에서도 firedList를 함께 반환(엔진 1줄) → 손상 엔진 v2에 묶어 처리**(어차피 그때 엔진을 건드린다). ⚠️ **코드의 🔴 탐침 경고 주석 유지 필수** — 누가 시술이력을 읽는 갈래 조건을 추가하면 우회가 조용히 깨진다.
   - **차단 시 insight를 비우고 safety가 대표 판정을 대신한다**(PM 승인). b9의 stamp·door·aha가 §6-6에 따라 이미 safety에 있어서다.
-- 🔴 **다음 작업(순서 고정)**: **② production 게이트 활성화 → ③ §7-3 전수 덤프.**
-  - **② 게이트 활성화(2줄)**: `check.ts`의 `GATE_ENFORCED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5. **현재 상태**: 게이트는 계산은 되고 적용만 안 된 상태로, `copy:check`가 "도달 136건 중 승인 아님 136건 → 지금 켜면 production 빌드 FAIL"을 미리 알려준다(전건 draft라 정상). **사장님 승인(status→approved)이 먼저다.**
-  - **③ §7-3 전수 덤프**: `RESULT_ENUMERATION_V2.md`/`DAMAGE_ENUMERATION_V2.md`. "전수" 정의 = copy entry 100% + resolver branch·state·riskFamily·grayFlag·volumeState 100% + unique rendered signature 전량. **Cartesian 전량 실행이 비현실적이면 exhaustive라 표기하지 말고 실행 개수·생성 방식·seed·미커버를 명시할 것.**
-  - **블록별 최종 분포(139)**: `style/insight` 30 · `style/volume` 19 · `style/curl-fit` 12 · `style/safety` 7 · `style/cut` 4 · `style/hair-structure` 3(전부 refId 참조) / `damage/risk` 42 · `damage/cause` 7 · `damage/elasticity` 6 · `damage/friction` 5 · `damage/drying` 3 · `damage/gray` 1.
-  - **§7-2 최우선 정독 검수 대상(`신규` 14건)** — 사장님 빨간펜은 여기 집중: Q1 5값+unsure 안내(elasticity 5) · Q2 4값+unsure 안내(friction 4) · Q3 3값(drying 3) · **`damage.cause.bleach`**(탈색 고유 판단, 원문 대응 문장 없음) · `style.volume.balanced`(§6-4가 신규로 명시한 BALANCED 축소 카피).
+- ✅ **③ §7-3 전수 덤프 완료 (2026-08-19 `3d1f259`·`799ec7e`, 2026-08-20 재덤프)**: 생성기 `copy-drafts/enumerate/`(`npm run dump:v2`)를 **레포에 뒀다** — 기존 V1 덤프는 생성 스크립트가 scratchpad에 있어 재현이 불가능했는데, §7-3이 "실행 개수·생성 방식·seed"를 검증 가능하게 요구하므로 바꿨다. 사장님 빨간펜 → 반영 → **재덤프가 한 명령**으로 돈다. 산출물도 커밋해 검수 diff를 git으로 추적한다.
+  - **damage 151,200회**(유효 입력공간 전수 · 순수 Cartesian 1,128,960 대비. 설문이 못 만드는 조합 제외 규칙을 문서에 명시) · 고유 signature 11,639 · issue 0
+  - **style 69,120회** · 고유 signature 102 · issue 0. 시술이력 축은 **표본이 아니라 등가류 축약** — resolver가 시술이력에서 읽는 값이 `gateLevel·usedRootDye·usedPerm·q8_root_gray` 4개뿐이라 같은 4-튜플은 구별되지 않는다. **코드 독해로만 주장하지 않고 seed `20260819` 고정 표본 3,000건으로 실측 검증**(불일치 0).
+  - **커버리지**: 도달 가능 139건 100%. 미도달 3건(예언 8번 door/aha/tip)은 엔진 `match:()=>false`라 구조상 도달 불가 — **미커버로 명시, exhaustive 표기 안 함.** `riskFamily`는 Phase 1.5 미구현이라 100% 주장하지 않음.
+- ✅ **실물 결과지 검수 반영 (2026-08-20, `de75745`·`03b0c4f`)**: 대표 손님 6명(D1 탈색/D2 새치반복/D3 매직/D4 탈색2회+firm/S1 P10/S2 게이트차단) 결과지를 실제로 뽑아 PM 검수 → 수정 4건. **firm 분기 확장**(탈색·누적 전용 신규 2건, Lv3+ "좋은 신호" 노출 전수 0 보장) / **refId 중복 노출 제거**(같은 화면 같은 문장 2회 → 1회) / **차단 시 procedure 조건부 전환**(전제 문구 신규 1건 + `conditional` 표시, safety의 "자제"와 궁합의 "시술 지시" 충돌 해소) / **블록 순서 시술이력 우선**. b9 tip 오너 빨간펜 반영(라이브 `branchCopy.ts` 무수정, 레지스트리만).
+- 🔴 **다음 작업**: **② production 게이트 활성화** (③ 전수 덤프는 2026-08-19~20 완료 — 체크 해제.)
+  - **② 게이트 활성화(2줄)**: `check.ts`의 `GATE_ENFORCED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5. **현재 상태**: 게이트는 계산은 되고 적용만 안 된 상태로, `copy:check`가 "도달 139건 중 승인 아님 139건 → 지금 켜면 production 빌드 FAIL"을 미리 알려준다(전건 draft라 정상). **사장님 승인(status→approved)이 먼저다.**
+  - **§7-3 "전수" 정의(재덤프 시 지킬 것)**: copy entry 100% + resolver branch·state·riskFamily·grayFlag·volumeState 100% + unique rendered signature 전량. **Cartesian 전량 실행이 비현실적이면 exhaustive라 표기하지 말고 실행 개수·생성 방식·seed·미커버를 명시할 것.**
+  - **블록별 최종 분포(142)**: `style/insight` 30 · `style/volume` 19 · `style/curl-fit` 12 · `style/safety` 8 · `style/cut` 4 · `style/hair-structure` 3(전부 refId 참조) / `damage/risk` 42 · `damage/elasticity` 8 · `damage/cause` 7 · `damage/friction` 5 · `damage/drying` 3 · `damage/gray` 1.
+  - **§7-2 최우선 정독 검수 대상(`신규` 17건)** — 사장님 빨간펜은 여기 집중: Q1 5값+unsure 안내(elasticity 5) · **firm 전용 분기 2**(`firm_after_bleach`·`firm_heavy_history`) · Q2 4값+unsure 안내(friction 4) · Q3 3값(drying 3) · **`damage.cause.bleach`**(탈색 고유 판단, 원문 대응 문장 없음) · `style.volume.balanced`(§6-4 BALANCED 축소) · `style.safety.blocked_procedure_prefix`(차단 시 전제 문구).
 - ℹ️ **확정124 정정**: 아래 "확정124 …커밋/배포 승인 대기" 항목은 **낡음** — Q1 firm·매직 코팅은 실제 코드(`damageRecommend.ts:68,265`, `surveyData.ts:11,82`)에 이미 반영·라이브(747021e 이후). 대기 아님.
 
+## 🟦 손상 판단 원칙 (2026-08-20 사업주 확정 · 어떤 세션도 어기지 말 것)
+
+> 대표 손님 6명 결과지를 실제로 뽑아본 뒤 확정된 원칙이다. 카피·엔진·resolver 어디서든 이 순서를 지킨다.
+
+1. **손상 판단의 우선순위는 시술이력 > 물리테스트다.**
+   물리테스트(Q1 당김·Q2 엉킴·Q3 건조)는 손상을 **정의하지 않는다.** 참고 신호일 뿐이며, **그 판정은 미용사의 영역**이다. 화면 순서도 이 우선순위를 따른다(cause → risk → gray → 물리 3종).
+2. **시술 누적이 많은 손님에게 당김테스트의 건강 신호(firm)를 믿지 않는다.**
+   확정124 매직 코팅 규칙의 일반화다. 탈색 이력(1회 포함)·누적 많음에서는 firm을 "좋은 신호"로 말하지 않는다. `firm`("좋은 신호") 카피는 **가벼운 이력 전용**이며, Lv3 이상 화면에 도달하면 안 된다 — `copy:check`가 유효 입력공간 151,200건 전수로 보장한다.
+3. 이 원칙을 어기는 카피·분기가 발견되면 **엔진 판정과 화면 문장이 어긋난 것**으로 취급한다(INV1·D4 firm이 같은 유형의 결함이었다).
+
 ## 🟠 손상 엔진 v2 — 질문지·점수 개편 (2026-08-19 안건 등록, **착수 전 · 별건**)
+
+**이번(2026-08-20) 범위 경계 — 확정**: **점수 가중치 전면 재설계(물리 보정 ±값 전면 재검토 포함)는 v2로 미룬다.** 이번에 넣은 건 **강제 규칙 2건까지**다 — ① 탈색 2회+ → Lv4(INV1, `da79bae`) ② 새치 반복 뿌리염색 → 최소 Lv2(INV7, `de75745`). 둘 다 **점수를 건드리지 않고 최소/고정 레벨만 강제**하는 방식이라 다른 조합 판정이 연쇄로 흔들리지 않는다. v2에서 가중치를 재설계할 때 이 두 강제 규칙이 여전히 필요한지 함께 재검토한다.
 
 **착수 시점(사업주 확정)**: 결과지 V2(카피 블록화) **완료 직후**, 아래 4건을 **일괄** 진행한다. 결과지 V2 진행 중에는 손대지 않는다(설문 스키마 불변 원칙 유지).
 
