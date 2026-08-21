@@ -1,11 +1,14 @@
 # PROJECT_STATE.md — A-Beauty 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-19
+> 최종 갱신: 2026-08-21
 
-## 🟦 결과지 V2 블록 조립 리팩터링 — Phase 1.0 착수 (2026-08-18, **진행 중 · 미배포**)
+## 🟢 결과지 V2 블록 조립 리팩터링 — Phase 1.0 완료·배포 (2026-08-18~21, **배포 완료 `4f5d70d`**)
 
-지시서 「결과지 V2 블록 조립 리팩터링」(PM방 3라운드 교차검증본) Phase 1.0. `/style/result`·`/damage-check/result` 진단 엔진·결과지 렌더를 "답 하나하나가 결과지 곳곳에 살아있는 블록 조립 구조"로 전환. **설문 스키마·DB 불변, styleGate.ts 동결(§8-6), Production 배포 금지.**
+지시서 「결과지 V2 블록 조립 리팩터링」(PM방 3라운드 교차검증본) Phase 1.0. `/style/result`·`/damage-check/result` 진단 엔진·결과지 렌더를 "답 하나하나가 결과지 곳곳에 살아있는 블록 조립 구조"로 전환. **설문 스키마·DB 불변, styleGate.ts 동결(§8-6).**
+
+- ✅ **배포 완료 (2026-08-21 확인, `4f5d70d` push)**: `4f5d70d`가 origin/main에 push됨(HEAD==origin/main) → **Vercel 자동배포 → 라이브 `https://hair-dna.vercel.app`.** 이 커밋부터 라이브 화면이 resolver 블록 렌더로 바뀌었다(이전 V2 커밋들은 전부 라이브 영향 0이었다). 두 결과지(`/style/result`·`/damage-check/result`)를 branchCopy·인라인 상수 직접참조에서 resolver 139-entry 블록 렌더로 교체. 엔진·styleGate 판정 무수정, 로그인 게이트·설문 가드·REPORT_VIEW 계측·쿠팡 카드·공유·다이어리 저장 6종 미변경(코드 확인).
+- ✅ **② production 승인 게이트 활성화 완료 (2026-08-21 코드 확인 · `4f5d70d`)**: 실제 코드 대조 결과 — `copy-drafts/check.ts:214` **`GATE_ENFORCED = true`**(주석: "활성화됨(2026-08-20) — prebuild가 copy:check를 체인한다"), `package.json:10` **`"prebuild": "node scripts/gen-references-manifest.mjs && npm run copy:check"`**. 즉 승인 안 된 카피가 도달 가능해지면 production 빌드가 멈춘다. **게이트가 켜진 채 Vercel 빌드가 성공해 라이브 배포됐다는 사실 = `copy:check` 통과 증명**(도달 카피 전건 승인, 949c840에서 142건 전건 `approved`). ⚠️ 이번 세션 `copy:check` 로컬 재실행은 권한 거부로 미수행 — 배포 성공을 통과 근거로 사용.
 
 - **산출물 A `V2_PRECHECK.md`(커밋됨)**: §1 실물확인 12항목 코드 직접 대조 완료. 결론: 지시문 가정 코드와 거의 일치. 정정 1건(**Style엔 stampTitle 개념 없음** — 공유=간판명 entry.name, 화면 스탬프=갈래 카피 bcopy.stamp / Damage만 `level.label · typeInfo.label` 파생). 주의 3건(예언 11~14 폴백 겸용·레거시 q10_history_count 존치·styleGate 동결).
 - **PM 승인 확정(2026-08-18)**: ① Style stampTitle 정정 수용(스탬프 유지 규정은 Damage만) ② Gray 블록 = 예언 뒤(현행)로 Phase 1.0 확정, **순서배열 기반 렌더 필수**(추후 한 줄 교체), §12 안건 유지 ③ secondary 예언 = Phase1.0 첫 매칭 1개 유지 + riskFamily 태깅은 스키마만, 실노출 1.5 flag ④ **레거시 q10_history_count는 Coverage 기록만·이번 Phase 제거/수정 금지(게이트 영향, invariant 위반 우려) → Phase 2 이관**.
@@ -38,8 +41,13 @@
   - **style 69,120회** · 고유 signature 102 · issue 0. 시술이력 축은 **표본이 아니라 등가류 축약** — resolver가 시술이력에서 읽는 값이 `gateLevel·usedRootDye·usedPerm·q8_root_gray` 4개뿐이라 같은 4-튜플은 구별되지 않는다. **코드 독해로만 주장하지 않고 seed `20260819` 고정 표본 3,000건으로 실측 검증**(불일치 0).
   - **커버리지**: 도달 가능 139건 100%. 미도달 3건(예언 8번 door/aha/tip)은 엔진 `match:()=>false`라 구조상 도달 불가 — **미커버로 명시, exhaustive 표기 안 함.** `riskFamily`는 Phase 1.5 미구현이라 100% 주장하지 않음.
 - ✅ **실물 결과지 검수 반영 (2026-08-20, `de75745`·`03b0c4f`)**: 대표 손님 6명(D1 탈색/D2 새치반복/D3 매직/D4 탈색2회+firm/S1 P10/S2 게이트차단) 결과지를 실제로 뽑아 PM 검수 → 수정 4건. **firm 분기 확장**(탈색·누적 전용 신규 2건, Lv3+ "좋은 신호" 노출 전수 0 보장) / **refId 중복 노출 제거**(같은 화면 같은 문장 2회 → 1회) / **차단 시 procedure 조건부 전환**(전제 문구 신규 1건 + `conditional` 표시, safety의 "자제"와 궁합의 "시술 지시" 충돌 해소) / **블록 순서 시술이력 우선**. b9 tip 오너 빨간펜 반영(라이브 `branchCopy.ts` 무수정, 레지스트리만).
-- 🔴 **다음 작업**: **② production 게이트 활성화** (③ 전수 덤프는 2026-08-19~20 완료 — 체크 해제.)
-  - **② 게이트 활성화(2줄)**: `check.ts`의 `GATE_ENFORCED=true` + `package.json` `prebuild`에 `npm run copy:check` 체인. 위치는 `copy-drafts/README.md` §5. **현재 상태**: 게이트는 계산은 되고 적용만 안 된 상태로, `copy:check`가 "도달 139건 중 승인 아님 139건 → 지금 켜면 production 빌드 FAIL"을 미리 알려준다(전건 draft라 정상). **사장님 승인(status→approved)이 먼저다.**
+- 🔴 **다음 작업**: **스타일 Phase 2 카피 확장 + 데미지 건조(slow) 원문 보강** (② 게이트 활성화·③ 전수 덤프·V2 배선/배포는 2026-08-19~21 완료 — 체크 해제.)
+  - **스타일 Phase 2 카피 확장** — Phase 1.0에서 door 한 줄만 갈리던 블록들을 실제 내용 차등으로 채운다:
+    - **모질 매트릭스 9종**(`style/hair-structure`는 현재 3건 전부 refId 참조뿐) — 밀도×굵기 조합별 내용 차등.
+    - **`curl-fit` 차등**(§6-5(2) 미충족분): C컬/S컬/웨이브가 door 치환이 아니라 **시작점·크기·순서**가 실제로 달라야 함. 원문에 없는 신규라 **사장님 빨간펜/원고 조달 후 착수** — `copy-drafts/style/curl-fit.ts` 상단에 명시돼 있음.
+    - **`cut` 확장**(현재 4건) — 갈래별 커트 내용 확충.
+  - **데미지 건조(slow) 카피 사장님 원문 보강**: `damage/drying`(현재 3건)에서 건조 느림(slow) 계열 문구를 사장님 원문으로 채움.
+  - **⛔ 질문지 개편은 여기서 하지 않는다**: 시간기반 건조 문항·시술 종류별 중복체크 전환은 **손상 엔진 v2(아래 🟠 섹션) 별건**으로 유지. 설문 스키마 불변 원칙 지속(V2 카피 확장은 스키마를 건드리지 않는다).
   - **§7-3 "전수" 정의(재덤프 시 지킬 것)**: copy entry 100% + resolver branch·state·riskFamily·grayFlag·volumeState 100% + unique rendered signature 전량. **Cartesian 전량 실행이 비현실적이면 exhaustive라 표기하지 말고 실행 개수·생성 방식·seed·미커버를 명시할 것.**
   - **블록별 최종 분포(142)**: `style/insight` 30 · `style/volume` 19 · `style/curl-fit` 12 · `style/safety` 8 · `style/cut` 4 · `style/hair-structure` 3(전부 refId 참조) / `damage/risk` 42 · `damage/elasticity` 8 · `damage/cause` 7 · `damage/friction` 5 · `damage/drying` 3 · `damage/gray` 1.
   - **§7-2 최우선 정독 검수 대상(`신규` 17건)** — 사장님 빨간펜은 여기 집중: Q1 5값+unsure 안내(elasticity 5) · **firm 전용 분기 2**(`firm_after_bleach`·`firm_heavy_history`) · Q2 4값+unsure 안내(friction 4) · Q3 3값(drying 3) · **`damage.cause.bleach`**(탈색 고유 판단, 원문 대응 문장 없음) · `style.volume.balanced`(§6-4 BALANCED 축소) · `style.safety.blocked_procedure_prefix`(차단 시 전제 문구).
