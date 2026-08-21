@@ -36,6 +36,7 @@ import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 import BottomStickyCTA from "@/components/beauty-ui/BottomStickyCTA";
+import FadePreview from "@/components/beauty-ui/FadePreview";
 // 결과지 V2: 카피는 copy-drafts 레지스트리가 단일 출처. branchCopy 직접 참조는 걷어냈다
 //   (라이브 원본 파일 자체는 그대로 두고, 이 페이지가 더 이상 읽지 않을 뿐이다).
 import { resolveStyle } from "@/copy-drafts/resolver";
@@ -671,17 +672,14 @@ export default function StyleResultPage() {
                         </GlassCard>
                       )}
                       {steps.length > 0 && (
-                        <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                          <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">{title?.text ?? "정수리 드라이 · 순서 그대로"}</summary>
-                          <div className="border-t border-line px-4 py-3">
-                            <ol className="list-decimal space-y-1.5 pl-5">
-                              {steps.map((e) => (
-                                <li key={e.id} className="text-[13.5px] leading-relaxed text-ink"><Rich html={e.text} /></li>
-                              ))}
-                            </ol>
-                            {note && <p className="mt-2 text-[12.5px] text-ink-2">{note.text}</p>}
-                          </div>
-                        </details>
+                        <FadePreview title={title?.text ?? "정수리 드라이 · 순서 그대로"}>
+                          <ol className="list-decimal space-y-1.5 pl-5">
+                            {steps.map((e) => (
+                              <li key={e.id} className="text-[13.5px] leading-relaxed text-ink"><Rich html={e.text} /></li>
+                            ))}
+                          </ol>
+                          {note && <p className="mt-2 text-[12.5px] text-ink-2">{note.text}</p>}
+                        </FadePreview>
                       )}
                     </>
                   );
@@ -701,23 +699,21 @@ export default function StyleResultPage() {
 
                 {/* 7. 커트 설계(접힘) — §6-5(3). 미용실 주문 멘트. */}
                 {bodyOf(sblock("cut")).length > 0 && (
-                  <details className="mt-2 overflow-hidden rounded-xl border border-line">
-                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</summary>
-                    <div className="space-y-2 border-t border-line px-4 py-3">
+                  <FadePreview title="미용실에서 이렇게 주문하세요">
+                    <div className="space-y-2">
                       {bodyOf(sblock("cut")).map((e) => (
                         <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
                       ))}
                     </div>
-                  </details>
+                  </FadePreview>
                 )}
 
                 {/* 8. 회복 후 시술 참고(접힘) — 차단 상태에서만.
                        (시술 안전 안내 자체는 토글 밖 SafetyNotice가 항상 노출한다 — §6-6) 시술 지시를 숨기지 않고
                        "지금 하라"로 읽히지 않게 조건부로 묶는다. 블록 경계를 넘어 한 카드로 모은다. */}
                 {conditionalCard.length > 0 && (
-                  <details className="mt-2 overflow-hidden rounded-xl border border-line border-dashed">
-                    <summary className="cursor-pointer px-4 py-3 text-[13px] font-bold text-ink-2">회복 후 시술 참고</summary>
-                    <div className="space-y-2 border-t border-line px-4 py-3">
+                  <FadePreview title="회복 후 시술 참고" dashed>
+                    <div className="space-y-2">
                       {conditionalCard.map((e) => (
                         <Rich
                           key={e.id}
@@ -730,7 +726,7 @@ export default function StyleResultPage() {
                         />
                       ))}
                     </div>
-                  </details>
+                  </FadePreview>
                 )}
 
                 {/* 큰 버튼 ② — 케어 제품 열기(진단 읽고 나면 등장). 차단(block)은 제품 대신 데미지 안내. */}
