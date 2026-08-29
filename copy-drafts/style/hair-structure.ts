@@ -42,6 +42,114 @@ const hairStructure: StyleCopyBlockModule = {
       sourceRef: "BRANCH_COPY.b10.aha 참조 (원본=style.insight.b10_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl"],
     },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // [PHASE2] 모질 매트릭스 — 굵기(q7) × 숱(q8) 9칸 + 곱슬(q3) modifier.
+    //   전건 draft(사장님 빨간펜 전 라이브 차단). 갈래(b3/b6/b10)가 못 덮는 6칸까지
+    //   전 손님의 hair-structure 블록을 채운다(현행: 갈래 손님만 aha-ref 1줄, 나머진 빈칸).
+    //   틀: "숱은 양이고, 버티는 힘은 한 올의 굵기"(b3_aha 논리)를 9칸에 일반화.
+    //   ⚠️ 갈래 손님(fine×많음=b3/b10, coarse×많음=b6, fine×적음=b4/b5)은 승인된 aha-ref와
+    //      매트릭스 칸이 같은 화면에 겹친다 → 승인 시 aha-ref 유지 vs 매트릭스 대체를 정한다
+    //      (리뷰 파일에 명시). production은 draft 차단이라 지금은 aha-ref만 나가 회귀 없음.
+    // ════════════════════════════════════════════════════════════════════════
+    {
+      id: "style.hair_structure.m_coarse_thick",
+      text: "한 올 한 올이 굵은 데다 숱까지 많은 머리예요. 양도 많고 버티는 힘도 세니까, 가만 둬도 옆으로 크게 부풀어요. 힘이 없어서가 아니라 힘이 넘쳐서 생기는 부피라, 눌러주는 설계가 관건입니다.",
+      status: "draft",
+      sourceGrade: "파생",
+      sourceRef: "[PHASE2] 매트릭스 굵음×많음 — BRANCH_COPY.b6.aha(숱+굵기=옆으로 뜸) 논리 확장",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_coarse_med",
+      text: "굵은 머리칼에 숱은 보통이라, 실제보다 숱이 많아 보이는 머리예요. 힘이 있고 쉽게 눌리지 않아서 웬만한 스타일은 다 소화하는, 선택의 폭이 넓은 모질입니다. 굵은 결이 살아 있으니 그 장점을 살리는 방향으로 가면 됩니다.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 2026-08-21 — 굵음×보통: 숱 많아 보임·선택폭 넓음·할 수 있는 방향이 넓음(가능성 톤)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_coarse_thin",
+      text: "한 올이 굵어 심지는 튼튼한데 숱은 많지 않은 편이에요. 그래서 이 머리는 숱을 더 많아 보이게, 볼륨을 살려주는 방향이 잘 어울립니다. 굵은 결 자체가 힘이 있어서, 볼륨만 받쳐주면 한결 풍성해 보입니다.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 2026-08-21 — 굵음×적음: 숱 많아 보이게·볼륨 살려주는 경우 많음(가능성 톤)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_med_thick",
+      text: "굵기는 평균인데 숱이 많아 양감이 넉넉한 머리예요. 볼륨이 잘 살고 스타일이 오래 가는 게 강점입니다. 숱이 너무 많다 싶을 때만 속에서 양감을 살짝 덜어주면 되고, 웬만해선 그대로도 충분히 풍성하게 예뻐요.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 §3-1(숱=양감/질감) — 보통×많음: 숱이 곧 볼륨, 너무 많을 때만 속 양감 조절(덮는 머리는 안 침)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_med_med",
+      text: "굵기도 숱도 평균에 가까운, 균형 잡힌 머리예요. 특별히 불리한 구석이 없어서 고르실 수 있는 스타일의 폭이 가장 넓습니다. 끝선·앞머리·컬 크기 같은 디테일만 맞추면 원하시는 스타일이 거의 다 나와요.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 2026-08-21 — 보통×보통: 선택지가 많다(가능성 톤)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_med_thin",
+      text: "굵기는 평균인데 숱이 적은 편이라, 볼륨을 살려주는 게 이 머리의 열쇠예요. 뿌리를 세우는 손질이나 볼륨을 더하는 시술로 받쳐주고, 제품으로 채워주면 한결 풍성해 보입니다. 방법이 분명한 머리예요.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 2026-08-21 — 보통×적음: 볼륨 많이 살려줘야·다른 시술 보완·제품으로 채움(가능성 톤)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_fine_thick",
+      text: "숱은 많은데 한 올 한 올이 가는 머리예요. 양은 넘치는데 그 양을 세워줄 기둥이 약하다 보니, 중간은 부풀고 정수리는 눌립니다. 숱을 덜어내기보다 무게를 어디에 두느냐가 핵심이에요.",
+      status: "draft",
+      sourceGrade: "파생",
+      sourceRef: "[PHASE2] 매트릭스 얇음×많음 — BRANCH_COPY.b3/b10.aha(양은 많은데 기둥 없음) 논리 확장",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_fine_med",
+      text: "한 올이 가늘고 숱은 평균인 머리예요. 볼륨을 살려주는 방향이 잘 맞아서, 뿌리를 세우고 가볍게 가면 얼마든지 살아납니다. 가는 결은 손질과 제품으로 충분히 받쳐줄 수 있어요.",
+      status: "draft",
+      sourceGrade: "재배치",
+      sourceRef: "[PHASE2] 사장님 채굴 답변 2026-08-21 — 얇음×보통: 보통×적음과 동일 방향(볼륨 보완, 가능성 톤)",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+    {
+      id: "style.hair_structure.m_fine_thin",
+      text: "가늘고 숱도 적은 머리예요. 한 올의 힘도 약하고 양도 적어서, 통째로 가라앉기 쉽습니다. 이 머리는 길이가 곧 무게라, 길수록 위가 눌리고 끝이 비어 보여요.",
+      status: "draft",
+      sourceGrade: "파생",
+      sourceRef: "[PHASE2] 매트릭스 얇음×적음 — BRANCH_COPY.b4/b5.aha(통째로 가라앉음, 길이=무게) 논리 확장",
+      evidenceKeys: ["q7_thickness", "q8_density"],
+    },
+
+    // ── 곱슬 modifier — 매트릭스 칸 뒤에 붙는 곱슬기 보정 한 줄(q3_curl) ──────────
+    {
+      id: "style.hair_structure.curlmod_wavy",
+      text: "여기에 반곱슬기가 더해져 있어요. 평소엔 괜찮다가 습한 날·비 오는 날 부스스하게 올라오는 건 이 성질 때문입니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef: "[PHASE2] 곱슬 modifier(반곱슬) — surveyData q3_curl=wavy_hair 판별멘트 기반",
+      evidenceKeys: ["q3_curl"],
+    },
+    {
+      id: "style.hair_structure.curlmod_mid",
+      text: "여기에 곱슬기까지 있어서, 같은 숱이라도 부피가 더 크게 느껴져요. 말리면 곱슬이 올라오는 만큼 양이 더 많아 보입니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef: "[PHASE2] 곱슬 modifier(곱슬) — surveyData q3_curl=curly_hair_mid 판별멘트 기반",
+      evidenceKeys: ["q3_curl"],
+    },
+    {
+      id: "style.hair_structure.curlmod_strong",
+      text: "여기에 강한 곱슬이 더해져 있어요. 곱슬이 부피를 키우기 때문에, 실제 숱보다 훨씬 많고 커 보이는 게 자연스러운 머리입니다.",
+      status: "draft",
+      sourceGrade: "신규",
+      sourceRef: "[PHASE2] 곱슬 modifier(악성곱슬) — surveyData q3_curl=curly_hair 판별멘트 기반",
+      evidenceKeys: ["q3_curl"],
+    },
   ],
 };
 export default hairStructure;

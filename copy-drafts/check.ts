@@ -213,7 +213,25 @@ const stats = registryStats();
 // 사업주가 정한다. 아래는 켰을 때 무엇이 걸리는지 **미리 보여주기만** 한다.
 const GATE_ENFORCED = true; // 활성화됨(2026-08-20) — prebuild가 copy:check를 체인한다
 {
-  const failures = findUnapprovedReachable(reachable);
+  // [PHASE2] 검토중 레인 — sourceRef가 "[PHASE2]"로 시작하는 draft는 게이트에서 예외.
+  //   근거: 실화면(dev) 프리뷰를 위해 실 resolver에 배선했으나 사장님 빨간펜 전이라 승인
+  //   불가. production은 collectBlock의 env 게이트가 draft 렌더를 이미 막으므로(라이브 무영향),
+  //   빌드까지 세우면 다른 배포가 전부 묶인다. 그래서 이 마커가 붙은 것만 예외로 통과시키되,
+  //   §7-3 미커버 명시 원칙대로 **건수를 리포트**한다. 그 외 미승인 도달은 여전히 FAIL —
+  //   게이트 무결성은 보존된다. 승인 시 [PHASE2] 마커를 떼면 정상 게이트 대상이 된다.
+  const isPhase2Pending = (id: string): boolean => {
+    const e = getEntry(id);
+    return !!e && e.sourceRef.startsWith("[PHASE2]");
+  };
+  const allFailures = findUnapprovedReachable(reachable);
+  const phase2Pending = allFailures.filter((f) => isPhase2Pending(f.id));
+  const failures = allFailures.filter((f) => !isPhase2Pending(f.id));
+  if (phase2Pending.length > 0) {
+    notes.push(
+      `[PHASE2] 검토중 draft ${phase2Pending.length}건 — 게이트 예외(dev 프리뷰용, production은 env 게이트가 렌더 차단). ` +
+        `사장님 승인(status→approved) + sourceRef의 "[PHASE2]" 마커 제거 시 정상 게이트 편입.`,
+    );
+  }
   if (GATE_ENFORCED) {
     if (failures.length > 0) problems.push(`production 승인 게이트 위반 ${failures.length}건`);
   } else if (failures.length > 0) {

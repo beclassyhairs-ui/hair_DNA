@@ -685,17 +685,42 @@ export default function StyleResultPage() {
                   );
                 })()}
 
-                {/* 6. 스타일 궁합 — §6-5(2). 곱슬 × 희망 디자인. */}
-                {bodyOf(sblock("curl-fit")).length > 0 && (
-                  <>
-                    <TT>이 스타일과의 궁합</TT>
-                    <GlassCard tone="soft" className="space-y-2 px-5 py-4">
-                      {bodyOf(sblock("curl-fit")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-                      ))}
-                    </GlassCard>
-                  </>
-                )}
+                {/* 6. 스타일 궁합 — §6-5(2). 곱슬 × 희망 디자인.
+                       §4 2단 구조(Phase2): 겉(_say = 미용실 주문 멘트)은 카드에 보이고,
+                       더보기(_why = 원장 이유)는 FadePreview로 접는다. */}
+                {bodyOf(sblock("curl-fit")).length > 0 && (() => {
+                  const cf = bodyOf(sblock("curl-fit"));
+                  const say = cf.filter((e) => e.id.endsWith("_say"));
+                  const why = cf.filter((e) => e.id.endsWith("_why"));
+                  const body = cf.filter((e) => !e.id.endsWith("_say") && !e.id.endsWith("_why"));
+                  return (
+                    <>
+                      <TT>이 스타일과의 궁합</TT>
+                      <GlassCard tone="soft" className="space-y-2 px-5 py-4">
+                        {body.map((e) => (
+                          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                        ))}
+                        {say.length > 0 && (
+                          <div className="mt-1 space-y-2 border-t border-line pt-3">
+                            <p className="text-[12px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</p>
+                            {say.map((e) => (
+                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[14.5px] font-bold leading-relaxed text-ink">“{e.text}”</p>
+                            ))}
+                          </div>
+                        )}
+                      </GlassCard>
+                      {why.length > 0 && (
+                        <FadePreview title="왜 이렇게 주문할까요">
+                          <div className="space-y-2">
+                            {why.map((e) => (
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                            ))}
+                          </div>
+                        </FadePreview>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* 7. 커트 설계(접힘) — §6-5(3). 미용실 주문 멘트. */}
                 {bodyOf(sblock("cut")).length > 0 && (

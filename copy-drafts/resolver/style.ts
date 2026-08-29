@@ -81,6 +81,40 @@ const CUT: Partial<Record<BranchKey, string[]>> = {
   b10: ["style.cut.b10_procedure"],
 };
 
+// ─── [PHASE2] 원답 직접 매핑 — 갈래가 못 덮는 조합까지 전 손님 블록을 채운다 ─────
+//   모질 매트릭스(q7×q8)·곱슬 modifier(q3)·디자인 차등 궁합(b2/b7×q13)·기장 커트(q11).
+//   전건 draft라 production은 collectBlock의 env 게이트가 렌더를 막고(회귀 0),
+//   dev/preview에서만 나가 실화면 프리뷰가 된다. 판정(crossBranch·styleGate)은 무수정 —
+//   여기서 읽는 건 손님이 **직접 답한** 굵기/숱/곱슬/디자인/기장이지 재계산이 아니다.
+const HAIR_MATRIX_THICK: Record<string, string> = { coarse: "coarse", medium_thickness: "med", fine: "fine" };
+const HAIR_MATRIX_DENS: Record<string, string> = { thick_density: "thick", medium_density: "med", thin_density: "thin" };
+function hairMatrixId(a: StyleAnswers): string {
+  const t = HAIR_MATRIX_THICK[a.q7_thickness ?? "medium_thickness"] ?? "med";
+  const d = HAIR_MATRIX_DENS[a.q8_density ?? "medium_density"] ?? "med";
+  return `style.hair_structure.m_${t}_${d}`;
+}
+const ALL_HAIR_MATRIX_IDS = ["coarse", "med", "fine"].flatMap((t) =>
+  ["thick", "med", "thin"].map((d) => `style.hair_structure.m_${t}_${d}`),
+);
+const CURL_MOD: Record<string, string> = {
+  wavy_hair: "style.hair_structure.curlmod_wavy",
+  curly_hair_mid: "style.hair_structure.curlmod_mid",
+  curly_hair: "style.hair_structure.curlmod_strong",
+};
+const B2_DESIGN: Record<string, string> = {
+  c_curl: "style.curl_fit.b2_c_curl", s_curl: "style.curl_fit.b2_s_curl", wave: "style.curl_fit.b2_wave",
+};
+const B7_DESIGN: Record<string, string> = {
+  c_curl: "style.curl_fit.b7_c_curl", s_curl: "style.curl_fit.b7_s_curl", wave: "style.curl_fit.b7_wave",
+};
+// §4 2단 미용실 주문 멘트 — 겉(_say) + 더보기(_why). 갈래 발동 시 함께 나감.
+const ORDER_B2 = ["style.curl_fit.order_b2_say", "style.curl_fit.order_b2_why"];
+const ORDER_B7 = ["style.curl_fit.order_b7_say", "style.curl_fit.order_b7_why"];
+const LEN_CUT: Record<string, string> = {
+  short: "style.cut.len_short", short_bob: "style.cut.len_short_bob", bob: "style.cut.len_bob",
+  collarbone: "style.cut.len_collarbone", chest: "style.cut.len_chest",
+};
+
 /** §6-6 시술 안전. */
 const SAFETY_CAUTION = ["style.safety.caution_notice"];
 const SAFETY_BLOCK = [
@@ -177,12 +211,29 @@ export function resolveStyle(answers: StyleAnswers, env?: CopyEnv): StyleResolut
   //   hair-structure의 refId 참조는 건너뛴다. 차단으로 insight가 비면 참조가 살아난다.
   const seen = newSeenOrigins();
 
+  // ── [PHASE2] 원답 매핑 추가 id — 매트릭스가 먼저(모질 기본 서술), 그 뒤 곱슬 modifier,
+  //   마지막에 기존 aha-ref(비-차단 손님은 insight와 중복돼 dedup으로 자동 제외됨). ──
+  const curlMod = CURL_MOD[answers.q3_curl ?? ""];
+  const hairStructureIds = [
+    hairMatrixId(answers),
+    ...(curlMod ? [curlMod] : []),
+    ...pick(HAIR_STRUCTURE),
+  ];
+
+  const designCurl: string[] = [];
+  if (fired.includes("b2")) { const d = B2_DESIGN[answers.q13_design ?? ""]; if (d) designCurl.push(d); designCurl.push(...ORDER_B2); }
+  if (fired.includes("b7")) { const d = B7_DESIGN[answers.q13_design ?? ""]; if (d) designCurl.push(d); designCurl.push(...ORDER_B7); }
+  const curlFitIds = [...pick(CURL_FIT), ...designCurl];
+
+  const lenCut = LEN_CUT[answers.q11_length ?? ""];
+  const cutIds = [...pick(CUT), ...(lenCut ? [lenCut] : [])];
+
   const blocks: ResolvedBlock[] = [
     collectBlock("style", "insight", insightIds, e, issues, seen),
     collectBlock("style", "volume", volumeIds, e, issues, seen),
-    collectBlock("style", "hair-structure", pick(HAIR_STRUCTURE), e, issues, seen),
-    collectBlock("style", "curl-fit", pick(CURL_FIT), e, issues, seen),
-    collectBlock("style", "cut", pick(CUT), e, issues, seen),
+    collectBlock("style", "hair-structure", hairStructureIds, e, issues, seen),
+    collectBlock("style", "curl-fit", curlFitIds, e, issues, seen),
+    collectBlock("style", "cut", cutIds, e, issues, seen),
     collectBlock("style", "safety", safetyIds, e, issues, seen),
   ];
 
@@ -236,6 +287,14 @@ export function styleReachableIds(): string[] {
     ...SAFETY_CAUTION,
     ...SAFETY_BLOCK,
     BLOCKED_PROCEDURE_PREFIX,
+    // [PHASE2] 원답 매핑 도달 집합 — 전 조합 도달(죽은칸 0). 전건 draft라 gate는 예외 처리.
+    ...ALL_HAIR_MATRIX_IDS,
+    ...Object.values(CURL_MOD),
+    ...Object.values(B2_DESIGN),
+    ...Object.values(B7_DESIGN),
+    ...ORDER_B2,
+    ...ORDER_B7,
+    ...Object.values(LEN_CUT),
   ];
 }
 
