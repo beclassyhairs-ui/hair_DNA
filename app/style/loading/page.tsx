@@ -89,10 +89,13 @@ function buildDiagnosisReveal(a: StyleAnswers): string[] {
 // faceswap 합성 자체는 빠르지만(웜업 후 수 초), GPU 콜드스타트 시 수 분 걸린다.
 const MIN_LOADING_MS   = 2_800;   // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
 const POLL_INTERVAL_MS = 2_500;   // status 폴링 간격
-// 전체 대기 상한(확정125: 5→8분). 부팅이 5분을 넘긴 실측 사례(대시보드 최악 15분)가 있어 상향.
+// 전체 대기 상한. 2026-08-21: 8→5분(300s). 세션핑 예열이 부팅을 상당히 당겨놔 5분이면 충분.
+//   ⚠️ 이 커밋(Phase1) 시점엔 폴백이 아직 "상한(5분) 소진 후" 발사되는 임시 상태다. 다음
+//   커밋(Phase2)에서 폴백 트리거를 4:50으로 당겨, 5:00 상한 직전에 상시-warm 루카타코가
+//   "최대 5분" 약속을 지키게 한다(과거 8분 상향은 폴백 시점이 8분이던 시절 기준).
 // ★ 아래 로딩 문구의 "최대 N분"도 이 상수에서 파생(POLL_BUDGET_MIN) → 표기 상한과 폴링 상한이
-//   절대 갈라지지 않는다(문구만 8분인데 폴링이 5분에 포기하면 안내와 달리 에러를 보게 됨).
-const POLL_BUDGET_MS   = 480_000; // 8분
+//   절대 갈라지지 않는다.
+const POLL_BUDGET_MS   = 300_000; // 5분
 const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 // ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
@@ -501,6 +504,12 @@ export default function StyleLoadingPage() {
               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               className="h-2 w-2 rounded-full bg-ink" />
           </div>
+
+          {/* 주문구(Phase1) — 손님에게 정직하게 제시하는 약속. 아래 4단계·경과표시는 보조.
+              "최대 N분"은 POLL_BUDGET_MIN 파생(보조 문구와 동일 출처 → 상한 바뀌어도 안 갈라짐). */}
+          <p className="max-w-[320px] text-center text-[19px] font-extrabold leading-snug text-ink">
+            평균 2~3분, 최대 {POLL_BUDGET_MIN}분 걸려요
+          </p>
 
           <AnimatePresence mode="wait">
             <motion.p
