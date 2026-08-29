@@ -114,6 +114,9 @@ const LEN_CUT: Record<string, string> = {
   short: "style.cut.len_short", short_bob: "style.cut.len_short_bob", bob: "style.cut.len_bob",
   collarbone: "style.cut.len_collarbone", chest: "style.cut.len_chest",
 };
+// §4 2단 커트 주문 멘트 — 숏 계열(두상)만. 겉(_say)+더보기(_why).
+const ORDER_CUT = ["style.cut.order_short_say", "style.cut.order_short_why"];
+const SHORT_LENGTHS = ["short", "short_bob"];
 
 /** §6-6 시술 안전. */
 const SAFETY_CAUTION = ["style.safety.caution_notice"];
@@ -226,7 +229,8 @@ export function resolveStyle(answers: StyleAnswers, env?: CopyEnv): StyleResolut
   const curlFitIds = [...pick(CURL_FIT), ...designCurl];
 
   const lenCut = LEN_CUT[answers.q11_length ?? ""];
-  const cutIds = [...pick(CUT), ...(lenCut ? [lenCut] : [])];
+  const shortOrder = SHORT_LENGTHS.includes(answers.q11_length ?? "") ? ORDER_CUT : [];
+  const cutIds = [...pick(CUT), ...(lenCut ? [lenCut] : []), ...shortOrder];
 
   const blocks: ResolvedBlock[] = [
     collectBlock("style", "insight", insightIds, e, issues, seen),
@@ -295,6 +299,7 @@ export function styleReachableIds(): string[] {
     ...ORDER_B2,
     ...ORDER_B7,
     ...Object.values(LEN_CUT),
+    ...ORDER_CUT,
   ];
 }
 

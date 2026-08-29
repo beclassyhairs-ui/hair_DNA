@@ -722,16 +722,37 @@ export default function StyleResultPage() {
                   );
                 })()}
 
-                {/* 7. 커트 설계(접힘) — §6-5(3). 미용실 주문 멘트. */}
-                {bodyOf(sblock("cut")).length > 0 && (
-                  <FadePreview title="미용실에서 이렇게 주문하세요">
-                    <div className="space-y-2">
-                      {bodyOf(sblock("cut")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
-                      ))}
-                    </div>
-                  </FadePreview>
-                )}
+                {/* 7. 커트 설계 — §6-5(3). §4 2단(Phase2): 겉(_say = 주문 멘트)은 보이고,
+                       나머지(기장 조언 + _why 이유)는 FadePreview로 접는다. say가 없는
+                       기장(단발·롱·쇄골)은 종전대로 전체를 접는다. */}
+                {bodyOf(sblock("cut")).length > 0 && (() => {
+                  const cut = bodyOf(sblock("cut"));
+                  const say = cut.filter((e) => e.id.endsWith("_say"));
+                  const rest = cut.filter((e) => !e.id.endsWith("_say"));
+                  return (
+                    <>
+                      {say.length > 0 && (
+                        <>
+                          <TT>미용실에서 이렇게 주문하세요</TT>
+                          <GlassCard tone="soft" className="space-y-2 px-5 py-4">
+                            {say.map((e) => (
+                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[14.5px] font-bold leading-relaxed text-ink">“{e.text}”</p>
+                            ))}
+                          </GlassCard>
+                        </>
+                      )}
+                      {rest.length > 0 && (
+                        <FadePreview title={say.length > 0 ? "왜 이렇게 주문할까요" : "미용실에서 이렇게 주문하세요"}>
+                          <div className="space-y-2">
+                            {rest.map((e) => (
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                            ))}
+                          </div>
+                        </FadePreview>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {/* 8. 회복 후 시술 참고(접힘) — 차단 상태에서만.
                        (시술 안전 안내 자체는 토글 밖 SafetyNotice가 항상 노출한다 — §6-6) 시술 지시를 숨기지 않고
