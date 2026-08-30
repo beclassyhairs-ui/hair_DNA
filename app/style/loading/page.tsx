@@ -154,6 +154,9 @@ export default function StyleLoadingPage() {
   const [revealIdx,   setRevealIdx]   = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0); // 🟡-02 진행감: 화면에서 매초 바뀌는 유일한 숫자
   const [fallbackActive, setFallbackActive] = useState(false); // ⑤ 폴백 진행 중 안내용
+  // Phase3: 진행 중 작업(STYLE_JOB_KEY)이 실제로 설정된 뒤에만 스킵링크를 연다. kickoff POST가
+  //   늦어 아직 job이 없을 때 스킵하면 결과지가 이어받을 job이 없어 pending 대신 fail로 빠지기 때문.
+  const [jobStarted, setJobStarted] = useState(false);
   const calledRef  = useRef(false); // 중복 호출 방지
 
   // 진행단계 라벨 로테이션 (시각 연출 — API 와 독립, 마지막 단계에서 정지).
@@ -239,6 +242,7 @@ export default function StyleLoadingPage() {
 
       if (job) {
         // 재개 경로: 이전 상태(결과/에러/한도)만 정리하고 바로 폴링. incrementUsage 재호출 안 함.
+        setJobStarted(true); // Phase3: 진행 중 job 존재 → 스킵 허용
         clearPrevResultKeys();
         // ⑤ Fix: 재개(새로고침) 시 폴백 1회 가드·예산을 job 에서 복원한다.
         //   · fallbackAttempted → fellBack 복원(킬스위치 OFF로 ddvinh1 재착수된 job 이어도 2차 폴백 차단).
@@ -298,7 +302,9 @@ export default function StyleLoadingPage() {
             id: data.id, token: data.token, startedAt: Date.now(),
             primaryAttestation: data.primaryAttestation, // ② 이 job(원본)을 나중에 폴백 자격증표로 쓴다.
           };
-          try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(started)); } catch { /**/ }
+          // Phase3: setItem 성공 시에만 jobStarted → 스킵 허용. 저장 실패면 결과지가 이어받을 job이
+          //   없으므로 스킵링크를 열지 않는다(try 안에 둬 실패 시 setJobStarted 미실행).
+          try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(started)); setJobStarted(true); } catch { /**/ }
           console.log("[AI] 착수 성공, 폴링 시작:", data.id);
           await pollUntilDone(started);
           return;
@@ -558,6 +564,20 @@ export default function StyleLoadingPage() {
             <p className="text-center text-[12px] font-medium tabular-nums text-ink-2/80">
               {formatElapsedKo(elapsedSec)} 준비 중
             </p>
+          )}
+
+          {/* Phase3: 10초 후 스킵 — 밑줄 텍스트 링크(큰 버튼 금지: '기다리지 마세요' 역신호 방지).
+              결과지로 보내되 STYLE_JOB_KEY를 유지한 채(finishAndRoute 안 거침) 넘긴다. 백그라운드
+              폴링이 계속 돌아 사진을 만들고, 결과지가 그 사진을 이어받아 채운다(Phase3 자동채움).
+              ⚠️ 탭을 닫으면 폴링이 끊기므로 '나갔다 와도 완성' 같은 과약속 문구는 쓰지 않는다. */}
+          {elapsedSec >= 10 && jobStarted && (
+            <button
+              type="button"
+              onClick={() => { void trackEvent("style_loading_skip", { source: "style", elapsed: elapsedSec }); router.push("/style/result"); }}
+              className="mt-1 text-[13px] leading-relaxed text-ink-2 underline underline-offset-4 decoration-ink-2/40 transition-colors hover:text-ink"
+            >
+              기다리기 지루하면, 이미지 없이 결과 먼저 보기
+            </button>
           )}
         </div>
 

@@ -14,6 +14,7 @@ import {
   STYLE_DEBUG_ERROR_KEY,
   STYLE_FAIL_REASON_KEY,
   STYLE_GENERATED_KEY,
+  STYLE_JOB_KEY,
   STYLE_LIMIT_KEY,
   STYLE_PHOTO_KEY,
 } from "../constants";
@@ -219,7 +220,7 @@ function failMessage(reason: string | null): { title: string; hint: string; butt
 }
 
 function BeforeAfterSection({
-  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel,
+  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel, pending,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
@@ -227,6 +228,7 @@ function BeforeAfterSection({
   limitMessage: string | null;
   onRetry:      () => void;
   hairLabel?:   string | null;
+  pending?:     boolean; // Phase3: 스킵 후 백그라운드 폴링 대기(사진 준비 중)
 }) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -265,6 +267,14 @@ function BeforeAfterSection({
             </svg>
             <p className="text-[13px] font-semibold leading-snug text-white/90">오늘 무료 합성을<br />모두 사용했어요</p>
             <p className="text-[11px] leading-relaxed text-white/70">{limitMessage}</p>
+          </div>
+        ) : pending ? (
+          // Phase3: 스킵 후 자동 채움 대기 — 백그라운드 폴링이 사진을 만들면 여기에 채워진다.
+          //   ★ 과약속 금지: '이 화면에 있는 동안'으로만 약속(탭 닫으면 끊김).
+          <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center">
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/25 border-t-white/85" />
+            <p className="text-[13px] font-semibold leading-snug text-white/90">사진을 준비하고 있어요</p>
+            <p className="text-[11px] leading-relaxed text-white/70">이 화면에 있는 동안<br />준비되면 여기에 채워져요</p>
           </div>
         ) : (() => {
           const f = failMessage(failReason);
@@ -449,6 +459,8 @@ export default function StyleResultPage() {
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [answers,    setAnswers]    = useState<StyleAnswers>({});
   const [ready,      setReady]      = useState(false);
+  // Phase3: 스킵 후 자동 채움 — 사진이 아직 없고 진행 중 작업이 있으면 '준비 중'.
+  const [pending,    setPending]    = useState(false);
   const [showSave,   setShowSave]   = useState(false);
   const [completeTracked, setCompleteTracked] = useState(false);
   // 파트2 버튼 계단식 — 진단·처방(①)과 케어 제품(②)을 버튼으로 단계 공개.
@@ -482,13 +494,46 @@ export default function StyleResultPage() {
         } else {
           const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
           const reason = sessionStorage.getItem(STYLE_FAIL_REASON_KEY);
-          console.warn("[Result] ⚠️ AI 이미지 URL 없음. reason:", reason ?? "(없음)", "debugError:", dbgErr ?? "(없음)");
-          setFailReason(reason);
+          // Phase3: 진행 중 작업(STYLE_JOB_KEY)이 남아 있으면 아직 '실패'가 아니라 '준비 중'이다
+          //   (로딩에서 사진 없이 스킵해 넘어온 경우). fail 로 단정하지 말고 아래 watcher effect가
+          //   pending 을 켜 백그라운드 폴링이 만드는 사진을 이어받게 둔다.
+          const hasJob = !!sessionStorage.getItem(STYLE_JOB_KEY);
+          console.warn("[Result] ⚠️ AI 이미지 URL 없음. reason:", reason ?? "(없음)", "debugError:", dbgErr ?? "(없음)", "hasJob:", hasJob);
+          if (!hasJob) setFailReason(reason);
         }
       }
     } catch { /**/ }
     setReady(true);
   }, []);
+
+  // ── Phase3: 스킵 후 자동 채움 ──────────────────────────────────────────────
+  //   로딩에서 사진 없이 스킵해 넘어오면 STYLE_JOB_KEY(진행 중 작업)가 그대로 남아 있다.
+  //   결과지가 status를 직접 폴링하지 않고 sessionStorage(STYLE_GENERATED_KEY)를 감시한다 —
+  //   폴백(4:50) 트리거·자격검증은 로딩의 백그라운드 폴링이 그대로 담당하게 두어 그 로직을
+  //   건드리지 않기 위함. 정상 경로·폴백 경로 모두 같은 STYLE_GENERATED_KEY로 도착 → 같은 자리에 채워짐.
+  //   ⚠️ 탭을 닫으면 백그라운드 폴링이 끊긴다(hair_jobs 서버 원장 없이는 완성 불가) → 과약속 문구 금지.
+  useEffect(() => {
+    if (!ready || generated || limitMessage || failReason) return; // 이미 이미지/한도/실패로 종착
+    let hasJob = false;
+    try { hasJob = !!sessionStorage.getItem(STYLE_JOB_KEY); } catch { /**/ }
+    if (!hasJob) return; // 진행 중 작업 없음(정상 종착) → 감시 안 함
+    setPending(true);
+    const startedAt = Date.now();
+    const t = setInterval(() => {
+      // 안전장치: sessionStorage 접근이 매번 던져도 반드시 종료되도록 타임아웃을 try 밖에서 먼저 검사.
+      //   6분 넘도록 아무 신호가 없으면(백그라운드 폴링 유실·탭 전환 등) 감시 종료·실패 안내.
+      if (Date.now() - startedAt > 360_000) { setFailReason("poll_timeout"); setPending(false); clearInterval(t); return; }
+      try {
+        const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
+        if (g) { setGenerated(g); setPending(false); clearInterval(t); return; } // 완성 → 사진 교체
+        const lim = sessionStorage.getItem(STYLE_LIMIT_KEY);
+        if (lim) { setLimitMessage(lim); setPending(false); clearInterval(t); return; }
+        const fr = sessionStorage.getItem(STYLE_FAIL_REASON_KEY);
+        if (fr) { setFailReason(fr); setPending(false); clearInterval(t); return; }
+      } catch { /* 일시적 접근 실패는 다음 tick 재시도 — 위 타임아웃이 상한을 보장 */ }
+    }, 2_000);
+    return () => clearInterval(t);
+  }, [ready, generated, limitMessage, failReason]);
 
   // 리포트 열람 — 결과지 진입(답변 로드 완료) 시 1회 적재. 퍼널의 "리포트열람" 단계.
   // 진단 완료(diagnosis_complete)는 설문 마지막 제출 시점(/style/survey)에서 발화한다.
@@ -579,7 +624,7 @@ export default function StyleResultPage() {
           <CompletionGauge className="mb-4" />
 
           {/* 1. Before/After — 캡션 확정(농담성 문구 금지, 확정 138). 차단이어도 After는 그대로 노출. */}
-          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} />
+          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} pending={pending} />
           <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
 
           {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 — 사진 결과의 헤드라인(항상 노출) */}
