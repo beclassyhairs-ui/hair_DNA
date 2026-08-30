@@ -100,6 +100,11 @@ const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구�
 const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 // ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
 const FALLBACK_POLL_BUDGET_MS = 120_000;
+// ⑤ 폴백 트리거 시점(Phase2) — 5:00 상한 소진 전, 4:50(290s) 경과 시 상시-warm 루카타코로 조기
+//   전환한다. ddvinh1이 4:50까지 대부분 처리하고, 못 끝낸 최악의 날만 폴백이 마지막 10초에 사진을
+//   만들어 "최대 5분" 약속을 지킨다. ★ 폴백 자체 로직/자격검증/킬스위치(a11dd72)는 무수정 —
+//   발사 "시점"만 이 상수로 당긴다. 폴백 재착수 poll 은 fellBack 가드로 이 분기를 재발동하지 않는다.
+const FALLBACK_TRIGGER_MS = 290_000; // 4:50
 
 // 🟡-02 경과 초 → "N분 N초째" (50·60 가독: 콜론 mm:ss 대신 한글 분/초).
 function formatElapsedKo(sec: number): string {
@@ -312,21 +317,33 @@ export default function StyleLoadingPage() {
     }
 
     // ── 폴링 루프: 성공/실패/타임아웃까지 ─────────────────────────────────────
-    //   budgetMs: 기본 8분(신규/재개). ⑤ 폴백은 짧은 예산(FALLBACK_POLL_BUDGET_MS)으로 호출.
+    //   budgetMs: 기본 5분(신규/재개). ⑤ 폴백은 짧은 예산(FALLBACK_POLL_BUDGET_MS)으로 호출.
     async function pollUntilDone(job: JobRef, budgetMs: number = POLL_BUDGET_MS) {
       const deadline = job.startedAt + budgetMs;
       while (Date.now() < deadline) {
+        // ⑤ Phase2: 4:50(FALLBACK_TRIGGER_MS) 도달 시 조기 폴백으로 빠진다(아래 cancel→runFallback).
+        //   fellBack 가드로 폴백 재착수 poll(fellBack=true)은 이 분기를 건너뛴다 → 자기 자신 재트리거 방지.
+        //   startedAt 기준이라 새로고침 재개여도 원래 착수 시점 기준 4:50에 발사된다.
+        if (!fellBack && Date.now() - job.startedAt >= FALLBACK_TRIGGER_MS) break;
+        // Phase2: 트리거 직전 시작한 폴이 15초(PER_POLL_TIMEOUT) 늘어져 4:50을 넘기지 않게,
+        //   남은 트리거 시간까지로 이번 폴 타임아웃을 좁힌다 → 폴백이 5:00 상한 전에 확실히 발사.
+        //   (폴백 재착수 poll 은 fellBack=true 라 정상 15초 유지 — 클램프 대상 아님.)
+        const pollTimeout = fellBack
+          ? PER_POLL_TIMEOUT
+          : Math.max(1_000, Math.min(PER_POLL_TIMEOUT, job.startedAt + FALLBACK_TRIGGER_MS - Date.now()));
         let data: { ok?: boolean; imageUrl?: string; status?: string; reason?: string; debugError?: string } | null = null;
         try {
           const res = await fetch("/api/hair-transform/status", {
             method:  "POST",
             headers: { "Content-Type": "application/json" },
             body:    JSON.stringify({ id: job.id, token: job.token }),
-            signal:  AbortSignal.timeout(PER_POLL_TIMEOUT),
+            signal:  AbortSignal.timeout(pollTimeout),
           });
           if (res.status === 401) { goRelogin(); return; }
           data = await res.json();
         } catch {
+          // Phase2: 트리거 도달로 폴이 잘렸으면 재시도 sleep 없이 즉시 폴백으로(5:00 전 발사 보장).
+          if (!fellBack && Date.now() - job.startedAt >= FALLBACK_TRIGGER_MS) break;
           // 일시적 네트워크/타임아웃 → 예산 내에서 계속 재시도
           await sleep(POLL_INTERVAL_MS);
           continue;
@@ -351,20 +368,20 @@ export default function StyleLoadingPage() {
         return;
       }
 
-      // 예산 소진 → 예측 취소 요청(비용 중단, best-effort)
-      console.warn("[AI] ⏱ 폴링 예산 소진 → 예측 취소 요청(비용 중단)");
-      try {
-        await fetch("/api/hair-transform/cancel", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ id: job.id, token: job.token }),
-          signal:  AbortSignal.timeout(10_000),
-        });
-      } catch { /* best-effort */ }
+      // 4:50 조기 폴백 or 예산(5분) 소진 → 예측 취소 요청(비용 중단, best-effort) → 아래 ⑤ 폴백
+      // Phase2: cancel 을 await 하지 않는다(fire-and-forget). await 하면 최대 10초가 폴백 발사를
+      //   5:00 뒤로 밀 수 있다. 취소 요청 자체는 그대로 나가 비용 중단 효과는 유지된다.
+      console.warn("[AI] ⏱ 4:50 도달/예산 소진 → 예측 취소 요청(비용 중단) → 폴백 시도");
+      void fetch("/api/hair-transform/cancel", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ id: job.id, token: job.token }),
+        signal:  AbortSignal.timeout(10_000),
+      }).catch(() => { /* best-effort */ });
 
-      // ⑤ 루카타코 폴백 — ddvinh1 이 예산(8분)을 넘긴 드문 콜드 미스에서 1회만 상시-warm 모델로
-      //   재착수해 "에러 대신 결과"를 노린다(사업주 결정). 폴백 자신의 예산 소진 시엔 fellBack 가드로
-      //   더 이상 재시도하지 않고 아래 실패 안내로 종착한다.
+      // ⑤ 루카타코 폴백 — ddvinh1 이 4:50(FALLBACK_TRIGGER_MS)까지 못 끝낸 드문 콜드 미스에서 1회만
+      //   상시-warm 모델로 재착수해 "에러 대신 결과"를 노린다(사업주 결정). 폴백 자신의 예산 소진
+      //   시엔 fellBack 가드로 더 이상 재시도하지 않고 아래 실패 안내로 종착한다.
       if (!fellBack) {
         fellBack = true;
         const handled = await runFallback(job);
