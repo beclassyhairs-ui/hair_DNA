@@ -1,5 +1,5 @@
 // ============================================================================
-// 어뷰티 — /items 매칭 순수 로직
+// 미알팁 — /items 매칭 순수 로직
 // 유저의 최신 /style 진단(answers: q3_curl/q7_thickness/q8_density)에서 coreKey
 // (`curl__thickness__density`)를 도출하고, 상품 fit_hair_types/avoid_hair_types와
 // 매칭한다. hairTags(한글 고민어휘)는 coreKey와 어휘가 달라 매칭에 쓰지 않는다.

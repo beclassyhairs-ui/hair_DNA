@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 어드민 — 소싱 후보 검수(Sourcing Review)
+// 미알팁 어드민 — 소싱 후보 검수(Sourcing Review)
 // Gemini가 만든 raw_candidates TSV/CSV 표를 붙여넣으면 자동 파싱 + 검수 플래그 +
 // admin_import 미리보기를 보여준다.
 //

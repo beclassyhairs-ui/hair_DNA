@@ -1,4 +1,4 @@
-# PROJECT MASTER CODE — A-Beauty (어뷰티)
+# PROJECT MASTER CODE — 미알팁 (미알팁)
 > 최종 업데이트: 2026-06-25  
 > 목적: AI 코딩 작업 시 기억 저장소 (전체 코드 + 아키텍처 백업)
 
@@ -209,7 +209,7 @@ pickReferenceUrl(answers, baseUrl):
 
 ```typescript
 // ============================================================================
-// 어뷰티 스타일 서비스 — 4×4 마이크로 설문 데이터
+// 미알팁 스타일 서비스 — 4×4 마이크로 설문 데이터
 // STEP 1: 희망 스타일 결정 (4문항)
 // STEP 2: 모질 및 시술 상태 파악 (4문항)
 // ============================================================================
@@ -354,7 +354,7 @@ export const STYLE_TOTAL = ALL_STYLE_QUESTIONS.length; // 8
 "use client";
 
 // ============================================================================
-// 어뷰티(A-Beauty) — 루트 랜딩 (/)
+// 미알팁 — 루트 랜딩 (/)
 //
 // ★ 어떤 상태(로그인 여부, 진단 이력, 세션 잔류, 새로고침)에도
 //   화면은 무조건 동일한 3가지 요소만 렌더링:
@@ -416,7 +416,7 @@ export default function HomePage() {
         {/* 브랜드 배지 */}
         <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.38em] text-gold/55">
           <span className="h-px w-6 bg-gold/40" />
-          A-Beauty · Hair Style AI
+          미알팁 · Hair Style AI
           <span className="h-px w-6 bg-gold/40" />
         </span>
 
@@ -518,7 +518,7 @@ export default function StyleLandingPage() {
         {/* 브랜드 배지 */}
         <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.38em] text-gold/55">
           <span className="h-px w-6 bg-gold/40" />
-          A-Beauty · Hair Style AI
+          미알팁 · Hair Style AI
           <span className="h-px w-6 bg-gold/40" />
         </span>
 
@@ -722,7 +722,7 @@ export default function StyleLoadingPage() {
           style={{ minHeight: "300px" }}>
           <div className="border-b border-white/[0.05] px-4 py-2.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold/35">
-              Sponsored · A-Beauty
+              Sponsored · 미알팁
             </p>
           </div>
           <div className="flex min-h-[260px] flex-col items-center justify-center px-6 py-8 text-center">
@@ -858,7 +858,7 @@ function KakaoLockModal({ onUnlock }: { onUnlock: () => void }) {
         className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-gold/25 bg-[#141210]">
         <div className="h-px w-full bg-gradient-to-r from-transparent via-gold to-transparent" />
         <div className="px-7 py-8 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">A-Beauty</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">미알팁</p>
           <h2 className="mt-3 font-serif text-2xl font-bold text-cream">결과지가 완성됐어요!</h2>
           <p className="mt-2 text-sm text-cream/50">맞춤 헤어스타일과 케어 처방전을 확인하세요.</p>
           <div className="mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-full border border-gold/25 bg-gold/10 text-2xl">🔓</div>
@@ -930,7 +930,7 @@ function KakaoSaveModal({
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-3xl border-t border-gold/20 bg-[#141210] px-6 pb-10 pt-5"
         onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/20" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">A-Beauty Diary</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">미알팁 Diary</p>
         <h3 className="mt-2 font-serif text-xl font-bold text-cream">내 다이어리에 저장하고 평생 소장하기</h3>
         <p className="mt-2 text-sm text-cream/45 leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
@@ -1269,7 +1269,7 @@ export default function StyleResultPage() {
               <button
                 onClick={() => {
                   const url = typeof window !== "undefined" ? `${window.location.origin}/style` : "/style";
-                  if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 어뷰티", url }).catch(() => {});
+                  if (navigator.share) navigator.share({ title: "AI 헤어 변신 | 미알팁", url }).catch(() => {});
                   else navigator.clipboard?.writeText(url).then(() => alert("링크가 복사됐어요!"));
                 }}
                 className="flex h-12 flex-1 items-center justify-center rounded-xl border border-gold/20 bg-gold/[0.06] text-sm font-semibold text-gold-light transition-all hover:bg-gold/12">
@@ -1824,7 +1824,7 @@ export default function MyDiaryPage() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.28em]" style={{ color: "rgba(200,168,107,0.55)" }}>
-                  A-Beauty Hair Diary
+                  미알팁 Hair Diary
                 </p>
                 <p className="mt-0.5 text-sm" style={{ color: "rgba(253,251,250,0.5)" }}>
                   진단 이력 {entries.length}건
@@ -1868,4 +1868,4 @@ export default function MyDiaryPage() {
 
 ---
 
-*이 파일은 A-Beauty 프로젝트의 전체 코드 백업입니다. AI 코딩 세션 시작 시 컨텍스트 로드용으로 활용하세요.*
+*이 파일은 미알팁 프로젝트의 전체 코드 백업입니다. AI 코딩 세션 시작 시 컨텍스트 로드용으로 활용하세요.*

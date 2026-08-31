@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 어드민 — 제품 관리(Product CMS)
+// 미알팁 어드민 — 제품 관리(Product CMS)
 // /api/admin/products(GET/POST), /api/admin/products/[id](PUT/DELETE)를 통해
 // products 테이블을 CRUD한다. 이미지는 Supabase 용량을 아끼기 위해 파일 업로드
 // 없이 외부 이미지 URL 붙여넣기만 지원한다.

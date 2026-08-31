@@ -1,7 +1,7 @@
 "use client";
 
 // ============================================================================
-// 어뷰티 — UTM 어트리뷰션 캡처 (앱 전역, 마운트 시 1회)
+// 미알팁 — UTM 어트리뷰션 캡처 (앱 전역, 마운트 시 1회)
 //
 // 유저가 처음 들어올 때 URL의 utm_source/utm_medium/utm_campaign을 first-touch로
 // localStorage에 고정 저장한다(lib/eventTracking.captureAttribution). 이후 내부 이동으로

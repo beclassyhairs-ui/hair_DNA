@@ -1,5 +1,5 @@
 // ============================================================================
-// 어뷰티 — 제품 관리(Product CMS) 공용 타입
+// 미알팁 — 제품 관리(Product CMS) 공용 타입
 // 테이블 정의: supabase/products_schema.sql (Supabase DB에 적용 완료)
 //
 // status/sales_type/fit_hair_types 등은 draft → review → approved → hidden
