@@ -5,6 +5,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BUSINESS_INFO, BUSINESS_PLACEHOLDER } from "@/lib/business";
 
 export const metadata: Metadata = {
   title: "이용약관 | 미알팁",
@@ -22,6 +23,9 @@ function Article({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function TermsPage() {
+  // 계약 주체(회사) = 사업자 상호(lib/business.ts, env). 미설정 시 플레이스홀더 폴백.
+  const companyName = BUSINESS_INFO.companyName || BUSINESS_PLACEHOLDER;
+  const companyAddress = BUSINESS_INFO.address || BUSINESS_PLACEHOLDER;
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
       <div className="rounded-btn border border-line bg-surface px-4 py-3 text-aux font-medium text-ink-2">
@@ -32,14 +36,16 @@ export default function TermsPage() {
 
       <Article title="제1조 (목적)">
         <p>
-          본 약관은 미알팁(이하 &ldquo;회사&rdquo;)가 제공하는 AI 헤어 진단 및
-          커머스 서비스(이하 &ldquo;서비스&rdquo;)의 이용 조건과 절차, 회사와 이용자의 권리·의무를
-          규정함을 목적으로 합니다.
+          본 약관은 {companyName}(이하 &ldquo;회사&rdquo;)가 제공하는 AI 헤어 진단 및
+          커머스 플랫폼 &lsquo;미알팁&rsquo;(이하 &ldquo;서비스&rdquo;)의 이용 조건과 절차, 회사와 이용자의
+          권리·의무를 규정함을 목적으로 합니다.
         </p>
       </Article>
 
       <Article title="제2조 (정의)">
         <ul className="list-disc space-y-1 pl-5">
+          <li>&ldquo;회사&rdquo;란 서비스를 제공하는 사업자를 말합니다.</li>
+          <li>&ldquo;서비스&rdquo;란 회사가 제공하는 &lsquo;미알팁&rsquo; 및 관련 제반 서비스를 말합니다.</li>
           <li>&ldquo;이용자&rdquo;란 본 약관에 따라 서비스를 이용하는 자를 말합니다.</li>
           <li>&ldquo;진단&rdquo;이란 이용자의 설문·사진을 바탕으로 제공되는 AI 헤어 분석·합성 결과를 말합니다.</li>
           <li>&ldquo;발견템&rdquo;이란 진단 결과에 따라 매칭·소개되는 상품을 말합니다.</li>
@@ -93,7 +99,7 @@ export default function TermsPage() {
       <Article title="제9조 (준거법 및 관할)">
         <p>
           본 약관은 대한민국 법령에 따르며, 서비스 이용과 관련한 분쟁의 관할 법원은
-          관련 법령이 정하는 바에 따릅니다. (회사 상호·주소: [사업주 기재 필요])
+          관련 법령이 정하는 바에 따릅니다. (회사 상호: {companyName} / 주소: {companyAddress})
         </p>
       </Article>
 

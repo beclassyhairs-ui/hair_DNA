@@ -16,6 +16,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
+import { BUSINESS_INFO, BUSINESS_PLACEHOLDER } from "@/lib/business";
 
 // Sentry(오류 모니터링) 고지는 실제 활성 상태에만 노출한다 — DSN 미설정 시 Sentry는 완전
 // no-op(enabled:false)이라 오류 데이터가 어디로도 전송되지 않으므로, 그때 고지를 띄우면
@@ -38,12 +39,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function PrivacyPage() {
+  // 개인정보 처리자(회사) = 사업자 상호(lib/business.ts, env). 미설정 시 플레이스홀더 폴백.
+  const companyName = BUSINESS_INFO.companyName || BUSINESS_PLACEHOLDER;
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
       <h1 className="text-h1 text-ink">개인정보처리방침</h1>
       <p className="mt-2 text-[13px] text-ink-2">
-        미알팁(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 중요하게 생각하며,
-        「개인정보 보호법」 등 관련 법령을 준수합니다.
+        {companyName}(이하 &ldquo;회사&rdquo;)는 &lsquo;미알팁&rsquo;(이하 &ldquo;서비스&rdquo;)를 운영하며,
+        이용자의 개인정보를 중요하게 생각하고 「개인정보 보호법」 등 관련 법령을 준수합니다.
       </p>
 
       <Section title="1. 수집하는 개인정보 항목">
@@ -77,7 +80,7 @@ export default function PrivacyPage() {
       <Section title="3. 보유 및 이용기간">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, <b>우리 서버에는 저장하지 않습니다</b>.
+            <b>셀카 이미지</b>: AI 헤어스타일 합성 처리에만 사용하며, <b>회사 서버에는 저장하지 않습니다</b>.
             합성 처리를 위해 Replicate(미국)로 전송되며(아래 5항 국외이전 참조), 원본을 별도로 보관하거나
             다른 목적으로 이용하지 않습니다.
           </li>
@@ -97,7 +100,7 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="4. 개인정보 처리위탁">
-        <p>서비스 제공을 위해 아래 업체에 개인정보 처리를 위탁합니다.</p>
+        <p>회사는 서비스 제공을 위해 아래 업체에 개인정보 처리를 위탁합니다.</p>
         <div className="overflow-x-auto">
           <table className="mt-2 w-full min-w-[420px] border-collapse text-[13px]">
             <thead>
@@ -137,7 +140,7 @@ export default function PrivacyPage() {
           <li>이전 목적: AI 헤어스타일 합성</li>
           <li>이전 방법: 합성 처리 시점에 네트워크를 통해 전송</li>
           <li>이전받는 자의 데이터 처리: Replicate은 원본 입력·출력을 모델 학습에 사용하지 않으며, 서비스 개선에는 익명·집계된 이용 통계만 사용합니다(생성 결과물의 권리는 이용자에게 귀속). 출처: replicate.com/terms.</li>
-          <li>보유·이용기간: 서비스는 원본 사진을 서버에 저장하지 않습니다(위 3항). 전송받은 Replicate는 API 예측의 입력·출력·로그를 기본적으로 1시간 후 자동 삭제합니다(출처: replicate.com/docs/topics/predictions/data-retention. 법령이 요구하는 경우 연장될 수 있습니다).</li>
+          <li>보유·이용기간: 회사는 원본 사진을 서버에 저장하지 않습니다(위 3항). 전송받은 Replicate는 API 예측의 입력·출력·로그를 기본적으로 1시간 후 자동 삭제합니다(출처: replicate.com/docs/topics/predictions/data-retention. 법령이 요구하는 경우 연장될 수 있습니다).</li>
           <li>
             국외이전 거부 방법 및 효과: 로그인 시 동의 화면의 필수 항목(개인정보·약관·사진의 국외이전)은 각각 선택할 수 있으나,{" "}
             <b>국외이전에 동의하지 않으면 진행 버튼이 활성화되지 않아 다음 단계로 넘어갈 수 없습니다.</b>{" "}
@@ -188,7 +191,7 @@ export default function PrivacyPage() {
 
       <Section title="7. 만 14세 미만 아동의 개인정보">
         <p>
-          서비스는 <b>만 14세 미만 아동의 개인정보를 수집하지 않습니다.</b>
+          회사는 <b>만 14세 미만 아동의 개인정보를 수집하지 않습니다.</b>
           만 14세 미만임이 확인되는 경우 해당 정보를 지체 없이 파기합니다.
         </p>
       </Section>
