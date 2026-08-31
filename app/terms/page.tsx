@@ -1,6 +1,6 @@
 // ============================================================================
-// /terms — 이용약관 (초안)
-// ⚠️ 초안이다. 상호·관할 등 [ ] 표기는 사업주 확정 후 채운다. noindex.
+// /terms — 이용약관 (확정본 게시 · 사업주 전문 검토 완료)
+// 회사 상호·주소는 lib/business.ts(env)를 참조한다. 미설정 시 [사업주 기재 필요] 폴백. noindex 유지.
 // ============================================================================
 
 import type { Metadata } from "next";
@@ -9,7 +9,7 @@ import { BUSINESS_INFO, BUSINESS_PLACEHOLDER } from "@/lib/business";
 
 export const metadata: Metadata = {
   title: "이용약관 | 미알팁",
-  description: "미알팁 서비스 이용약관(초안).",
+  description: "미알팁 서비스 이용약관.",
   robots: { index: false, follow: false },
 };
 
@@ -28,11 +28,7 @@ export default function TermsPage() {
   const companyAddress = BUSINESS_INFO.address || BUSINESS_PLACEHOLDER;
   return (
     <main className="mx-auto max-w-[720px] px-5 py-10">
-      <div className="rounded-btn border border-line bg-surface px-4 py-3 text-aux font-medium text-ink-2">
-        초안 — 사업주 검토·확정 전입니다.
-      </div>
-
-      <h1 className="mt-6 text-h1 text-ink">이용약관</h1>
+      <h1 className="text-h1 text-ink">이용약관</h1>
 
       <Article title="제1조 (목적)">
         <p>
