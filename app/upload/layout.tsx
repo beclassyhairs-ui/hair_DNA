@@ -6,7 +6,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "어뷰티(A-Beauty) | 얼굴 사진 등록",
+  title: "미알팁 | 얼굴 사진 등록",
   description: "정면 얼굴 사진을 등록하고 AI 헤어 진단을 받아보세요.",
 };
 

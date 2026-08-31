@@ -109,7 +109,7 @@ export default function AdminSidebar() {
       {/* 데스크톱: 좌측 고정 사이드바 */}
       <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-60 md:flex-col md:border-r md:border-white/[0.06] md:bg-[#141210] md:px-4 md:py-6">
         <div className="px-2 pb-6">
-          <p className="font-serif text-lg font-bold text-cream">어뷰티</p>
+          <p className="font-serif text-lg font-bold text-cream">미알팁</p>
           <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-cream/35">Admin Console</p>
         </div>
         <NavLinks pathname={pathname} />
@@ -126,7 +126,7 @@ export default function AdminSidebar() {
           <p className="mt-4 px-1 text-[11px] leading-relaxed text-cream/25">
             헤어 고민 해결 커머스
             <br />
-            어뷰티 관리자 전용
+            미알팁 관리자 전용
           </p>
         </div>
       </aside>

@@ -33,7 +33,7 @@ export default function DamageCheckLandingPage() {
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
-          <span className="font-serif text-[13px] tracking-[0.3em] text-sub">A-BEAUTY</span>
+          <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
 
           {/* 액자 히어로 (유일한 흰 카드) */}
           <div className="mt-5 w-full">

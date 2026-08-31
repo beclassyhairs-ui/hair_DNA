@@ -215,7 +215,7 @@ export default function DamageCheckResultPage() {
           K.Share.sendDefault({
             objectType: "feed",
             content: {
-              title: "어뷰티 | 내 모발 손상도 자가진단 결과",
+              title: "미알팁 | 내 모발 손상도 자가진단 결과",
               description: `AI 진단 결과, 나는 [${stampTitle}]입니다.`,
               imageUrl: `${SITE_URL}/og-default.png`,
               link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
@@ -229,7 +229,7 @@ export default function DamageCheckResultPage() {
       }
     } catch { /**/ }
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "어뷰티 | 손상도 자가진단", text: `나는 ${stampTitle}!`, url: shareUrl }).catch(() => {});
+      navigator.share({ title: "미알팁 | 손상도 자가진단", text: `나는 ${stampTitle}!`, url: shareUrl }).catch(() => {});
       return;
     }
     navigator.clipboard?.writeText(shareUrl).then(() => {

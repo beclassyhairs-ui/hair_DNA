@@ -31,9 +31,9 @@ export const viewport: Viewport = {
   // 확대 금지 제거(maximumScale/userScalable) — 40~50대 타깃 접근성: 핀치 줌 허용
 };
 
-const SITE_NAME = "어뷰티(A-Beauty)";
+const SITE_NAME = "미알팁";
 const SITE_DESCRIPTION =
-  "AI로 내 모발 타입을 진단하고, 타입에 맞는 헤어 발견템을 추천받는 퍼스널 헤어 커머스. 어뷰티(A-Beauty).";
+  "AI로 내 모발 타입을 진단하고, 타입에 맞는 헤어 발견템을 추천받는 퍼스널 헤어 커머스. 미알팁 — 미용실에서 알기 어려운 꿀팁.";
 
 export const metadata: Metadata = {
   // 소셜 미리보기 이미지 절대 URL 해석 기준 — 배포 도메인으로 교체
@@ -42,15 +42,15 @@ export const metadata: Metadata = {
   ),
   // title 미설정 페이지의 기본값. 각 랜딩 layout이 자체 title(접미사 포함)을
   // 이미 지정하므로 template은 두지 않는다(이중 접미사 방지).
-  title: "어뷰티(A-Beauty) | AI 헤어 진단 & 발견템",
+  title: "미알팁 — 미용실에서 알기 어려운 꿀팁",
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: ["헤어 진단", "AI 헤어", "모발 타입", "헤어 MBTI", "헤어스타일 추천", "어뷰티", "A-Beauty"],
+  keywords: ["헤어 진단", "AI 헤어", "모발 타입", "헤어 MBTI", "헤어스타일 추천", "미알팁", "MIALTIP"],
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
     locale: "ko_KR",
-    title: "어뷰티(A-Beauty) | AI 헤어 진단 & 발견템",
+    title: "미알팁 — 미용실에서 알기 어려운 꿀팁",
     description: SITE_DESCRIPTION,
     // ⚠️ 플레이스홀더 — public/og-default.png(1200×630)를 디자인 확정 후 추가/교체.
     //    (자체 OG 이미지를 가진 랜딩 layout은 각자 값으로 이 기본값을 덮어씀)
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "어뷰티(A-Beauty) | AI 헤어 진단 & 발견템",
+    title: "미알팁 — 미용실에서 알기 어려운 꿀팁",
     description: SITE_DESCRIPTION,
     images: ["/og-default.png"],
   },

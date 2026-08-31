@@ -1,7 +1,7 @@
 import SourcingReview from "../../components/admin/SourcingReview";
 
 export const metadata = {
-  title: "소싱 검수 | 어뷰티 어드민",
+  title: "소싱 검수 | 미알팁 어드민",
   robots: { index: false, follow: false },
 };
 

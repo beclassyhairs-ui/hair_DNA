@@ -36,7 +36,7 @@ export default function SiteFooter() {
         )}
 
         <p className="mt-5 text-[12px] text-ink-2">
-          © {new Date().getFullYear()} 어뷰티(A-Beauty). All rights reserved.
+          © {new Date().getFullYear()} 미알팁. All rights reserved.
         </p>
       </div>
     </footer>

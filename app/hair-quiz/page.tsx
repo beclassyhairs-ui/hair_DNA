@@ -268,7 +268,7 @@ function IntroView({ onStart }: { onStart: () => void }) {
       transition={{ duration: 0.45 }}
       className="flex min-h-screen flex-col items-center justify-center px-page py-10 text-center"
     >
-      <span className="font-serif text-[13px] tracking-[0.3em] text-sub">A-BEAUTY</span>
+      <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
 
       {/* 액자 히어로 (유일한 흰 카드) */}
       <div className="mt-5 w-full max-w-sm">

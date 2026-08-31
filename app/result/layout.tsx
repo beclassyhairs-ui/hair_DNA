@@ -12,28 +12,28 @@ const OG_IMAGE = `${SITE_URL}/hair-mbti-og.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
+  title: "미알팁 | 나의 AI 헤어 진단 결과",
   description:
     "AI가 분석한 나의 얼굴형·헤어 고민 맞춤 진단 결과지. 추천 스타일과 맞춤 처방을 확인해 보세요.",
   openGraph: {
-    title: "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
+    title: "미알팁 | 나의 AI 헤어 진단 결과",
     description:
       "AI가 분석한 나의 맞춤 헤어스타일과 처방전을 확인해 보세요. 지금 무료로 진단받기!",
     type: "website",
-    siteName: "어뷰티(A-Beauty)",
+    siteName: "미알팁",
     locale: "ko_KR",
     images: [
       {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "어뷰티(A-Beauty) AI 헤어 진단 결과",
+        alt: "미알팁 AI 헤어 진단 결과",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
+    title: "미알팁 | 나의 AI 헤어 진단 결과",
     description: "AI가 분석한 나의 맞춤 헤어스타일과 처방전을 확인해 보세요.",
     images: [OG_IMAGE],
   },

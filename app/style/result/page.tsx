@@ -863,7 +863,7 @@ export default function StyleResultPage() {
                     const base = typeof window !== "undefined" ? window.location.origin : "";
                     const url  = `${base}/style?utm_source=kakao_share`;
                     const text = `AI가 처방한 나의 스타일은 [${entry.name}] 입니다.`;
-                    if (navigator.share) navigator.share({ title: "어뷰티 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
+                    if (navigator.share) navigator.share({ title: "미알팁 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
                   className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">

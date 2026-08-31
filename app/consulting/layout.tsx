@@ -5,20 +5,20 @@ import type { Metadata } from "next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
 
 export const metadata: Metadata = {
-  title: "헤어 고민상담소 | 어뷰티(A-Beauty)",
+  title: "헤어 고민상담소 | 미알팁",
   description:
-    "혼자 고민하지 마세요. 헤어 고민을 나누고 함께 답을 찾는 어뷰티 고민상담소.",
+    "혼자 고민하지 마세요. 헤어 고민을 나누고 함께 답을 찾는 미알팁 고민상담소.",
   openGraph: {
-    title: "헤어 고민상담소 | 어뷰티(A-Beauty)",
+    title: "헤어 고민상담소 | 미알팁",
     description: "지금 다른 분들은 어떤 헤어 고민을 나누고 있을까요? 함께 답을 찾아보세요.",
     url: `${SITE_URL}/consulting`,
     type: "website",
     locale: "ko_KR",
-    images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "어뷰티(A-Beauty)" }],
+    images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "미알팁" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "헤어 고민상담소 | 어뷰티(A-Beauty)",
+    title: "헤어 고민상담소 | 미알팁",
     description: "지금 다른 분들은 어떤 헤어 고민을 나누고 있을까요? 함께 답을 찾아보세요.",
     images: [`${SITE_URL}/og-default.png`],
   },

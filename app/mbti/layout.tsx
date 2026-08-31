@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    siteName: "어뷰티(A-Beauty)",
+    siteName: "미알팁",
     locale: "ko_KR",
     type: "website",
     images: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: "퍼스널 헤어 MBTI 테스트 — 어뷰티(A-Beauty)",
+        alt: "퍼스널 헤어 MBTI 테스트 — 미알팁",
       },
     ],
   },

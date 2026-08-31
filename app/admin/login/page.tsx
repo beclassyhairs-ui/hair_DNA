@@ -56,7 +56,7 @@ function LoginForm() {
       onSubmit={handleSubmit}
       className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-7"
     >
-      <p className="font-serif text-xl font-bold text-cream">어뷰티 관리자</p>
+      <p className="font-serif text-xl font-bold text-cream">미알팁 관리자</p>
       <p className="mt-1 text-sm text-cream/40">관리자 비밀번호를 입력하세요.</p>
 
       <label className="mt-6 block">

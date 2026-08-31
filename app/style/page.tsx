@@ -83,7 +83,7 @@ export default function StyleLandingPage() {
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
           {/* 브랜드 배지 (명조) */}
-          <span className="font-serif text-[13px] tracking-[0.3em] text-sub">A-BEAUTY</span>
+          <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
 
           {/* 액자 히어로 — 흰 매트 + 기울임 + EXAMPLE 라벨 (유일한 흰 카드) */}
           <div className="mt-5 w-full">

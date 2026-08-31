@@ -173,7 +173,7 @@ function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
 //   ① iOS 사파리는 a[download]를 무시(같은 탭에서 이미지만 열림) → Web Share(파일)로 '사진에 추가' 유도.
 //   ② click 직후 동기 revokeObjectURL이 다운로드를 시작 전에 취소 → revoke를 지연.
 async function downloadImage(url: string, styleName: string) {
-  const filename = `abeauty-${styleName}-${Date.now()}.jpg`;
+  const filename = `mialtip-${styleName}-${Date.now()}.jpg`;
 
   let blob: Blob;
   try {

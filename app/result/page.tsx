@@ -138,7 +138,7 @@ export default function ResultPage() {
           K.Share.sendDefault({
             objectType: "feed",
             content: {
-              title:       "어뷰티(A-Beauty) | 나의 AI 헤어 진단 결과",
+              title:       "미알팁 | 나의 AI 헤어 진단 결과",
               description: "AI가 분석한 나의 맞춤 헤어 처방전을 확인해 보세요!",
               imageUrl:    `${SITE_URL}/hair-mbti-og.png`,
               link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
@@ -342,7 +342,7 @@ function AnalyzingOverlay() {
       {/* 상단 로고 영역 */}
       <div className="text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white/5 px-5 py-2 text-sm font-medium tracking-wide text-gold-light">
-          ✦ 어뷰티 AI 분석 중
+          ✦ 미알팁 AI 분석 중
         </span>
       </div>
 
@@ -623,7 +623,7 @@ function Tab1FacePrescription({ facePrescription }: { facePrescription: FacePres
       <section>
         <div className="text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white/5 px-5 py-2 text-sm font-medium tracking-wide text-gold-light">
-            ✦ 어뷰티 AI 얼굴형 분석 결과
+            ✦ 미알팁 AI 얼굴형 분석 결과
           </span>
         </div>
         <div className="mt-6 overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-br from-white/5 to-transparent">
@@ -872,7 +872,7 @@ function Tab3HairCare({ result, myRefId }: { result: DiagnosisResult; myRefId: s
             <span className="text-xs font-medium uppercase tracking-[0.2em] text-gold">
               Prescription
             </span>
-            <h2 className="mt-1 font-serif text-2xl font-semibold text-cream">어뷰티 맞춤 처방전</h2>
+            <h2 className="mt-1 font-serif text-2xl font-semibold text-cream">미알팁 맞춤 처방전</h2>
             <p className="mt-1 text-sm text-cream/55">진단 결과에 맞춰 디자이너가 추천하는 홈케어 제품이에요.</p>
           </div>
           <div className="space-y-3">
@@ -1089,7 +1089,7 @@ function ShareRow({ styleName, myRefId }: { styleName: string; myRefId: string }
             K.Share.sendDefault({
               objectType: "feed",
               content: {
-                title:       `어뷰티(A-Beauty) | ${styleName}`,
+                title:       `미알팁 | ${styleName}`,
                 description: shareText,
                 imageUrl:    `${SITE_URL}/hair-mbti-og.png`,
                 link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
@@ -1103,7 +1103,7 @@ function ShareRow({ styleName, myRefId }: { styleName: string; myRefId: string }
         }
       } catch { /* SDK 실패 → fallback */ }
       if (typeof navigator !== "undefined" && navigator.share) {
-        navigator.share({ title: "어뷰티(A-Beauty) AI 헤어 진단", text: shareText, url: shareUrl }).catch(() => {});
+        navigator.share({ title: "미알팁 AI 헤어 진단", text: shareText, url: shareUrl }).catch(() => {});
       } else {
         void navigator.clipboard?.writeText(shareUrl);
       }

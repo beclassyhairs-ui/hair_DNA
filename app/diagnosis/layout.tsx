@@ -5,20 +5,20 @@ import type { Metadata } from "next";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
 
 export const metadata: Metadata = {
-  title: "AI 헤어 진단 허브 | 어뷰티(A-Beauty)",
+  title: "AI 헤어 진단 허브 | 미알팁",
   description:
-    "앞머리·손상도·습관까지, 어뷰티의 AI 헤어 진단을 한곳에서 골라 시작하세요.",
+    "앞머리·손상도·습관까지, 미알팁의 AI 헤어 진단을 한곳에서 골라 시작하세요.",
   openGraph: {
-    title: "AI 헤어 진단 허브 | 어뷰티(A-Beauty)",
+    title: "AI 헤어 진단 허브 | 미알팁",
     description: "내게 필요한 진단을 골라보세요. 모발 타입부터 앞머리·손상도까지.",
     url: `${SITE_URL}/diagnosis`,
     type: "website",
     locale: "ko_KR",
-    images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "어뷰티(A-Beauty)" }],
+    images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: "미알팁" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI 헤어 진단 허브 | 어뷰티(A-Beauty)",
+    title: "AI 헤어 진단 허브 | 미알팁",
     description: "내게 필요한 진단을 골라보세요. 모발 타입부터 앞머리·손상도까지.",
     images: [`${SITE_URL}/og-default.png`],
   },

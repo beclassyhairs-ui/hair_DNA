@@ -373,7 +373,7 @@ export default function BangsResultPage() {
           K.Share.sendDefault({
             objectType: "feed",
             content: {
-              title: "어뷰티 | 내 인생 앞머리 진단 결과",
+              title: "미알팁 | 내 인생 앞머리 진단 결과",
               description: `AI가 처방한 나의 인생 앞머리는 [${result.primaryBangLabel}] 입니다.`,
               imageUrl: `${SITE_URL}/images/bangs-og.png`,
               link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
@@ -387,7 +387,7 @@ export default function BangsResultPage() {
       }
     } catch { /**/ }
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "어뷰티 | 내 인생 앞머리 찾기", text: `내 인생 앞머리는 ${result.primaryBangLabel}이에요`, url: shareUrl }).catch(() => {});
+      navigator.share({ title: "미알팁 | 내 인생 앞머리 찾기", text: `내 인생 앞머리는 ${result.primaryBangLabel}이에요`, url: shareUrl }).catch(() => {});
       return;
     }
     navigator.clipboard?.writeText(shareUrl).then(() => {
