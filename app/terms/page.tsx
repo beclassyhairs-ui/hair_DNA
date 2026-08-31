@@ -7,8 +7,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "이용약관 | 어뷰티(A-Beauty)",
-  description: "어뷰티(A-Beauty) 서비스 이용약관(초안).",
+  title: "이용약관 | 미알팁",
+  description: "미알팁 서비스 이용약관(초안).",
   robots: { index: false, follow: false },
 };
 
@@ -32,7 +32,7 @@ export default function TermsPage() {
 
       <Article title="제1조 (목적)">
         <p>
-          본 약관은 어뷰티(A-Beauty)(이하 &ldquo;회사&rdquo;)가 제공하는 AI 헤어 진단 및
+          본 약관은 미알팁(이하 &ldquo;회사&rdquo;)가 제공하는 AI 헤어 진단 및
           커머스 서비스(이하 &ldquo;서비스&rdquo;)의 이용 조건과 절차, 회사와 이용자의 권리·의무를
           규정함을 목적으로 합니다.
         </p>

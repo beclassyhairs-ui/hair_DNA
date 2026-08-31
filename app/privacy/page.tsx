@@ -24,8 +24,8 @@ import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
 const SENTRY_ENABLED = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
 export const metadata: Metadata = {
-  title: "개인정보처리방침 | 어뷰티(A-Beauty)",
-  description: "어뷰티(A-Beauty)의 개인정보 수집·이용·처리위탁·국외이전 및 이용자 권리 안내.",
+  title: "개인정보처리방침 | 미알팁",
+  description: "미알팁의 개인정보 수집·이용·처리위탁·국외이전 및 이용자 권리 안내.",
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
     <main className="mx-auto max-w-[720px] px-5 py-10">
       <h1 className="text-h1 text-ink">개인정보처리방침</h1>
       <p className="mt-2 text-[13px] text-ink-2">
-        어뷰티(A-Beauty)(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 중요하게 생각하며,
+        미알팁(이하 &ldquo;서비스&rdquo;)는 이용자의 개인정보를 중요하게 생각하며,
         「개인정보 보호법」 등 관련 법령을 준수합니다.
       </p>
 
