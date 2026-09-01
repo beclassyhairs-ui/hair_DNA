@@ -1,7 +1,20 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-08-31
+> 최종 갱신: 2026-09-01
+
+## 🟡 B. 홈 최상단 '나의 스타일' 카드 신설 (2026-09-01, Phase 1~2 커밋 완료·미push)
+
+지시서 「B. 홈 상단 '내 스타일' 카드 신설」. 홈 최상단의 옛 `HairProfileCard`(곱슬축 참고사진 `HairTypeImage`=남의 모델컷 + 해시태그)를 제거하고, **"손님 본인의 것"이 놓이는 '나의 스타일' 카드**로 재설계. 진단·매칭 로직·스토리지 키·랜딩 카드 2장·게이지·하단 탭 전부 무변경. **push 금지·전건 Codex 검수.**
+
+- ✅ **Phase 0**: 홈 최상단 = 이미 `HairProfileCard`(빈/채워진 분기)임을 규명. "일반 머리 사진"의 정체 = `HairTypeImage`(곱슬축 3종 참고컷, 채워진 상태에서만). 저장 스키마 확정(style: `styleName`·`generatedImageUrl`·`savedAt` / damage: `headline`·`diagnosisSummary`·`savedAt`, 사진 없음). 카드 토큰 `rounded-2xl bg-card p-4 shadow-soft`. → 사장님 판정 A(교체·태그/HairTypeImage 제거)·B(링크 /my-diary·문구 "나의 헤어에서 보기")·C(빈상태 →/style) 수령.
+- ✅ **Phase 1 (`01ad2c2`)**: 빈 상태 카드. 라벨 "나의 스타일" + 옅은 회색 얼굴 실루엣(도형, 사진 아님) + "아직 비어 있어요"/"3분이면 채워집니다" + 우하단 "내 스타일 찾기 →"(→/style). `HairProfileCard`·`HairTypeImage`·해시태그·미사용 import 제거, `useHomeData`는 완성도만. Codex 통과.
+- ✅ **Phase 2 (`fcc2701`)**: 채워진 상태. 최신 진단 1건을 이름/결론 주인공으로 렌더 — 스타일=`styleName`, **데미지=`headline`("N단계·유형") 직접**(요약문 아님, kind별 전용 필드·교차대체 없음). 썸네일=`generatedImageUrl`(있으면 표식 크기, 없거나 로드실패면 실루엣). 날짜=numeric `savedAt`만(없으면 줄 생략). 링크 "나의 헤어에서 보기 →"(→/my-diary). **dev 실측 3상태(빈/스타일 썸네일/데미지 실루엣+headline) 스크린샷 통과.** Codex 2차 통과.
+- 🔴 **다음 = 사업주 승인 후 push·배포.** 확인법: 진단 0건이면 빈 카드("내 스타일 찾기 →"), 스타일 진단 1회 저장하면 합성 썸네일+스타일명, 데미지 저장하면 실루엣+"N단계·유형".
+
+## ℹ️ 배포 상태 정정 (2026-09-01)
+- **D. 서비스명 교체 라운드는 push·배포 완료**(`9308fc2` + 초안배너 `f2f7641`, origin/main 반영). 아래 D 섹션의 "미push" 표기는 낡음.
+- **A. 로딩 라운드도 이미 배포 상태**였음(`eeb4100`이 origin/main에 있었음 = A 피처커밋 `1b934b4`·`be4056e`·`4351643` 이미 원격). 아래 A 섹션의 "미push·미배포"는 낡음.
 
 ## 🟢 D. 서비스명 전면 교체 — 어뷰티/A-Beauty → 미알팁 (2026-08-31, Phase 0~3 커밋 완료·미push)
 
