@@ -34,27 +34,73 @@ import {
   ALL_DIAGNOSIS_KINDS,
   DIAGNOSIS_KIND_LABEL,
   type DiagnosisKind,
+  type DiaryEntryLike,
 } from "@/lib/beautyProfile";
 
 // 진단 이력을 한 번만 읽어 완성도를 계산한다.
 // (첫 렌더는 서버와 동일한 기본값 → 마운트 후 실제 값으로 교체: 하이드레이션 안전)
 function useHomeData() {
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
+  const [latest, setLatest] = useState<MyStyleData | null>(null);
 
   useEffect(() => {
     try {
-      setCompleted(getCompletedKinds(readDiaryEntries()));
+      const entries = readDiaryEntries();
+      setCompleted(getCompletedKinds(entries));
+      setLatest(selectLatestDiagnosis(entries));
     } catch {
       /**/
     }
   }, []);
 
-  return { completed };
+  return { completed, latest };
 }
 
 // ─── 위젯 1: '나의 스타일' 카드 (홈 최상단 · 손님 본인의 것이 놓이는 자리) ──────────
-// 빈 상태(신규 방문자): 채우고 싶게 만드는 빈 카드. 어떤 사진도 넣지 않는다.
-// (채워진 상태 = 저장된 진단 렌더는 Phase 2에서 추가)
+// 빈 상태(신규 방문자): 채우고 싶게 만드는 빈 카드 — 어떤 사진도 넣지 않는다.
+// 채워진 상태(재방문자): 저장된 최신 진단 1건을 "이름/결론이 주인공"으로 렌더.
+//   주인공 = 스타일명(style) 또는 레벨·유형 headline(damage). 합성 사진은 있으면 표식 크기
+//   썸네일, 없으면 실루엣 유지. 저장된 필드만 쓰고 없는 값은 만들지 않는다(2-3).
+
+type MyStyleData = { title: string; imageUrl: string | null; savedAt: number };
+
+function readString(v: unknown): string {
+  return typeof v === "string" ? v.trim() : "";
+}
+
+function entryTime(e: DiaryEntryLike): number {
+  if (typeof e.savedAt === "number") return e.savedAt;
+  if (typeof e.createdAt === "string") {
+    const t = Date.parse(e.createdAt);
+    if (!Number.isNaN(t)) return t;
+  }
+  return 0;
+}
+
+// 큰 제목(주인공) — kind별 "그 진단이 저장하는 제목 필드"만 쓴다. 교차 대체 없음(가짜 금지).
+//   ★ 데미지는 headline("N단계 · 유형")을 직접 읽는다 — 요약문(diagnosisSummary)이 아니라.
+function titleForEntry(e: DiaryEntryLike, kind: string): string {
+  if (kind === "damage") return readString(e.headline);
+  if (kind === "style")  return readString(e.styleName);
+  return readString(e.diagnosisSummary); // bangs / hairquiz
+}
+
+// 저장된 진단 중 가장 최근 1건을 카드용으로 정규화. 표시할 제목이 없으면 null(→ 빈 상태).
+function selectLatestDiagnosis(entries: DiaryEntryLike[]): MyStyleData | null {
+  let latest: DiaryEntryLike | null = null;
+  let latestTime = -Infinity;
+  for (const e of entries) {
+    const t = entryTime(e); // 선택(정렬)용 — savedAt 없으면 createdAt 폴백 허용
+    if (t > latestTime) { latestTime = t; latest = e; }
+  }
+  if (!latest) return null;
+  const kind = readString(latest.kind) || "style";
+  const title = titleForEntry(latest, kind);
+  if (!title) return null;
+  // 날짜는 "표시 전용" — 반드시 numeric savedAt만 쓴다. 없으면 0 → 카드가 줄을 생략(가짜 날짜 금지).
+  const savedAt = typeof latest.savedAt === "number" ? latest.savedAt : 0;
+  return { title, imageUrl: readString(latest.generatedImageUrl) || null, savedAt };
+}
 
 function FaceSilhouette() {
   // 옅은 회색 얼굴 실루엣 — 사진이 아니라 도형/아이콘. 채워진 상태의 합성 썸네일과 같은 자리·크기.
@@ -68,23 +114,64 @@ function FaceSilhouette() {
   );
 }
 
-function MyStyleCard() {
+// 합성 사진 썸네일(표식 크기 · 키우지 않는다). 로드 실패면 실루엣으로 폴백 — 깨진 이미지 금지(2-4).
+function StyleThumb({ url }: { url: string }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return <FaceSilhouette />;
+  return (
+    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-soft">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" aria-hidden className="h-full w-full object-cover" onError={() => setOk(false)} />
+    </div>
+  );
+}
+
+function MyStyleCard({ latest }: { latest: MyStyleData | null }) {
+  // 빈 상태 — 채우고 싶게 만드는 빈 카드. 사진 없음.
+  if (!latest) {
+    return (
+      <section className="rounded-2xl bg-card p-4 shadow-soft">
+        <p className="text-aux text-sub">나의 스타일</p>
+        <div className="mt-2 flex items-center gap-3.5">
+          <FaceSilhouette />
+          <div className="min-w-0 flex-1">
+            <p className="text-emphasis font-bold text-ink">아직 비어 있어요</p>
+            <p className="mt-1 text-body text-sub">3분이면 채워집니다</p>
+          </div>
+        </div>
+        <div className="mt-3 text-right">
+          <Link
+            href="/style"
+            className="inline-flex min-h-[44px] items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
+          >
+            내 스타일 찾기 →
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  // 채워진 상태 — 이름/결론이 주인공. 날짜는 savedAt에서 실제 값(없으면 줄 생략).
+  const date =
+    latest.savedAt > 0
+      ? new Date(latest.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })
+      : "";
   return (
     <section className="rounded-2xl bg-card p-4 shadow-soft">
       <p className="text-aux text-sub">나의 스타일</p>
       <div className="mt-2 flex items-center gap-3.5">
-        <FaceSilhouette />
+        {latest.imageUrl ? <StyleThumb url={latest.imageUrl} /> : <FaceSilhouette />}
         <div className="min-w-0 flex-1">
-          <p className="text-emphasis font-bold text-ink">아직 비어 있어요</p>
-          <p className="mt-1 text-body text-sub">3분이면 채워집니다</p>
+          <h2 className="font-serif text-h2 font-semibold leading-snug text-ink">{latest.title}</h2>
+          {date && <p className="mt-1 text-aux text-sub">최근 진단 · {date}</p>}
         </div>
       </div>
       <div className="mt-3 text-right">
         <Link
-          href="/style"
+          href="/my-diary"
           className="inline-flex min-h-[44px] items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
         >
-          내 스타일 찾기 →
+          나의 헤어에서 보기 →
         </Link>
       </div>
     </section>
@@ -221,11 +308,11 @@ function ConsultBlock() {
 // ─── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { completed } = useHomeData();
+  const { completed, latest } = useHomeData();
 
   return (
     <AppShell>
-      <MyStyleCard />
+      <MyStyleCard latest={latest} />
       <DiagnosisLandings />
       <InlineCompletion completed={completed} />
       <ConsultBlock />
