@@ -7,19 +7,18 @@
 //   · 홈의 주인공 = 진단 랜딩 2장(스타일·데미지) 카드.
 //   · '물어보세요' 소통 창구 블록은 feature flag(CONSULT_CHANNEL)로 숨김 —
 //     카카오 채널 개설 후 링크 주입 + enabled=true. 갈 곳 없는 상태로는 절대 노출 안 함.
-//   · 프로필 카드(최근 진단 요약/빈 상태)·완성도 게이지는 유지.
+//   · 최상단 '나의 스타일' 카드(빈 상태/채워진 상태)·완성도 게이지는 유지.
 //
-// 진단·매칭 로직은 건드리지 않는다 — coreKey는 기존 deriveCoreKeyFromEntries를
-// 그대로 재사용(/items와 동일)해 스와치만 고른다.
+// 2026-09-01 최상단 블록 교체(B라운드):
+//   · 옛 HairProfileCard(곱슬축 참고사진 HairTypeImage + 해시태그)를 제거하고,
+//     "손님 본인의 것"이 놓이는 '나의 스타일' 카드로 재설계. 진단·매칭 로직은 무변경.
 // ============================================================================
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FileText } from "lucide-react";
+import { FileText, User } from "lucide-react";
 import AppShell from "../components/layout/AppShell";
-import HairTypeImage from "../components/HairTypeImage";
-import { deriveCoreKeyFromEntries } from "../../lib/itemsMatch";
 import { trackEvent } from "../../lib/trackEvent";
 
 // ─── 물어보세요(소통 창구) feature flag ──────────────────────────────────────
@@ -31,105 +30,62 @@ const CONSULT_CHANNEL = {
 };
 import {
   readDiaryEntries,
-  readBeautyUserProfile,
-  buildBeautyUserProfileFromDiary,
   getCompletedKinds,
-  selectHomeTags,
   ALL_DIAGNOSIS_KINDS,
   DIAGNOSIS_KIND_LABEL,
   type DiagnosisKind,
 } from "@/lib/beautyProfile";
 
-// ─── mock 유저 데이터 (실 연동 전 — 저장된 진단 결과 없을 때의 기본값) ──────────────
-
-// 가짜 기본 태그·범용 제목은 두지 않는다 — 진단 0건이면 빈 상태 블록을 보여준다.
-const DEFAULT_PROFILE = {
-  name: "고객",
-  hairTags: [] as string[],
-  lastDiagnosis: "",
-  lastDiagnosisDate: "",
-  mainConcern: "",
-  latestResultSummary: "",
-};
-
-// 진단 이력을 한 번만 읽어 프로필·coreKey·완성도를 함께 계산한다.
+// 진단 이력을 한 번만 읽어 완성도를 계산한다.
 // (첫 렌더는 서버와 동일한 기본값 → 마운트 후 실제 값으로 교체: 하이드레이션 안전)
 function useHomeData() {
-  const [profile, setProfile] = useState(DEFAULT_PROFILE);
-  const [coreKey, setCoreKey] = useState<string | null>(null);
   const [completed, setCompleted] = useState<DiagnosisKind[]>([]);
-  // 홈 노출 태그(kind 출처 규칙). 진단 0건이면 빈 배열 유지(가짜 태그 없음).
-  const [tags, setTags] = useState<string[]>([]);
 
   useEffect(() => {
     try {
-      const entries = readDiaryEntries();
-      const stored = readBeautyUserProfile();
-      const derived =
-        entries.length > 0 ? buildBeautyUserProfileFromDiary(entries, stored) : stored;
-      if (derived) setProfile((prev) => ({ ...prev, ...derived }));
-      setCoreKey(deriveCoreKeyFromEntries(entries));
-      setCompleted(getCompletedKinds(entries));
-      if (entries.length > 0) setTags(selectHomeTags(entries));
+      setCompleted(getCompletedKinds(readDiaryEntries()));
     } catch {
       /**/
     }
   }, []);
 
-  return { profile, coreKey, completed, tags };
+  return { completed };
 }
 
-// ─── 위젯 1: 헤어 프로필 카드 (화면의 유일한 흰 카드) ────────────────────────────
+// ─── 위젯 1: '나의 스타일' 카드 (홈 최상단 · 손님 본인의 것이 놓이는 자리) ──────────
+// 빈 상태(신규 방문자): 채우고 싶게 만드는 빈 카드. 어떤 사진도 넣지 않는다.
+// (채워진 상태 = 저장된 진단 렌더는 Phase 2에서 추가)
 
-function HairProfileCard({
-  profile,
-  coreKey,
-  tags,
-}: {
-  profile: typeof DEFAULT_PROFILE;
-  coreKey: string | null;
-  tags: string[];
-}) {
-  const hasDiagnosis = Boolean(profile.latestResultSummary);
-
-  // 진단 0건 — 가짜 태그·범용 제목 없이 빈 상태 전용 블록.
-  if (!hasDiagnosis) {
-    return (
-      <section className="card-soft p-6 text-center">
-        <p className="font-serif text-h2 font-semibold text-ink">아직 진단 전이에요</p>
-        <p className="mt-2 text-body leading-relaxed text-sub">
-          첫 진단을 마치면 내 모발 타입과 오늘의 관리 포인트가 여기에 정리돼요.
-        </p>
-        <Link href="/diagnosis" className="btn-primary mt-4 inline-flex">
-          진단 시작하기
-        </Link>
-      </section>
-    );
-  }
-
+function FaceSilhouette() {
+  // 옅은 회색 얼굴 실루엣 — 사진이 아니라 도형/아이콘. 채워진 상태의 합성 썸네일과 같은 자리·크기.
   return (
-    <section className="card-soft flex items-center gap-3.5 p-4">
-      {/* 곱슬축 이미지 (4:5) — coreKey 없거나 로드 실패면 렌더 안 됨(텍스트만) */}
-      <HairTypeImage coreKey={coreKey} />
-      <div className="min-w-0">
-        <p className="text-aux text-sub">
-          최근 진단 기준{profile.lastDiagnosisDate ? ` · ${profile.lastDiagnosisDate}` : ""}
-        </p>
-        <h2 className="mt-1 font-serif text-h2 font-semibold leading-snug text-ink">
-          {profile.latestResultSummary}
-        </h2>
-        {tags.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-pill bg-soft px-2.5 py-1 text-aux font-medium text-sub"
-              >
-                {tag.startsWith("#") ? tag : `#${tag}`}
-              </span>
-            ))}
-          </div>
-        )}
+    <div
+      aria-hidden
+      className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-soft"
+    >
+      <User size={30} strokeWidth={1.6} className="text-ink-3" />
+    </div>
+  );
+}
+
+function MyStyleCard() {
+  return (
+    <section className="rounded-2xl bg-card p-4 shadow-soft">
+      <p className="text-aux text-sub">나의 스타일</p>
+      <div className="mt-2 flex items-center gap-3.5">
+        <FaceSilhouette />
+        <div className="min-w-0 flex-1">
+          <p className="text-emphasis font-bold text-ink">아직 비어 있어요</p>
+          <p className="mt-1 text-body text-sub">3분이면 채워집니다</p>
+        </div>
+      </div>
+      <div className="mt-3 text-right">
+        <Link
+          href="/style"
+          className="inline-flex min-h-[44px] items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
+        >
+          내 스타일 찾기 →
+        </Link>
       </div>
     </section>
   );
@@ -265,11 +221,11 @@ function ConsultBlock() {
 // ─── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const { profile, coreKey, completed, tags } = useHomeData();
+  const { completed } = useHomeData();
 
   return (
     <AppShell>
-      <HairProfileCard profile={profile} coreKey={coreKey} tags={tags} />
+      <MyStyleCard />
       <DiagnosisLandings />
       <InlineCompletion completed={completed} />
       <ConsultBlock />
