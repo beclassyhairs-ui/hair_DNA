@@ -34,6 +34,7 @@ export default function DamageCheckLandingPage() {
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
           <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
+          <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
           {/* 액자 히어로 (유일한 흰 카드) */}
           <div className="mt-5 w-full">

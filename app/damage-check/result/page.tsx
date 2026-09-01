@@ -229,7 +229,7 @@ export default function DamageCheckResultPage() {
       }
     } catch { /**/ }
     if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title: "미알팁 | 손상도 자가진단", text: `나는 ${stampTitle}!`, url: shareUrl }).catch(() => {});
+      navigator.share({ title: "미알팁 | 손상도 자가진단", text: `나는 ${stampTitle}!\n미알팁 — 미용실에서 알 수 없는 꿀팁`, url: shareUrl }).catch(() => {});
       return;
     }
     navigator.clipboard?.writeText(shareUrl).then(() => {

@@ -9,7 +9,7 @@ export default function Header() {
       <div className="flex items-center px-6 py-5">
         <div>
           <p className="text-[19px] font-bold tracking-tight text-ink">미알팁</p>
-          <p className="mt-1 text-[11px] font-medium tracking-wide text-ink-2">오늘의 헤어 케어</p>
+          <p className="mt-1 text-[11px] font-medium tracking-wide text-ink-2">미용실에서 알 수 없는 꿀팁</p>
         </div>
       </div>
     </header>

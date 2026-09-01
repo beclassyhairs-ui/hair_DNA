@@ -82,8 +82,9 @@ export default function StyleLandingPage() {
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
-          {/* 브랜드 배지 (명조) */}
+          {/* 브랜드 배지 (명조) + 태그라인 */}
           <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
+          <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
           {/* 액자 히어로 — 흰 매트 + 기울임 + EXAMPLE 라벨 (유일한 흰 카드) */}
           <div className="mt-5 w-full">

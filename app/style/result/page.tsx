@@ -862,7 +862,7 @@ export default function StyleResultPage() {
                     // 브랜드 + 타입 별명(스타일명) + 주소. 미검증 숫자는 넣지 않는다.
                     const base = typeof window !== "undefined" ? window.location.origin : "";
                     const url  = `${base}/style?utm_source=kakao_share`;
-                    const text = `AI가 처방한 나의 스타일은 [${entry.name}] 입니다.`;
+                    const text = `AI가 처방한 나의 스타일은 [${entry.name}] 입니다.\n미알팁 — 미용실에서 알 수 없는 꿀팁`;
                     if (navigator.share) navigator.share({ title: "미알팁 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
