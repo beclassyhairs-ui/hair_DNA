@@ -877,6 +877,13 @@ export default function StyleResultPage() {
               </div>
             </GlassCard>
 
+            {/* 홈 복귀 — 데미지 결과지와 동일 동선(C-2 [3-3]). 저장 없이 홈으로. */}
+            <div className="flex justify-center pt-1">
+              <Link href="/home" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+                홈으로 →
+              </Link>
+            </div>
+
             {/* 문의 창구 — 결과지 맨 하단, 커머스(제품) 블록 아래(구매 동선 안 끊기). 홈과 다른 문구. */}
             <div className="mt-5">
               <ConsultChannel
