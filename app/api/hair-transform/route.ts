@@ -40,6 +40,7 @@ import { isLoginRequiredBeforeSynthesis } from "@/lib/loginGate";
 import { hasCurrentOverseasConsent } from "@/lib/consentServer";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { issueJobToken, issuePrimaryAttestation, verifyPrimaryAttestation } from "@/lib/hairJobToken";
+import { isFallbackElapsed, FALLBACK_MIN_ELAPSED_MS, type FallbackPredictionFields } from "@/lib/fallbackEligibility";
 import {
   REPLICATE_PREDICTIONS_ENDPOINT,
   replicatePredictionUrl,
@@ -77,11 +78,9 @@ const ANON_BIND = "anon";
 //   문턱을 넘기면 속아 넘어감). → 이미 종결(failed/canceled)된 job 은 "생성부터 지금까지"가 아니라
 //   "생성부터 실제로 종결되기까지 걸린 시간"(completed_at - created_at)을 봐야 한다. 즉시 취소는
 //   이 값이 거의 0이라 시간이 아무리 지나도 영원히 자격을 얻지 못한다(진짜 콜드미스만 이 값이 크다).
-// ★ 240s(4분): 클라 트리거 290s(4:50)보다 낮아 정상 콜드미스는 통과(now−created≈290≥240),
-//   즉시 cancel 우회(completed−created≈0)·즉시 재요청(now−created≈0)은 차단. 클라
-//   FALLBACK_TRIGGER_MS 와 상호의존 — 위 ★★ 주석 참조(한쪽만 바꾸면 폴백이 죽는다).
-const FALLBACK_MIN_ELAPSED_MS = 240 * 1000;
-
+// ★ 자격 문턱(FALLBACK_MIN_ELAPSED_MS=240s)과 경과시간 판정식은 lib/fallbackEligibility 로 이관했다.
+//   클라 트리거 290s(4:50)보다 낮아 정상 콜드미스는 통과, 즉시 cancel·즉시 재요청은 차단.
+//   두 상수(클라 290s·서버 240s)의 정합은 tests/invariant/fallback-eligibility.test.ts 가 감시한다.
 async function verifyFallbackEligibility(originalId: string, replicateKey: string): Promise<boolean> {
   try {
     const pr = await fetch(replicatePredictionUrl(originalId), {
@@ -90,20 +89,10 @@ async function verifyFallbackEligibility(originalId: string, replicateKey: strin
       signal: AbortSignal.timeout(8_000),
     });
     if (!pr.ok) return false; // 원본 조회 실패 → 자격 불확실, fail-closed
-    const pred = (await pr.json()) as { status?: string; created_at?: string; completed_at?: string };
-    if (pred.status === "succeeded") return false; // 이미 성공한 원본을 폴백으로 재시도하는 건 허용 안 함
-
-    const createdMs = pred.created_at ? Date.parse(pred.created_at) : NaN;
-    if (!Number.isFinite(createdMs)) return false;
-
-    if (pred.status === "failed" || pred.status === "canceled") {
-      // 종결된 job — "생성→종결" 실제 소요시간으로 판정(즉시 cancel 우회 차단).
-      const completedMs = pred.completed_at ? Date.parse(pred.completed_at) : NaN;
-      if (!Number.isFinite(completedMs)) return false; // completed_at 없으면 판정 불가 → fail-closed
-      return completedMs - createdMs >= FALLBACK_MIN_ELAPSED_MS;
-    }
-    // starting/processing — 아직 진행 중이므로 "생성→지금"으로 판정(진짜 콜드미스만 통과).
-    return Date.now() - createdMs >= FALLBACK_MIN_ELAPSED_MS;
+    const pred = (await pr.json()) as FallbackPredictionFields;
+    // ★ 경과시간 판정은 순수 함수(lib/fallbackEligibility)에 위임 — 판정식만 이관하고 fetch/에러
+    //   처리는 여기 그대로. 두 상수(클라 290s·서버 240s)의 정합을 tests 하네스가 기계로 박제한다.
+    return isFallbackElapsed(pred, Date.now, FALLBACK_MIN_ELAPSED_MS);
   } catch {
     return false; // 네트워크 오류 등 → fail-closed
   }
