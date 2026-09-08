@@ -224,7 +224,7 @@ const HOME_LANDINGS: LandingCard[] = [
     label: "손상도 체크",
     desc: "미용실 가기 전 1분 팩트체크",
     href: "/damage-check",
-    image: "/landing/damage-hero.jpg",
+    image: "/images/damage-hero-damaged.png",
   },
 ];
 
