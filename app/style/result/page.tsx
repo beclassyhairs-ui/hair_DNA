@@ -43,6 +43,7 @@ import FadePreview from "@/components/beauty-ui/FadePreview";
 import { resolveStyle } from "@/copy-drafts/resolver";
 import type { ResolvedBlock, ResolvedCopy } from "@/copy-drafts/resolver";
 import CoupangCardList from "@/components/CoupangCardList";
+import ConsultChannel from "../../components/ConsultChannel";
 import { pickStyleCards } from "@/lib/coupangCards";
 
 function buildHairTags(answers: StyleAnswers): string[] {
@@ -875,6 +876,15 @@ export default function StyleResultPage() {
                 </Link>
               </div>
             </GlassCard>
+
+            {/* 문의 창구 — 결과지 맨 하단, 커머스(제품) 블록 아래(구매 동선 안 끊기). 홈과 다른 문구. */}
+            <div className="mt-5">
+              <ConsultChannel
+                title="이 결과가 이상하거나 궁금하면 말씀해주세요"
+                body="진단·추천 관련 무엇이든 편하게 물어보세요."
+                source="style_result_consult"
+              />
+            </div>
           </div>
         </div>
 

@@ -31,6 +31,7 @@ import { deriveCoreKeyFromEntries } from "../../../lib/itemsMatch";
 import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
 import { ensureLoggedInOrRedirect } from "@/lib/authGate";
 import InlineCompletion from "@/components/InlineCompletion";
+import ConsultChannel from "../../components/ConsultChannel";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
 import HairTypeHero from "../../components/HairTypeHero";
 import CoupangCardList from "@/components/CoupangCardList";
@@ -381,6 +382,13 @@ export default function DamageCheckResultPage() {
           <p className="pt-2 text-center text-[12px] leading-relaxed text-sub">
             이 진단은 20년차 디자이너의 판단 기준을 바탕으로 안내드리는 참고 결과예요.
           </p>
+
+          {/* 문의 창구 — 결과지 맨 하단, 커머스(제품) 블록 아래(구매 동선 안 끊기). 홈과 다른 문구. */}
+          <ConsultChannel
+            title="이 결과가 이상하거나 궁금하면 말씀해주세요"
+            body="진단·추천 관련 무엇이든 편하게 물어보세요."
+            source="damage_result_consult"
+          />
 
         </motion.div>
       </div>
