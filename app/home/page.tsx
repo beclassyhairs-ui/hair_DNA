@@ -5,8 +5,8 @@
 // 2026-08-15 구조 개편:
 //   · '오늘케어 루틴' 섹션 제거, '퀵 진단 →' 배너 제거.
 //   · 홈의 주인공 = 진단 랜딩 2장(스타일·데미지) 카드.
-//   · '물어보세요' 소통 창구 블록은 feature flag(CONSULT_CHANNEL)로 숨김 —
-//     카카오 채널 개설 후 링크 주입 + enabled=true. 갈 곳 없는 상태로는 절대 노출 안 함.
+//   · '물어보세요' 문의 창구 블록 = 카카오 채널 개설 완료로 오픈(2026-09, lib/consultChannel).
+//     공용 ConsultChannel 컴포넌트로 홈·결과지가 같은 플래그·링크를 참조. 갈 곳 없으면 렌더 안 함.
 //   · 최상단 '나의 스타일' 카드(빈 상태/채워진 상태)·완성도 게이지는 유지.
 //
 // 2026-09-01 최상단 블록 교체(B라운드):
@@ -19,15 +19,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { FileText, User } from "lucide-react";
 import AppShell from "../components/layout/AppShell";
+import ConsultChannel from "../components/ConsultChannel";
 import { trackEvent } from "../../lib/trackEvent";
 
-// ─── 물어보세요(소통 창구) feature flag ──────────────────────────────────────
-// 카카오 채널 개설 전까지 숨긴다. 개설 후 href에 채널 링크를 넣고 enabled=true로 켠다.
-// enabled && href 둘 다 있어야 렌더 → "눌렀는데 갈 곳 없음"을 원천 차단.
-const CONSULT_CHANNEL = {
-  enabled: false,
-  href: "", // 예: "https://pf.kakao.com/_xxxxx"
-};
 import {
   readDiaryEntries,
   getCompletedKinds,
@@ -281,30 +275,6 @@ function DiagnosisLandings() {
   );
 }
 
-// ─── 위젯 4: 물어보세요(소통 창구) — feature flag로 숨김 ───────────────────────────
-// 카카오 채널 개설 후에만 노출(CONSULT_CHANNEL.enabled && href). 그 전엔 렌더 자체를 안 함.
-
-function ConsultBlock() {
-  if (!CONSULT_CHANNEL.enabled || !CONSULT_CHANNEL.href) return null;
-  return (
-    <a
-      href={CONSULT_CHANNEL.href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => trackEvent("consult_channel_click", { source: "home_consult_block" })}
-      className="flex items-center justify-between gap-3 rounded-2xl bg-soft p-4 transition-colors active:opacity-80"
-    >
-      <div className="min-w-0">
-        <p className="text-emphasis font-bold text-ink">궁금한 걸 물어보세요</p>
-        <p className="mt-1 text-body leading-snug text-sub">
-          내 모발·시술 고민, 현직 디자이너에게 편하게 물어보세요.
-        </p>
-      </div>
-      <span aria-hidden className="shrink-0 text-h2 text-ink-2">→</span>
-    </a>
-  );
-}
-
 // ─── 메인 페이지 ───────────────────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -315,7 +285,11 @@ export default function HomePage() {
       <MyStyleCard latest={latest} />
       <DiagnosisLandings />
       <InlineCompletion completed={completed} />
-      <ConsultBlock />
+      <ConsultChannel
+        title="불편한 점이나 궁금한 것, 편하게 말씀해주세요"
+        body="앱 사용 중 불편한 점, 결과가 이상한 것, 무엇이든 좋아요."
+        source="home_consult_block"
+      />
 
       <Link
         href="/my-diary"
