@@ -9,6 +9,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Home } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { EVENT_NAMES, trackEvent } from "../../lib/eventTracking";
@@ -26,6 +27,14 @@ export default function DamageCheckLandingPage() {
 
   return (
     <div className="relative min-h-screen">
+      {/* 홈 복귀 — 이 플로우엔 하단 3탭이 없어 홈으로 갈 길이 없던 문제(C-2 [3]). */}
+      <Link
+        href="/home"
+        aria-label="홈으로"
+        className="absolute left-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-soft hover:text-ink active:scale-95"
+      >
+        <Home size={22} strokeWidth={1.8} />
+      </Link>
       <main className="mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-page py-10 text-ink">
         <motion.div
           initial={{ opacity: 0, y: 22 }}

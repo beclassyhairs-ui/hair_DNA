@@ -375,6 +375,10 @@ export default function DamageCheckResultPage() {
             <Link href="/damage-check" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
               ↺ 처음부터 다시 하기
             </Link>
+            {/* 홈 복귀 — 이 플로우엔 하단 3탭이 없어 저장 없이 홈으로 갈 길이 없던 문제(C-2 [3]). */}
+            <Link href="/home" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+              홈으로 →
+            </Link>
           </div>
 
           {/* 푸터 — 20년차 디자이너 판단 기준(확정49 · 🟡-03 연차·직함 통일: 25년 원장→20년차 디자이너,
