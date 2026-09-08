@@ -3,7 +3,17 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-05
 
-## 🟢 C. 손상도 랜딩 히어로 '결 대비 2장' 교체 (2026-09-05, 커밋 완료·미push)
+## 🟡 E. 문의 창구 오픈 — CONSULT_CHANNEL 켜기 (2026-09-05, 커밋 완료·미push)
+
+카카오 채널(미알팁 @mialtip) 개설 완료로 문의 접수 오픈. 플래그·링크를 공용화하고 홈+결과지 2곳에 진입점 배선. ★ 로직·스토리지키·가드레일 무수정, 플래그·링크·문구만.
+
+- ✅ **Phase 0**: `CONSULT_CHANNEL`이 홈(app/home/page.tsx)에만 로컬 정의·배선(enabled:false)돼 있었음 확인. 다른 진입점 없음, /consulting은 무관한 별도 준비중 페이지. 현재 문구 인용 보고 → 판정 수령(문구 A안 확정·결과지 2곳 추가·나의헤어 제외·URL·공용화).
+- ✅ **Phase 1 홈 (`d1b3195`)**: 플래그를 **lib/consultChannel.ts**로 이관(enabled:true, href `http://pf.kakao.com/_gkXJX/chat` — 채팅 URL/chat). **공용 app/components/ConsultChannel.tsx** 신설(title/body/source props, enabled&&href 가드, target=_blank rel=noopener, 버튼 "카카오톡으로 문의하기", 클릭 이벤트 consult_channel_click 보존). 홈 로컬 상수·ConsultBlock 제거→공용 사용, 문구 확정안. **375px 실측**: 하단 문의 블록·차콜 버튼·링크(href/target/rel) 정상. Codex 통과.
+- ✅ **Phase 2 결과지 (`699f7b8`)**: 스타일·데미지 결과지 **맨 하단(커머스=CoupangCardList 아래, 저장/공유/푸터 뒤)**에 ConsultChannel 배치. 홈과 다른 문구("이 결과가 이상하거나 궁금하면 말씀해주세요"), source style_result_consult/damage_result_consult. import는 상대경로(@/components는 루트 components/ 매핑이라 app/components/엔 상대경로). Codex 통과. (결과지 시각검증은 로그인 게이트로 dev 확인 불가 → 컴포넌트는 홈에서 실측.)
+- 🔴 **다음 = 사업주 승인 후 push·배포.** 확인법: 홈 하단·스타일/데미지 결과지 하단에 "카카오톡으로 문의하기" 블록 → 탭 시 새 탭으로 @mialtip 채팅창.
+- ℹ️ 진입점 확장은 홈+결과지 2곳에서 멈춤(나의 헤어 제외 — 재방문 동선이라 급하지 않고 진입점 남발 시 배너화).
+
+## 🟢 C. 손상도 랜딩 히어로 '결 대비 2장' 교체 (2026-09-05, push·배포 완료 — hair-dna.vercel.app/damage-check)
 
 지시서 「C. 데미지체크 랜딩 히어로 교체」. 랜딩 최상단 모델사진(LandingFrameHero)을 "건강한 결 vs 상한 결" 견본 2장으로 교체 — 손님이 자기 머리끝과 대조하게. 설문·진단·점수·결과지·CTA·게이지·배지·h1 전부 불가침.
 
