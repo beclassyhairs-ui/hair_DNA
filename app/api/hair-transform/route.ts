@@ -61,18 +61,26 @@ const ANON_BIND = "anon";
 // ⑤ 폴백 자격: 원본(ddvinh1) job 이 실제로 "콜드미스"인지 서버가 Replicate에서 직접 확인한다.
 //   클라의 fallback:true 자기신고만으로는 허용하지 않는다(2026-08-16 D-2 감사 ② — 콜드미스가
 //   아닌데도 fallback:true 만 던져 상시-warm 인 lucataco(미화 모델)로 즉시 우회하는 사업정책 회피를
-//   서버가 직접 막는다). 로딩 페이지의 실제 폴백 트리거는 8분(POLL_BUDGET_MS) 예산 소진 후이므로,
-//   그보다 살짝 짧은 문턱(7분)을 두면 정상 클라는 항상 통과하고 즉시-우회 시도만 차단된다.
+//   서버가 직접 막는다). 로딩 페이지의 실제 폴백 트리거는 4:50(290s, 클라 FALLBACK_TRIGGER_MS)이고
+//   상한은 5분(POLL_BUDGET_MS)이므로, 그보다 짧은 문턱(240s)을 두면 정상 클라는 항상 통과하고
+//   즉시-우회 시도만 차단된다.
+//   ★★ 클라·서버 상수 상호의존(2026-09-08 회귀 교훈): 이 문턱(FALLBACK_MIN_ELAPSED_MS)은 클라의
+//      FALLBACK_TRIGGER_MS(290s, app/style/loading/page.tsx)보다 반드시 낮아야 한다. 한쪽만 바꾸면
+//      폴백이 죽는다 — 과거 트리거를 8분→4:50으로 당기며 이 문턱(7분)을 안 내려 정상 콜드미스
+//      폴백이 전건 거부됐다. 어느 한쪽을 바꾸면 반대편도 반드시 함께 확인할 것.
 //   ★ Codex 라운드1 반영: failed/canceled 를 경과시간 없이 즉시 허용하면, 공격자가 kickoff 직후
 //   /cancel 을 스스로 호출해 "종결 상태"를 인위로 만들고 곧장 폴백을 요청하는 우회가 가능했다
-//   (로딩 페이지의 진짜 취소도 8분 예산을 다 쓴 뒤에만 일어나므로, "취소됨" 자체는 경과시간의
+//   (로딩 페이지의 진짜 취소도 4:50 트리거(상한 5분 POLL_BUDGET_MS) 뒤에만 일어나므로, "취소됨" 자체는 경과시간의
 //   대체 증거가 못 된다). → 상태와 무관하게 "생성 후 충분한 시간이 지났는가" 하나로 통일한다.
 //   ★ Codex 라운드2 반영: "충분한 시간"을 now()-created_at 으로만 재면, 공격자가 즉시 cancel 한
-//   뒤 그냥 7분을 흘려보내고 재요청해도 통과했다(취소 자체는 즉시 됐지만 "그때부터 기다린 시간"이
+//   뒤 그냥 240초(문턱)를 흘려보내고 재요청해도 통과했다(취소 자체는 즉시 됐지만 "그때부터 기다린 시간"이
 //   문턱을 넘기면 속아 넘어감). → 이미 종결(failed/canceled)된 job 은 "생성부터 지금까지"가 아니라
 //   "생성부터 실제로 종결되기까지 걸린 시간"(completed_at - created_at)을 봐야 한다. 즉시 취소는
 //   이 값이 거의 0이라 시간이 아무리 지나도 영원히 자격을 얻지 못한다(진짜 콜드미스만 이 값이 크다).
-const FALLBACK_MIN_ELAPSED_MS = 7 * 60 * 1000;
+// ★ 240s(4분): 클라 트리거 290s(4:50)보다 낮아 정상 콜드미스는 통과(now−created≈290≥240),
+//   즉시 cancel 우회(completed−created≈0)·즉시 재요청(now−created≈0)은 차단. 클라
+//   FALLBACK_TRIGGER_MS 와 상호의존 — 위 ★★ 주석 참조(한쪽만 바꾸면 폴백이 죽는다).
+const FALLBACK_MIN_ELAPSED_MS = 240 * 1000;
 
 async function verifyFallbackEligibility(originalId: string, replicateKey: string): Promise<boolean> {
   try {
@@ -161,7 +169,7 @@ export async function POST(req: NextRequest) {
   //    먼저 파싱해야 폴백 자격검증도 quota 앞으로 옮길 수 있다).
   let userPhoto: string;
   let answers: StyleAnswers;
-  let fallback = false;            // ⑤ true 면 폴백 모델(lucataco)로 착수 — 클라가 8분 콜드 미스 후에만 보낸다.
+  let fallback = false;            // ⑤ true 면 폴백 모델(lucataco)로 착수 — 클라가 4:50 콜드 미스 후에만 보낸다.
   let originalId = "";             // 폴백 자격 증표: 같은 유저의 원본(ddvinh1) kickoff prediction id
   let originalAttestation = "";    //                그 원본이 "진짜 원본(primary)"이었다는 증표(HMAC)
   try {
@@ -342,7 +350,7 @@ export async function POST(req: NextRequest) {
 
     // 5. 소유권 바인딩 토큰 발급 후 즉시 반환(예약 유지, 환불 없음).
     //   ★ fallbackUsed: 실제로 폴백(lucataco)으로 착수했는지를 클라에 알린다(Codex 반영). 킬스위치가
-    //     꺼져 fallback 요청이 ddvinh1 로 처리된 경우 false → 클라는 이를 보고 폴링 예산(8분)·안내·
+    //     꺼져 fallback 요청이 ddvinh1 로 처리된 경우 false → 클라는 이를 보고 폴링 예산(5분)·안내·
     //     job 영속 상태를 정한다(폴백 예산 2분으로 콜드 ddvinh1 을 조기취소하는 회귀 방지).
     //   ★ primaryAttestation: 이번 kickoff 가 "진짜 원본"(useFallback=false)일 때만 발급한다.
     //     폴백 job 은 이 증표를 절대 받지 못하므로, 나중에 이 job 을 "원본"으로 내세워 또 다른

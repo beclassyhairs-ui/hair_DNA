@@ -3,9 +3,9 @@
 // ============================================================================
 // /style/loading — 비동기 AI 헤어 합성 로딩 페이지 (폴링 구조)
 // - 마운트 즉시 POST /api/hair-transform 로 예측 "착수"(id/token 수신)
-// - 이후 POST /api/hair-transform/status 를 2.5초 간격으로 최대 8분 폴링(확정125: 5→8분)
+// - 이후 POST /api/hair-transform/status 를 2.5초 간격으로 최대 5분(POLL_BUDGET_MS) 폴링
 // - 새로고침해도 sessionStorage(STYLE_JOB_KEY)의 {id,token,startedAt}로 폴링 재개
-// - 8분 예산 소진 시 /api/hair-transform/cancel 로 예측 취소(비용 중단 목적, 환불 없음) 후 실패 안내
+// - 4:50 트리거(상한 5분) 도달 시 /api/hair-transform/cancel 로 예측 취소(비용 중단) 후 ⑤ 폴백 시도
 // - GPU 콜드스타트(첫 요청 수 분)를 견디는 것이 목적. 동기대기(62s abort) 구조는 폐기.
 // ============================================================================
 
@@ -101,9 +101,14 @@ const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
 // ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
 const FALLBACK_POLL_BUDGET_MS = 120_000;
 // ⑤ 폴백 트리거 시점(Phase2) — 5:00 상한 소진 전, 4:50(290s) 경과 시 상시-warm 루카타코로 조기
-//   전환한다. ddvinh1이 4:50까지 대부분 처리하고, 못 끝낸 최악의 날만 폴백이 마지막 10초에 사진을
-//   만들어 "최대 5분" 약속을 지킨다. ★ 폴백 자체 로직/자격검증/킬스위치(a11dd72)는 무수정 —
+//   전환한다. ddvinh1이 4:50까지 대부분 처리하고, 못 끝낸 최악의 날만 상시-warm 루카타코로 마무리한다.
+//   ⚠️ "최대 5분"은 best-effort다: 폴백 자체 폴링 예산(FALLBACK_POLL_BUDGET_MS=2분)은 무수정이라
+//      lucataco도 느린 극단 케이스는 코드상 최대 ~6:50까지 갈 수 있다(PROJECT_STATE A 섹션 기록·수용).
+//   ★ 폴백 자체 로직/자격검증/킬스위치(a11dd72)는 무수정 —
 //   발사 "시점"만 이 상수로 당긴다. 폴백 재착수 poll 은 fellBack 가드로 이 분기를 재발동하지 않는다.
+//   ★★ 서버 상수 상호의존(2026-09-08 회귀 교훈): 이 값은 서버 FALLBACK_MIN_ELAPSED_MS(240s,
+//      app/api/hair-transform/route.ts)보다 반드시 커야 한다. 이 트리거를 더 당기면(예: 4:00 미만)
+//      서버 문턱을 넘지 못해 정상 콜드미스 폴백이 전건 거부된다. 이 값을 바꾸면 서버 문턱도 함께 확인.
 const FALLBACK_TRIGGER_MS = 290_000; // 4:50
 
 // 🟡-02 경과 초 → "N분 N초째" (50·60 가독: 콜론 mm:ss 대신 한글 분/초).
@@ -113,8 +118,8 @@ function formatElapsedKo(sec: number): string {
   return m > 0 ? `${m}분 ${s}초째` : `${s}초째`;
 }
 
-// 🟡-02 경과 구간별 안심 문구 — 20초~8분 사이 최소 4번 새 문구로 바뀌어 "멈춘 화면" 인지를 없앤다.
-//   폴링/8분 예산과 무관한 '표시 전용'(경과 초만 보고 문구를 고른다).
+// 🟡-02 경과 구간별 안심 문구 — 20초~5분 사이 최소 4번 새 문구로 바뀌어 "멈춘 화면" 인지를 없앤다.
+//   폴링/5분 예산과 무관한 '표시 전용'(경과 초만 보고 문구를 고른다).
 function waitReassurance(elapsedSec: number, budgetMin: number): string {
   if (elapsedSec < 20)  return `보통 몇 초 안에 완성돼요 · 이용자가 많을 때는 최대 ${budgetMin}분까지 걸릴 수 있어요`;
   if (elapsedSec < 60)  return "정성껏 만들고 있어요 · 이 화면을 잠깐 벗어났다 다시 돌아오셔도 이어서 진행돼요";
@@ -128,7 +133,7 @@ const KNOWN_FAIL_REASONS = new Set([
   "reference_fetch_failed", "poll_timeout", "api_error", "no_output", "exception",
   "content_flagged", "consent_required", "login_required", "network",
   "fallback_not_eligible", // ② 서버가 폴백 자격(원본 콜드미스 여부)을 재확인해 거부한 경우. 정상
-                           // 8분 대기 플로우에서는 발생하지 않는다(즉시 우회 시도 방어용 코드).
+                           // 정상 대기 플로우(5분)에서는 발생하지 않는다(즉시 우회 시도 방어용 코드).
 ]);
 function normFailReason(r: string | undefined): string {
   return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
@@ -182,8 +187,8 @@ export default function StyleLoadingPage() {
     return () => clearInterval(t);
   }, [revealLines.length]);
 
-  // 🟡-02 경과 초 카운터 — 매초 1씩 증가(표시 전용, 폴링/8분 예산과 완전 독립).
-  //   20초~8분 구간에서 화면이 "멈춘 듯" 보이던 문제를, 매초 바뀌는 숫자 + 경과별 점진 문구로 해소.
+  // 🟡-02 경과 초 카운터 — 매초 1씩 증가(표시 전용, 폴링/5분 예산과 완전 독립).
+  //   20초~5분 구간에서 화면이 "멈춘 듯" 보이던 문제를, 매초 바뀌는 숫자 + 경과별 점진 문구로 해소.
   useEffect(() => {
     const t = setInterval(() => setElapsedSec((s) => s + 1), 1_000);
     return () => clearInterval(t);
@@ -246,7 +251,7 @@ export default function StyleLoadingPage() {
         clearPrevResultKeys();
         // ⑤ Fix: 재개(새로고침) 시 폴백 1회 가드·예산을 job 에서 복원한다.
         //   · fallbackAttempted → fellBack 복원(킬스위치 OFF로 ddvinh1 재착수된 job 이어도 2차 폴백 차단).
-        //   · fallback(실제 lucataco) → 폴백 예산(2분)·안내. 아니면 정상 8분.
+        //   · fallback(실제 lucataco) → 폴백 예산(2분)·안내. 아니면 정상 5분(POLL_BUDGET_MS).
         if (job.fallbackAttempted) fellBack = true;
         if (job.fallback) {
           setFallbackActive(true);
@@ -449,7 +454,7 @@ export default function StyleLoadingPage() {
 
         if (data.ok && data.id && data.token) {
           // ★ 서버가 실제로 폴백(lucataco)으로 착수했는지(fallbackUsed)를 기준으로 예산·상태를 정한다.
-          //   킬스위치 OFF 로 ddvinh1 로 처리됐으면(false) 폴백 예산(2분)이 아니라 정상 8분으로 폴링하고
+          //   킬스위치 OFF 로 ddvinh1 로 처리됐으면(false) 폴백 예산(2분)이 아니라 정상 5분(POLL_BUDGET_MS)으로 폴링하고
           //   "다른 방식" 안내·job 폴백표시도 끈다(콜드 ddvinh1 을 2분에 조기취소하는 회귀 방지·Codex 반영).
           const usedFallback = data.fallbackUsed === true;
           // fallbackAttempted 는 킬스위치 상태와 무관하게 항상 true(1회 가드) — fallback(실제 모델)과 분리해

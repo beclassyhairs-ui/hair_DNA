@@ -46,7 +46,7 @@ export function buildFaceswapInput(
   return { swap_image: swapImage, input_image: hairImage, enhance: HAIRSYNTH_ENHANCE };
 }
 
-// ─── ⑤ 폴백 모델(lucataco) — 8분 콜드스타트 미스 시 "결과 우선"(사업주 결정 2026-08-16) ──────
+// ─── ⑤ 폴백 모델(lucataco) — 4:50 콜드스타트 미스 시 "결과 우선"(사업주 결정 2026-08-16) ──────
 // ★ 주의(§11 반론·영구 기록): lucataco 는 GFPGAN 상시 미화로 원본 대비 15~20년 젊게 만든다 →
 //   나이별 레퍼런스 무력화가 애초에 ddvinh1 을 택한 이유였다(과거 사업주 판정: lucataco 기각).
 //   이 폴백은 그 드문(세션핑 90초가 막지 못한) 콜드 미스에서만 발동하며, 미화된 결과를 내보낸다
