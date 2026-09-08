@@ -16,30 +16,6 @@ import InlineCompletion from "@/components/InlineCompletion";
 
 const LANDING_ID = "damage_check";
 
-// 결 대비 히어로 — 건강한 결 vs 상한 결 견본 2장(세로 2단, 1:1 정사각 동일 크롭 기준).
-//   ★ 스타일 랜딩과 공유하는 LandingFrameHero(폴라로이드+EXAMPLE+기울임)는 이 자리에 쓰지 않는다
-//     — 여긴 "예시"가 아니라 손님이 자기 머리끝과 대조하는 "결 견본"이라 액자·EXAMPLE·기울임 부적합.
-//     LandingFrameHero 컴포넌트 자체는 손대지 않는다(수정 시 /style이 함께 바뀜).
-//   원본 이미지는 편집하지 않고 object-cover 정사각 크롭 + object-position으로만 결을 정렬한다.
-function TextureSample({ src, label, objectPosition }: { src: string; label: string; objectPosition: string }) {
-  return (
-    <div className="relative aspect-square w-full bg-soft">
-      <Image
-        src={src}
-        alt={`${label} 견본`}
-        fill
-        sizes="(max-width: 430px) 88vw, 300px"
-        priority
-        className="object-cover"
-        style={{ objectPosition }}
-      />
-      <span className="absolute left-2.5 top-2.5 rounded-pill bg-white/85 px-2.5 py-1 text-aux font-semibold text-ink shadow-[0_1px_5px_rgba(42,38,31,0.14)] backdrop-blur-sm">
-        {label}
-      </span>
-    </div>
-  );
-}
-
 export default function DamageCheckLandingPage() {
   useEffect(() => {
     trackEvent(EVENT_NAMES.LANDING_VIEW, {
@@ -60,11 +36,18 @@ export default function DamageCheckLandingPage() {
           <span className="font-serif text-[13px] tracking-[0.3em] text-sub">MIALTIP</span>
           <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
-          {/* 결 대비 히어로 — 위 건강한 결 / 아래 상한 결. 한 세트로 읽히도록 한 카드에 붙여 세로 2단. */}
-          <div className="mt-5 w-full max-w-[300px] overflow-hidden rounded-2xl bg-card shadow-soft">
-            <TextureSample src="/images/damage-hero-healthy.png" label="건강한 결" objectPosition="50% 45%" />
-            <div className="h-px bg-line" />
-            <TextureSample src="/images/damage-hero-damaged.png" label="상한 결" objectPosition="50% 50%" />
+          {/* 히어로 — 상한 결 1장(정사각·라벨 없음). 2장 세로배치가 무거워 1장으로 축소(C-2).
+              healthy 이미지는 삭제하지 않고 미참조로 남긴다(추후 릴스 소재). */}
+          <div className="relative mt-5 aspect-square w-full max-w-[260px] overflow-hidden rounded-2xl bg-soft shadow-soft">
+            <Image
+              src="/images/damage-hero-damaged.png"
+              alt="상한 모발 결 견본"
+              fill
+              sizes="(max-width: 430px) 72vw, 260px"
+              priority
+              className="object-cover"
+              style={{ objectPosition: "50% 50%" }}
+            />
           </div>
 
           <span className="mt-6 inline-flex items-center rounded-pill bg-soft px-4 py-1.5 text-aux font-medium tracking-wide text-sub">
