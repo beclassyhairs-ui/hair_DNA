@@ -8,21 +8,18 @@
 //   거부됐다(사람 눈으로 못 잡음). 이 하네스가 아래를 기계로 박제한다:
 //     ① 판정식 4개 경계 (정상 콜드미스 통과 / 즉시 3종 차단)
 //     ② now() 평가 시점 계약 (원본과 동일: 비종결·비성공 상태에서·created 파싱 뒤에만 호출)
-//     ③ 서버 문턱의 회귀 (실값 import → 자동 감시). 문턱 < 트리거 관계 단언.
-//   ⚠️ 클라 트리거는 "use client"라 이 node 하네스로 import 불가 → 아래 미러(수동 동기)로만
-//      대조한다. 즉 서버 문턱 변경은 자동으로 잡히지만, 클라 트리거 변경은 자동으로는 못 잡는다
-//      (그건 page.tsx·route.ts 의 ★★ 상호의존 주석이 1차 방어). 과대주장하지 않는다.
+//     ③ 서버 문턱·클라 트리거 회귀 (★ Phase1: 둘 다 실값 import → 양쪽 자동 감시).
+//   ★ Phase1 승격(2026-09-09): 클라 트리거를 plain 모듈 hairJobConstants 로 옮겨, 예전 "수동 미러"를
+//      실제 import 로 바꿨다. 이제 서버 문턱이든 클라 트리거든 한쪽이 정합을 깨면 이 하네스가
+//      자동으로 잡는다(useHairTransformJob 훅도 같은 상수를 import — 하네스가 훅과 같은 값을 본다).
 //
 // 실행: npm run test:fallback  (TS→CJS 컴파일 후 node — 프레임워크·네트워크·DB 무설치)
 // ============================================================================
 
 import * as assert from "node:assert";
 import { isFallbackElapsed, FALLBACK_MIN_ELAPSED_MS } from "../../lib/fallbackEligibility";
-
-// ★ 클라 폴백 트리거의 미러. app/style/loading/page.tsx 의 FALLBACK_TRIGGER_MS(290_000)와
-//   반드시 같아야 한다 — 그 값을 바꾸면 여기도 바꾸고(page.tsx 상호의존 주석 참조) 아래 정합
-//   단언을 재확인할 것.
-const CLIENT_FALLBACK_TRIGGER_MS = 290_000;
+// ★ 클라 폴백 트리거 — 훅(useHairTransformJob)이 import 하는 바로 그 상수를 하네스도 실제로 import.
+import { FALLBACK_TRIGGER_MS as CLIENT_FALLBACK_TRIGGER_MS } from "../../app/style/hairJobConstants";
 
 const NOW = 1_000_000_000_000;           // 고정 기준시각(ms)
 const nowFn = () => NOW;                  // 라우트가 넘기는 Date.now 를 흉내낸 공급 함수
@@ -141,6 +138,44 @@ test("★ 정합: 클라 트리거 경과로 온 processing 폴백은 반드시 
     nowFn, FALLBACK_MIN_ELAPSED_MS,
   );
   assert.strictEqual(ok, true, "클라 트리거 경과로 온 정상 콜드미스 폴백이 서버 문턱을 넘어야 한다");
+});
+
+// ============================================================================
+// ④ 서버 문턱 경계(±1ms) — 문턱값이 바뀌면 이 경계가 흔들려 잡힌다.
+// ============================================================================
+
+test("경계: processing·문턱 정확히(>=) → 통과", () => {
+  const ok = isFallbackElapsed(
+    { status: "processing", created_at: createdBefore(FALLBACK_MIN_ELAPSED_MS) },
+    nowFn, FALLBACK_MIN_ELAPSED_MS,
+  );
+  assert.strictEqual(ok, true, "경과 == 문턱이면 통과(>=)");
+});
+test("경계: processing·문턱 1ms 미만 → 차단", () => {
+  const ok = isFallbackElapsed(
+    { status: "processing", created_at: createdBefore(FALLBACK_MIN_ELAPSED_MS - 1) },
+    nowFn, FALLBACK_MIN_ELAPSED_MS,
+  );
+  assert.strictEqual(ok, false, "경과 < 문턱이면 차단");
+});
+
+// ============================================================================
+// ⑤ 4:50 race 전제(판정③) — 4:50 직전 원본(primary)이 성공했는데 클라 status timeout 으로
+//    못 받은 경우, 클라는 폴백을 요청한다. 서버는 succeeded 원본을 폴백대상으로 안 잡아
+//    fallback_not_eligible 을 준다(=아래 succeeded→false). 그래서 훅은 원본 status 를 1회
+//    재확인(recheckOriginalOnce)해 성공 이미지를 회수해야 한다(성공 유실 방지).
+//    ※ 재확인 자체는 훅(React·fetch)이라 이 node 하네스로는 못 돌린다 — 여기선 "서버가 왜
+//       거절하는지"의 순수 전제만 박는다. 통합 검증은 Phase4 dev 완주.
+// ============================================================================
+
+test("4:50 race 전제: 트리거 직전 성공한(succeeded) 원본은 폴백대상 아님 → 훅이 원본 재확인해야", () => {
+  const justSucceeded = isFallbackElapsed(
+    // 트리거 근처(±수초)에 성공: created 는 트리거보다 조금 전, status 는 succeeded.
+    { status: "succeeded", created_at: createdBefore(CLIENT_FALLBACK_TRIGGER_MS - 3_000) },
+    nowFn, FALLBACK_MIN_ELAPSED_MS,
+  );
+  assert.strictEqual(justSucceeded, false,
+    "succeeded 원본을 폴백으로 재시도하면 안 된다(서버 거절) → 훅의 원본 재확인이 성공을 회수하는 근거");
 });
 
 // ─── 결과 출력 ────────────────────────────────────────────────────────────────
