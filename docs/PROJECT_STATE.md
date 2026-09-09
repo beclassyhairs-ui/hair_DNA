@@ -3,6 +3,15 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-08
 
+## 🟡 G. /style 결과지 선공개 라운드 (2026-09-09 · Phase 1 커밋 완료·미push · Phase 2~4 남음)
+
+목적(사업주 확정): 로딩창 대기 제거 — 접수 즉시 결과지를 보여주고 faceswap 사진은 결과지 맨 위 칸에 준비되는 대로 채운다. 사진은 미끼, 본체는 결과지.
+
+- **아키텍처 확정(Phase 0 + Codex 반론 "구조 찬성")**: 접수 페이지(현 loading)=게이트+1차 kickoff+저장 성공 후 즉시 result 이동·**폴링 0** / result 페이지=`useHairTransformJob` **단일 poller**. Codex 9조건 채택(핵심: 단일 poller·fallbackAttempted 선저장·`fallback_not_eligible` 시 원본 재확인·terminal에서만 JOB_KEY 제거). 스킵 링크·skipped 상태 **폐기**. 세션핑은 `app/style/layout.tsx` 담당이라 이관 대상 아님.
+- ✅ **Phase 1 (`4b2bf97` 추출 + `ad86feb` 하네스)**: 폴링·4:50폴백·cancel·에러5종·성공저장·재개·fellBack가드를 `app/style/useHairTransformJob.ts` 훅으로 **위치만** 이관(값·동작 불변). 타이밍 상수 → plain 모듈 `app/style/hairJobConstants.ts` 단일화(하네스가 훅과 같은 상수 실 import). 로딩 페이지는 게이트+kickoff+네비만. **Codex 추출충실성 "정상경로 충실"** 확인(재마운트/단일-poller 강화는 흐름 바뀌는 P2). Codex #6(4:50 race) `recheckOriginalOnce` 반영. **하네스 14/14**(클라 트리거 실 import 승격·경계·race 전제, 자기검증 통과) + `test:invariant` 9/9. **화면·손님 문구 불변.** dev 스모크: /style 200·/style/loading 마운트→로그인 게이트 정상 redirect·리팩터 관련 콘솔에러 0(나머지는 로컬 Supabase env 미설정).
+- 🔴 **다음 = Phase 2(결과지 선공개·손님화면·Codex 필수)**: 접수 즉시 result 이동 + PhotoSlot 상태별 렌더(generating/fallback/done/failed, 사진칸 문구 사업주 확정본·16px+) + 계단버튼 기본펼침 + sticky 띠. 이어 Phase 3(계측 6종)·Phase 4(3경로 dev 완주·문서·push).
+- ⚠️ **미push 누적**: `9ffb7d6`(docs F-2)·`4b2bf97`·`ad86feb`. push는 라운드 끝 일괄 승인.
+
 ## 🟢 F. 오픈 전 최종 검수 — 폴백 죽은경로 회귀 수정 + 정합 하네스 (2026-09-08 커밋·push·배포 / F-2 재검수 2026-09-09)
 
 오픈 직전 8/16 이후 변경분 전수 검수. 🔴 1건 발견·수정·**push·배포 완료**(`46ed39a`·`1dabfb2`·`157d16c` → origin/main). F-2 표적 재검수도 통과 — **오픈 가능.**
