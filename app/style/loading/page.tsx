@@ -25,6 +25,11 @@ import { clearAccountId, trackEvent } from "@/lib/eventTracking";
 import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
+// ★ Phase1: 폴링·폴백·에러 로직은 useHairTransformJob 훅으로 이관(위치만). 이 페이지는
+//   게이트·1차 kickoff·네비게이션만 담당하고, 훅이 유일한 poller다. 상수는 hairJobConstants
+//   단일 출처에서 import(복사 금지 — 하네스가 같은 값을 본다).
+import { POLL_BUDGET_MS, PER_POLL_TIMEOUT } from "../hairJobConstants";
+import { useHairTransformJob, normFailReason, type JobRef } from "../useHairTransformJob";
 
 // 진행단계 라벨(로딩바 위) — 파트1. 사진 분석 → 얼굴형 → 스타일 → 마무리(마지막에서 정지).
 const STEPS = [
@@ -87,29 +92,11 @@ function buildDiagnosisReveal(a: StyleAnswers): string[] {
 }
 
 // faceswap 합성 자체는 빠르지만(웜업 후 수 초), GPU 콜드스타트 시 수 분 걸린다.
-const MIN_LOADING_MS   = 2_800;   // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
-const POLL_INTERVAL_MS = 2_500;   // status 폴링 간격
-// 전체 대기 상한. 2026-08-21: 8→5분(300s). 세션핑 예열이 부팅을 상당히 당겨놔 5분이면 충분.
-//   ⚠️ 이 커밋(Phase1) 시점엔 폴백이 아직 "상한(5분) 소진 후" 발사되는 임시 상태다. 다음
-//   커밋(Phase2)에서 폴백 트리거를 4:50으로 당겨, 5:00 상한 직전에 상시-warm 루카타코가
-//   "최대 5분" 약속을 지키게 한다(과거 8분 상향은 폴백 시점이 8분이던 시절 기준).
-// ★ 아래 로딩 문구의 "최대 N분"도 이 상수에서 파생(POLL_BUDGET_MIN) → 표기 상한과 폴링 상한이
-//   절대 갈라지지 않는다.
-const POLL_BUDGET_MS   = 300_000; // 5분
-const POLL_BUDGET_MIN  = Math.round(POLL_BUDGET_MS / 60_000); // 로딩 문구용(분)
-const PER_POLL_TIMEOUT = 15_000;  // 폴 1회 타임아웃
-// ⑤ 폴백(lucataco) 폴링 예산 — 폴백은 상시 warm(초 단위)이라 짧게. 그래도 소소한 큐 여유 2분.
-const FALLBACK_POLL_BUDGET_MS = 120_000;
-// ⑤ 폴백 트리거 시점(Phase2) — 5:00 상한 소진 전, 4:50(290s) 경과 시 상시-warm 루카타코로 조기
-//   전환한다. ddvinh1이 4:50까지 대부분 처리하고, 못 끝낸 최악의 날만 상시-warm 루카타코로 마무리한다.
-//   ⚠️ "최대 5분"은 best-effort다: 폴백 자체 폴링 예산(FALLBACK_POLL_BUDGET_MS=2분)은 무수정이라
-//      lucataco도 느린 극단 케이스는 코드상 최대 ~6:50까지 갈 수 있다(PROJECT_STATE A 섹션 기록·수용).
-//   ★ 폴백 자체 로직/자격검증/킬스위치(a11dd72)는 무수정 —
-//   발사 "시점"만 이 상수로 당긴다. 폴백 재착수 poll 은 fellBack 가드로 이 분기를 재발동하지 않는다.
-//   ★★ 서버 상수 상호의존(2026-09-08 회귀 교훈): 이 값은 서버 FALLBACK_MIN_ELAPSED_MS(240s,
-//      app/api/hair-transform/route.ts)보다 반드시 커야 한다. 이 트리거를 더 당기면(예: 4:00 미만)
-//      서버 문턱을 넘지 못해 정상 콜드미스 폴백이 전건 거부된다. 이 값을 바꾸면 서버 문턱도 함께 확인.
-const FALLBACK_TRIGGER_MS = 290_000; // 4:50
+const MIN_LOADING_MS  = 2_800; // 너무 빨리 끝났을 때 로딩이 깜빡이며 지나가지 않게 하는 하한
+// "최대 N분" 로딩 문구용(분). POLL_BUDGET_MS(단일 출처)에서 파생 → 표기 상한과 폴링 상한이 안 갈라짐.
+const POLL_BUDGET_MIN = Math.round(POLL_BUDGET_MS / 60_000);
+// ⑤ 폴백 트리거·폴링 간격·예산 등 job 타이밍 상수는 hairJobConstants(단일 출처)로 이관.
+//   폴링·폴백 로직 자체는 useHairTransformJob 훅으로 이관(값·동작 불변, 위치만).
 
 // 🟡-02 경과 초 → "N분 N초째" (50·60 가독: 콜론 mm:ss 대신 한글 분/초).
 function formatElapsedKo(sec: number): string {
@@ -128,28 +115,6 @@ function waitReassurance(elapsedSec: number, budgetMin: number): string {
   return "거의 마무리 단계예요 · 조금만 더 기다려 주세요";
 }
 
-const KNOWN_FAIL_REASONS = new Set([
-  "daily_limit", "no_token", "bad_request", "missing_photo", "invalid_photo_format",
-  "reference_fetch_failed", "poll_timeout", "api_error", "no_output", "exception",
-  "content_flagged", "consent_required", "login_required", "network",
-  "fallback_not_eligible", // ② 서버가 폴백 자격(원본 콜드미스 여부)을 재확인해 거부한 경우. 정상
-                           // 정상 대기 플로우(5분)에서는 발생하지 않는다(즉시 우회 시도 방어용 코드).
-]);
-function normFailReason(r: string | undefined): string {
-  return r && KNOWN_FAIL_REASONS.has(r) ? r : "unknown";
-}
-
-interface JobRef {
-  id: string;
-  token: string;
-  startedAt: number;
-  fallback?: boolean;             // 실제 폴백(lucataco) 사용 여부 — 예산(2분)·안내 표시 결정
-  fallbackAttempted?: boolean;    // 세션당 폴백 1회 가드 — 킬스위치 상태와 무관하게 재착수 시 true
-  primaryAttestation?: string;    // ② 이 job이 "진짜 원본(primary)"이었다는 서버 발급 증표. 폴백
-                                   //   job은 이 값을 절대 받지 않는다 — 폴백을 "원본" 삼아 또 다른
-                                   //   폴백을 체이닝하는 시도를 서버가 구조적으로 거부하게 한다.
-}
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function StyleLoadingPage() {
@@ -158,11 +123,32 @@ export default function StyleLoadingPage() {
   const [revealLines, setRevealLines] = useState<string[]>([]);
   const [revealIdx,   setRevealIdx]   = useState(0);
   const [elapsedSec, setElapsedSec] = useState(0); // 🟡-02 진행감: 화면에서 매초 바뀌는 유일한 숫자
-  const [fallbackActive, setFallbackActive] = useState(false); // ⑤ 폴백 진행 중 안내용
+  // Phase1: 폴링 대상 job. 게이트+kickoff(또는 새로고침 재개)로 정해지면 훅이 이어받아 폴링한다.
+  const [job, setJob] = useState<JobRef | null>(null);
   // Phase3: 진행 중 작업(STYLE_JOB_KEY)이 실제로 설정된 뒤에만 스킵링크를 연다. kickoff POST가
   //   늦어 아직 job이 없을 때 스킵하면 결과지가 이어받을 job이 없어 pending 대신 fail로 빠지기 때문.
   const [jobStarted, setJobStarted] = useState(false);
   const calledRef  = useRef(false); // 중복 호출 방지
+  const runStartRef = useRef(0);    // 최소표시시간(MIN_LOADING_MS) 기준 시각
+
+  // ★ 최소 표시 시간 채운 뒤 결과지로 이동(정상/실패/타임아웃 공통 종착). 훅의 terminal 콜백과
+  //   pre-poll 실패(429·kickoff실패·network)가 공용으로 쓴다.
+  async function finishAndRoute() {
+    try { sessionStorage.removeItem(STYLE_JOB_KEY); } catch { /**/ }
+    const elapsed = Date.now() - runStartRef.current;
+    if (elapsed < MIN_LOADING_MS) await sleep(MIN_LOADING_MS - elapsed);
+    router.replace("/style/result");
+  }
+
+  // ★ Phase1 단일 poller — 폴링·4:50 폴백·에러·성공 저장은 훅이 담당(값·동작 불변). 이 페이지는
+  //   game/fallback 표시를 훅 상태에서 읽고, 종단 시 finishAndRoute 로 결과지 이동만 한다.
+  const jobResult = useHairTransformJob({
+    job,
+    returnTo: "/style/loading",
+    onReloginRedirect: clearAccountId,
+    onTerminal: () => { void finishAndRoute(); },
+  });
+  const fallbackActive = jobResult.fallbackActive;
 
   // 진행단계 라벨 로테이션 (시각 연출 — API 와 독립, 마지막 단계에서 정지).
   useEffect(() => {
@@ -194,25 +180,31 @@ export default function StyleLoadingPage() {
     return () => clearInterval(t);
   }, []);
 
-  // ── 마운트 즉시 착수 + 폴링 ─────────────────────────────────────────────────
+  // ── 마운트 즉시: 게이트 + 1차 kickoff(또는 새로고침 재개) → job 확정. 폴링은 훅이 이어받는다. ──
   useEffect(() => {
     if (calledRef.current) return;
     calledRef.current = true;
-
-    const runStart = Date.now();
-    let fellBack = false; // ⑤ 루카타코 폴백은 세션당 최대 1회(무한 재시도 방지)
-
-    // 최소 표시 시간 채운 뒤 결과지로 이동(정상/실패/타임아웃 공통 종착).
-    async function finishAndRoute() {
-      try { sessionStorage.removeItem(STYLE_JOB_KEY); } catch { /**/ }
-      const elapsed = Date.now() - runStart;
-      if (elapsed < MIN_LOADING_MS) await sleep(MIN_LOADING_MS - elapsed);
-      router.replace("/style/result");
-    }
+    runStartRef.current = Date.now();
 
     function goRelogin() {
       clearAccountId();
       window.location.href = `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
+    }
+    function clearPrevResultKeys() {
+      try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_FAIL_REASON_KEY); } catch { /**/ }
+      try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
+    }
+    // 착수(kickoff) 자체 실패 기록 — 폴링 단계 실패는 훅이 담당(같은 5종 코드).
+    function recordFail(rawReason: string | undefined, rawDebug: string | undefined) {
+      const reason = normFailReason(rawReason);
+      const errMsg = rawDebug ?? `reason: ${reason} (debugError 없음)`;
+      console.warn("[AI] ⚠️ 착수 실패 —", errMsg);
+      try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, reason); } catch { /**/ }
+      try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
+      void trackEvent("hair_transform_fail", { reason, source: "style" });
+      Sentry.captureMessage(`[hair-transform] 착수 실패: ${reason}`, { level: "error", extra: { debugError: errMsg } });
     }
 
     async function run() {
@@ -224,41 +216,31 @@ export default function StyleLoadingPage() {
       // 셀카 없으면 업로드로(결과지로 진행하지 않음)
       if (!photo) { router.replace("/style/upload"); return; }
 
-      // ── Phase B 로그인 게이트 (공용 authGate 헬퍼로 치환 — 동작 100% 불변) ──
-      //   게이트 조건(isLoginRequiredBeforeSynthesis)·return_to(/style/loading)·clearAccountId·
-      //   fail-closed 전부 기존과 동일. 서버 401 강제와 upload 동의 게이트는 별개로 그대로 유지.
+      // ── Phase B 로그인 게이트(동작 불변) ── 조건·return_to·clearAccountId·fail-closed 그대로.
       if (isLoginRequiredBeforeSynthesis()) {
         const ok = await ensureLoggedInOrRedirect("/style/loading", { onRedirect: clearAccountId });
         if (!ok) return;
       }
 
-      // ── 새로고침 재개: 진행 중 작업이 있으면 그걸 이어서 폴링한다(중복 착수·중복 차감 방지) ──
-      let job: JobRef | null = null;
+      // ── 새로고침 재개: 진행 중 작업이 있으면 훅에 넘겨 이어 폴링(중복 착수·차감 방지) ──
+      let existing: JobRef | null = null;
       try {
         const rawJob = sessionStorage.getItem(STYLE_JOB_KEY);
         if (rawJob) {
           const parsed = JSON.parse(rawJob) as JobRef;
           if (parsed?.id && parsed?.token && typeof parsed.startedAt === "number"
               && Date.now() - parsed.startedAt < POLL_BUDGET_MS) {
-            job = parsed;
+            existing = parsed;
           }
         }
-      } catch { job = null; }
+      } catch { existing = null; }
 
-      if (job) {
-        // 재개 경로: 이전 상태(결과/에러/한도)만 정리하고 바로 폴링. incrementUsage 재호출 안 함.
-        setJobStarted(true); // Phase3: 진행 중 job 존재 → 스킵 허용
+      if (existing) {
+        // 재개: 이전 결과/에러/한도만 정리하고 훅에 넘긴다(incrementUsage 재호출 안 함).
+        //   훅이 job.fallback/fallbackAttempted 를 보고 예산·1회가드를 복원한다.
         clearPrevResultKeys();
-        // ⑤ Fix: 재개(새로고침) 시 폴백 1회 가드·예산을 job 에서 복원한다.
-        //   · fallbackAttempted → fellBack 복원(킬스위치 OFF로 ddvinh1 재착수된 job 이어도 2차 폴백 차단).
-        //   · fallback(실제 lucataco) → 폴백 예산(2분)·안내. 아니면 정상 5분(POLL_BUDGET_MS).
-        if (job.fallbackAttempted) fellBack = true;
-        if (job.fallback) {
-          setFallbackActive(true);
-          await pollUntilDone(job, FALLBACK_POLL_BUDGET_MS);
-        } else {
-          await pollUntilDone(job);
-        }
+        setJobStarted(true); // 진행 중 job 존재 → 스킵 허용
+        setJob(existing);
         return;
       }
 
@@ -307,11 +289,10 @@ export default function StyleLoadingPage() {
             id: data.id, token: data.token, startedAt: Date.now(),
             primaryAttestation: data.primaryAttestation, // ② 이 job(원본)을 나중에 폴백 자격증표로 쓴다.
           };
-          // Phase3: setItem 성공 시에만 jobStarted → 스킵 허용. 저장 실패면 결과지가 이어받을 job이
-          //   없으므로 스킵링크를 열지 않는다(try 안에 둬 실패 시 setJobStarted 미실행).
+          // ★ Codex #2: JOB_KEY 저장 성공 후에 폴링을 넘긴다(저장 성공 시에만 스킵링크도 연다).
           try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(started)); setJobStarted(true); } catch { /**/ }
-          console.log("[AI] 착수 성공, 폴링 시작:", data.id);
-          await pollUntilDone(started);
+          console.log("[AI] 착수 성공, 폴링 시작(훅):", data.id);
+          setJob(started); // 훅이 이어받아 폴링·4:50 폴백·에러·성공 저장
           return;
         }
 
@@ -327,185 +308,8 @@ export default function StyleLoadingPage() {
       }
     }
 
-    // ── 폴링 루프: 성공/실패/타임아웃까지 ─────────────────────────────────────
-    //   budgetMs: 기본 5분(신규/재개). ⑤ 폴백은 짧은 예산(FALLBACK_POLL_BUDGET_MS)으로 호출.
-    async function pollUntilDone(job: JobRef, budgetMs: number = POLL_BUDGET_MS) {
-      const deadline = job.startedAt + budgetMs;
-      while (Date.now() < deadline) {
-        // ⑤ Phase2: 4:50(FALLBACK_TRIGGER_MS) 도달 시 조기 폴백으로 빠진다(아래 cancel→runFallback).
-        //   fellBack 가드로 폴백 재착수 poll(fellBack=true)은 이 분기를 건너뛴다 → 자기 자신 재트리거 방지.
-        //   startedAt 기준이라 새로고침 재개여도 원래 착수 시점 기준 4:50에 발사된다.
-        if (!fellBack && Date.now() - job.startedAt >= FALLBACK_TRIGGER_MS) break;
-        // Phase2: 트리거 직전 시작한 폴이 15초(PER_POLL_TIMEOUT) 늘어져 4:50을 넘기지 않게,
-        //   남은 트리거 시간까지로 이번 폴 타임아웃을 좁힌다 → 폴백이 5:00 상한 전에 확실히 발사.
-        //   (폴백 재착수 poll 은 fellBack=true 라 정상 15초 유지 — 클램프 대상 아님.)
-        const pollTimeout = fellBack
-          ? PER_POLL_TIMEOUT
-          : Math.max(1_000, Math.min(PER_POLL_TIMEOUT, job.startedAt + FALLBACK_TRIGGER_MS - Date.now()));
-        let data: { ok?: boolean; imageUrl?: string; status?: string; reason?: string; debugError?: string } | null = null;
-        try {
-          const res = await fetch("/api/hair-transform/status", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ id: job.id, token: job.token }),
-            signal:  AbortSignal.timeout(pollTimeout),
-          });
-          if (res.status === 401) { goRelogin(); return; }
-          data = await res.json();
-        } catch {
-          // Phase2: 트리거 도달로 폴이 잘렸으면 재시도 sleep 없이 즉시 폴백으로(5:00 전 발사 보장).
-          if (!fellBack && Date.now() - job.startedAt >= FALLBACK_TRIGGER_MS) break;
-          // 일시적 네트워크/타임아웃 → 예산 내에서 계속 재시도
-          await sleep(POLL_INTERVAL_MS);
-          continue;
-        }
-
-        if (data?.ok && data.imageUrl) {
-          try { sessionStorage.setItem(STYLE_GENERATED_KEY, data.imageUrl); } catch { /**/ }
-          try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-          void trackEvent("hair_transform_done", { source: "style" });
-          await finishAndRoute();
-          return;
-        }
-
-        if (data?.status === "processing") {
-          await sleep(POLL_INTERVAL_MS);
-          continue;
-        }
-
-        // 그 외 = 터미널 실패(reason 있음)
-        recordFail(data?.reason, data?.debugError);
-        await finishAndRoute();
-        return;
-      }
-
-      // 4:50 조기 폴백 or 예산(5분) 소진 → 예측 취소 요청(비용 중단, best-effort) → 아래 ⑤ 폴백
-      // Phase2: cancel 을 await 하지 않는다(fire-and-forget). await 하면 최대 10초가 폴백 발사를
-      //   5:00 뒤로 밀 수 있다. 취소 요청 자체는 그대로 나가 비용 중단 효과는 유지된다.
-      console.warn("[AI] ⏱ 4:50 도달/예산 소진 → 예측 취소 요청(비용 중단) → 폴백 시도");
-      void fetch("/api/hair-transform/cancel", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ id: job.id, token: job.token }),
-        signal:  AbortSignal.timeout(10_000),
-      }).catch(() => { /* best-effort */ });
-
-      // ⑤ 루카타코 폴백 — ddvinh1 이 4:50(FALLBACK_TRIGGER_MS)까지 못 끝낸 드문 콜드 미스에서 1회만
-      //   상시-warm 모델로 재착수해 "에러 대신 결과"를 노린다(사업주 결정). 폴백 자신의 예산 소진
-      //   시엔 fellBack 가드로 더 이상 재시도하지 않고 아래 실패 안내로 종착한다.
-      if (!fellBack) {
-        fellBack = true;
-        const handled = await runFallback(job);
-        if (handled) return;
-      }
-
-      recordFail("poll_timeout", "폴링 예산 소진(폴백 포함) — 예측 취소 요청");
-      await finishAndRoute();
-    }
-
-    // ── ⑤ 폴백 착수: lucataco 로 새 kickoff 후 짧은 예산으로 폴링 ──────────────
-    //   반환 true = 이 함수가 종착 처리를 마쳤다(결과 라우팅/한도안내/리다이렉트/폴백폴링).
-    //          false = 폴백 착수 자체가 실패 → 호출측이 poll_timeout 으로 마무리한다.
-    //   과금: 폴백도 일반 kickoff 와 동일하게 서버가 1회 예약(환불 없음). 콜드 미스는 드물고
-    //         일일한도(7)로 완충된다 — 기존 "재시도 시 1회 더 차감" 정책과 정합.
-    async function runFallback(originalJob: JobRef): Promise<boolean> {
-      const photo = sessionStorage.getItem(STYLE_PHOTO_KEY);
-      if (!photo) return false;
-      const raw = sessionStorage.getItem(STYLE_ANSWERS_KEY);
-      let answers: StyleAnswers = {};
-      try { answers = raw ? (JSON.parse(raw) as StyleAnswers) : {}; } catch { answers = {}; }
-
-      setFallbackActive(true);
-      try {
-        incrementUsage(); // 클라 표시용(서버 예약이 실제 강제)
-        console.log("[AI] ⑤ 폴백 착수(lucataco)...");
-        const res = await fetch("/api/hair-transform", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          // 원본(ddvinh1) job의 "진짜 원본" 증표를 함께 보낸다 — 서버가 이 증표(폴백 job은 절대
-          //   받지 못함)와 원본의 실제 콜드미스 여부(경과시간)를 둘 다 검증해야 폴백을 허용한다
-          //   (임의 lucataco 직접호출·폴백→폴백 체이닝 차단·Codex 라운드1 반영).
-          body:    JSON.stringify({
-            userPhoto: photo, answers, fallback: true,
-            originalId: originalJob.id, originalAttestation: originalJob.primaryAttestation,
-          }),
-          signal:  AbortSignal.timeout(PER_POLL_TIMEOUT + 15_000),
-        });
-
-        if (res.status === 401) { goRelogin(); return true; }
-
-        const data = await res.json() as {
-          ok: boolean; id?: string; token?: string; primaryAttestation?: string; fallbackUsed?: boolean;
-          reason?: string; message?: string; debugError?: string;
-        };
-
-        if (res.status === 403 && data.reason === "consent_required") {
-          window.location.href = `/login/consent?return_to=${encodeURIComponent("/style/loading")}`;
-          return true;
-        }
-
-        if (res.status === 429 || data.reason === "daily_limit") {
-          const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
-          try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
-          void trackEvent("hair_transform_fail", { reason: "daily_limit", source: "style_fallback" });
-          await finishAndRoute();
-          return true;
-        }
-
-        if (data.ok && data.id && data.token) {
-          // ★ 서버가 실제로 폴백(lucataco)으로 착수했는지(fallbackUsed)를 기준으로 예산·상태를 정한다.
-          //   킬스위치 OFF 로 ddvinh1 로 처리됐으면(false) 폴백 예산(2분)이 아니라 정상 5분(POLL_BUDGET_MS)으로 폴링하고
-          //   "다른 방식" 안내·job 폴백표시도 끈다(콜드 ddvinh1 을 2분에 조기취소하는 회귀 방지·Codex 반영).
-          const usedFallback = data.fallbackUsed === true;
-          // fallbackAttempted 는 킬스위치 상태와 무관하게 항상 true(1회 가드) — fallback(실제 모델)과 분리해
-          //   영속화하여, 새로고침으로 재개돼도 2차 폴백을 막는다(Codex 반영).
-          const fbJob: JobRef = {
-            id: data.id, token: data.token, startedAt: Date.now(),
-            fallback: usedFallback, fallbackAttempted: true,
-            // 킬스위치 OFF로 실제로는 ddvinh1(원본)로 처리됐다면(usedFallback=false) 서버가 정상적으로
-            //   primaryAttestation을 발급한다 — 이 job이 나중에 진짜 폴백의 원본이 될 수 있다(정상).
-            //   실제 폴백(lucataco)로 처리됐다면 서버가 애초에 발급하지 않으므로 항상 undefined.
-            primaryAttestation: data.primaryAttestation,
-          };
-          try { sessionStorage.setItem(STYLE_JOB_KEY, JSON.stringify(fbJob)); } catch { /**/ }
-          setFallbackActive(usedFallback);
-          void trackEvent("hair_transform_fallback", { source: "style", used: usedFallback });
-          console.log(`[AI] ⑤ 재착수 성공(fallbackUsed=${usedFallback}), 폴링 시작:`, data.id);
-          await pollUntilDone(fbJob, usedFallback ? FALLBACK_POLL_BUDGET_MS : POLL_BUDGET_MS);
-          return true;
-        }
-
-        // 폴백 착수 자체 실패 → 호출측이 poll_timeout 으로 마무리
-        console.warn("[AI] ⑤ 폴백 착수 실패:", data.reason ?? "(reason 없음)");
-        return false;
-      } catch (e) {
-        console.error("[AI] ⑤ 폴백 예외:", e);
-        Sentry.captureException(e);
-        return false;
-      }
-    }
-
-    function clearPrevResultKeys() {
-      try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_DEBUG_ERROR_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_FAIL_REASON_KEY); } catch { /**/ }
-      try { sessionStorage.removeItem(STYLE_LIMIT_KEY); } catch { /**/ }
-    }
-
-    function recordFail(rawReason: string | undefined, rawDebug: string | undefined) {
-      const reason = normFailReason(rawReason);
-      const errMsg = rawDebug ?? `reason: ${reason} (debugError 없음)`;
-      console.warn("[AI] ⚠️ 합성 실패 —", errMsg);
-      try { sessionStorage.setItem(STYLE_FAIL_REASON_KEY, reason); } catch { /**/ }
-      try { sessionStorage.setItem(STYLE_DEBUG_ERROR_KEY, errMsg); } catch { /**/ }
-      void trackEvent("hair_transform_fail", { reason, source: "style" });
-      Sentry.captureMessage(`[hair-transform] 합성 실패: ${reason}`, {
-        level: "error",
-        extra: { debugError: errMsg },
-      });
-    }
-
     run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   return (
