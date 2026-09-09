@@ -17,10 +17,12 @@ export default function CoupangCardList({
   cards,
   landingId,
   heading = "이 머리에 맞는 제품",
+  metaExtra,
 }: {
   cards: CoupangCard[];
   landingId: string;
   heading?: string;
+  metaExtra?: Record<string, unknown>; // 호출측 부가 계측(예: 결과지 photo_state). 기존 필드는 그대로.
 }) {
   if (!cards || cards.length === 0) return null;
 
@@ -40,6 +42,7 @@ export default function CoupangCardList({
               ui: `${landingId}_result_coupang`,
               cta_clicked: "제품 보러 가기",
               diagnosis_type: landingId,
+              ...(metaExtra ?? {}),
             })
           }
           // ★ 카드 전체가 터치영역(≥44px). 검은 채움 없이 가벼운 카드.

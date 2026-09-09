@@ -5,7 +5,7 @@
 // 캡처 방지 + 저장하고 홈에서 오늘 케어 보기 CTA + 배열 다이어리 저장
 // ============================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,8 +31,12 @@ function isDamageBlock(a: StyleAnswers): boolean {
   return a.q10_history_count === "count_7plus" || evaluateStyleGate(a).level === "block";
 }
 import { toast } from "../../../lib/toast";
-import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
+import { EVENT_NAMES, trackEvent, clearAccountId } from "../../../lib/eventTracking";
 import { refreshBeautyUserProfileFromDiary } from "../../../lib/beautyProfile";
+// Phase2 선공개: 폴링·4:50 폴백·에러·성공저장을 결과지가 단일 poller 로 담당(접수 페이지는 폴링 0).
+import { useHairTransformJob, type JobRef } from "../useHairTransformJob";
+import { failMessage } from "../failMessage";
+import { POLL_BUDGET_MS } from "../hairJobConstants";
 import CompletionGauge from "@/components/CompletionGauge";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
@@ -172,56 +176,12 @@ function SaveDiaryModal({
 }
 
 // ─── Before / After 이미지 섹션 ───────────────────────────────────────────────
-// ★ 폴링 없음 — sessionStorage에서 즉시 읽은 URL만 표시.
-// Phase B: 잠금(blur) 오버레이 제거 — 결과지 진입 전 이미 로그인을 마쳤으므로 항상 공개한다.
-
-// 실패 사유 코드 → 손님 안내(한국어 평서문·에러코드/영어 없음·50·60이 읽는 문장).
-// 🟡-11: "지금 잠시 붐볐어요"로 뭉뚱그리던 것을 "손님이 다음에 뭘 하면 되는지"가 다른
-//   사유끼리 분리한다. 각 사유마다 title·hint·button(다음 행동)이 실제로 달라야 한다.
-function failMessage(reason: string | null): { title: string; hint: string; button: string } {
-  // ① 얼굴/사진 내용 문제 — 사진을 바꿔야 풀린다(재시도만으론 안 됨).
-  //   서버는 얼굴 미검출·안전필터를 content_flagged 로 내려준다(status classifyReplicateError).
-  if (reason === "content_flagged" || reason === "face_not_detected") {
-    return {
-      title:  "얼굴이 잘 안 보여요",
-      hint:   "밝은 곳에서 얼굴이 정면으로 크게 나오게, 앞머리로 눈·이마를 가리지 않고 다시 찍어주세요.",
-      button: "사진 다시 찍기",
-    };
-  }
-  // ② 사진 파일 자체 문제(누락·형식·용량) — 다른 사진을 고르면 된다.
-  if (reason === "missing_photo" || reason === "invalid_photo_format") {
-    return {
-      title:  "사진을 다시 선택해 주세요",
-      hint:   "사진이 제대로 안 올라갔어요. 다른 사진으로 다시 골라주세요.",
-      button: "사진 다시 선택",
-    };
-  }
-  // ③ 네트워크 끊김 — 손님 쪽 연결 문제. 연결을 확인하는 게 다음 행동.
-  if (reason === "network") {
-    return {
-      title:  "연결이 잠깐 끊겼어요",
-      hint:   "와이파이나 데이터 연결을 확인하신 뒤 다시 시도해 주세요.",
-      button: "다시 시도",
-    };
-  }
-  // ④ 시간 초과(콜드스타트) — 첫 요청이 GPU를 깨우느라 오래 걸린 경우. 두 번째는 금방.
-  if (reason === "poll_timeout") {
-    return {
-      title:  "준비에 시간이 너무 오래 걸렸어요",
-      hint:   "다시 눌러주시면 이번엔 금방 나와요. 잠깐만 기다려 주세요.",
-      button: "다시 시도",
-    };
-  }
-  // ⑤ 그 외 일시/서버 문제(api_error·no_output·reference_fetch_failed·exception 등) — 잠시 후 재시도.
-  return {
-    title:  "지금 잠시 붐볐어요",
-    hint:   "잠시 후 다시 시도하면 정상적으로 완성돼요.",
-    button: "다시 시도",
-  };
-}
+// Phase2 선공개: After 칸이 생성 중(generating/fallback)·완성(done)·실패(failed)·한도(limit)를
+//   상태별로 렌더한다. 생성 중 자리 크기 = 완성 사진 크기(레이아웃 점프 금지).
+// failMessage(5종)는 app/style/failMessage 단일 출처에서 import(접수 페이지와 공용).
 
 function BeforeAfterSection({
-  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel, pending,
+  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel, generating, sectionRef,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
@@ -229,10 +189,11 @@ function BeforeAfterSection({
   limitMessage: string | null;
   onRetry:      () => void;
   hairLabel?:   string | null;
-  pending?:     boolean; // Phase3: 스킵 후 백그라운드 폴링 대기(사진 준비 중)
+  generating?:  boolean; // Phase2 선공개: 사진 생성/폴백 진행 중(사진 준비 중) — 슬롯은 스피너만(무점프)
+  sectionRef?:  React.Ref<HTMLDivElement>; // sticky 띠 IntersectionObserver 용
 }) {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div ref={sectionRef} className="grid grid-cols-2 gap-3">
       {/* BEFORE */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
@@ -251,7 +212,8 @@ function BeforeAfterSection({
         </div>
       </div>
 
-      {/* AFTER */}
+      {/* AFTER — 생성 중엔 스피너만(자리 크기=완성 사진, 레이아웃 점프 금지). 상세 안내 문구는
+          이 그리드 바로 아래 전폭 블록(16px+)에 둔다(반칸 슬롯엔 16px 2문장이 안 들어가므로). */}
       <div className="relative overflow-hidden rounded-2xl border border-line bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
         {generatedUrl ? (
@@ -262,32 +224,28 @@ function BeforeAfterSection({
             onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
         ) : limitMessage ? (
           // 일일 한도 초과 — 친절 안내(빨간 에러 아님)
-          <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center overflow-y-auto py-4">
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-[13px] font-semibold leading-snug text-white/90">오늘 무료 합성을<br />모두 사용했어요</p>
-            <p className="text-[11px] leading-relaxed text-white/70">{limitMessage}</p>
+            <p className="text-[15px] font-bold leading-snug text-white/95">오늘 무료 합성을<br />다 쓰셨어요</p>
           </div>
-        ) : pending ? (
-          // Phase3: 스킵 후 자동 채움 대기 — 백그라운드 폴링이 사진을 만들면 여기에 채워진다.
-          //   ★ 과약속 금지: '이 화면에 있는 동안'으로만 약속(탭 닫으면 끊김).
-          <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/25 border-t-white/85" />
-            <p className="text-[13px] font-semibold leading-snug text-white/90">사진을 준비하고 있어요</p>
-            <p className="text-[11px] leading-relaxed text-white/70">이 화면에 있는 동안<br />준비되면 여기에 채워져요</p>
+        ) : generating ? (
+          // Phase2: 사진 준비 중 — 슬롯엔 스피너만(상세 문구는 그리드 아래 전폭 블록).
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-3 text-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-white/85" />
+            <p className="text-[15px] font-semibold leading-snug text-white/90">준비 중</p>
           </div>
         ) : (() => {
           const f = failMessage(failReason);
           return (
-            <div className="flex h-full flex-col items-center justify-center gap-2.5 px-4 text-center overflow-y-auto py-4">
+            <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
               <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
                 <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
               </svg>
-              <p className="text-[13px] font-semibold leading-snug text-white/90">{f.title}</p>
-              <p className="text-[11px] leading-relaxed text-white/70">{f.hint}</p>
+              <p className="text-[15px] font-bold leading-snug text-white/95">{f.title}</p>
               <button onClick={onRetry}
-                className="mt-1 rounded-btn border border-white/35 bg-white/10 px-4 py-1.5 text-[13px] font-semibold text-white transition-colors hover:bg-white/20">
+                className="mt-1 rounded-btn border border-white/35 bg-white/10 px-4 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-white/20">
                 {f.button}
               </button>
             </div>
@@ -460,84 +418,80 @@ export default function StyleResultPage() {
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [answers,    setAnswers]    = useState<StyleAnswers>({});
   const [ready,      setReady]      = useState(false);
-  // Phase3: 스킵 후 자동 채움 — 사진이 아직 없고 진행 중 작업이 있으면 '준비 중'.
-  const [pending,    setPending]    = useState(false);
   const [showSave,   setShowSave]   = useState(false);
   const [completeTracked, setCompleteTracked] = useState(false);
-  // 파트2 버튼 계단식 — 진단·처방(①)과 케어 제품(②)을 버튼으로 단계 공개.
-  const [showDiagnosis, setShowDiagnosis] = useState(false);
+  // ★ Phase2: 진단·처방은 기본 펼침(버튼 뒤에 숨기지 않음). 제품만 결과지 끝 버튼으로 단계 공개.
   const [showProducts,  setShowProducts]  = useState(false);
+  // Phase2 선공개: 진행 중 job → 훅이 단일 poller 로 폴링. 접수 페이지가 STYLE_JOB_KEY 남기고 넘어온다.
+  const [job, setJob] = useState<JobRef | null>(null);
+  const jobResult = useHairTransformJob({ job, returnTo: "/style/result", onReloginRedirect: clearAccountId });
+  const mountedAtRef   = useRef<number>(Date.now());     // user_on_result_ms 계측 기준
+  const photoRef       = useRef<HTMLDivElement>(null);   // sticky 띠 관찰 대상(사진 칸)
+  const arrivedRef     = useRef(false);                  // photo_arrived 1회
+  const scrollFiredRef = useRef<Set<number>>(new Set()); // scroll_depth 임계 1회씩
+  const [photoOffscreen,  setPhotoOffscreen]  = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
 
-  // 세션 데이터 즉시 로드 (폴링 없음)
+  // 세션 데이터 즉시 로드 + 진행 중 job 이면 훅(단일 poller)에 넘긴다.
   useEffect(() => {
     try {
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (p) setPhoto(p);
+      // 🔴-02 가드 기준인 answers 유효성 — job 을 훅에 넘기기 전에 먼저 확정한다(Codex b:
+      //   answers 없이 조작된 job 만 있는 직접진입에서 status 요청이 1회도 안 나가게).
+      let answersValid = false;
       const a = sessionStorage.getItem(STYLE_ANSWERS_KEY);
       if (a) {
         const parsed: unknown = JSON.parse(a);
         // 세션 조작(JSON "null"·배열 등) 방어 — 순수 객체가 아니면 무시하고 기본값({}) 유지.
-        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Object.keys(parsed).length > 0) {
           setAnswers(parsed as StyleAnswers);
+          answersValid = true;
         }
       }
-      // ★ AI 이미지 — 한 번만 읽기 (loading 페이지가 완성 후 넘겨줌)
       const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
-      console.log("[Result] sessionStorage STYLE_GENERATED_KEY 값:", g ?? "(없음)");
       if (g) {
-        setGenerated(g);
+        setGenerated(g); // 이미 완성(재개) — 폴링 불필요
       } else {
-        // 일일 한도 초과 안내가 있으면 우선 표시(빨간 에러 대신 친절 카드)
         const limit = sessionStorage.getItem(STYLE_LIMIT_KEY);
         if (limit) {
           setLimitMessage(limit);
         } else {
-          const dbgErr = sessionStorage.getItem(STYLE_DEBUG_ERROR_KEY);
-          const reason = sessionStorage.getItem(STYLE_FAIL_REASON_KEY);
-          // Phase3: 진행 중 작업(STYLE_JOB_KEY)이 남아 있으면 아직 '실패'가 아니라 '준비 중'이다
-          //   (로딩에서 사진 없이 스킵해 넘어온 경우). fail 로 단정하지 말고 아래 watcher effect가
-          //   pending 을 켜 백그라운드 폴링이 만드는 사진을 이어받게 둔다.
-          const hasJob = !!sessionStorage.getItem(STYLE_JOB_KEY);
-          console.warn("[Result] ⚠️ AI 이미지 URL 없음. reason:", reason ?? "(없음)", "debugError:", dbgErr ?? "(없음)", "hasJob:", hasJob);
-          if (!hasJob) setFailReason(reason);
+          // 진행 중 job 있으면 훅에 넘겨 선공개 폴링. 없으면 이전 실패 사유(없으면 null).
+          //   ★ answers 유효할 때만 job 을 넘긴다(가드 실패 진입에서 API 0). startedAt 범위 검증(위조 방어).
+          let parsedJob: JobRef | null = null;
+          try {
+            const rawJob = sessionStorage.getItem(STYLE_JOB_KEY);
+            if (rawJob) {
+              const pj = JSON.parse(rawJob) as JobRef;
+              const now = Date.now();
+              if (pj?.id && pj?.token && typeof pj.startedAt === "number"
+                  && pj.startedAt <= now && now - pj.startedAt < POLL_BUDGET_MS) parsedJob = pj;
+            }
+          } catch { /**/ }
+          if (parsedJob && answersValid) setJob(parsedJob);
+          else if (!parsedJob) setFailReason(sessionStorage.getItem(STYLE_FAIL_REASON_KEY));
         }
       }
     } catch { /**/ }
     setReady(true);
   }, []);
 
-  // ── Phase3: 스킵 후 자동 채움 ──────────────────────────────────────────────
-  //   로딩에서 사진 없이 스킵해 넘어오면 STYLE_JOB_KEY(진행 중 작업)가 그대로 남아 있다.
-  //   결과지가 status를 직접 폴링하지 않고 sessionStorage(STYLE_GENERATED_KEY)를 감시한다 —
-  //   폴백(4:50) 트리거·자격검증은 로딩의 백그라운드 폴링이 그대로 담당하게 두어 그 로직을
-  //   건드리지 않기 위함. 정상 경로·폴백 경로 모두 같은 STYLE_GENERATED_KEY로 도착 → 같은 자리에 채워짐.
-  //   ⚠️ 탭을 닫으면 백그라운드 폴링이 끊긴다(hair_jobs 서버 원장 없이는 완성 불가) → 과약속 문구 금지.
+  // 훅 결과(이미지/한도/실패)를 렌더 상태로 브리지 — 렌더는 계속 generated/limitMessage/failReason 를 본다.
   useEffect(() => {
-    if (!ready || generated || limitMessage || failReason) return; // 이미 이미지/한도/실패로 종착
-    let hasJob = false;
-    try { hasJob = !!sessionStorage.getItem(STYLE_JOB_KEY); } catch { /**/ }
-    if (!hasJob) return; // 진행 중 작업 없음(정상 종착) → 감시 안 함
-    setPending(true);
-    const startedAt = Date.now();
-    const t = setInterval(() => {
-      // 안전장치: sessionStorage 접근이 매번 던져도 반드시 종료되도록 타임아웃을 try 밖에서 먼저 검사.
-      //   6분 넘도록 아무 신호가 없으면(백그라운드 폴링 유실·탭 전환 등) 감시 종료·실패 안내.
-      if (Date.now() - startedAt > 360_000) { setFailReason("poll_timeout"); setPending(false); clearInterval(t); return; }
-      try {
-        const g = sessionStorage.getItem(STYLE_GENERATED_KEY);
-        if (g) { setGenerated(g); setPending(false); clearInterval(t); return; } // 완성 → 사진 교체
-        const lim = sessionStorage.getItem(STYLE_LIMIT_KEY);
-        if (lim) { setLimitMessage(lim); setPending(false); clearInterval(t); return; }
-        const fr = sessionStorage.getItem(STYLE_FAIL_REASON_KEY);
-        if (fr) { setFailReason(fr); setPending(false); clearInterval(t); return; }
-      } catch { /* 일시적 접근 실패는 다음 tick 재시도 — 위 타임아웃이 상한을 보장 */ }
-    }, 2_000);
-    return () => clearInterval(t);
-  }, [ready, generated, limitMessage, failReason]);
+    if (jobResult.imageUrl) setGenerated((prev) => prev ?? jobResult.imageUrl);
+    if (jobResult.limitActive) {
+      setLimitMessage((prev) => {
+        if (prev) return prev;
+        try { return sessionStorage.getItem(STYLE_LIMIT_KEY) ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요."; }
+        catch { return "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요."; }
+      });
+    }
+    if (jobResult.errorKind) setFailReason((prev) => prev ?? jobResult.errorKind);
+  }, [jobResult.imageUrl, jobResult.limitActive, jobResult.errorKind]);
 
-  // 리포트 열람 — 결과지 진입(답변 로드 완료) 시 1회 적재. 퍼널의 "리포트열람" 단계.
-  // 진단 완료(diagnosis_complete)는 설문 마지막 제출 시점(/style/survey)에서 발화한다.
+  // 리포트 열람 — 결과지 진입 시 1회. Phase3: photo_state 추가(진입 시점엔 대개 pending).
   useEffect(() => {
     if (!ready || completeTracked) return;
     if (!answers || Object.keys(answers).length === 0) return;
@@ -547,9 +501,56 @@ export default function StyleResultPage() {
       diagnosis_type: "style",
       result_type: report.hairTypeKey,
       concern_tags: buildHairTags(answers),
+      photo_state: generated ? "done" : "pending",
     });
     setCompleteTracked(true);
-  }, [ready, answers, completeTracked]);
+  }, [ready, answers, completeTracked, generated]);
+
+  // Phase3: 사진 도착(photo_arrived) — 훅으로 이미지가 "이 화면에서" 완성된 경우 1회.
+  useEffect(() => {
+    if (arrivedRef.current) return;
+    if (jobResult.state === "done" && jobResult.imageUrl) {
+      arrivedRef.current = true;
+      trackEvent("photo_arrived", {
+        source: "style",
+        job_elapsed_ms: jobResult.elapsedMs,
+        user_on_result_ms: Date.now() - mountedAtRef.current,
+        model: jobResult.modelUsed ?? "primary",
+      });
+    }
+  }, [jobResult.state, jobResult.imageUrl, jobResult.elapsedMs, jobResult.modelUsed]);
+
+  // Phase3: 스크롤 깊이(result_scroll_depth) — 25/50/75/100 각 1회.
+  useEffect(() => {
+    if (!ready) return;
+    function onScroll() {
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - doc.clientHeight;
+      if (scrollable <= 0) return;
+      const pct = Math.min(100, Math.round((doc.scrollTop / scrollable) * 100));
+      for (const th of [25, 50, 75, 100]) {
+        if (pct >= th && !scrollFiredRef.current.has(th)) {
+          scrollFiredRef.current.add(th);
+          trackEvent("result_scroll_depth", {
+            source: "style", depth: th,
+            photo_state: generated ? "done" : "pending",
+            elapsed_ms: Date.now() - mountedAtRef.current,
+          });
+        }
+      }
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [ready, generated]);
+
+  // sticky 띠 — 사진 칸이 화면 밖으로 나가면 상단 고정 띠 노출.
+  useEffect(() => {
+    const el = photoRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setPhotoOffscreen(!e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ready]);
 
   function handleRetry() {
     try { sessionStorage.removeItem(STYLE_GENERATED_KEY); } catch { /**/ }
@@ -577,6 +578,16 @@ export default function StyleResultPage() {
   //   이제 resolveStyle 안에서 일어나고, 이 페이지는 그 결과(blocks)만 그린다.
   //   판정 로직(crossBranch.ts) 자체는 무수정이다.
 
+  // Phase2 선공개: 사진 칸 상태(레이아웃·sticky 띠·계측 공용). job 없고 결과도 없으면 비정상 진입 → failed.
+  const photoState: "generating" | "done" | "failed" | "limit" =
+    generated ? "done" : limitMessage ? "limit" : failReason ? "failed" : job ? "generating" : "failed";
+  const generatingPhoto = photoState === "generating";
+  const elapsedText = (() => {
+    const s = Math.max(0, Math.floor(jobResult.elapsedMs / 1000));
+    const m = Math.floor(s / 60);
+    return m > 0 ? `${m}분 ${s % 60}초째` : `${s}초째`;
+  })();
+
   // ── 블록 조립 ── resolver가 어떤 문장을 낼지 다 정한다. 이 페이지는 그리기만 한다.
   const resolution = resolveStyle(answers);
   const sblock = (name: string): ResolvedBlock | undefined =>
@@ -603,6 +614,23 @@ export default function StyleResultPage() {
     <SilkBackground>
       <main className="mx-auto min-h-screen max-w-[430px] text-ink" style={{ touchAction: "pan-y" }}>
 
+        {/* Phase2 sticky 띠 — 사진 칸이 화면 밖으로 나가면 상단 고정(준비 중 / 도착 / 실패). ≥16px. */}
+        {photoOffscreen && (generatingPhoto || photoState === "failed" || (photoState === "done" && !bannerDismissed)) && (
+          <button
+            onClick={() => {
+              trackEvent("photo_banner_click", { source: "style", photo_state: photoState });
+              if (photoState === "failed") { handleRetry(); return; }
+              photoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              if (photoState === "done") setBannerDismissed(true);
+            }}
+            className="fixed inset-x-0 top-0 z-40 mx-auto flex h-12 w-full max-w-[430px] items-center justify-center gap-1.5 border-b border-line bg-surface/95 px-4 text-[16px] font-bold text-ink backdrop-blur-sm transition-transform active:scale-[0.99]"
+          >
+            {generatingPhoto && <span>사진 준비 중 · {elapsedText}</span>}
+            {photoState === "done" && <span>사진이 도착했어요 ↑ 보기</span>}
+            {photoState === "failed" && <span>사진을 못 만들었어요 · 다시 시도</span>}
+          </button>
+        )}
+
         <AnimatePresence>
           {showSave && <SaveDiaryModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
         </AnimatePresence>
@@ -624,9 +652,18 @@ export default function StyleResultPage() {
           {/* A-1 완성도 게이지 — 결과지 상단 */}
           <CompletionGauge className="mb-4" />
 
-          {/* 1. Before/After — 캡션 확정(농담성 문구 금지, 확정 138). 차단이어도 After는 그대로 노출. */}
-          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} pending={pending} />
-          <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
+          {/* 1. 사진 칸(선공개) — 생성 중엔 스피너만(자리 크기=완성 사진, 무점프). 상세 안내는 바로 아래 전폭 블록(16px+). */}
+          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} generating={generatingPhoto} sectionRef={photoRef} />
+          {generatingPhoto ? (
+            <div className="mt-3 rounded-2xl border border-line bg-surface px-4 py-4 text-center">
+              <p className="text-[16px] font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
+              <p className="mt-1.5 text-[16px] leading-relaxed text-ink">먼저 아래 진단 결과부터 읽어보세요. 다 읽을 때쯤 사진이 도착합니다.</p>
+              <p className="mt-2.5 text-[13px] font-medium tabular-nums text-ink-2">{elapsedText} 준비 중</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-ink-2/80">이 화면을 벗어나면 준비가 멈춰요.</p>
+            </div>
+          ) : (
+            <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
+          )}
 
           {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 — 사진 결과의 헤드라인(항상 노출) */}
           <div className="mt-4 text-center">
@@ -652,18 +689,8 @@ export default function StyleResultPage() {
 
           <div className="mt-4 space-y-5 transition-all duration-700">
 
-            {/* 큰 버튼 ① — 진단·처방 열기(누르면 아래 진단 섹션이 펼쳐진다) */}
-            {!showDiagnosis && (
-              <button
-                onClick={() => { setShowDiagnosis(true); trackEvent("result_diagnosis_open", { source: "style" }); }}
-                className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border px-5 py-4 text-[17px] font-extrabold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
-                <span aria-hidden>📋</span> 20년차 디자이너의 내 진단 결과 보기
-              </button>
-            )}
-
-            {/* 진단·처방 섹션 — 버튼①을 눌러야 열린다 */}
-            {showDiagnosis && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="space-y-1">
+            {/* ★ Phase2: 진단·처방은 기본 펼침 — 버튼 뒤에 숨기지 않는다(선공개의 목적: 읽히는 것). */}
+            <div className="space-y-1">
 
                 {/* 3. 대표 판정 — 예언(door) + 아하(aha). §6-3에 따라 "결과 전체 결정"이
                        아니라 "대표 한 줄 + 이래서 그렇습니다"로 역할이 줄었다. */}
@@ -832,7 +859,7 @@ export default function StyleResultPage() {
                   ) : (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mt-5">
                       {/* 7. 쿠팡 제휴 제품 카드 — 매칭 실물(확정48). COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
-                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" />
+                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" metaExtra={{ photo_state: generated ? "done" : "pending" }} />
                     </motion.div>
                   )
                 ) : (
@@ -842,8 +869,7 @@ export default function StyleResultPage() {
                     정밀 손상 진단 받아보기 <span className="flex-none">→</span>
                   </Link>
                 )}
-              </motion.div>
-            )}
+            </div>
 
             {/* 저장 + 공유 — 🟡-01 어포던스: 텍스트처럼 보이던 것을 테두리로 '버튼'임을 명확히.
                 저장하기=아웃라인(하단 고정 채움 CTA와 위계 구분), 공유/재진단=옅은 테두리 보조버튼. */}
