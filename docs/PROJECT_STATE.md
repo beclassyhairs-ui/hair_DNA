@@ -3,14 +3,16 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-08
 
-## 🟡 G. /style 결과지 선공개 라운드 (2026-09-09 · Phase 1 커밋 완료·미push · Phase 2~4 남음)
+## 🟡 G. /style 결과지 선공개 라운드 (2026-09-09 · Phase 1~3 커밋 완료·미push · Phase 4 남음)
 
 목적(사업주 확정): 로딩창 대기 제거 — 접수 즉시 결과지를 보여주고 faceswap 사진은 결과지 맨 위 칸에 준비되는 대로 채운다. 사진은 미끼, 본체는 결과지.
 
 - **아키텍처 확정(Phase 0 + Codex 반론 "구조 찬성")**: 접수 페이지(현 loading)=게이트+1차 kickoff+저장 성공 후 즉시 result 이동·**폴링 0** / result 페이지=`useHairTransformJob` **단일 poller**. Codex 9조건 채택(핵심: 단일 poller·fallbackAttempted 선저장·`fallback_not_eligible` 시 원본 재확인·terminal에서만 JOB_KEY 제거). 스킵 링크·skipped 상태 **폐기**. 세션핑은 `app/style/layout.tsx` 담당이라 이관 대상 아님.
 - ✅ **Phase 1 (`4b2bf97` 추출 + `ad86feb` 하네스)**: 폴링·4:50폴백·cancel·에러5종·성공저장·재개·fellBack가드를 `app/style/useHairTransformJob.ts` 훅으로 **위치만** 이관(값·동작 불변). 타이밍 상수 → plain 모듈 `app/style/hairJobConstants.ts` 단일화(하네스가 훅과 같은 상수 실 import). 로딩 페이지는 게이트+kickoff+네비만. **Codex 추출충실성 "정상경로 충실"** 확인(재마운트/단일-poller 강화는 흐름 바뀌는 P2). Codex #6(4:50 race) `recheckOriginalOnce` 반영. **하네스 14/14**(클라 트리거 실 import 승격·경계·race 전제, 자기검증 통과) + `test:invariant` 9/9. **화면·손님 문구 불변.** dev 스모크: /style 200·/style/loading 마운트→로그인 게이트 정상 redirect·리팩터 관련 콘솔에러 0(나머지는 로컬 Supabase env 미설정).
-- 🔴 **다음 = Phase 2(결과지 선공개·손님화면·Codex 필수)**: 접수 즉시 result 이동 + PhotoSlot 상태별 렌더(generating/fallback/done/failed, 사진칸 문구 사업주 확정본·16px+) + 계단버튼 기본펼침 + sticky 띠. 이어 Phase 3(계측 6종)·Phase 4(3경로 dev 완주·문서·push).
-- ⚠️ **미push 누적**: `9ffb7d6`(docs F-2)·`4b2bf97`·`ad86feb`. push는 라운드 끝 일괄 승인.
+- ✅ **Phase 2+3 (`81e3c96`)**: 결과지 선공개 + 계측. **접수 페이지**(loading): 게이트+kickoff+job 저장 성공→즉시 result, 폴링 0(단일 poller). 스킵 링크·로딩 UI 삭제. 접수 실패=401→로그인/403→동의/429·network→접수화면 에러(결과지 안 감). **결과지**: `useHairTransformJob` 단일 poller. PhotoSlot 상태별(generating 스피너·done·failed·limit, 무점프), 확정 문구(16px)는 사진 칸 바로 아래 전폭 블록("스타일 사진을 만들고 있어요. 평균 2~3분…" + elapsed + 벗어남 안내). 진단 기본 펼침(버튼 제거), 제품만 끝 버튼. sticky 띠. 훅: 언마운트 abort·지역 클로저(StrictMode 폴링사망 방지)·fallbackAttempted 선저장·fallback_not_eligible 원본 재확인·startedAt 범위검증·answers 유효 시만 폴링. **계측**: report_view·product_clicked에 photo_state / 신규 result_scroll_depth·photo_arrived(model)·photo_banner_click / hair_transform_done에 model(meta만·SQL 불필요). 서버 무수정. **Codex 3관점 통과**(StrictMode 🔴 수정·재검), 잔여 🟡=언마운트 중 폴백POST 재개 경계(드문 lost-success·이중차감 없음)→hair_jobs 원장 로드맵. tsc 0·fallback 14/14·invariant 9/9. dev 실측 done/generating/failed 렌더 확인.
+- 🔴 **다음 = Phase 4(마감)**: 3경로 dev 완주(정상/폴백/실패, 로그인 세션 필요→사장님 폰)·전체 하네스·문서·**push 일괄 승인**.
+- ⚠️ **미push 누적**: `9ffb7d6`(docs F-2)·`4b2bf97`·`ad86feb`(P1)·`81e3c96`(P2+P3)+본 docs. push는 라운드 끝 일괄 승인.
+- ℹ️ **커밋 분리 메모**: P2 선공개와 P3 계측은 결과지 rewrite에 물려 있어(공용 photoState·hook 출력) 독립 컴파일 커밋으로 못 나눠 `81e3c96` 한 커밋에 합침.
 
 ## 🟢 F. 오픈 전 최종 검수 — 폴백 죽은경로 회귀 수정 + 정합 하네스 (2026-09-08 커밋·push·배포 / F-2 재검수 2026-09-09)
 
