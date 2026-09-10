@@ -3,9 +3,11 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-10
 
-## 🟢 H. 결과지 원고 정비 라운드 — 배치·견본·lint (2026-09-10 · **push·배포 완료 `72faac1`**)
+## 🟢 H. 결과지 원고 정비 라운드 — 배치·견본·lint (2026-09-10 · **push·배포 완료 `a94e36b`**)
 
-> **배포**: 2026-09-10 `99b2882..72faac1` origin/main push → Vercel 자동배포. 배포 커밋 **`72faac1`**(HEAD==origin/main). 로컬 tsc 0·copy:check OK.
+> **배포**: 2026-09-10 origin/main push → Vercel 자동배포. 최신 배포 커밋 **`a94e36b`**(견본 2차 정정 포함, HEAD==origin/main). 로컬 tsc 0·copy:check OK.
+> 견본 2차 정정(`a94e36b`): b2 사장님 현장 말투 — b2_aha·b2_detail·order_b2_say/why·b2_c_curl 표현통일. 롯드 수치 정정(`72faac1`): C=한 바퀴 반/S=두~두반.
+> 5초 도착 조사(2026-09-10): 코드 판정 ① 원본 warm(정상) — ② stale은 접수 clearPrevResultKeys+photo_arrived 미발화로 방지·③ 폴백은 4:50 구조상 불가. event 데이터 최종확인은 사장님 SQL(hair_transform_done·photo_arrived의 meta.model).
 
 역할표(조각 헌법) 확정 후 ①배치 수정 ②견본 1조합 문장 교체 ③lint ④수치 정정. 나머지 105개 훑기는 채굴방 라운드. 서버·훅·폴백·계측 무변경.
 
