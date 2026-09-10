@@ -51,10 +51,10 @@ const curlFit: StyleCopyBlockModule = {
     // ── 갈래2 · 곱슬인데 컬 희망 ───────────────────────────────────────────
     {
       id: "style.curl_fit.b2_detail",
-      text: "됩니다. 단, 곱슬을 먼저 펴고 그 위에 컬을 얹는 순서로만. 순서를 아는 곳이면 한 번 방문으로 끝납니다.",
+      text: "됩니다. 곱슬기를 다 잡은 다음에 컬을 넣으면 깔끔해요. 그 순서를 아는 곳이면 한 번 방문으로 끝납니다.",
       status: "approved",
       sourceGrade: "파생",
-      sourceRef: "2026-09-10 역할표 견본 재작성 (구 BRANCH_COPY.b2.detail — 궁합=판정+조건, 구 b2_procedure 흡수)",
+      sourceRef: "2026-09-10 역할표 견본(2차 사장님 현장 말투) — 궁합=판정+조건, 구 b2_procedure 흡수",
       evidenceKeys: [...B2_KEYS],
     },
     {
@@ -144,7 +144,7 @@ const curlFit: StyleCopyBlockModule = {
     // ── 갈래2 · 곱슬 있는 머리 × 컬 희망 — 바퀴 수 차등 ──────────────────────
     {
       id: "style.curl_fit.b2_c_curl",
-      text: "C컬은 셋 중 가장 완만한 컬이에요. 곱슬을 약으로 정리한 다음, 중간쯤부터 롯드를 한 바퀴 반 감아 안쪽으로 살짝 말아주면 됩니다. 곱슬을 잡는 것과 컬을 마는 게 따로가 아니라 같은 시술 안에서 순서대로 이어지는 거라, 한 번 방문으로 끝나요.",
+      text: "C컬은 셋 중 가장 완만한 컬이에요. 곱슬기 잡은 다음, 중간쯤부터 롯드를 한 바퀴 반 감아 안쪽으로 살짝 말아주면 됩니다. 곱슬을 잡는 것과 컬을 마는 게 따로가 아니라 같은 시술 안에서 순서대로 이어지는 거라, 한 번 방문으로 끝나요.",
       status: "approved",
       sourceGrade: "재배치",
       sourceRef: "사장님 채굴 답변 2026-08-21 · 2026-09-10 롯드 수치 확정 정정 — C컬=한 바퀴 반(중간부터), 곱슬 정리는 같은 시술 내 순서",
@@ -195,18 +195,18 @@ const curlFit: StyleCopyBlockModule = {
     //   렌더: 겉(_say)은 궁합 카드에 항상 보이고, 더보기(_why)는 FadePreview 안으로 접힌다.
     {
       id: "style.curl_fit.order_b2_say",
-      text: "곱슬 먼저 펴고, 그 위에 원하는 컬로 말아주세요",
+      text: "곱슬기 다 잡고 나서 컬 넣어주세요",
       status: "approved",
       sourceGrade: "파생",
-      sourceRef: "§4 2단 겉(주문 멘트) — 곱슬 있는 머리×컬. 사장님 원문(곱슬 정리→컬 순서)",
+      sourceRef: "§4 2단 겉(주문 멘트) · 2026-09-10 견본 2차(사장님 현장 말투) — 곱슬기 정리→컬 순서",
       evidenceKeys: [...B2_KEYS],
     },
     {
       id: "style.curl_fit.order_b2_why",
-      text: "곱슬 펴기는 따로 받는 시술이 아니라 컬 마는 시술 안에서 같이 됩니다. 이 한 마디가 원래 곱슬과 새 컬이 섞이는 걸 막아줘요.",
+      text: "곱슬기를 안 잡고 바로 컬을 넣는 곳도 있어요. 이 한 마디가 그걸 막아줍니다.",
       status: "approved",
       sourceGrade: "파생",
-      sourceRef: "§4 2단 더보기(이유) · 2026-09-10 역할표 견본 재작성 — 그 한 마디가 무엇을 막는지",
+      sourceRef: "§4 2단 더보기(이유) · 2026-09-10 견본 2차(사장님 현장 말투) — 그 한 마디가 무엇을 막는지",
       evidenceKeys: [...B2_KEYS],
     },
     {

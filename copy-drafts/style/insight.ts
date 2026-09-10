@@ -47,8 +47,8 @@ const insight: StyleCopyBlockModule = {
       text: "할 수 있습니다 — 순서만 지키면요" },
     { id: "style.insight.b2_door", status: "approved", sourceGrade: "재배치", sourceRef: "BRANCH_COPY.b2.door 원문 그대로 (갈래2 기본 door=C컬. wave·s_curl은 curl-fit의 디자인 분기)", evidenceKeys: [...B2],
       text: "C컬 해달라고 했는데 부스스하고 지저분하게 나온 적 있다면 — 바로 이것 때문이에요." },
-    { id: "style.insight.b2_aha", status: "approved", sourceGrade: "파생", sourceRef: "2026-09-10 역할표 견본 재작성 (구 BRANCH_COPY.b2.aha — aha 규칙: 답 1문장+원리 1문장)", evidenceKeys: [...B2],
-      text: "펌 탓이 아니라 원래 있던 곱슬 탓입니다. 곱슬을 그대로 두고 컬을 얹으면 두 결이 섞여서 지저분해져요." },
+    { id: "style.insight.b2_aha", status: "approved", sourceGrade: "파생", sourceRef: "2026-09-10 역할표 견본(2차 사장님 현장 말투) — 구 BRANCH_COPY.b2.aha", evidenceKeys: [...B2],
+      text: "곱슬이 있는 머리에 그냥 컬을 넣으면 보통 지저분해져요. 곱슬기가 덜 펴진 자리마다 컬이 깔끔하게 안 나오는 거예요." },
 
     // ── 갈래3 · 숱많음+얇음+곱슬기 × 펴기 ──────────────────────────────────
     { id: "style.insight.b3_stamp", status: "approved", sourceGrade: "재배치", sourceRef: "BRANCH_COPY.b3.stamp 원문 그대로 (갈래3)", evidenceKeys: [...B3],
