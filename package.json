@@ -15,6 +15,7 @@
     "test:invariant": "tsc -p tests/tsconfig.invariant.json && node tests/.build/tests/invariant/engine-invariants.js",
     "test:fallback": "tsc -p tests/tsconfig.invariant.json && node tests/.build/tests/invariant/fallback-eligibility.test.js",
     "copy:check": "tsc -p copy-drafts/tsconfig.check.json && node copy-drafts/.build/copy-drafts/check.js",
+    "copy:lint": "tsc -p copy-drafts/tsconfig.check.json && node copy-drafts/.build/copy-drafts/lint.js",
     "dump:v2": "tsc -p copy-drafts/tsconfig.check.json && node copy-drafts/.build/copy-drafts/enumerate/run.js"
   },
   "dependencies": {
