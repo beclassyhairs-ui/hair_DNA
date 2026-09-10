@@ -761,6 +761,19 @@ export default function StyleResultPage() {
                   );
                 })()}
 
+                {/* 5-b. 케어 — 2026-09-10 역할표: 집에서 하는 관리 행동(_tip). 궁합 칸에서 분리.
+                       _tip 없는 갈래(b3 등)는 칸 자체를 그리지 않는다(빈 헤더 금지). */}
+                {bodyOf(sblock("care")).length > 0 && (
+                  <>
+                    <TT>이렇게 관리하세요</TT>
+                    <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                      {bodyOf(sblock("care")).map((e) => (
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                      ))}
+                    </div>
+                  </>
+                )}
+
                 {/* 6. 스타일 궁합 — §6-5(2). 곱슬 × 희망 디자인.
                        §4 2단 구조(Phase2): 겉(_say = 미용실 주문 멘트)은 카드에 보이고,
                        더보기(_why = 원장 이유)는 FadePreview로 접는다. */}
@@ -798,15 +811,26 @@ export default function StyleResultPage() {
                   );
                 })()}
 
-                {/* 7. 커트 설계 — §6-5(3). §4 2단(Phase2): 겉(_say = 주문 멘트)은 보이고,
-                       나머지(기장 조언 + _why 이유)는 FadePreview로 접는다. say가 없는
-                       기장(단발·롱·쇄골)은 종전대로 전체를 접는다. */}
+                {/* 7. 커트 — 2026-09-10 역할표: 기장 조언(len_*·커트 판단)은 "기장은 이렇게 봅니다"
+                       자기 헤더로, 주문 인용문(_say)은 "주문하세요", 이유(_why)는 "왜 이렇게 주문할까요".
+                       각 칸은 내용이 있을 때만 그린다(빈 헤더 금지). */}
                 {bodyOf(sblock("cut")).length > 0 && (() => {
                   const cut = bodyOf(sblock("cut"));
                   const say = cut.filter((e) => e.id.endsWith("_say"));
-                  const rest = cut.filter((e) => !e.id.endsWith("_say"));
+                  const why = cut.filter((e) => e.id.endsWith("_why"));
+                  const lenAdvice = cut.filter((e) => !e.id.endsWith("_say") && !e.id.endsWith("_why"));
                   return (
                     <>
+                      {lenAdvice.length > 0 && (
+                        <>
+                          <TT>기장은 이렇게 봅니다</TT>
+                          <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                            {lenAdvice.map((e) => (
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                            ))}
+                          </div>
+                        </>
+                      )}
                       {say.length > 0 && (
                         <>
                           <TT>미용실에서 이렇게 주문하세요</TT>
@@ -817,10 +841,10 @@ export default function StyleResultPage() {
                           </GlassCard>
                         </>
                       )}
-                      {rest.length > 0 && (
-                        <FadePreview title={say.length > 0 ? "왜 이렇게 주문할까요" : "미용실에서 이렇게 주문하세요"}>
+                      {why.length > 0 && (
+                        <FadePreview title="왜 이렇게 주문할까요">
                           <div className="space-y-2">
-                            {rest.map((e) => (
+                            {why.map((e) => (
                               <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
                             ))}
                           </div>

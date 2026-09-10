@@ -34,10 +34,11 @@ export function renderableStatuses(env: CopyEnv): readonly ("draft" | "owner_rev
     : (["draft", "owner_reviewed", "approved"] as const);
 }
 
-/** 이 status가 이 환경에서 렌더 가능한가. */
+/** 이 status가 이 환경에서 렌더 가능한가. retired 는 어떤 환경에서도 불가. */
 export function isRenderable(
-  status: "draft" | "owner_reviewed" | "approved",
+  status: "draft" | "owner_reviewed" | "approved" | "retired",
   env: CopyEnv = currentCopyEnv(),
 ): boolean {
+  if (status === "retired") return false;
   return env === "production" ? status === "approved" : true;
 }

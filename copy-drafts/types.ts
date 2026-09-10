@@ -15,7 +15,10 @@ import type { DamageSurveyAnswers } from "../app/damage-check/surveyData";
 //   draft          : 초안. dev/preview에서만 렌더.
 //   owner_reviewed : 사장님이 봤으나 아직 승인 전. dev/preview에서만 렌더.
 //   approved       : 승인 완료. production 렌더 가능한 유일한 상태.
-export type CopyStatus = "draft" | "owner_reviewed" | "approved";
+//   retired        : 은퇴. 삭제하지 않고 보존하되 resolver 도달집합에서 빼고 어떤 환경에서도
+//                    렌더하지 않는다(2026-09-10 역할표 — 예: 내용이 다른 조각에 흡수된 entry).
+//                    죽은칸(orphan) 검사에서 제외된다.
+export type CopyStatus = "draft" | "owner_reviewed" | "approved" | "retired";
 
 // ─── §7-2 sourceGrade ──────────────────────────────────────────────────────
 //   재배치 : 원문 판단 그대로, 위치·분량만 재편 → 검수 부담 최소

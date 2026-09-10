@@ -86,7 +86,9 @@ for (const id of reachable) {
 {
   const reachableSet = new Set(reachable);
   // 예언 8번은 엔진에서 match=() => false라 구조상 도달 불가 — 알려진 예외다.
+  // retired entry는 의도적으로 도달집합에서 뺀 것이라 죽은칸 검사에서 제외한다(2026-09-10 역할표).
   const orphans = allEntries()
+    .filter((x) => x.status !== "retired")
     .map((x) => x.id)
     .filter((id) => !reachableSet.has(id) && !id.includes(".p08_"));
   if (orphans.length > 0) {
@@ -252,7 +254,7 @@ const GATE_ENFORCED = true; // 활성화됨(2026-08-20) — prebuild가 copy:che
 console.log("\n📋 copy registry check (§7)\n");
 console.log(`  블록: ${ALL_BLOCKS.length}개 (style ${ALL_BLOCKS.filter((b) => b.domain === "style").length} · damage ${ALL_BLOCKS.filter((b) => b.domain === "damage").length})`);
 console.log(`  entry: ${stats.total}개`);
-console.log(`  status: draft ${stats.byStatus.draft} · owner_reviewed ${stats.byStatus.owner_reviewed} · approved ${stats.byStatus.approved}`);
+console.log(`  status: draft ${stats.byStatus.draft} · owner_reviewed ${stats.byStatus.owner_reviewed} · approved ${stats.byStatus.approved} · retired ${stats.byStatus.retired}`);
 console.log(`  sourceGrade: 재배치 ${stats.bySourceGrade.재배치} · 파생 ${stats.bySourceGrade.파생} · 신규 ${stats.bySourceGrade.신규}`);
 console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verbatim.mismatches.length}건`);
 {

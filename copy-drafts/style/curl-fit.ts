@@ -66,11 +66,13 @@ const curlFit: StyleCopyBlockModule = {
       evidenceKeys: [...B2_KEYS],
     },
     {
+      // ★ 2026-09-10 역할표: 내용을 b2_detail 3문장째("순서를 아는 곳이면 한 번 방문으로 끝납니다")에
+      //   흡수하고 retired 처리. 삭제하지 않고 보존(resolver 도달집합·렌더에서 제외, 죽은칸 검사 예외).
       id: "style.curl_fit.b2_procedure",
       text: "이 머리는 곱슬을 먼저 정리하고 컬을 얹는 순서로 설계해야 합니다. 순서를 아는 곳이면 한 번 방문으로도 됩니다.",
-      status: "approved",
+      status: "retired",
       sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b2.procedure 원문 그대로 (갈래2 · 곱슬×컬 순서 설계)",
+      sourceRef: "BRANCH_COPY.b2.procedure 원문 그대로 (갈래2 · 곱슬×컬 순서 설계) — 2026-09-10 retired(detail 흡수)",
       evidenceKeys: [...B2_KEYS],
     },
 

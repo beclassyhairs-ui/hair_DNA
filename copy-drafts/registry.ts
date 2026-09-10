@@ -106,7 +106,7 @@ export interface RegistryStats {
 
 export function registryStats(): RegistryStats {
   const entries = allEntries();
-  const byStatus: Record<CopyStatus, number> = { draft: 0, owner_reviewed: 0, approved: 0 };
+  const byStatus: Record<CopyStatus, number> = { draft: 0, owner_reviewed: 0, approved: 0, retired: 0 };
   const bySourceGrade: Record<SourceGrade, number> = { 재배치: 0, 파생: 0, 신규: 0 };
   for (const e of entries) {
     // 참조 entry는 원본에서 상속한 실효 상태로 센다.

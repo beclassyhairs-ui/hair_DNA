@@ -65,13 +65,21 @@ const HAIR_STRUCTURE: Partial<Record<BranchKey, string[]>> = {
   b10: ["style.hair_structure.b10_aha_ref"],
 };
 
-/** §6-5(2) 스타일 궁합. */
+/** §6-5(2) 스타일 궁합 — 된다/안 된다 판정 + 조건 + 시술 순서. (2026-09-10 역할표: _tip 은
+ *  CARE 로, b2_procedure 는 detail 흡수 후 retired.) */
 const CURL_FIT: Partial<Record<BranchKey, string[]>> = {
-  b1: ["style.curl_fit.b1_detail", "style.curl_fit.b1_tip", "style.curl_fit.b1_procedure"],
-  b2: ["style.curl_fit.b2_detail", "style.curl_fit.b2_tip", "style.curl_fit.b2_procedure"],
-  b7: ["style.curl_fit.b7_detail", "style.curl_fit.b7_tip", "style.curl_fit.b7_procedure"],
+  b1: ["style.curl_fit.b1_detail", "style.curl_fit.b1_procedure"],
+  b2: ["style.curl_fit.b2_detail"], // b2_procedure retired(견본 detail 흡수), b2_tip→CARE
+  b7: ["style.curl_fit.b7_detail", "style.curl_fit.b7_procedure"],
   // 걸침 배치(§6 보정 2): 펴기 시술 설계가 주(主)라 curl-fit.
   b3: ["style.curl_fit.b3_procedure"],
+};
+
+/** ★2026-09-10 역할표: 케어(집에서 하는 행동)는 궁합 칸에서 분리한다. _tip 조각 = CARE. */
+const CARE: Partial<Record<BranchKey, string[]>> = {
+  b1: ["style.curl_fit.b1_tip"],
+  b2: ["style.curl_fit.b2_tip"],
+  b7: ["style.curl_fit.b7_tip"],
 };
 
 /** §6-5(3) 커트 설계. */
@@ -227,6 +235,7 @@ export function resolveStyle(answers: StyleAnswers, env?: CopyEnv): StyleResolut
   if (fired.includes("b2")) { const d = B2_DESIGN[answers.q13_design ?? ""]; if (d) designCurl.push(d); designCurl.push(...ORDER_B2); }
   if (fired.includes("b7")) { const d = B7_DESIGN[answers.q13_design ?? ""]; if (d) designCurl.push(d); designCurl.push(...ORDER_B7); }
   const curlFitIds = [...pick(CURL_FIT), ...designCurl];
+  const careIds = pick(CARE); // 2026-09-10 역할표: 케어 칸(집에서 하는 행동) — _tip 조각.
 
   const lenCut = LEN_CUT[answers.q11_length ?? ""];
   const shortOrder = SHORT_LENGTHS.includes(answers.q11_length ?? "") ? ORDER_CUT : [];
@@ -237,6 +246,7 @@ export function resolveStyle(answers: StyleAnswers, env?: CopyEnv): StyleResolut
     collectBlock("style", "volume", volumeIds, e, issues, seen),
     collectBlock("style", "hair-structure", hairStructureIds, e, issues, seen),
     collectBlock("style", "curl-fit", curlFitIds, e, issues, seen),
+    collectBlock("style", "care", careIds, e, issues, seen),
     collectBlock("style", "cut", cutIds, e, issues, seen),
     collectBlock("style", "safety", safetyIds, e, issues, seen),
   ];
@@ -287,6 +297,7 @@ export function styleReachableIds(): string[] {
     ...SCALP_ROUTINE,
     ...flat(HAIR_STRUCTURE),
     ...flat(CURL_FIT),
+    ...flat(CARE),
     ...flat(CUT),
     ...SAFETY_CAUTION,
     ...SAFETY_BLOCK,
