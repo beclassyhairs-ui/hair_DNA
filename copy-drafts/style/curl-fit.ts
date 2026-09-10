@@ -51,18 +51,18 @@ const curlFit: StyleCopyBlockModule = {
     // ── 갈래2 · 곱슬인데 컬 희망 ───────────────────────────────────────────
     {
       id: "style.curl_fit.b2_detail",
-      text: "곱슬이 남아 있는 채로 컬이 들어가면 원래 곱슬과 새 컬이 섞입니다. 머릿결이 나빠서도, 펌약이 싸구려여서도 아니에요. 곱슬을 잡는 단계가 빠진 겁니다. 곱슬기를 먼저 정리하고 그 위에 컬을 얹으면 같은 머리에서도 컬 선이 살아납니다.",
+      text: "됩니다. 단, 곱슬을 먼저 펴고 그 위에 컬을 얹는 순서로만. 순서를 아는 곳이면 한 번 방문으로 끝납니다.",
       status: "approved",
-      sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b2.detail 원문 그대로 (갈래2 곱슬인데 컬 희망)",
+      sourceGrade: "파생",
+      sourceRef: "2026-09-10 역할표 견본 재작성 (구 BRANCH_COPY.b2.detail — 궁합=판정+조건, 구 b2_procedure 흡수)",
       evidenceKeys: [...B2_KEYS],
     },
     {
       id: "style.curl_fit.b2_tip",
-      text: "컬이 있는 머리는 브러시로 빗어 내리는 순간 부스스해집니다. 말릴 때는 컬 방향대로 손으로 감아쥐고 말리는 게 기본이에요. 습한 날은 나가기 전에 얼굴 주변에만 크림을 살짝 발라주세요. 앞머리랑 헤어라인이 제일 먼저 부스스해지는 자리라서요.",
+      text: "컬 있는 머리는 브러시로 빗어 내리면 바로 부스스해져요. 말릴 때는 컬 방향대로 손으로 감아쥐고 말리세요. 습한 날은 나가기 전에 앞머리와 헤어라인에만 크림을 살짝.",
       status: "approved",
-      sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b2.tip 원문 그대로 (갈래2 곱슬인데 컬 희망)",
+      sourceGrade: "파생",
+      sourceRef: "2026-09-10 역할표 견본 재작성 (구 BRANCH_COPY.b2.tip — 케어 칸: 집에서 하는 행동)",
       evidenceKeys: [...B2_KEYS],
     },
     {
@@ -152,10 +152,10 @@ const curlFit: StyleCopyBlockModule = {
     },
     {
       id: "style.curl_fit.b2_s_curl",
-      text: "S컬은 C컬과 방식이 같고, 롯드를 더 감는 것만 달라요. 곱슬을 정리한 뒤 두 바퀴에서 두 바퀴 반 정도로 감으면 굴곡이 한 번 더 생기면서 S자로 흐릅니다. 컬을 조금 더 세게 잡는 것뿐이라, 다른 특별한 방식이 있는 게 아니에요.",
+      text: "S컬은 C컬보다 롯드를 반 바퀴 더 감는 것뿐이에요. 이 머리에 어려운 시술이 아닙니다.",
       status: "approved",
-      sourceGrade: "재배치",
-      sourceRef: "사장님 채굴 답변 2026-08-21 — S컬=두~두반 바퀴, C컬과 차이는 '더 마는 것뿐'",
+      sourceGrade: "파생",
+      sourceRef: "2026-09-10 역할표 견본 재작성 (구 사장님 채굴 2026-08-21 S컬=두~두반 바퀴 — 간결화)",
       evidenceKeys: [...B2_KEYS],
     },
     {
@@ -203,10 +203,10 @@ const curlFit: StyleCopyBlockModule = {
     },
     {
       id: "style.curl_fit.order_b2_why",
-      text: "곱슬을 약으로 정리하는 건 따로 받는 시술이 아니라, 컬을 마는 그 시술 안에서 같이 이뤄져요. 이 순서를 알고 주문하시면, 원래 곱슬과 새 컬이 섞여 지저분해지는 일 없이 컬 선이 깔끔하게 나옵니다.",
+      text: "곱슬 펴기는 따로 받는 시술이 아니라 컬 마는 시술 안에서 같이 됩니다. 이 한 마디가 원래 곱슬과 새 컬이 섞이는 걸 막아줘요.",
       status: "approved",
       sourceGrade: "파생",
-      sourceRef: "§4 2단 더보기(이유) — 곱슬 정리=같은 시술 내 순서",
+      sourceRef: "§4 2단 더보기(이유) · 2026-09-10 역할표 견본 재작성 — 그 한 마디가 무엇을 막는지",
       evidenceKeys: [...B2_KEYS],
     },
     {
