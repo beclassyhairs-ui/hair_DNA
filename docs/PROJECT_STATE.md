@@ -1,7 +1,18 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-09-08
+> 최종 갱신: 2026-09-10
+
+## 🟡 H. 결과지 원고 정비 라운드 — 배치·견본·lint (2026-09-10 · 커밋 완료·미push)
+
+역할표(조각 헌법) 확정 후 ①배치 수정 ②견본 1조합 문장 교체 ③lint. 나머지 105개 훑기는 견본 승인 후 채굴방 라운드. 서버·훅·폴백·계측 무변경.
+
+- ✅ **P1 배치 (`6e7fac8`)**: CARE 블록 신설(curl-fit `_tip`→결과지 "이렇게 관리하세요" 칸, 볼륨 아래·_tip 없는 갈래는 칸 미생성) · 커트 `len_*`(+모질 커트판단)→"기장은 이렇게 봅니다" 자기헤더, `_say`→주문 인용문, `_why`→왜 · `b2_procedure` retired(내용 detail 흡수, 삭제 아님). **retired status 신설**(types·env 렌더불가·registry stats·check.ts 죽은칸 제외). resolver/result만 수정, 문장 무변경.
+- ✅ **P2 견본 (`4f795f8`)**: b2×굵음·보통×S컬×쇄골 8조각 교체(insight.b2_aha·curl_fit.b2_detail/b2_tip/b2_s_curl/order_b2_why·hair_structure.m_coarse_med/curlmod_wavy·cut.len_collarbone). 재작성한 "원문 그대로"(재배치) 3건은 verbatim 통과 위해 마커 제거+grade 파생. 유지 3건 무손상.
+- ✅ **P3 lint (`82caf22`)**: `copy:lint` 신설(빌드실패 아님·리포트) — L1 4문장+·L2 부정선행. 167개 대상 경고 25건(L1 24·L2 2) → `docs/copy_lint_2026-09-10.md`(다음 채굴방 작업 대상표). 견본 8건 경고 0.
+- ✅ **P4 dev 실측**: 견본 조합 렌더 확인 — 궁합 2문단(4→2)·케어/기장 칸 신설·주문 인용문만·**빈 헤더 0**·원리 aha 1회. 다른 갈래 b1(order 없음)·b3(케어 없음)도 빈 헤더 0. copy:check OK(approved 170·retired 1·도달167·죽은칸0·원문대조111·불일치0)·tsc 0·invariant 9/9·fallback 14/14.
+- 🟡 **오너 확인 요망(견본 승인 대상)**: ① **b2_s_curl 견본** "S컬은 C컬보다 롯드를 반 바퀴 더" — 옆칸 b2_c_curl·기존 채굴(C=반·S=두~두반 바퀴)과 어긋남(간결화 우선한 사장님 견본). ② cut의 `b*_procedure`(모질 커트판단)가 별도 헤더 없어 "기장은 이렇게 봅니다"에 함께 묶임(견본 b2엔 없어 무영향).
+- 🔴 **다음 = 사업주 견본 승인 → push**(미push 4건: `26ddb96`·`6e7fac8`·`4f795f8`·`82caf22` + 본 docs) → 채굴방 style 105개 훑기 라운드.
 
 ## 🟢 G. /style 결과지 선공개 라운드 (2026-09-09~10 · **push·배포 완료 `99b2882`** · Phase 4 실합성 완주만 남음)
 
