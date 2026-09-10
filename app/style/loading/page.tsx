@@ -28,13 +28,12 @@ import * as Sentry from "@sentry/nextjs";
 import SilkBackground from "@/components/beauty-ui/SilkBackground";
 import GlassCard from "@/components/beauty-ui/GlassCard";
 
-type IntakePhase = "submitting" | "error" | "limit";
+type IntakePhase = "submitting" | "error";
 
 export default function StyleIntakePage() {
   const router = useRouter();
   const [phase, setPhase] = useState<IntakePhase>("submitting");
   const [failReason, setFailReason] = useState<string | null>(null);
-  const [limitMsg, setLimitMsg] = useState<string | null>(null);
   const calledRef = useRef(false);
 
   useEffect(() => {
@@ -123,9 +122,12 @@ export default function StyleIntakePage() {
         }
 
         if (res.status === 429 || data.reason === "daily_limit") {
+          // ★ 429(일일한도)는 결과지로 보낸다(사업주 판정 2026-09-10) — 진단 본체는 정상 노출하고
+          //   사진 칸만 "오늘은 여기까지" 안내. STYLE_LIMIT_KEY 로 결과지에 전달(폴링 안 함).
           const msg = data.message ?? "오늘 무료 횟수를 모두 사용했어요. 내일 다시 만나요.";
+          try { sessionStorage.setItem(STYLE_LIMIT_KEY, msg); } catch { /**/ }
           void trackEvent("hair_transform_fail", { reason: "daily_limit", source: "style" });
-          setLimitMsg(msg); setPhase("limit");
+          router.replace("/style/result");
           return;
         }
 
@@ -166,17 +168,6 @@ export default function StyleIntakePage() {
             <p className="text-[17px] font-bold leading-snug text-ink">결과지를 준비하고 있어요</p>
             <p className="text-[15px] text-ink-2">잠시만요…</p>
           </div>
-        )}
-
-        {phase === "limit" && (
-          <GlassCard className="flex max-w-[340px] flex-col items-center gap-3 px-6 py-8 text-center">
-            <p className="text-[18px] font-extrabold leading-snug text-ink">오늘 무료 합성을 다 쓰셨어요</p>
-            <p className="text-[15px] leading-relaxed text-ink-2">{limitMsg}</p>
-            <button onClick={() => router.replace("/home")}
-              className="mt-2 rounded-full border border-btn-border bg-btn-bg px-6 py-3 text-[16px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
-              홈으로
-            </button>
-          </GlassCard>
         )}
 
         {phase === "error" && (() => {

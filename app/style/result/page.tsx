@@ -228,7 +228,8 @@ function BeforeAfterSection({
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-[15px] font-bold leading-snug text-white/95">오늘 무료 합성을<br />다 쓰셨어요</p>
+            <p className="text-[15px] font-bold leading-snug text-white/95">오늘 사진은<br />여기까지예요</p>
+            <p className="text-[12px] leading-relaxed text-white/75">내일 다시<br />만들어드릴게요</p>
           </div>
         ) : generating ? (
           // Phase2: 사진 준비 중 — 슬롯엔 스피너만(상세 문구는 그리드 아래 전폭 블록).
@@ -501,10 +502,10 @@ export default function StyleResultPage() {
       diagnosis_type: "style",
       result_type: report.hairTypeKey,
       concern_tags: buildHairTags(answers),
-      photo_state: generated ? "done" : "pending",
+      photo_state: generated ? "done" : limitMessage ? "limited" : "pending",
     });
     setCompleteTracked(true);
-  }, [ready, answers, completeTracked, generated]);
+  }, [ready, answers, completeTracked, generated, limitMessage]);
 
   // Phase3: 사진 도착(photo_arrived) — 훅으로 이미지가 "이 화면에서" 완성된 경우 1회.
   useEffect(() => {
@@ -533,7 +534,7 @@ export default function StyleResultPage() {
           scrollFiredRef.current.add(th);
           trackEvent("result_scroll_depth", {
             source: "style", depth: th,
-            photo_state: generated ? "done" : "pending",
+            photo_state: generated ? "done" : limitMessage ? "limited" : "pending",
             elapsed_ms: Date.now() - mountedAtRef.current,
           });
         }
@@ -541,7 +542,7 @@ export default function StyleResultPage() {
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [ready, generated]);
+  }, [ready, generated, limitMessage]);
 
   // sticky 띠 — 사진 칸이 화면 밖으로 나가면 상단 고정 띠 노출.
   useEffect(() => {
@@ -582,6 +583,8 @@ export default function StyleResultPage() {
   const photoState: "generating" | "done" | "failed" | "limit" =
     generated ? "done" : limitMessage ? "limit" : failReason ? "failed" : job ? "generating" : "failed";
   const generatingPhoto = photoState === "generating";
+  // 계측용 photo_state — 429 한도(limited)를 pending 과 구분(사업주 판정 2026-09-10).
+  const photoStateForMeta = generated ? "done" : limitMessage ? "limited" : failReason ? "failed" : "pending";
   const elapsedText = (() => {
     const s = Math.max(0, Math.floor(jobResult.elapsedMs / 1000));
     const m = Math.floor(s / 60);
@@ -618,7 +621,7 @@ export default function StyleResultPage() {
         {photoOffscreen && (generatingPhoto || photoState === "failed" || (photoState === "done" && !bannerDismissed)) && (
           <button
             onClick={() => {
-              trackEvent("photo_banner_click", { source: "style", photo_state: photoState });
+              trackEvent("photo_banner_click", { source: "style", photo_state: photoStateForMeta });
               if (photoState === "failed") { handleRetry(); return; }
               photoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
               if (photoState === "done") setBannerDismissed(true);
@@ -859,7 +862,7 @@ export default function StyleResultPage() {
                   ) : (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mt-5">
                       {/* 7. 쿠팡 제휴 제품 카드 — 매칭 실물(확정48). COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
-                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" metaExtra={{ photo_state: generated ? "done" : "pending" }} />
+                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" metaExtra={{ photo_state: photoStateForMeta }} />
                     </motion.div>
                   )
                 ) : (
