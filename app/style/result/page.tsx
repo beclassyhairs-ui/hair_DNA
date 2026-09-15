@@ -920,11 +920,11 @@ export default function StyleResultPage() {
                     if (navigator.share) navigator.share({ title: "미알팁 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
+                  className="flex min-h-14 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   공유하기
                 </button>
                 <Link href="/style/survey"
-                  className="flex h-12 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
+                  className="flex min-h-14 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   다시 진단하기
                 </Link>
               </div>
@@ -932,7 +932,7 @@ export default function StyleResultPage() {
 
             {/* 홈 복귀 — 데미지 결과지와 동일 동선(C-2 [3-3]). 저장 없이 홈으로. */}
             <div className="flex justify-center pt-1">
-              <Link href="/home" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+              <Link href="/home" className="inline-flex min-h-14 items-center text-[15px] font-medium text-sub transition-colors hover:text-ink">
                 홈으로 →
               </Link>
             </div>

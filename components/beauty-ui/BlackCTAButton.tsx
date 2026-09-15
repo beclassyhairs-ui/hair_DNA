@@ -21,8 +21,8 @@ export default function BlackCTAButton({
   children, onClick, href, disabled = false, type = "button", className = "",
 }: Props) {
   const classes =
-    "flex h-14 min-h-[48px] w-full items-center justify-center gap-2 rounded-btn " +
-    "bg-btn-bg border border-btn-border text-base font-bold text-btn-text " +
+    "flex h-14 min-h-14 w-full items-center justify-center gap-2 rounded-btn " +
+    "bg-btn-bg border border-btn-border text-emphasis font-bold text-btn-text " +
     "transition-all active:scale-[0.98] hover:brightness-95 " +
     "disabled:opacity-50 disabled:cursor-not-allowed " +
     className;

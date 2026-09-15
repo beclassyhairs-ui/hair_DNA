@@ -13,8 +13,8 @@ import type { ComponentProps, ReactNode } from "react";
 type Variant = "primary" | "secondary" | "ghost";
 
 const BASE =
-  "inline-flex items-center justify-center gap-2 rounded-btn text-base " +
-  "transition-colors select-none min-h-[48px] px-5 " +
+  "inline-flex items-center justify-center gap-2 rounded-btn text-emphasis " +
+  "transition-colors select-none min-h-14 px-5 " +
   "disabled:cursor-not-allowed";
 
 const VARIANT: Record<Variant, string> = {

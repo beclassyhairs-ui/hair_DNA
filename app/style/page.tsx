@@ -67,7 +67,7 @@ export default function StyleLandingPage() {
                 </p>
                 <button
                   onClick={() => setShowLimitModal(false)}
-                  className="mt-6 flex h-12 w-full items-center justify-center rounded-btn bg-surface text-emphasis text-ink transition hover:bg-line"
+                  className="mt-6 flex min-h-14 w-full items-center justify-center rounded-btn bg-surface text-emphasis text-ink transition hover:bg-line"
                 >
                   확인
                 </button>
