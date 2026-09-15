@@ -32,11 +32,19 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - 기존 토큰: `app/globals.css`(:root SSOT) + `tailwind.config.ts`(var 참조). body=16·aux=14(→5060 위반: body≥17·보조≥15로 상향 예정). 포인트=차콜 CTA, 배경 아이보리. 구 팔레트(gold/brown/accent) 잔존.
 
 ## 다음 할 일
-1. **Phase 3: Codex 3관점 검수** — a)5060 UX b)회귀·불가침 diff c)접근성·기술.
-   그룹 A(style 랜딩~접수) / B(style 결과지+home/my-diary) / C(damage+login+items).
-   🔴 나오면 수정 + 재검수 후 보고.
-2. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 3폭(360/390/430) 캡처
-   + PROJECT_STATE 갱신 + 최종 보고. **push 전 멈춤.**
+- **전 단계 완료. 사장님 push 승인만 남음.** (승인 시: git push origin main → Vercel 자동배포 → 배포 해시 기록.)
+
+## Phase 4 결과 (완료)
+- 회귀: tsc 0 · copy:check OK · copy:lint 변동 0(copy-drafts 무변경) · test:fallback 14/14 · test:invariant 9/9.
+- 결과지 5상태 렌더 확인: done(05_after)·generating·limit·failed(phase4_result_*) — 슬롯 무점프.
+- 3폭 렌더: 360/390/430 오버플로우 0(phase4_result_w*·phase4_survey_w*).
+- PROJECT_STATE.md 에 라운드 I 기록.
+
+## Phase 3 결과 (완료)
+- Codex 그룹 A/B/C + 통합 4회 반복 검수. 최종: (1)5060 통과 (2)회귀/불가침 통과.
+- 반영 커밋: 97de286·c33b328·311f8bb·a571ad4·e32961f·2fb2ae0.
+- (b) 회귀: 로직·상태·핸들러·라우팅·계측 이벤트명·카피 단어 변경 없음 확정.
+- 업로드 PhotoGuide에 넣었던 신규 뒤로가기는 절대원칙(시각만) 위해 되돌림.
    - 게이트/상태 화면은 route mock(`_shot_upload/_loading/_result/_diary.mjs` 참고)로 캡처.
 3. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
 4. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. **push 전 멈춤**.
