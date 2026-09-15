@@ -248,12 +248,12 @@ export default function DamageCheckResultPage() {
 
       {/* ── 헤더 ── */}
       <header className="sticky top-0 z-20 flex items-center justify-between bg-bg/85 px-5 py-3.5 backdrop-blur-md">
-        <Link href="/damage-check/survey" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+        <Link href="/damage-check/survey" className="-ml-1 flex min-h-14 items-center px-1 text-[15px] font-medium text-sub transition-colors hover:text-ink">
           ← 다시 하기
         </Link>
         <span className="text-[15px] font-bold uppercase tracking-[0.12em] text-sub">진단 결과지</span>
         {/* 🟡-01 어포던스: 텍스트만이던 헤더 공유를 옅은 테두리 pill로 — 누를 수 있음을 명확히. */}
-        <button onClick={handleKakaoShare} className="rounded-full border border-line px-4 py-2 text-[15px] font-medium text-sub transition-colors hover:bg-surface hover:text-ink active:scale-[0.98]">
+        <button onClick={handleKakaoShare} className="inline-flex min-h-14 items-center rounded-full border border-line px-4 text-[15px] font-medium text-sub transition-colors hover:bg-surface hover:text-ink active:scale-[0.98]">
           {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>

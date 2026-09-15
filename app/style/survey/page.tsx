@@ -283,7 +283,7 @@ export default function StyleSurveyPage() {
               className="flex flex-1 flex-col py-7"
             >
               <div className="mb-6">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">
+                <p className="mb-2 text-[15px] font-bold uppercase tracking-[0.1em] text-ink-2">
                   {q.no}
                 </p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink sm:text-2xl">

@@ -250,7 +250,7 @@ export default function DamageCheckSurveyPage() {
               className="flex min-h-full flex-col justify-center pt-6 pb-10"
             >
               <div className="mb-6">
-                <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">{q.no}</p>
+                <p className="mb-1.5 text-[15px] font-bold uppercase tracking-[0.1em] text-ink-2">{q.no}</p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">{q.title}</h2>
                 {q.hint && <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{q.hint}</p>}
               </div>
