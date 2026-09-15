@@ -71,14 +71,6 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
     <SilkBackground>
       <main className="flex h-[100dvh] flex-col text-ink">
 
-        {/* ── 헤더 (뒤로가기 좌상단, P7) ── */}
-        <header className="flex flex-none items-center border-b border-line bg-bg px-page py-2">
-          <Link href="/style/survey"
-            className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
-            <span aria-hidden className="text-xl leading-none">←</span> 질문으로
-          </Link>
-        </header>
-
         {/* 가이드 이미지 — 중앙 정렬 */}
         <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
           <div className="w-full max-w-sm">

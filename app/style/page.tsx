@@ -83,7 +83,7 @@ export default function StyleLandingPage() {
           className="flex w-full flex-col items-center text-center"
         >
           {/* 브랜드 배지 (명조) + 태그라인 */}
-          <span className="font-serif text-[14px] tracking-[0.3em] text-sub">MIALTIP</span>
+          <span className="font-serif text-[15px] tracking-[0.3em] text-sub">MIALTIP</span>
           <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
           {/* 액자 히어로 — 첫 화면에 헤드라인·CTA가 함께 보이도록 폭 축소(유일한 흰 카드) */}

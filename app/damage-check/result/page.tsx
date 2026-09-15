@@ -367,16 +367,16 @@ export default function DamageCheckResultPage() {
           />
 
           {/* 공유 + 재진단 */}
-          <div className="flex flex-col items-center gap-3 pt-1">
-            <button onClick={handleKakaoShare} className="btn-textlink text-[15px]">
+          <div className="flex flex-col items-center gap-2 pt-1">
+            <button onClick={handleKakaoShare} className="btn-textlink inline-flex min-h-14 items-center text-[15px]">
               {kakaoSent ? "카카오톡 전송 완료 ✓" : "결과 공유하기"}
             </button>
             {copied && <p className="text-[15px] text-sub">✓ 링크가 복사됐어요</p>}
-            <Link href="/damage-check" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+            <Link href="/damage-check" className="flex min-h-14 items-center font-medium text-[15px] text-sub transition-colors hover:text-ink">
               ↺ 처음부터 다시 하기
             </Link>
             {/* 홈 복귀 — 이 플로우엔 하단 3탭이 없어 저장 없이 홈으로 갈 길이 없던 문제(C-2 [3]). */}
-            <Link href="/home" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
+            <Link href="/home" className="flex min-h-14 items-center font-medium text-[15px] text-sub transition-colors hover:text-ink">
               홈으로 →
             </Link>
           </div>

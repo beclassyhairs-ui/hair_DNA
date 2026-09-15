@@ -312,7 +312,7 @@ function SafetyNotice({ entries }: { entries: ResolvedCopy[] }) {
         ))}
       </div>
       <Link href="/damage-check"
-        className="mt-1.5 inline-flex items-center gap-1 text-[15px] font-semibold text-amber-700 underline underline-offset-2">
+        className="mt-1.5 inline-flex min-h-14 items-center gap-1 text-[15px] font-semibold text-amber-700 underline underline-offset-2">
         정밀 손상 진단 받아보기 →
       </Link>
     </div>
