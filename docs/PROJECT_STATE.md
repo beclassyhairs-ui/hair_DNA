@@ -3,9 +3,9 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-15
 
-## 🟡 I. UI/UX 전면 교체 라운드 — 5060 가독·터치 기본선 (2026-09-15 · **push 대기**)
+## 🟢 I. UI/UX 전면 교체 라운드 — 5060 가독·터치 기본선 (2026-09-15 · **push·배포 완료 `fe2f92a`**)
 
-> 현재 상태 한 줄: **10개 화면 5060 UI 개편 완료·Codex 3관점 통과·회귀 all green. origin/main 대비 로컬 앞섬(미push). 사장님 push 승인 대기.**
+> 현재 상태 한 줄: **10개 화면 5060 UI 개편 완료·Codex 3관점 통과·회귀 all green·push 완료(`a94e36b..fe2f92a`). Vercel 자동배포. HEAD==origin/main==`fe2f92a`.**
 > 목적: 개발자스러운 UI → "노안 손님이 편한 앱"(벤치마크 마메드네·퀸잇의 밀도·크기 원칙만 차용, 픽셀 복제 금지). **절대원칙: 시각(크기·간격·정렬·아이콘)만, 로직 0줄·문장 0곳 변경.**
 > 문서: `docs/ui_redesign_2026-09-15/`(PRINCIPLES·SCREENS·PROGRESS + before/after 샷). 캡처 도구는 미커밋 `_shot*.mjs`(playwright, route mock).
 
@@ -16,7 +16,8 @@
 - **Phase 3 Codex**: 그룹 A/B/C + 통합 반복검수 → 최종 (1)5060 통과 (2)회귀/불가침 통과. 반영 6커밋. (업로드 PhotoGuide 신규 뒤로가기는 "시각만" 원칙 위해 되돌림.)
 - **Phase 4 회귀**: tsc 0 · copy:check OK · copy:lint 변동 0(copy-drafts 무변경) · test:fallback 14/14 · test:invariant 9/9. 결과지 5상태(done/generating/limit/failed) + 3폭(360/390/430) 렌더 무점프 확인.
 - **불가침 준수 확인**: app/api·lib(훅·폴링·폴백·계측·게이트·quota)·resolver·copy-drafts·결과지 선공개 구조·PhotoSlot 5상태·계측 이벤트명·법적문구·동의 게이트 순서 — 전부 무변경(Codex diff 검증).
-- 🔴 **다음 = 사장님 push 승인** → origin/main push → Vercel 배포. 승인 시 배포 해시 여기 기록.
+- ✅ **push·배포 완료**: 2026-09-15 `a94e36b..fe2f92a` origin/main push → Vercel 자동배포. 배포 커밋 **`fe2f92a`**(HEAD==origin/main).
+- 🔴 **다음 = 원고 전면 교체 라운드** (사장님 첨부 2건 기준).
 - ⚠️ 미커밋 temp(rm 차단): `docs/ui_redesign_2026-09-15/_diag.mjs`·`shots/_diag_*.png`·`shots/_tmp_*.png` — 사장님 수동 삭제.
 
 ## 🟢 H. 결과지 원고 정비 라운드 — 배치·견본·lint (2026-09-10 · **push·배포 완료 `a94e36b`**)
