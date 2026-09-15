@@ -251,9 +251,9 @@ export default function DamageCheckResultPage() {
         <Link href="/damage-check/survey" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
           ← 다시 하기
         </Link>
-        <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-sub">진단 결과지</span>
+        <span className="text-[15px] font-bold uppercase tracking-[0.12em] text-sub">진단 결과지</span>
         {/* 🟡-01 어포던스: 텍스트만이던 헤더 공유를 옅은 테두리 pill로 — 누를 수 있음을 명확히. */}
-        <button onClick={handleKakaoShare} className="rounded-full border border-line px-3 py-1 text-[14px] font-medium text-sub transition-colors hover:bg-surface hover:text-ink active:scale-[0.98]">
+        <button onClick={handleKakaoShare} className="rounded-full border border-line px-4 py-2 text-[15px] font-medium text-sub transition-colors hover:bg-surface hover:text-ink active:scale-[0.98]">
           {kakaoSent ? "전송됨 ✓" : "공유"}
         </button>
       </header>
@@ -274,7 +274,7 @@ export default function DamageCheckResultPage() {
           <section className="card-soft space-y-2 p-5">
             <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">진단 요약</p>
             <p className="mt-1 text-body leading-relaxed text-ink">{result.level.summary}</p>
-            <p className="pt-1 text-[13px] font-semibold text-sub">
+            <p className="pt-1 text-[15px] font-semibold text-sub">
               권장 관리 강도: <span className="text-ink">{result.level.careIntensity}</span>
             </p>
           </section>
@@ -299,7 +299,7 @@ export default function DamageCheckResultPage() {
                 <p
                   key={e.id}
                   className={
-                    i === 0 ? "text-[16px] font-extrabold leading-relaxed text-ink"
+                    i === 0 ? "text-[17px] font-extrabold leading-relaxed text-ink"
                     : i === 1 ? "mt-2 text-body leading-relaxed text-sub"
                     : "mt-3 border-t border-line pt-3 text-body leading-relaxed text-ink"
                   }
@@ -329,7 +329,7 @@ export default function DamageCheckResultPage() {
             <section className="card-soft space-y-3 p-5">
               <div>
                 <p className="text-aux font-bold uppercase tracking-[0.2em] text-sub">직접 확인해보신 것</p>
-                <p className="mt-1 text-[13px] leading-relaxed text-sub">
+                <p className="mt-1 text-[15px] leading-relaxed text-sub">
                   아래는 참고로 함께 보는 신호예요. 단계는 시술 이력을 기준으로 판단했습니다.
                 </p>
               </div>
@@ -371,7 +371,7 @@ export default function DamageCheckResultPage() {
             <button onClick={handleKakaoShare} className="btn-textlink text-[15px]">
               {kakaoSent ? "카카오톡 전송 완료 ✓" : "결과 공유하기"}
             </button>
-            {copied && <p className="text-[13px] text-sub">✓ 링크가 복사됐어요</p>}
+            {copied && <p className="text-[15px] text-sub">✓ 링크가 복사됐어요</p>}
             <Link href="/damage-check" className="text-[15px] font-medium text-sub transition-colors hover:text-ink">
               ↺ 처음부터 다시 하기
             </Link>
@@ -383,7 +383,7 @@ export default function DamageCheckResultPage() {
 
           {/* 푸터 — 20년차 디자이너 판단 기준(확정49 · 🟡-03 연차·직함 통일: 25년 원장→20년차 디자이너,
               스타일 결과지/로딩과 동일 페르소나). % 미노출. */}
-          <p className="pt-2 text-center text-[12px] leading-relaxed text-sub">
+          <p className="pt-2 text-center text-[15px] leading-relaxed text-sub">
             이 진단은 20년차 디자이너의 판단 기준을 바탕으로 안내드리는 참고 결과예요.
           </p>
 
