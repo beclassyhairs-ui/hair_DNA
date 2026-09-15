@@ -283,7 +283,7 @@ function Rich({ html, className }: { html: string; className?: string }) {
 
 // 섹션 라벨(작은 제목)
 function TT({ children }: { children: string }) {
-  return <p className="mb-2 mt-6 text-[11px] font-extrabold uppercase tracking-[0.24em] text-ink-2">{children}</p>;
+  return <p className="mb-2 mt-6 text-[15px] font-extrabold uppercase tracking-[0.12em] text-ink-2">{children}</p>;
 }
 
 // 판정 스탬프 3단 — 전문은 갈래 카피(bcopy.stamp), 색만 게이트 레벨로(block=amber / 그 외 green).
@@ -291,7 +291,7 @@ function VerdictStamp({ level, stamp }: { level: "pass" | "caution" | "block"; s
   const isBlock = level === "block";
   return (
     <div className="mt-2.5 flex justify-center">
-      <span className={`rounded-full border px-4 py-1.5 text-center text-[14px] font-extrabold ${
+      <span className={`rounded-full border px-4 py-1.5 text-center text-[15px] font-extrabold ${
         isBlock ? "border-amber-500 bg-amber-50 text-amber-700" : "border-emerald-600 bg-emerald-50 text-emerald-700"
       }`}>
         {stamp}
@@ -308,11 +308,11 @@ function SafetyNotice({ entries }: { entries: ResolvedCopy[] }) {
     <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
       <div className="space-y-1.5">
         {entries.map((e) => (
-          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] font-semibold leading-relaxed text-amber-900" />
+          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-amber-900" />
         ))}
       </div>
       <Link href="/damage-check"
-        className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-amber-700 underline underline-offset-2">
+        className="mt-1.5 inline-flex items-center gap-1 text-[15px] font-semibold text-amber-700 underline underline-offset-2">
         정밀 손상 진단 받아보기 →
       </Link>
     </div>
@@ -626,7 +626,7 @@ export default function StyleResultPage() {
               photoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
               if (photoState === "done") setBannerDismissed(true);
             }}
-            className="fixed inset-x-0 top-0 z-40 mx-auto flex h-12 w-full max-w-[430px] items-center justify-center gap-1.5 border-b border-line bg-surface/95 px-4 text-[16px] font-bold text-ink backdrop-blur-sm transition-transform active:scale-[0.99]"
+            className="fixed inset-x-0 top-0 z-40 mx-auto flex h-14 w-full max-w-[430px] items-center justify-center gap-1.5 border-b border-line bg-surface/95 px-4 text-[17px] font-bold text-ink backdrop-blur-sm transition-transform active:scale-[0.99]"
           >
             {generatingPhoto && <span>사진 준비 중 · {elapsedText}</span>}
             {photoState === "done" && <span>사진이 도착했어요 ↑ 보기</span>}
@@ -648,7 +648,7 @@ export default function StyleResultPage() {
               </svg>
               다시 찍기
             </Link>
-            <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">스타일 결과지</span>
+            <span className="text-[15px] font-bold uppercase tracking-[0.12em] text-ink-2">스타일 결과지</span>
             <Link href="/style" className="text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
           </div>
 
@@ -659,20 +659,20 @@ export default function StyleResultPage() {
           <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} generating={generatingPhoto} sectionRef={photoRef} />
           {generatingPhoto ? (
             <div className="mt-3 rounded-2xl border border-line bg-surface px-4 py-4 text-center">
-              <p className="text-[16px] font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
-              <p className="mt-1.5 text-[16px] leading-relaxed text-ink">먼저 아래 진단 결과부터 읽어보세요. 다 읽을 때쯤 사진이 도착합니다.</p>
-              <p className="mt-2.5 text-[13px] font-medium tabular-nums text-ink-2">{elapsedText} 준비 중</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-ink-2/80">이 화면을 벗어나면 준비가 멈춰요.</p>
+              <p className="text-[17px] font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
+              <p className="mt-1.5 text-[17px] leading-relaxed text-ink">먼저 아래 진단 결과부터 읽어보세요. 다 읽을 때쯤 사진이 도착합니다.</p>
+              <p className="mt-2.5 text-[15px] font-medium tabular-nums text-ink-2">{elapsedText} 준비 중</p>
+              <p className="mt-1 text-[15px] leading-relaxed text-ink-2/80">이 화면을 벗어나면 준비가 멈춰요.</p>
             </div>
           ) : (
-            <p className="mt-2 text-center text-[12px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
+            <p className="mt-2 text-center text-[15px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
           )}
 
           {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 — 사진 결과의 헤드라인(항상 노출) */}
           <div className="mt-4 text-center">
-            <p className="text-[13px] text-ink-2">내가 고른 스타일</p>
+            <p className="text-[15px] text-ink-2">내가 고른 스타일</p>
             <p className="mt-0.5 text-[26px] font-extrabold tracking-tight text-ink">{entry.name}</p>
-            {entry.subtitle && <p className="mt-1 text-[14px] text-ink-2">{entry.subtitle}</p>}
+            {entry.subtitle && <p className="mt-1 text-[15px] text-ink-2">{entry.subtitle}</p>}
             {stampEntry && <VerdictStamp level={gate.level} stamp={stampEntry.text} />}
           </div>
 
@@ -685,7 +685,7 @@ export default function StyleResultPage() {
           {/* 파트2 훅 — 스크롤 없이 보이는 위치에서 '왜 어울리는지 / 뭘 주문해야 실패 안 하는지'를
               아래 버튼으로 끌어내린다(50·60은 스크롤을 안 하고 사진만 보고 끝내는 문제 직격). */}
           <div className="mt-5 rounded-2xl border border-line bg-surface px-4 py-3.5 text-center">
-            <p className="text-[15.5px] font-semibold leading-relaxed text-ink">
+            <p className="text-[17px] font-semibold leading-relaxed text-ink">
               내 모발은 <b className="font-extrabold">{readableHairLabel(answers)}</b> — 이 스타일이 왜 어울리는지, 미용실에서 뭘 주문해야 실패 안 하는지 아래에 담았어요
             </p>
           </div>
@@ -701,14 +701,14 @@ export default function StyleResultPage() {
                   <>
                     <TT>혹시, 이런 적 있다면</TT>
                     <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                      <Rich html={insightBody[0]!.text} className="block whitespace-pre-line text-[16px] font-extrabold leading-relaxed text-ink" />
+                      <Rich html={insightBody[0]!.text} className="block whitespace-pre-line text-[17px] font-extrabold leading-relaxed text-ink" />
                     </GlassCard>
                     {insightBody.length > 1 && (
                       <>
                         <TT>왜 그랬던 걸까요</TT>
                         <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                           {insightBody.slice(1).map((e) => (
-                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14.5px] font-semibold leading-relaxed text-ink" />
+                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] font-semibold leading-relaxed text-ink" />
                           ))}
                         </div>
                       </>
@@ -722,7 +722,7 @@ export default function StyleResultPage() {
                     <TT>내 모발 구조</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                       {bodyOf(sblock("hair-structure")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
@@ -743,7 +743,7 @@ export default function StyleResultPage() {
                       {rest.length > 0 && (
                         <GlassCard tone="soft" className="space-y-2 px-5 py-4">
                           {rest.map((e) => (
-                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                           ))}
                         </GlassCard>
                       )}
@@ -751,10 +751,10 @@ export default function StyleResultPage() {
                         <FadePreview title={title?.text ?? "정수리 드라이 · 순서 그대로"}>
                           <ol className="list-decimal space-y-1.5 pl-5">
                             {steps.map((e) => (
-                              <li key={e.id} className="text-[13.5px] leading-relaxed text-ink"><Rich html={e.text} /></li>
+                              <li key={e.id} className="text-[16px] leading-relaxed text-ink"><Rich html={e.text} /></li>
                             ))}
                           </ol>
-                          {note && <p className="mt-2 text-[12.5px] text-ink-2">{note.text}</p>}
+                          {note && <p className="mt-2 text-[15px] text-ink-2">{note.text}</p>}
                         </FadePreview>
                       )}
                     </>
@@ -768,7 +768,7 @@ export default function StyleResultPage() {
                     <TT>이렇게 관리하세요</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                       {bodyOf(sblock("care")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
@@ -787,13 +787,13 @@ export default function StyleResultPage() {
                       <TT>이 스타일과의 궁합</TT>
                       <GlassCard tone="soft" className="space-y-2 px-5 py-4">
                         {body.map((e) => (
-                          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                         ))}
                         {say.length > 0 && (
                           <div className="mt-1 space-y-2 border-t border-line pt-3">
-                            <p className="text-[12px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</p>
+                            <p className="text-[15px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</p>
                             {say.map((e) => (
-                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[14.5px] font-bold leading-relaxed text-ink">“{e.text}”</p>
+                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[17px] font-bold leading-relaxed text-ink">“{e.text}”</p>
                             ))}
                           </div>
                         )}
@@ -802,7 +802,7 @@ export default function StyleResultPage() {
                         <FadePreview title="왜 이렇게 주문할까요">
                           <div className="space-y-2">
                             {why.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                             ))}
                           </div>
                         </FadePreview>
@@ -826,7 +826,7 @@ export default function StyleResultPage() {
                           <TT>기장은 이렇게 봅니다</TT>
                           <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                             {lenAdvice.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                             ))}
                           </div>
                         </>
@@ -836,7 +836,7 @@ export default function StyleResultPage() {
                           <TT>미용실에서 이렇게 주문하세요</TT>
                           <GlassCard tone="soft" className="space-y-2 px-5 py-4">
                             {say.map((e) => (
-                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[14.5px] font-bold leading-relaxed text-ink">“{e.text}”</p>
+                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[17px] font-bold leading-relaxed text-ink">“{e.text}”</p>
                             ))}
                           </GlassCard>
                         </>
@@ -845,7 +845,7 @@ export default function StyleResultPage() {
                         <FadePreview title="왜 이렇게 주문할까요">
                           <div className="space-y-2">
                             {why.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[14px] leading-relaxed text-ink" />
+                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                             ))}
                           </div>
                         </FadePreview>
@@ -866,8 +866,8 @@ export default function StyleResultPage() {
                           html={e.text}
                           className={
                             e.id === "style.safety.blocked_procedure_prefix"
-                              ? "block whitespace-pre-line text-[13.5px] font-semibold leading-relaxed text-ink-2"
-                              : "block whitespace-pre-line text-[14px] leading-relaxed text-ink"
+                              ? "block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-ink-2"
+                              : "block whitespace-pre-line text-[17px] leading-relaxed text-ink"
                           }
                         />
                       ))}
@@ -892,7 +892,7 @@ export default function StyleResultPage() {
                 ) : (
                   /* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */
                   <Link href="/damage-check"
-                    className="mt-5 flex items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[14px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                    className="mt-5 flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] font-semibold text-ink-2 transition-colors hover:text-ink">
                     정밀 손상 진단 받아보기 <span className="flex-none">→</span>
                   </Link>
                 )}
@@ -902,10 +902,10 @@ export default function StyleResultPage() {
                 저장하기=아웃라인(하단 고정 채움 CTA와 위계 구분), 공유/재진단=옅은 테두리 보조버튼. */}
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
-                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-base font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
+                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-[17px] font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
                 <span aria-hidden>⬇️</span> 사진 다운받기 (나의 헤어 저장 후 가능)
               </button>
-              <p className="text-center text-[13px] text-ink-2 -mt-1">
+              <p className="text-center text-[15px] text-ink-2 -mt-1">
                 나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
               </p>
               {/* 공유(③)가 재진단(④)보다 우선 — 좌측 우선 배치 */}
@@ -959,7 +959,7 @@ export default function StyleResultPage() {
         <BottomStickyCTA>
           <button
             onClick={() => setShowSave(true)}
-            className="flex h-14 min-h-[48px] w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-base font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+            className="flex h-14 min-h-14 w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-[17px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
             저장하고 홈에서 오늘 케어 보기
           </button>
         </BottomStickyCTA>
