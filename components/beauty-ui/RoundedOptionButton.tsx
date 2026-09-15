@@ -33,7 +33,7 @@ export default function RoundedOptionButton({
       onClick={onSelect}
       disabled={disabled}
       whileTap={{ scale: 0.985 }}
-      className={`flex w-full items-center gap-3 rounded-full border px-5 py-3.5 text-left transition-all duration-200 disabled:opacity-40 ${
+      className={`flex min-h-14 w-full items-center gap-3 rounded-full border px-5 py-4 text-left transition-all duration-200 disabled:opacity-40 ${
         selected
           ? "border-ink bg-white shadow-soft"
           : "border-line bg-white/70 hover:border-btn-line hover:bg-white"
@@ -49,11 +49,11 @@ export default function RoundedOptionButton({
         </span>
       )}
       <span className="flex-1">
-        <span className={`block text-sm font-semibold leading-snug ${selected ? "text-ink" : muted ? "text-ink-3" : "text-ink"}`}>
+        <span className={`block text-emphasis leading-snug ${selected ? "text-ink" : muted ? "text-ink-3" : "text-ink"}`}>
           {label}
         </span>
         {desc && (
-          <span className={`mt-0.5 block text-xs leading-relaxed ${selected ? "text-ink-2" : "text-ink-2"}`}>
+          <span className={`mt-1 block text-aux leading-relaxed ${selected ? "text-ink-2" : "text-ink-2"}`}>
             {desc}
           </span>
         )}

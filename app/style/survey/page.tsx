@@ -75,10 +75,10 @@ function TreatmentHistoryStep({
 
   const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
     <button type="button" onClick={onToggle} disabled={disabled}
-      className={`flex w-full items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-[15px] transition-colors disabled:opacity-40 ${
+      className={`flex min-h-14 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
         on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
       }`}>
-      <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
+      <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
         {on ? "✓" : ""}
       </span>
       {label}
@@ -89,7 +89,7 @@ function TreatmentHistoryStep({
     <div className="space-y-6">
       {/* Q8-a 가장 최근 */}
       <div>
-        <p className="mb-2 text-[14px] font-bold text-ink">가장 최근에 한 시술은?</p>
+        <p className="mb-2 text-emphasis text-ink">가장 최근에 한 시술은?</p>
         <div className="grid grid-cols-2 gap-2">
           {TREATMENT_OPTIONS.map((o) => (
             <RoundedOptionButton key={o.id} label={o.label} selected={recent === o.id}
@@ -101,7 +101,7 @@ function TreatmentHistoryStep({
       {/* Q8-b 그 전 (최근 선택 후 노출, 단 최근="없음"이면 스킵) */}
       {recent !== null && !recentIsNone && (
         <div>
-          <p className="mb-2 text-[14px] font-bold text-ink">그 전에 한 시술은?</p>
+          <p className="mb-2 text-emphasis text-ink">그 전에 한 시술은?</p>
           <div className="grid grid-cols-2 gap-2">
             {TREATMENT_OPTIONS.map((o) => (
               <RoundedOptionButton key={o.id} label={o.label} selected={prev === o.id}
@@ -122,8 +122,8 @@ function TreatmentHistoryStep({
       {/* Q8-c 더 하신 거 (그 전 선택 후 노출, 선택 안 해도 됨. 최근="없음"이면 스킵) */}
       {!recentIsNone && recent !== null && prev !== null && (
         <div>
-          <p className="mb-1 text-[14px] font-bold text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
-          <p className="mb-2 text-[13px] text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
+          <p className="mb-1 text-emphasis text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
+          <p className="mb-2 text-aux text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
           <div className="grid grid-cols-3 gap-2">
             {MORE_OPTIONS.map((o) => (
               <RoundedOptionButton key={o.id} label={o.label} selected={more === o.id}
@@ -248,7 +248,24 @@ export default function StyleSurveyPage() {
     <div className="relative min-h-screen">
       <main className="mx-auto flex min-h-screen max-w-lg flex-col text-ink">
 
-        <TestHeader stepLabel={STEP_LABEL_BY_QID[q.id] ?? ""} current={qIdx + 1} total={visibleTotal}>
+        <TestHeader
+          stepLabel={STEP_LABEL_BY_QID[q.id] ?? ""}
+          current={qIdx + 1}
+          total={visibleTotal}
+          leading={
+            qIdx > 0 ? (
+              <button onClick={goBack} disabled={pending}
+                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
+                <span aria-hidden className="text-xl leading-none">←</span> 이전
+              </button>
+            ) : (
+              <Link href="/style"
+                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
+                <span aria-hidden className="text-xl leading-none">←</span> 나가기
+              </Link>
+            )
+          }
+        >
           <ProgressBar value={((qIdx + 1) / visibleTotal) * 100} />
         </TestHeader>
 
@@ -301,19 +318,9 @@ export default function StyleSurveyPage() {
           </AnimatePresence>
         </div>
 
-        {/* 하단 네비게이션 */}
+        {/* 하단 안내 — 뒤로가기는 좌상단(P7)으로 이동, 자동진행 안내만 유지 */}
         <div className="flex-none px-5 pb-8 pt-4">
-          {qIdx > 0 ? (
-            <button onClick={goBack} disabled={pending}
-              className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
-              ← 이전
-            </button>
-          ) : (
-            <Link href="/style" className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">
-              나가기
-            </Link>
-          )}
-          <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
+          <p className="text-center text-aux text-ink-2">선택하면 자동으로 넘어가요</p>
         </div>
       </main>
     </div>
