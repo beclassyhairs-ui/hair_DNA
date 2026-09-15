@@ -100,7 +100,7 @@ function ConsentRow({
         onClick={onToggle}
         aria-pressed={checked}
         aria-label={label}
-        className="flex min-h-[44px] min-w-[44px] items-center justify-center"
+        className="flex min-h-14 min-w-14 items-center justify-center"
       >
         <span
           className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border-[1.5px] transition-colors ${
@@ -299,7 +299,7 @@ function ConsentInner() {
         type="button"
         onClick={toggleAll}
         aria-pressed={allChecked}
-        className="mt-6 flex min-h-[44px] w-full items-center gap-3 rounded-btn border border-line bg-card px-4 py-3 text-left shadow-soft"
+        className="mt-6 flex min-h-14 w-full items-center gap-3 rounded-btn border border-line bg-card px-4 py-3 text-left shadow-soft"
       >
         <span
           className={`flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
@@ -362,7 +362,7 @@ function ConsentInner() {
       </button>
       <Link
         href="/"
-        className="mt-3 flex min-h-[44px] items-center justify-center text-aux text-sub active:text-ink"
+        className="mt-3 flex min-h-14 items-center justify-center text-aux text-sub active:text-ink"
       >
         취소하고 돌아가기
       </Link>
