@@ -32,8 +32,11 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - 기존 토큰: `app/globals.css`(:root SSOT) + `tailwind.config.ts`(var 참조). body=16·aux=14(→5060 위반: body≥17·보조≥15로 상향 예정). 포인트=차콜 CTA, 배경 아이보리. 구 팔레트(gold/brown/accent) 잔존.
 
 ## 다음 할 일
-1. **⑨ /login·/consent** — 게이트 순서·법적문구·동의 로직 불가침, 시각만.
-2. 이어서 ⑩ items.
+1. **Phase 3: Codex 3관점 검수** — a)5060 UX b)회귀·불가침 diff c)접근성·기술.
+   그룹 A(style 랜딩~접수) / B(style 결과지+home/my-diary) / C(damage+login+items).
+   🔴 나오면 수정 + 재검수 후 보고.
+2. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 3폭(360/390/430) 캡처
+   + PROJECT_STATE 갱신 + 최종 보고. **push 전 멈춤.**
    - 게이트/상태 화면은 route mock(`_shot_upload/_loading/_result/_diary.mjs` 참고)로 캡처.
 3. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
 4. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. **push 전 멈춤**.
@@ -53,6 +56,9 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - `cd20175` ⑥ /home·/my-diary(P2 카드15·터치56·전역 하단탭) — /myhair 리다이렉트 껍데기
 - `9c02325` ⑦ /damage 랜딩·설문(P2·P7, ②와 동일 정렬)
 - `85949d3` ⑧ /damage 결과지(P2 보조15·대표판정17) — resolver/계측/문장 무변경
+- `ad4175a` ⑨ /login/consent(P2 터치56) — 동의/법적/게이트 무변경
+- `813517c` ⑩ /items·제품카드(P2 제목24·카드17) — 데이터/매칭/고지 무변경
+- **Phase 2 완료(①~⑩).** 다음: Phase 3 Codex.
 
 ## 미해결/메모
 - 스토어 스크린샷 이미지 미확보 → 원칙은 문서화 UX 근거. 필요 시 사장님이 두 앱 실제 화면 공유하면 보강.
