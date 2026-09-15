@@ -48,13 +48,13 @@ export default function TreatmentHistoryField({ className = "" }: { className?: 
           onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
           placeholder="예: 뿌리펌"
           aria-label="시술 이력 입력"
-          className="min-h-[48px] min-w-0 flex-1 rounded-btn border border-line bg-bg px-3.5 text-body text-ink outline-none transition-colors focus:border-ink"
+          className="min-h-14 min-w-0 flex-1 rounded-btn border border-line bg-bg px-3.5 text-body text-ink outline-none transition-colors focus:border-ink"
         />
         <button
           type="button"
           onClick={handleAdd}
           disabled={!draft.trim()}
-          className="min-h-[48px] shrink-0 px-3 text-body font-bold text-ink transition-opacity disabled:opacity-40"
+          className="min-h-14 shrink-0 px-3 text-body font-bold text-ink transition-opacity disabled:opacity-40"
         >
           추가
         </button>

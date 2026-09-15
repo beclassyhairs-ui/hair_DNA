@@ -136,7 +136,7 @@ function MyStyleCard({ latest }: { latest: MyStyleData | null }) {
         <div className="mt-3 text-right">
           <Link
             href="/style"
-            className="inline-flex min-h-[44px] items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
+            className="inline-flex min-h-14 items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
           >
             내 스타일 찾기 →
           </Link>
@@ -163,7 +163,7 @@ function MyStyleCard({ latest }: { latest: MyStyleData | null }) {
       <div className="mt-3 text-right">
         <Link
           href="/my-diary"
-          className="inline-flex min-h-[44px] items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
+          className="inline-flex min-h-14 items-center justify-end text-body font-semibold text-ink transition-colors active:text-sub"
         >
           나의 헤어에서 보기 →
         </Link>
@@ -293,7 +293,7 @@ export default function HomePage() {
 
       <Link
         href="/my-diary"
-        className="flex min-h-[44px] items-center justify-center gap-1.5 py-2 text-center text-aux text-sub transition-colors active:text-ink"
+        className="flex min-h-14 items-center justify-center gap-1.5 py-2 text-center text-aux text-sub transition-colors active:text-ink"
       >
         {/* 🟡-⑥: 나의 헤어 탭과 동일한 결과지(FileText) 아이콘 — "내 결과지" 시각 통일. */}
         <FileText size={15} strokeWidth={1.8} aria-hidden />

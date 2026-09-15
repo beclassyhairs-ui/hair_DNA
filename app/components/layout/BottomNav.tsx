@@ -42,16 +42,16 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className="flex flex-1 flex-col items-center gap-1 rounded-btn px-1 py-1.5 text-center"
+              className="flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-btn px-1 py-1.5 text-center"
             >
               <Icon
-                size={22}
+                size={24}
                 strokeWidth={1.8}
                 className={active ? "text-ink" : "text-ink-2"}
                 aria-hidden
               />
               <span
-                className={`text-[12px] ${active ? "font-medium text-ink" : "font-normal text-ink-2"}`}
+                className={`text-[13px] ${active ? "font-medium text-ink" : "font-normal text-ink-2"}`}
               >
                 {item.label}
               </span>
