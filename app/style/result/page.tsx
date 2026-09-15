@@ -642,14 +642,14 @@ export default function StyleResultPage() {
 
           {/* 헤더 */}
           <div className="flex items-center justify-between pb-4">
-            <Link href="/style/upload" className="flex items-center gap-1 text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">
+            <Link href="/style/upload" className="-ml-1 flex min-h-14 items-center gap-1 px-1 text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               다시 찍기
             </Link>
             <span className="text-[15px] font-bold uppercase tracking-[0.12em] text-ink-2">스타일 결과지</span>
-            <Link href="/style" className="text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
+            <Link href="/style" className="-mr-1 flex min-h-14 items-center px-1 text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
           </div>
 
           {/* A-1 완성도 게이지 — 결과지 상단 */}
@@ -751,7 +751,7 @@ export default function StyleResultPage() {
                         <FadePreview title={title?.text ?? "정수리 드라이 · 순서 그대로"}>
                           <ol className="list-decimal space-y-1.5 pl-5">
                             {steps.map((e) => (
-                              <li key={e.id} className="text-[16px] leading-relaxed text-ink"><Rich html={e.text} /></li>
+                              <li key={e.id} className="text-[17px] leading-relaxed text-ink"><Rich html={e.text} /></li>
                             ))}
                           </ol>
                           {note && <p className="mt-2 text-[15px] text-ink-2">{note.text}</p>}

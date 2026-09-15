@@ -51,7 +51,7 @@ export default function BottomNav() {
                 aria-hidden
               />
               <span
-                className={`text-[13px] ${active ? "font-medium text-ink" : "font-normal text-ink-2"}`}
+                className={`text-[15px] ${active ? "font-medium text-ink" : "font-normal text-ink-2"}`}
               >
                 {item.label}
               </span>

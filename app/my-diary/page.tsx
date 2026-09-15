@@ -277,7 +277,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         {/* 접기/펼치기 */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex w-full items-center justify-between px-4 pb-3 text-[15px] transition-colors"
+          className="flex min-h-14 w-full items-center justify-between px-4 pb-3 text-[15px] transition-colors"
           style={{ color: "var(--ink-2)" }}
         >
           <span>진단 데이터 {expanded ? "접기" : "보기"}</span>
@@ -309,7 +309,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               <p className="text-[15px] font-bold uppercase tracking-wider" style={{ color: "var(--ink-2)" }}>
                 {hint.category}
               </p>
-              <p className="truncate text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+              <p className="truncate text-[17px] font-semibold" style={{ color: "var(--ink)" }}>
                 이 진단에 맞는 제품 보기
               </p>
             </div>
@@ -352,7 +352,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
           <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-3 text-[15px] leading-relaxed" style={{ color: "var(--ink)" }}>
+        <p className="px-4 pb-3 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.headline}
         </p>
 
@@ -372,7 +372,7 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
             <div className="flex items-center gap-3 px-3 py-3">
               <span className="text-2xl">{entry.product.emoji}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+                <p className="truncate text-[17px] font-semibold" style={{ color: "var(--ink)" }}>
                   {entry.product.name}
                 </p>
                 <p className="truncate text-[15px]" style={{ color: "var(--ink-2)" }}>
@@ -422,7 +422,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
         </div>
 
         {entry.diagnosisSummary && (
-          <p className="px-4 pb-3 text-[15px] leading-relaxed" style={{ color: "var(--ink)" }}>
+          <p className="px-4 pb-3 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
             {entry.diagnosisSummary}
           </p>
         )}
@@ -490,7 +490,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
           <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-2 text-[15px] leading-relaxed" style={{ color: "var(--ink)" }}>
+        <p className="px-4 pb-2 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.diagnosisSummary}
         </p>
         <p className="px-4 pb-1 text-[15px]" style={{ color: "var(--ink-2)" }}>
