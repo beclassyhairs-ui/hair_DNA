@@ -3,16 +3,17 @@
 // 사용: MSYS_NO_PATHCONV=1 node _shot_damage_result.mjs <out.png> [width] [height]
 import { chromium } from "playwright";
 
-const [out = "damage_result.png", width = "390", height = "3400"] = process.argv.slice(2);
+const [out = "damage_result.png", width = "390", height = "3400", answersJson] = process.argv.slice(2);
 const w = parseInt(width, 10) || 390;
 const h = parseInt(height, 10) || 3400;
 
-const ANSWERS = {
+const DEFAULT_ANSWERS = {
   q1_pull: "snap", q2_friction: "rough", q3_dry: "slow",
   h_recent: "dye", h_prev: "perm", h_more: "none",
   h_bleach_2plus: false, h_root_gray: false, h_self_dye: false,
   h_root_interval: "", h_root_over6m: false,
 };
+const ANSWERS = answersJson ? { ...DEFAULT_ANSWERS, ...JSON.parse(answersJson) } : DEFAULT_ANSWERS;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: w, height: h } });

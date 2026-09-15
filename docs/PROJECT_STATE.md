@@ -3,6 +3,26 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-15
 
+## 🟡 J. 원고 전면 교체 라운드 — style 9갈래 재작성 + damage 되읽기 (2026-09-15 · **push 대기**)
+
+> 현재 상태 한 줄: **결과지 칸 재구성 + style 9갈래 구술 이식 + damage 6건 교체 완료. Codex 2관점(정합·회귀) 통과·회귀 all green. origin/main 대비 로컬 앞섬(미push). 사장님 push 승인 대기.**
+> 대상: **copy-drafts + resolver + 결과지 헤더 매핑만.** 서버·훅·폴링·계측·선공개 구조·게이트·UI 컴포넌트 무변경.
+> 첨부(사장님): style_result_rewrite_v1.md(9갈래 v1.1) + damage 되읽기 교체표. 문서: `docs/copy_rewrite_2026-09-15/`(정합 resolver 덤프 + 캡처 16장).
+
+- **새 칸 구성**(result/page.tsx 헤더 매핑): [스탬프]→[혹시, 이런 적 있다면]→[왜 그런가요]→[내 모발 구조]→[시술할 때 지킬 것]→[집에서는]→[기장은 이렇게 봅니다]→제품. 조각 없는 칸은 헤더 미생성(빈 헤더 0).
+  - door 없음: b5·b8. 시술할 때 지킬 것 없음: b8. 집에서는 없음: b6. 정수리 드라이 카드: b3·b4·b5·b10. b6 곱슬조건 줄(b6_curl)은 q3_curl≠직모일 때만.
+  - 차단(b9): 시술 지시는 "시술할 때 지킬 것"에 전제문구(blocked_procedure_prefix)+conditional 로 노출(구 "회복 후 시술 참고" 카드 대체).
+- **sourceGrade "구술" 신설**(types·registry·check) — 원문 대조 대상 아님.
+- **신규 블록**: `style/procedure`(8갈래+b6_curl) · `style/care`(7갈래 본문). STYLE_BLOCKS 8개로 확장.
+- **retire(삭제 아님)**: insight door b5·b8 + b8 detail/tip/procedure(5) · curl-fit 전체 21(궁합·주문·디자인 차등) · volume 본문 11(scalp 8 유지) · hair-structure 곱슬 modifier 3 + aha-ref 3(refId→retired 전환) · cut 커트procedure/주문 6. **retired 총 50**(damage 기존 1 포함).
+- **유지**: 매트릭스 m_* 9칸 · len_* 5(기장) · safety b9/caution · scalp 8 · 제품 매칭.
+- **신규 구술 entry**: insight 9갈래 stamp/door/aha(25) + procedure 9 + care 7 + damage 되읽기 6 = **구술 44건**(전부 status approved — 사장님 직접 구술, push 전 확인).
+- **damage 되읽기 6**: elasticity stretch·elastic·firm_after_bleach·firm_heavy_history(❓애매) · friction brush_tip(반말→해요체) · drying slow(다공성 2원인). diagnoseDamage 엔진 무변경.
+- **검수**: tsc 0 · copy:check OK(entry 187·구술 44·retired 50·원문대조 불일치 0·스모크 7/7) · fallback 14/14 · invariant 9/9 · Codex (정합 9갈래+차단+곱슬조건 대조 0오류 / 회귀 선공개·PhotoSlot·계측·제품·게이트 무변경) 통과.
+- **copy:lint**: 구술 다문단으로 L1(4문장+) 증가 — drying.slow 등 사장님 승인 예외(advisory, 게이트 아님).
+- 🔴 **다음 = 사장님 push 승인** → 배포 해시 기록.
+- 🟡 **사장님 확인 대상**(구술에 ❓): ① 스탬프 4번 "추천하지 않아요" 손님 노출 여부 ② firm_heavy_history 문장(애매) ③ 8번(무난) 짧음 ④ 삭제 칸(볼륨·궁합·주문·곱슬한줄) 동의 ⑤ 기장 칸 유지(§2 지시문 기준, v1.1 §0의 "기장 삭제"와 상충 → 지시문 우선).
+
 ## 🟢 I. UI/UX 전면 교체 라운드 — 5060 가독·터치 기본선 (2026-09-15 · **push·배포 완료 `fe2f92a`**)
 
 > 현재 상태 한 줄: **10개 화면 5060 UI 개편 완료·Codex 3관점 통과·회귀 all green·push 완료(`a94e36b..fe2f92a`). Vercel 자동배포. HEAD==origin/main==`fe2f92a`.**

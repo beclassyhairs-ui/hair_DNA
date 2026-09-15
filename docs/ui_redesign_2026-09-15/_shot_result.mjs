@@ -4,13 +4,14 @@
 //   mode: done(기본)|generating|limit|failed
 import { chromium } from "playwright";
 
-const [out = "result.png", width = "390", height = "3200", mode = "done"] = process.argv.slice(2);
+const [out = "result.png", width = "390", height = "3200", mode = "done", answersJson] = process.argv.slice(2);
 const w = parseInt(width, 10) || 390;
 const h = parseInt(height, 10) || 3200;
 const IMG = "data:image/svg+xml;base64," + Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="#cbb9a6"/><circle cx="150" cy="150" r="70" fill="#a08b74"/><rect x="70" y="230" width="160" height="200" rx="80" fill="#a08b74"/></svg>'
 ).toString("base64");
-const ANSWERS = { q1_age: "age_50", q11_length: "shoulder", q14_layer: "medium", q13_design: "c_curl", q8_density: "medium_density", q7_thickness: "medium_thickness", q3_curl: "wavy_hair", q10_history_count: "count_1_2" };
+const DEFAULT_ANSWERS = { q1_age: "age_50", q11_length: "collarbone", q14_layer: "medium", q13_design: "c_curl", q8_density: "medium_density", q7_thickness: "medium_thickness", q3_curl: "wavy_hair", q10_history_count: "count_1_2" };
+const ANSWERS = answersJson ? { ...DEFAULT_ANSWERS, ...JSON.parse(answersJson) } : DEFAULT_ANSWERS;
 
 const session = { "style:answers": JSON.stringify(ANSWERS), "style:photo": IMG };
 if (mode === "done") session["style:generated"] = IMG;
