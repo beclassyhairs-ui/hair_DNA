@@ -177,7 +177,7 @@ export default function StyleIntakePage() {
               <p className="text-[18px] font-extrabold leading-snug text-ink">{f.title}</p>
               <p className="text-[15px] leading-relaxed text-ink-2">{f.hint}</p>
               <button onClick={() => router.replace("/style/upload")}
-                className="mt-2 rounded-full border border-btn-border bg-btn-bg px-6 py-3 text-[16px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+                className="mt-2 inline-flex min-h-14 items-center justify-center rounded-full border border-btn-border bg-btn-bg px-6 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
                 {f.button}
               </button>
             </GlassCard>
