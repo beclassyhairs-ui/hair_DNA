@@ -32,8 +32,8 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - 기존 토큰: `app/globals.css`(:root SSOT) + `tailwind.config.ts`(var 참조). body=16·aux=14(→5060 위반: body≥17·보조≥15로 상향 예정). 포인트=차콜 CTA, 배경 아이보리. 구 팔레트(gold/brown/accent) 잔존.
 
 ## 다음 할 일
-1. **⑦ /damage-check 랜딩·설문** — 시각만. before/after → tsc0 → 커밋.
-2. 이어서 ⑧ damage 결과지 → ⑨ login/consent → ⑩ items.
+1. **⑧ /damage-check 결과지** — resolver·계측·문장 불가침, 본문17·보조15 시각만.
+2. 이어서 ⑨ login/consent → ⑩ items.
    - 게이트/상태 화면은 route mock(`_shot_upload/_loading/_result/_diary.mjs` 참고)로 캡처.
 3. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
 4. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. **push 전 멈춤**.
@@ -51,6 +51,7 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - `377cfd8` PROGRESS 갱신
 - `1797630` ⑤ /style 결과지(P2 본문17·보조15) — 선공개/PhotoSlot/계측/문장 무변경
 - `cd20175` ⑥ /home·/my-diary(P2 카드15·터치56·전역 하단탭) — /myhair 리다이렉트 껍데기
+- `9c02325` ⑦ /damage 랜딩·설문(P2·P7, ②와 동일 정렬)
 
 ## 미해결/메모
 - 스토어 스크린샷 이미지 미확보 → 원칙은 문서화 UX 근거. 필요 시 사장님이 두 앱 실제 화면 공유하면 보강.
