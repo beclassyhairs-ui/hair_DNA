@@ -32,8 +32,9 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - 기존 토큰: `app/globals.css`(:root SSOT) + `tailwind.config.ts`(var 참조). body=16·aux=14(→5060 위반: body≥17·보조≥15로 상향 예정). 포인트=차콜 CTA, 배경 아이보리. 구 팔레트(gold/brown/accent) 잔존.
 
 ## 다음 할 일
-1. **③ /style 업로드** — before 캡처(편집 전) → 5060 재배치 → after → tsc0·copy:check → 커밋 → PROGRESS.
-2. 이어서 ④ 접수 → ⑤ 결과지 → ⑥ home/my-hair → ⑦ damage 랜딩·설문 → ⑧ damage 결과지 → ⑨ login/consent → ⑩ items.
+1. **④ /style 접수(loading)** — 게이트/킥오프 로직 무변경, 대기 화면 시각만. before/after → tsc0 → 커밋.
+2. 이어서 ⑤ 결과지 → ⑥ home/my-hair → ⑦ damage 랜딩·설문 → ⑧ damage 결과지 → ⑨ login/consent → ⑩ items.
+   - 게이트 화면(업로드류)은 `_shot_upload.mjs`처럼 /api/auth/me route mock 로 캡처.
 3. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
 4. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. **push 전 멈춤**.
 
@@ -43,6 +44,8 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - `65fb35e` ① /style 랜딩(P5 하단고정 CTA·P10)
 - `acb30c2` 스크린샷 헬퍼 경로버그 수정 + ① 샷 재캡처(blank→정상)
 - `55c5d78` ② /style 설문(P2 선택지 크게·P7 뒤로 좌상단·P3 저밀도)
+- `c162fe5` PROGRESS 갱신
+- `4f66536` ③ /style 업로드(P2 선택버튼 크게·P7 PhotoGuide 뒤로) — 카메라 뷰파인더 대상 외
 
 ## 미해결/메모
 - 스토어 스크린샷 이미지 미확보 → 원칙은 문서화 UX 근거. 필요 시 사장님이 두 앱 실제 화면 공유하면 보강.
