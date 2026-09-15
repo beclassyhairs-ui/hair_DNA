@@ -109,7 +109,7 @@ export default function StyleLandingPage() {
             <Link
               href="/damage-check"
               onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: "damage", source: "style_landing_secondary" })}
-              className="block min-h-[48px] py-3 text-center text-aux text-sub transition-colors active:text-ink"
+              className="flex min-h-14 items-center justify-center py-3 text-center text-aux text-sub transition-colors active:text-ink"
             >
               머리 상태부터 볼까요? · 1분 손상도 체크 →
             </Link>

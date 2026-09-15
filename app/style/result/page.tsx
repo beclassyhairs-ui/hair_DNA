@@ -167,7 +167,7 @@ function SaveDiaryModal({
               />
             : "나의 헤어에 저장"}
         </button>
-        <button onClick={onClose} className="mt-2.5 flex h-11 w-full items-center justify-center rounded-full text-[15px] text-ink-2 hover:text-ink">
+        <button onClick={onClose} className="mt-2.5 flex min-h-14 w-full items-center justify-center rounded-full text-[15px] text-ink-2 hover:text-ink">
           나중에 저장하기
         </button>
       </motion.div>
