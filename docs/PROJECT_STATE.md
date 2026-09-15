@@ -3,9 +3,9 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-15
 
-## 🟡 J. 원고 전면 교체 라운드 — style 9갈래 재작성 + damage 되읽기 (2026-09-15 · **push 대기**)
+## 🟢 J. 원고 전면 교체 라운드 — style 9갈래 재작성 + damage 되읽기 (2026-09-15 · **push·배포 완료 `f250d58`**)
 
-> 현재 상태 한 줄: **결과지 칸 재구성 + style 9갈래 구술 이식 + damage 6건 교체 완료. Codex 2관점(정합·회귀) 통과·회귀 all green. origin/main 대비 로컬 앞섬(미push). 사장님 push 승인 대기.**
+> 현재 상태 한 줄: **결과지 칸 재구성 + style 9갈래 구술 이식 + damage 6건 교체 완료. Codex 2관점 통과·회귀 all green·push 완료(`948e4fd..f250d58`, 갈래1 오타 괜찬아→괜찮아 정정 포함). Vercel 자동배포. HEAD==origin/main==`f250d58`.**
 > 대상: **copy-drafts + resolver + 결과지 헤더 매핑만.** 서버·훅·폴링·계측·선공개 구조·게이트·UI 컴포넌트 무변경.
 > 첨부(사장님): style_result_rewrite_v1.md(9갈래 v1.1) + damage 되읽기 교체표. 문서: `docs/copy_rewrite_2026-09-15/`(정합 resolver 덤프 + 캡처 16장).
 
@@ -20,8 +20,8 @@
 - **damage 되읽기 6**: elasticity stretch·elastic·firm_after_bleach·firm_heavy_history(❓애매) · friction brush_tip(반말→해요체) · drying slow(다공성 2원인). diagnoseDamage 엔진 무변경.
 - **검수**: tsc 0 · copy:check OK(entry 187·구술 44·retired 50·원문대조 불일치 0·스모크 7/7) · fallback 14/14 · invariant 9/9 · Codex (정합 9갈래+차단+곱슬조건 대조 0오류 / 회귀 선공개·PhotoSlot·계측·제품·게이트 무변경) 통과.
 - **copy:lint**: 구술 다문단으로 L1(4문장+) 증가 — drying.slow 등 사장님 승인 예외(advisory, 게이트 아님).
-- 🔴 **다음 = 사장님 push 승인** → 배포 해시 기록.
-- 🟡 **사장님 확인 대상**(구술에 ❓): ① 스탬프 4번 "추천하지 않아요" 손님 노출 여부 ② firm_heavy_history 문장(애매) ③ 8번(무난) 짧음 ④ 삭제 칸(볼륨·궁합·주문·곱슬한줄) 동의 ⑤ 기장 칸 유지(§2 지시문 기준, v1.1 §0의 "기장 삭제"와 상충 → 지시문 우선).
+- ✅ **push·배포 완료**: 2026-09-15 `948e4fd..f250d58` origin/main push → Vercel 자동배포. 배포 커밋 **`f250d58`**(HEAD==origin/main).
+- 🟡 **사장님 사후 확인 대상**(구술에 ❓ — 필요 시 다음 라운드 미세조정): ① 스탬프 4번 "추천하지 않아요" 손님 노출 여부 ② firm_heavy_history 문장(애매) ③ 8번(무난) 짧음 ④ 삭제 칸(볼륨·궁합·주문·곱슬한줄) 동의 ⑤ 기장 칸 유지(§2 지시문 기준, v1.1 §0의 "기장 삭제"와 상충 → 지시문 우선).
 
 ## 🟢 I. UI/UX 전면 교체 라운드 — 5060 가독·터치 기본선 (2026-09-15 · **push·배포 완료 `fe2f92a`**)
 
