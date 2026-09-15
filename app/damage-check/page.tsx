@@ -31,9 +31,9 @@ export default function DamageCheckLandingPage() {
       <Link
         href="/home"
         aria-label="홈으로"
-        className="absolute left-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-soft hover:text-ink active:scale-95"
+        className="absolute left-3 top-3 z-10 flex h-14 w-14 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-soft hover:text-ink active:scale-95"
       >
-        <Home size={22} strokeWidth={1.8} />
+        <Home size={24} strokeWidth={1.8} />
       </Link>
       <main className="mx-auto flex min-h-screen max-w-[430px] flex-col items-center justify-center px-page py-10 text-ink">
         <motion.div

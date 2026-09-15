@@ -78,10 +78,10 @@ function TreatmentHistoryStep({
 
   const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
     <button type="button" onClick={onToggle} disabled={disabled}
-      className={`flex w-full items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-[15px] transition-colors disabled:opacity-40 ${
+      className={`flex min-h-14 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
         on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
       }`}>
-      <span className={`flex h-5 w-5 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
+      <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
         {on ? "✓" : ""}
       </span>
       {label}
@@ -91,7 +91,7 @@ function TreatmentHistoryStep({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-[14px] font-bold text-ink">가장 최근에 한 시술은?</p>
+        <p className="mb-2 text-emphasis text-ink">가장 최근에 한 시술은?</p>
         <div className="grid grid-cols-2 gap-2">
           {TREATMENT_OPTIONS.map((o) => (
             <RoundedOptionButton key={o.id} label={o.label} selected={recent === o.id}
@@ -102,7 +102,7 @@ function TreatmentHistoryStep({
 
       {recent !== null && !recentIsNone && (
         <div>
-          <p className="mb-2 text-[14px] font-bold text-ink">그 전에 한 시술은?</p>
+          <p className="mb-2 text-emphasis text-ink">그 전에 한 시술은?</p>
           <div className="grid grid-cols-2 gap-2">
             {TREATMENT_OPTIONS.map((o) => (
               <RoundedOptionButton key={o.id} label={o.label} selected={prev === o.id}
@@ -123,7 +123,7 @@ function TreatmentHistoryStep({
       {/* 뿌리염색 주기 — 뿌리염색 선택 손님에게만(새치 주고객 2~3주 반영). 선택해야 진행. */}
       {hasRootDye && recent !== null && prev !== null && (
         <div>
-          <p className="mb-2 text-[14px] font-bold text-ink">뿌리 염색은 보통 얼마마다 하세요?</p>
+          <p className="mb-2 text-emphasis text-ink">뿌리 염색은 보통 얼마마다 하세요?</p>
           <div className="grid grid-cols-3 gap-2">
             {ROOT_DYE_INTERVAL_OPTIONS.map((o) => (
               <RoundedOptionButton key={o.id} label={o.label} selected={rootInterval === o.id}
@@ -138,8 +138,8 @@ function TreatmentHistoryStep({
 
       {!recentIsNone && recent !== null && prev !== null && (
         <div>
-          <p className="mb-1 text-[14px] font-bold text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
-          <p className="mb-2 text-[13px] text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
+          <p className="mb-1 text-emphasis text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
+          <p className="mb-2 text-aux text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
           <div className="grid grid-cols-3 gap-2">
             {MORE_OPTIONS.map((o) => (
               <RoundedOptionButton key={o.id} label={o.label} selected={more === o.id}
@@ -150,7 +150,7 @@ function TreatmentHistoryStep({
       )}
 
       <button type="button" onClick={submit} disabled={!canProceed}
-        className="btn-primary h-11 w-full disabled:opacity-50">
+        className="btn-primary min-h-14 w-full disabled:opacity-50">
         진단 결과 보기 →
       </button>
     </div>
@@ -214,7 +214,24 @@ export default function DamageCheckSurveyPage() {
     <div className="relative min-h-screen">
       <main className="mx-auto flex h-[100dvh] max-w-[430px] flex-col overflow-hidden text-ink">
 
-        <TestHeader stepLabel={`손상도 진단 · ${q.stepTag}`} current={qIdx + 1} total={TOTAL}>
+        <TestHeader
+          stepLabel={`손상도 진단 · ${q.stepTag}`}
+          current={qIdx + 1}
+          total={TOTAL}
+          leading={
+            qIdx > 0 ? (
+              <button onClick={goBack} disabled={pending}
+                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
+                <span aria-hidden className="text-xl leading-none">←</span> 이전
+              </button>
+            ) : (
+              <a href="/damage-check"
+                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
+                <span aria-hidden className="text-xl leading-none">←</span> 나가기
+              </a>
+            )
+          }
+        >
           <ProgressBar value={((qIdx + 1) / TOTAL) * 100} />
         </TestHeader>
 
@@ -235,7 +252,7 @@ export default function DamageCheckSurveyPage() {
               <div className="mb-6">
                 <p className="mb-1.5 text-[12px] font-bold uppercase tracking-[0.18em] text-ink-2">{q.no}</p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">{q.title}</h2>
-                {q.hint && <p className="mt-2 text-[13px] leading-relaxed text-ink-2">{q.hint}</p>}
+                {q.hint && <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{q.hint}</p>}
               </div>
 
               {q.kind === "treatment_history" ? (
@@ -259,19 +276,12 @@ export default function DamageCheckSurveyPage() {
           </AnimatePresence>
         </div>
 
-        <div className="flex-none px-5 py-4">
-          {qIdx > 0 ? (
-            <button onClick={goBack} disabled={pending}
-              className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
-              ← 이전
-            </button>
-          ) : (
-            <a href="/damage-check" className="text-[15px] font-medium text-ink-2 transition-colors hover:text-ink">나가기</a>
-          )}
-          {q.kind === "single" && (
-            <p className="mt-2 text-center text-[13px] text-ink-2">선택하면 자동으로 넘어가요</p>
-          )}
-        </div>
+        {/* 하단 안내 — 뒤로가기는 좌상단(P7)으로 이동, 자동진행 안내만 유지 */}
+        {q.kind === "single" && (
+          <div className="flex-none px-5 py-4">
+            <p className="text-center text-[15px] text-ink-2">선택하면 자동으로 넘어가요</p>
+          </div>
+        )}
       </main>
     </div>
   );
