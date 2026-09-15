@@ -34,7 +34,7 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
       }
       className="block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow active:shadow-md"
     >
-      <p className="text-[11px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
+      <p className="text-[15px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
 
       <div className="mt-3 flex gap-3.5">
         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface">
@@ -46,9 +46,9 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-bold text-ink">{item.product_name}</p>
+          <p className="text-[17px] font-bold text-ink">{item.product_name}</p>
           {item.category && (
-            <span className="mt-1.5 inline-block rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-2">
+            <span className="mt-1.5 inline-block rounded-full bg-surface px-2.5 py-1 text-[15px] font-medium text-ink-2">
               {item.category}
             </span>
           )}
@@ -127,8 +127,8 @@ export default function ItemsPage() {
   return (
     <AppShell>
       <div>
-        <h1 className="text-[19px] font-bold tracking-tight text-ink">{name}님을 위한 맞춤 발견템</h1>
-        <p className="mt-1 text-[15px] text-ink-2">
+        <h1 className="text-h1 font-bold tracking-tight text-ink">{name}님을 위한 맞춤 발견템</h1>
+        <p className="mt-1 text-body text-ink-2">
           {coreKey
             ? "진단에서 확인된 모발 타입과 매칭된 제품만 모았어요."
             : "먼저 헤어 진단을 하면 모발 타입에 맞춰 더 정확히 추천해드려요."}
@@ -153,7 +153,7 @@ export default function ItemsPage() {
           </p>
           <button
             onClick={loadItems}
-            className="mt-3 inline-flex min-h-[44px] items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-[15px] font-semibold text-red-500 transition-colors active:bg-red-50"
+            className="mt-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-[15px] font-semibold text-red-500 transition-colors active:bg-red-50"
           >
             다시 시도 ↻
           </button>
