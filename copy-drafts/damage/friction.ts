@@ -52,14 +52,10 @@ const friction: DamageCopyBlockModule = {
     },
     {
       id: "damage.friction.brush_tip",
-      text: "트리트먼트는 바른 다음 빗으로 골고루 빗질해서 결 정돈까지 돼야 효과가 난다. 손 빗질만으론 부족하다.",
+      text: "트리트먼트는 바른 다음 빗으로 골고루 빗어서 결 정돈까지 돼야 효과가 나요. 손으로만 훑으면 부족합니다.",
       status: "approved",
-      sourceGrade: "재배치",
-      // ⚠️ verbatim 마커("원문 그대로")를 뗀 이유: 결과지 V2 배선(2026-08-20)에서
-      //   원본 상수 MANAGEMENT_TIP을 result/page.tsx에서 삭제했다. 대조할 라이브 원본이
-      //   사라져 자동 검사 대상에서 빠진다. **문장 자체는 확정94 원문과 한 글자도 다르지
-      //   않으며**, 삭제 직전 커밋(949c840)까지 원문 대조를 통과한 상태였다.
-      sourceRef: "확정94 MANAGEMENT_TIP 원문(문장 불변) — 노출 조건만 전원 고정에서 Q2 신호자(tangled·loosens)로 이동. 원본 상수는 V2 배선에서 삭제돼 자동 대조 대상 아님",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-15 사장님 구술(되읽기 교체·반말→해요체) — 구 확정94 MANAGEMENT_TIP. 노출 조건은 Q2 신호자(tangled·loosens) 유지",
       evidenceKeys: ["q2_friction"],
     },
   ],
