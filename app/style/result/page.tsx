@@ -145,7 +145,7 @@ function SaveDiaryModal({
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[28px] border-t border-white/60 bg-white/95 shadow-xl px-6 pb-10 pt-5 backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-surface" />
-        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-ink-2">MY HAIR</p>
+        <p className="text-[15px] font-bold uppercase tracking-[0.12em] text-ink-2">MY HAIR</p>
         <h3 className="mt-2 text-h2 text-ink">나의 헤어에 저장하고 평생 소장하기</h3>
         <p className="mt-2 text-[15px] text-ink-2 leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
@@ -158,7 +158,7 @@ function SaveDiaryModal({
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
-          className="mt-6 flex h-14 min-h-[48px] w-full items-center justify-center gap-3 rounded-full bg-btn-bg border border-btn-border text-base font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-50">
+          className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-btn-bg border border-btn-border text-[17px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-50">
           {loading
             ? <motion.span
                 className="inline-block h-4 w-4 rounded-full"
@@ -229,7 +229,7 @@ function BeforeAfterSection({
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <p className="text-[15px] font-bold leading-snug text-white/95">오늘 사진은<br />여기까지예요</p>
-            <p className="text-[12px] leading-relaxed text-white/75">내일 다시<br />만들어드릴게요</p>
+            <p className="text-[15px] leading-relaxed text-white/75">내일 다시<br />만들어드릴게요</p>
           </div>
         ) : generating ? (
           // Phase2: 사진 준비 중 — 슬롯엔 스피너만(상세 문구는 그리드 아래 전폭 블록).
@@ -246,7 +246,7 @@ function BeforeAfterSection({
               </svg>
               <p className="text-[15px] font-bold leading-snug text-white/95">{f.title}</p>
               <button onClick={onRetry}
-                className="mt-1 rounded-btn border border-white/35 bg-white/10 px-4 py-2 text-[15px] font-semibold text-white transition-colors hover:bg-white/20">
+                className="mt-1 inline-flex min-h-14 items-center rounded-btn border border-white/35 bg-white/10 px-4 text-[15px] font-semibold text-white transition-colors hover:bg-white/20">
                 {f.button}
               </button>
             </div>

@@ -424,10 +424,10 @@ export default function StyleUploadPage() {
         {/* ── 헤더 (flex-none) ── */}
         <header className="flex flex-none items-center justify-between border-b border-line bg-bg px-page py-3.5">
           <button onClick={() => router.push("/style/survey")}
-            className="text-body font-medium text-ink-2 transition-colors hover:text-ink">
+            className="-ml-1 inline-flex min-h-14 items-center px-1 text-body font-medium text-ink-2 transition-colors hover:text-ink">
             ← 질문으로
           </button>
-          <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-ink-2">사진 등록</span>
+          <span className="text-[15px] font-medium uppercase tracking-[0.12em] text-ink-2">사진 등록</span>
           <div className="w-16" />
         </header>
 
