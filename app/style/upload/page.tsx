@@ -71,6 +71,14 @@ function PhotoGuide({ onConfirm }: { onConfirm: () => void }) {
     <SilkBackground>
       <main className="flex h-[100dvh] flex-col text-ink">
 
+        {/* ── 헤더 (뒤로가기 좌상단, P7) ── */}
+        <header className="flex flex-none items-center border-b border-line bg-bg px-page py-2">
+          <Link href="/style/survey"
+            className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
+            <span aria-hidden className="text-xl leading-none">←</span> 질문으로
+          </Link>
+        </header>
+
         {/* 가이드 이미지 — 중앙 정렬 */}
         <div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-6">
           <div className="w-full max-w-sm">
@@ -488,15 +496,15 @@ export default function StyleUploadPage() {
             <>
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-8">
                 {/* 카메라 권한 안내 문구 */}
-                <p className="mb-1 max-w-xs text-center text-[13px] leading-relaxed text-ink-2">
+                <p className="mb-1 max-w-xs text-center text-aux leading-relaxed text-ink-2">
                   정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
-                  className="flex min-h-[48px] w-56 items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border py-3.5 text-base font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]">
+                  className="flex min-h-14 w-64 items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border py-4 text-emphasis font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]">
                   카메라로 촬영
                 </button>
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="flex min-h-[48px] w-56 items-center justify-center gap-2 rounded-full py-3.5 text-base font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
+                  className="flex min-h-14 w-64 items-center justify-center gap-2 rounded-full py-4 text-emphasis font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
                   갤러리에서 선택
                 </button>
               </div>
