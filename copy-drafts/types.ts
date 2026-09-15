@@ -25,12 +25,16 @@ export type CopyStatus = "draft" | "owner_reviewed" | "approved" | "retired";
 //   파생   : 원문 논리를 다른 조합에 적용한 확장 → 논리 확인 검수
 //   신규   : 원문 어디에도 없는 전문 판단 → 최우선 정독 검수 대상
 //            (V2_NEW_COPY_REVIEW.md 상단 배치 대상 — §7-2)
-export type SourceGrade = "재배치" | "파생" | "신규";
+//   구술   : 사장님이 직접 구술한 원고(2026-09-15 원고 전면 교체 라운드). 원문 대조 대상 아님
+//            (원본이 구술이라 대조할 파일이 없다). verbatim은 "원문 그대로" 마커로만 걸린다.
+export type SourceGrade = "재배치" | "파생" | "신규" | "구술";
 
 // ─── 도메인·블록 (§7-1 저장 구조) ───────────────────────────────────────────
 // insight는 §6 보정 1(2026-08-19 PM)로 §7-1 목록에 추가됐다 — §6-3 Primary Insight
 //   (stamp·door·aha)를 담을 칸이 원래 목록에 없었다.
-export const STYLE_BLOCKS = ["insight", "volume", "hair-structure", "curl-fit", "cut", "safety"] as const;
+// procedure("시술할 때 지킬 것")·care("집에서는")는 2026-09-15 원고 전면 교체에서 신설된 블록.
+//   기존 volume/curl-fit(궁합·주문)은 이 라운드에서 retired 되고 역할이 이 두 블록으로 옮겨졌다.
+export const STYLE_BLOCKS = ["insight", "volume", "hair-structure", "curl-fit", "procedure", "care", "cut", "safety"] as const;
 export const DAMAGE_BLOCKS = ["elasticity", "friction", "drying", "cause", "gray", "risk"] as const;
 
 export type StyleBlock = (typeof STYLE_BLOCKS)[number];

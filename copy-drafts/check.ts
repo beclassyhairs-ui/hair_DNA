@@ -162,10 +162,11 @@ const smoke = (() => {
     { q3_curl: "straight_hair", q13_design: "c_curl", q7_thickness: "fine", q8_density: "thin_density", q11_length: "chest", q8a_recent: "bleach", q8b_prev: "bleach", q8_bleach_2plus: "1" },
     "development",
   );
-  const allEntriesFlat = blocked.blocks.flatMap((b) => b.entries);
-  const procs = allEntriesFlat.filter((x) => x.id.endsWith("_procedure") && !x.id.startsWith("style.safety."));
+  // 2026-09-15: 시술 지시는 procedure 블록(id=style.procedure.b*)으로 이동. 전제 문구는 그 블록 앞에 놓인다.
+  const procBlk = blocked.blocks.find((b) => b.block === "procedure");
+  const procs = (procBlk?.entries ?? []).filter((x) => x.id.startsWith("style.procedure."));
   if (procs.length > 0) {
-    if (!allEntriesFlat.some((x) => x.id === "style.safety.blocked_procedure_prefix")) {
+    if (!(procBlk?.entries ?? []).some((x) => x.id === "style.safety.blocked_procedure_prefix")) {
       problems.push("차단인데 시술 지시 앞 전제 문구가 없음(§ 수정3)");
     }
     if (!procs.every((x) => x.conditional === true)) {
@@ -194,13 +195,12 @@ const smoke = (() => {
     problems.push("§6-6 확인 불가: 차단 케이스가 block으로 판정되지 않음");
   } else {
     const safety = blocked.blocks.find((b) => b.block === "safety");
-    const others = blocked.blocks.filter((b) => ["hair-structure", "curl-fit", "cut"].includes(b.block));
+    // 2026-09-15 새 구조: 모질(hair-structure)/시술(procedure)/커트(cut)가 차단이어도 살아 있어야 한다.
+    const others = blocked.blocks.filter((b) => ["hair-structure", "procedure", "cut"].includes(b.block));
     if (!safety || safety.entries.length === 0) problems.push("§6-6 위반: 차단인데 safety 블록이 비었음");
     if (others.every((b) => b.entries.length === 0)) {
-      problems.push("§6-6 위반: 차단이라고 모질/궁합/커트가 통째로 비었음 (b9가 결과 전체를 덮는 옛 동작)");
+      problems.push("§6-6 위반: 차단이라고 모질/시술/커트가 통째로 비었음 (b9가 결과 전체를 덮는 옛 동작)");
     }
-    const volume = blocked.blocks.find((b) => b.block === "volume");
-    if (!volume || volume.entries.length === 0) problems.push("§6-4 위반: volume 블록이 비었음(항상 존재해야 함)");
   }
 }
 
@@ -255,7 +255,7 @@ console.log("\n📋 copy registry check (§7)\n");
 console.log(`  블록: ${ALL_BLOCKS.length}개 (style ${ALL_BLOCKS.filter((b) => b.domain === "style").length} · damage ${ALL_BLOCKS.filter((b) => b.domain === "damage").length})`);
 console.log(`  entry: ${stats.total}개`);
 console.log(`  status: draft ${stats.byStatus.draft} · owner_reviewed ${stats.byStatus.owner_reviewed} · approved ${stats.byStatus.approved} · retired ${stats.byStatus.retired}`);
-console.log(`  sourceGrade: 재배치 ${stats.bySourceGrade.재배치} · 파생 ${stats.bySourceGrade.파생} · 신규 ${stats.bySourceGrade.신규}`);
+console.log(`  sourceGrade: 재배치 ${stats.bySourceGrade.재배치} · 파생 ${stats.bySourceGrade.파생} · 신규 ${stats.bySourceGrade.신규} · 구술 ${stats.bySourceGrade.구술}`);
 console.log(`  원문 대조: ${verbatim.checked}건 검사 · 불일치 ${verbatim.mismatches.length}건`);
 {
   const refEntries = allEntries().filter((e) => e.text === undefined);

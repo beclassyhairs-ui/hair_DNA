@@ -128,7 +128,6 @@ function runStyle(reps: Map<string, Partial<StyleAnswers>>) {
   const primaries = new Set<string>();
   const firedBranches = new Set<BranchKey>();
   const gateLevels = new Set<string>();
-  const volumeStates = new Set<string>();
   const scalpFlags = new Set<boolean>();
   const issues: string[] = [];
   let executed = 0;
@@ -144,14 +143,13 @@ function runStyle(reps: Map<string, Partial<StyleAnswers>>) {
       primaries.add(r.primary ?? "(차단)");
       for (const b of r.firedBranches) firedBranches.add(b);
       gateLevels.add(r.gateLevel);
-      volumeStates.add(r.volumeState);
       scalpFlags.add(r.scalpRoutineCard);
 
-      const sig = `${r.gateLevel}|${r.primary ?? "-"}|${r.volumeState}|${r.reachedIds.join(",")}`;
+      const sig = `${r.gateLevel}|${r.primary ?? "-"}|${r.reachedIds.join(",")}`;
       if (!signatures.has(sig)) signatures.set(sig, answers);
     }
   }
-  return { executed, seenEntries, signatures, primaries, firedBranches, gateLevels, volumeStates, scalpFlags, issues };
+  return { executed, seenEntries, signatures, primaries, firedBranches, gateLevels, scalpFlags, issues };
 }
 
 /** 축약이 결과를 바꾸지 않는지 seed 고정 무작위 표본으로 실검증. */
@@ -324,7 +322,6 @@ ${coverageSection(style.seenEntries, styleUniverse, "style")}
 | primary(대표 갈래) | ${Array.from(style.primaries).sort().join(", ")} | ${style.primaries.size} |
 | fired(발동 갈래 전체) | ${Array.from(style.firedBranches).sort().join(", ")} | ${style.firedBranches.size} |
 | gateLevel | ${Array.from(style.gateLevels).sort().join(", ")} | ${style.gateLevels.size} |
-| volumeState | ${Array.from(style.volumeStates).sort().join(", ")} | ${style.volumeStates.size} |
 | scalpRoutineCard | ${Array.from(style.scalpFlags).sort().join(", ")} | ${style.scalpFlags.size} |
 
 ## ③ unique rendered signature
@@ -332,7 +329,7 @@ ${coverageSection(style.seenEntries, styleUniverse, "style")}
 | 항목 | 값 |
 |---|---|
 | 고유 signature 수 | **${style.signatures.size.toLocaleString()}** |
-| signature 정의 | \`gateLevel + primary + volumeState + 도달한 copy id 순서열\` |
+| signature 정의 | \`gateLevel + primary + 도달한 copy id 순서열\` |
 
 ## 해석 issue
 

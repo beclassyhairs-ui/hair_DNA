@@ -601,17 +601,11 @@ export default function StyleResultPage() {
   const stampEntry =
     insight?.entries.find((e) => e.id.endsWith("_stamp")) ??
     sblock("safety")?.entries.find((e) => e.id.endsWith("_stamp"));
-  const insightBody = (insight?.entries ?? []).filter((e) => !e.id.endsWith("_stamp"));
+  // 2026-09-15 새 구조: [혹시]=door, [왜 그런가요]=aha 로 id 기준 분리(door 없는 갈래도 안전).
+  const doorEntry = insight?.entries.find((e) => e.id.endsWith("_door"));
+  const ahaEntries = (insight?.entries ?? []).filter((e) => e.id.endsWith("_aha"));
 
-  // 차단 상태의 시술 지시 — 블록 경계를 넘어 한 카드로 모은다.
-  //   전제 문구(blocked_procedure_prefix)가 앞에 오고 conditional 문장들이 뒤따른다.
-  const conditionalCard: ResolvedCopy[] = resolution.blocks.flatMap((b) =>
-    b.entries.filter((e) => e.conditional || e.id === "style.safety.blocked_procedure_prefix"),
-  );
-  const isConditional = (e: ResolvedCopy) =>
-    e.conditional === true || e.id === "style.safety.blocked_procedure_prefix";
-  /** 위 접힘 카드로 뺀 문장은 원래 블록에서 빼고 그린다(같은 문장 두 번 방지). */
-  const bodyOf = (b: ResolvedBlock | undefined) => (b?.entries ?? []).filter((e) => !isConditional(e));
+  const bodyOf = (b: ResolvedBlock | undefined) => b?.entries ?? [];
 
   return (
     <SilkBackground>
@@ -695,24 +689,25 @@ export default function StyleResultPage() {
             {/* ★ Phase2: 진단·처방은 기본 펼침 — 버튼 뒤에 숨기지 않는다(선공개의 목적: 읽히는 것). */}
             <div className="space-y-1">
 
-                {/* 3. 대표 판정 — 예언(door) + 아하(aha). §6-3에 따라 "결과 전체 결정"이
-                       아니라 "대표 한 줄 + 이래서 그렇습니다"로 역할이 줄었다. */}
-                {insightBody.length > 0 && (
+                {/* [혹시, 이런 적 있다면] — door(있는 갈래만). 2026-09-15 사장님 구술. */}
+                {doorEntry && (
                   <>
                     <TT>혹시, 이런 적 있다면</TT>
                     <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                      <Rich html={insightBody[0]!.text} className="block whitespace-pre-line text-[17px] font-extrabold leading-relaxed text-ink" />
+                      <Rich html={doorEntry.text} className="block whitespace-pre-line text-[17px] font-extrabold leading-relaxed text-ink" />
                     </GlassCard>
-                    {insightBody.length > 1 && (
-                      <>
-                        <TT>왜 그랬던 걸까요</TT>
-                        <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
-                          {insightBody.slice(1).map((e) => (
-                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] font-semibold leading-relaxed text-ink" />
-                          ))}
-                        </div>
-                      </>
-                    )}
+                  </>
+                )}
+
+                {/* [왜 그런가요] — aha */}
+                {ahaEntries.length > 0 && (
+                  <>
+                    <TT>왜 그런가요</TT>
+                    <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                      {ahaEntries.map((e) => (
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] font-semibold leading-relaxed text-ink" />
+                      ))}
+                    </div>
                   </>
                 )}
 
@@ -728,27 +723,42 @@ export default function StyleResultPage() {
                   </>
                 )}
 
-                {/* 5. 볼륨 — §6-4. primary가 무엇이든 항상 존재한다.
-                       정수리 루틴(scalp_step*)은 순서가 있는 절차라 번호 목록으로 따로 그린다. */}
+                {/* [시술할 때 지킬 것] — procedure. 차단 시 전제 문구(blocked_procedure_prefix)가
+                       resolver에서 이 블록 맨 앞에 놓이고 지시 문장은 conditional 프레임이 된다(§1-5). */}
+                {bodyOf(sblock("procedure")).length > 0 && (
+                  <>
+                    <TT>시술할 때 지킬 것</TT>
+                    <GlassCard tone="soft" className="space-y-2 px-5 py-4">
+                      {bodyOf(sblock("procedure")).map((e) => (
+                        <Rich key={e.id} html={e.text}
+                          className={e.id === "style.safety.blocked_procedure_prefix"
+                            ? "block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-ink-2"
+                            : "block whitespace-pre-line text-[17px] leading-relaxed text-ink"} />
+                      ))}
+                    </GlassCard>
+                  </>
+                )}
+
+                {/* [집에서는] — care 본문 + 정수리 드라이 6단계 카드(scalp, 3·4·5·9). */}
                 {(() => {
-                  const vol = bodyOf(sblock("volume"));
-                  if (vol.length === 0) return null;
-                  const steps = vol.filter((e) => e.id.includes(".scalp_step"));
-                  const title = vol.find((e) => e.id.endsWith(".scalp_title"));
-                  const note  = vol.find((e) => e.id.endsWith(".scalp_note"));
-                  const rest  = vol.filter((e) => !e.id.includes(".scalp_"));
+                  const care = bodyOf(sblock("care"));
+                  if (care.length === 0) return null;
+                  const steps = care.filter((e) => e.id.includes(".scalp_step"));
+                  const title = care.find((e) => e.id.endsWith(".scalp_title"));
+                  const note  = care.find((e) => e.id.endsWith(".scalp_note"));
+                  const body  = care.filter((e) => !e.id.includes(".scalp_"));
                   return (
                     <>
-                      <TT>볼륨은 이렇게 봅니다</TT>
-                      {rest.length > 0 && (
-                        <GlassCard tone="soft" className="space-y-2 px-5 py-4">
-                          {rest.map((e) => (
+                      <TT>집에서는</TT>
+                      {body.length > 0 && (
+                        <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+                          {body.map((e) => (
                             <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                           ))}
-                        </GlassCard>
+                        </div>
                       )}
                       {steps.length > 0 && (
-                        <FadePreview title={title?.text ?? "정수리 드라이 · 순서 그대로"}>
+                        <FadePreview title={title?.text ?? "정수리만 다시 세우는 드라이 · 순서 그대로"}>
                           <ol className="list-decimal space-y-1.5 pl-5">
                             {steps.map((e) => (
                               <li key={e.id} className="text-[17px] leading-relaxed text-ink"><Rich html={e.text} /></li>
@@ -761,118 +771,16 @@ export default function StyleResultPage() {
                   );
                 })()}
 
-                {/* 5-b. 케어 — 2026-09-10 역할표: 집에서 하는 관리 행동(_tip). 궁합 칸에서 분리.
-                       _tip 없는 갈래(b3 등)는 칸 자체를 그리지 않는다(빈 헤더 금지). */}
-                {bodyOf(sblock("care")).length > 0 && (
+                {/* [기장은 이렇게 봅니다] — 기장별 커트 조언(len_*). */}
+                {bodyOf(sblock("cut")).length > 0 && (
                   <>
-                    <TT>이렇게 관리하세요</TT>
+                    <TT>기장은 이렇게 봅니다</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
-                      {bodyOf(sblock("care")).map((e) => (
+                      {bodyOf(sblock("cut")).map((e) => (
                         <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
-                )}
-
-                {/* 6. 스타일 궁합 — §6-5(2). 곱슬 × 희망 디자인.
-                       §4 2단 구조(Phase2): 겉(_say = 미용실 주문 멘트)은 카드에 보이고,
-                       더보기(_why = 원장 이유)는 FadePreview로 접는다. */}
-                {bodyOf(sblock("curl-fit")).length > 0 && (() => {
-                  const cf = bodyOf(sblock("curl-fit"));
-                  const say = cf.filter((e) => e.id.endsWith("_say"));
-                  const why = cf.filter((e) => e.id.endsWith("_why"));
-                  const body = cf.filter((e) => !e.id.endsWith("_say") && !e.id.endsWith("_why"));
-                  return (
-                    <>
-                      <TT>이 스타일과의 궁합</TT>
-                      <GlassCard tone="soft" className="space-y-2 px-5 py-4">
-                        {body.map((e) => (
-                          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
-                        ))}
-                        {say.length > 0 && (
-                          <div className="mt-1 space-y-2 border-t border-line pt-3">
-                            <p className="text-[15px] font-bold text-ink-2">미용실에서 이렇게 주문하세요</p>
-                            {say.map((e) => (
-                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[17px] font-bold leading-relaxed text-ink">“{e.text}”</p>
-                            ))}
-                          </div>
-                        )}
-                      </GlassCard>
-                      {why.length > 0 && (
-                        <FadePreview title="왜 이렇게 주문할까요">
-                          <div className="space-y-2">
-                            {why.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
-                            ))}
-                          </div>
-                        </FadePreview>
-                      )}
-                    </>
-                  );
-                })()}
-
-                {/* 7. 커트 — 2026-09-10 역할표: 기장 조언(len_*·커트 판단)은 "기장은 이렇게 봅니다"
-                       자기 헤더로, 주문 인용문(_say)은 "주문하세요", 이유(_why)는 "왜 이렇게 주문할까요".
-                       각 칸은 내용이 있을 때만 그린다(빈 헤더 금지). */}
-                {bodyOf(sblock("cut")).length > 0 && (() => {
-                  const cut = bodyOf(sblock("cut"));
-                  const say = cut.filter((e) => e.id.endsWith("_say"));
-                  const why = cut.filter((e) => e.id.endsWith("_why"));
-                  const lenAdvice = cut.filter((e) => !e.id.endsWith("_say") && !e.id.endsWith("_why"));
-                  return (
-                    <>
-                      {lenAdvice.length > 0 && (
-                        <>
-                          <TT>기장은 이렇게 봅니다</TT>
-                          <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
-                            {lenAdvice.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
-                            ))}
-                          </div>
-                        </>
-                      )}
-                      {say.length > 0 && (
-                        <>
-                          <TT>미용실에서 이렇게 주문하세요</TT>
-                          <GlassCard tone="soft" className="space-y-2 px-5 py-4">
-                            {say.map((e) => (
-                              <p key={e.id} className="rounded-lg bg-surface px-3 py-2 text-[17px] font-bold leading-relaxed text-ink">“{e.text}”</p>
-                            ))}
-                          </GlassCard>
-                        </>
-                      )}
-                      {why.length > 0 && (
-                        <FadePreview title="왜 이렇게 주문할까요">
-                          <div className="space-y-2">
-                            {why.map((e) => (
-                              <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
-                            ))}
-                          </div>
-                        </FadePreview>
-                      )}
-                    </>
-                  );
-                })()}
-
-                {/* 8. 회복 후 시술 참고(접힘) — 차단 상태에서만.
-                       (시술 안전 안내 자체는 토글 밖 SafetyNotice가 항상 노출한다 — §6-6) 시술 지시를 숨기지 않고
-                       "지금 하라"로 읽히지 않게 조건부로 묶는다. 블록 경계를 넘어 한 카드로 모은다. */}
-                {conditionalCard.length > 0 && (
-                  <FadePreview title="회복 후 시술 참고" dashed>
-                    <div className="space-y-2">
-                      {conditionalCard.map((e) => (
-                        <Rich
-                          key={e.id}
-                          html={e.text}
-                          className={
-                            e.id === "style.safety.blocked_procedure_prefix"
-                              ? "block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-ink-2"
-                              : "block whitespace-pre-line text-[17px] leading-relaxed text-ink"
-                          }
-                        />
-                      ))}
-                    </div>
-                  </FadePreview>
                 )}
 
                 {/* 큰 버튼 ② — 케어 제품 열기(진단 읽고 나면 등장). 차단(block)은 제품 대신 데미지 안내. */}

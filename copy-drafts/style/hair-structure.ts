@@ -23,23 +23,26 @@ const hairStructure: StyleCopyBlockModule = {
   entries: [
     {
       id: "style.hair_structure.b3_aha_ref",
-      refId: "style.insight.b3_aha",
-      sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b3.aha 참조 (원본=style.insight.b3_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
+      text: "(retired) 구 hair-structure aha 참조 — 2026-09-15 새 구조에서 '내 모발 구조'는 매트릭스(m_*)만 노출.",
+      status: "retired",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-15 원고 전면 교체 — aha-ref 폐지(내 모발 구조=매트릭스만)",
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl", "q13_design"],
     },
     {
       id: "style.hair_structure.b6_aha_ref",
-      refId: "style.insight.b6_aha",
-      sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b6.aha 참조 (원본=style.insight.b6_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
+      text: "(retired) 구 hair-structure aha 참조 — 2026-09-15 새 구조에서 '내 모발 구조'는 매트릭스(m_*)만 노출.",
+      status: "retired",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-15 원고 전면 교체 — aha-ref 폐지(내 모발 구조=매트릭스만)",
       evidenceKeys: ["q8_density", "q7_thickness"],
     },
     {
       id: "style.hair_structure.b10_aha_ref",
-      refId: "style.insight.b10_aha",
-      sourceGrade: "재배치",
-      sourceRef: "BRANCH_COPY.b10.aha 참조 (원본=style.insight.b10_aha · §6-5(1) 모질 판단, §6 보정 1 refId 재사용)",
+      text: "(retired) 구 hair-structure aha 참조 — 2026-09-15 새 구조에서 '내 모발 구조'는 매트릭스(m_*)만 노출.",
+      status: "retired",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-15 원고 전면 교체 — aha-ref 폐지(내 모발 구조=매트릭스만)",
       evidenceKeys: ["q8_density", "q7_thickness", "q3_curl"],
     },
 
@@ -129,7 +132,7 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.curlmod_wavy",
       text: "반곱슬은 유리한 모질이에요. 커트만 잘 해놔도 형태가 잡힙니다. 펌이나 컬을 넣을 때만 곱슬기를 먼저 잡아주면 커트만으로도 오래 갑니다.",
-      status: "approved",
+      status: "retired",
       sourceGrade: "재배치",
       sourceRef: "사장님 채굴 답변 2026-08-21(2차) · 2026-09-10 역할표 견본 간결화 — 반곱슬: 유리+조건 한 줄",
       evidenceKeys: ["q3_curl"],
@@ -137,7 +140,7 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.curlmod_mid",
       text: "곱슬은 그대로 두면 지저분해 보이기 쉬워서, 있는 그대로 예쁘게 살리기가 쉽진 않아요. 대신 곱슬을 펌처럼 하나의 스타일로 잡으면 잘 어울립니다. 이때 숱이 많은지 적은지가 방향을 크게 가르니, 숱에 맞춰 설계하는 게 중요해요.",
-      status: "approved",
+      status: "retired",
       sourceGrade: "재배치",
       sourceRef: "사장님 채굴 답변 2026-08-21(2차) — 곱슬: 펌처럼 스타일로 잡으면 OK, 숱과 교차",
       evidenceKeys: ["q3_curl"],
@@ -145,7 +148,7 @@ const hairStructure: StyleCopyBlockModule = {
     {
       id: "style.hair_structure.curlmod_strong",
       text: "곱슬기가 강한 편이라, 이 정도면 펴는 시술을 전제로 스타일을 설계하는 게 일반적이에요. 결을 먼저 정리하고 나면 원하시는 스타일의 폭이 훨씬 넓어집니다.",
-      status: "approved",
+      status: "retired",
       sourceGrade: "재배치",
       sourceRef: "사장님 채굴 답변 2026-08-21(2차) — 악성곱슬: 매직(펴는 시술) 전제. 부정 톤 금지",
       evidenceKeys: ["q3_curl"],

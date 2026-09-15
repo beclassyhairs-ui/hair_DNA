@@ -16,6 +16,8 @@ import styleInsight from "./style/insight";
 import styleVolume from "./style/volume";
 import styleHairStructure from "./style/hair-structure";
 import styleCurlFit from "./style/curl-fit";
+import styleProcedure from "./style/procedure";
+import styleCare from "./style/care";
 import styleCut from "./style/cut";
 import styleSafety from "./style/safety";
 
@@ -32,6 +34,8 @@ export const ALL_BLOCKS: readonly CopyBlockModule[] = [
   styleVolume,
   styleHairStructure,
   styleCurlFit,
+  styleProcedure,
+  styleCare,
   styleCut,
   styleSafety,
   damageElasticity,
@@ -107,7 +111,7 @@ export interface RegistryStats {
 export function registryStats(): RegistryStats {
   const entries = allEntries();
   const byStatus: Record<CopyStatus, number> = { draft: 0, owner_reviewed: 0, approved: 0, retired: 0 };
-  const bySourceGrade: Record<SourceGrade, number> = { 재배치: 0, 파생: 0, 신규: 0 };
+  const bySourceGrade: Record<SourceGrade, number> = { 재배치: 0, 파생: 0, 신규: 0, 구술: 0 };
   for (const e of entries) {
     // 참조 entry는 원본에서 상속한 실효 상태로 센다.
     const st = resolveStatus(e);
