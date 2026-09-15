@@ -9,7 +9,17 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 계측 이벤트(이름·meta·발화시점) · 법적 문구·링크 · 로그인/동의 게이트 순서 · 확정106 금지어 · copy:check · 하네스(fallback14·invariant9).
 **문장 무변경**(고치고 싶으면 COPY_SUGGESTIONS.md에 적기만).
 
-## 현재 상태
+## 현재 상태 (2026-09-15 재개)
+- **Phase 2 진행 중: ①②완료, 다음 ③ /style 업로드.**
+- **스크린샷 도구 필수 사용법(중요)**: `MSYS_NO_PATHCONV=1 node docs/ui_redesign_2026-09-15/_shot.mjs <route-슬래시없이> <width> <out.png> "" <height>`
+  예: `MSYS_NO_PATHCONV=1 node docs/ui_redesign_2026-09-15/_shot.mjs style/survey 390 docs/ui_redesign_2026-09-15/shots/03_x.png "" 1200`
+  - ⚠️ Git Bash가 `/style`을 `C:/.../Git/style`로 변환 → 반드시 슬래시 없이 넘기고 MSYS_NO_PATHCONV=1.
+  - 출력 로그의 `bodyLen>0` + 파일 `>50KB` 여야 정상(수백 바이트/7KB=blank).
+  - before 샷: 화면 편집 **전에** 캡처하거나, 커밋된 경우 `git show <commit>~1:파일 > 파일`로 임시 교체 후 캡처→`git checkout -- 파일` 복원.
+- **명령 권한**: `npx`/`npm run`은 이 세션에서 거부됨 → tsc는 `node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json`, copy:check는 `node .../tsc -p copy-drafts/tsconfig.check.json && node copy-drafts/.build/copy-drafts/check.js`로 직접 실행.
+- **temp 미정리(rm 차단)**: `docs/ui_redesign_2026-09-15/_diag.mjs`, `shots/_diag_full.png`, `shots/_diag_viewport.png` — 사장님 수동 삭제.
+
+### 이전 상태
 - **Phase 0 완료·커밋 `dddceab`** / **Phase 1 토큰 완료(커밋 예정).**
   - Phase 1-1 토큰(tailwind.config·globals): body 16→17·aux 14→15·h1 22→24·h2 18→19·emphasis 16→17 / --ink-3 #b7b0a5→#7a7268(WCAG AA). tsc 0. /style 랜딩 390 렌더 확인(새 토큰 반영).
   - Phase 1-2 컴포넌트: **기존 세트가 요청 역할을 이미 커버**(TestHeader≈AppHeader·BottomStickyCTA≈BottomCTA·RoundedOptionButton≈ChoiceButton·ProgressBar≈ProgressDots·GlassCard≈SectionCard·CoupangCardList≈ProductCard). 라운드 원칙("갈아엎지 말고 스타일만·props 유지")+"Phase1 화면변화 0" 정합 위해 **컴포넌트 restyle은 화면 바뀌는 Phase 2에서 화면별 before/after와 함께** 수행(신규 컴포넌트는 필요 시 그때 신설). → 설계 선택지 표 참조.
@@ -22,14 +32,17 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 - 기존 토큰: `app/globals.css`(:root SSOT) + `tailwind.config.ts`(var 참조). body=16·aux=14(→5060 위반: body≥17·보조≥15로 상향 예정). 포인트=차콜 CTA, 배경 아이보리. 구 팔레트(gold/brown/accent) 잔존.
 
 ## 다음 할 일
-1. Phase 0-4: SCREENS.md — dev(390px) 스크린샷으로 화면 인벤토리.
-2. Phase 1: 토큰 갱신(body17·aux15·터치56·대비 AA·구팔레트 정리) + 공통 컴포넌트(AppHeader/BottomCTA/SectionCard/ProgressDots/ChoiceButton/ProductCard/Notice). 커밋 1(화면변화 0). tsc 0.
-3. Phase 2: 화면별 교체(①style랜딩 → ⑩items). 화면당 커밋1 + before/after 캡처.
-4. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
-5. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. push 전 멈춤.
+1. **③ /style 업로드** — before 캡처(편집 전) → 5060 재배치 → after → tsc0·copy:check → 커밋 → PROGRESS.
+2. 이어서 ④ 접수 → ⑤ 결과지 → ⑥ home/my-hair → ⑦ damage 랜딩·설문 → ⑧ damage 결과지 → ⑨ login/consent → ⑩ items.
+3. Phase 3: Codex 3그룹(A style랜딩~접수 / B style결과지+home / C damage+login).
+4. Phase 4: 회귀(fallback14·invariant9·tsc0·copy:check·lint변동0) + 5폭상태 캡처 + PROJECT_STATE + 보고. **push 전 멈춤**.
 
 ## 커밋 로그(이 라운드)
-- (없음 — Phase 0 문서만, 아직 미커밋)
+- `dddceab` Phase 0 문서(PRINCIPLES/SCREENS/PROGRESS)
+- `6c8f2ee` Phase 1 토큰(body17·aux15·h1 24·h2 19·ink-3 AA)
+- `65fb35e` ① /style 랜딩(P5 하단고정 CTA·P10)
+- `acb30c2` 스크린샷 헬퍼 경로버그 수정 + ① 샷 재캡처(blank→정상)
+- `55c5d78` ② /style 설문(P2 선택지 크게·P7 뒤로 좌상단·P3 저밀도)
 
 ## 미해결/메모
 - 스토어 스크린샷 이미지 미확보 → 원칙은 문서화 UX 근거. 필요 시 사장님이 두 앱 실제 화면 공유하면 보강.
