@@ -53,11 +53,12 @@ const config: Config = {
         // ── WORKORDER-02 타이포 스케일 (Pretendard) ──
         // 가독성은 크기·대비로 확보하고 굵기로 밀어붙이지 않는다(50·60 타깃).
         // 한 화면에 700(페이지타이틀)은 1~2곳만. 본문·라벨 기본은 400.
-        h1: ["22px", { lineHeight: "1.3", fontWeight: "700" }], // 페이지 타이틀 (WORKORDER-02.1: 26→22)
-        h2: ["18px", { lineHeight: "1.35", fontWeight: "600" }], // 섹션·카드 제목
-        body: ["16px", { lineHeight: "1.6", fontWeight: "400" }], // 본문
-        emphasis: ["16px", { lineHeight: "1.4", fontWeight: "600" }], // 버튼·강조
-        aux: ["14px", { lineHeight: "1.6", fontWeight: "400" }], // 보조 (노안 배려: 13→14, 1.5→1.6)
+        // ── UI 개편(2026-09-15) 5060 기본선: 본문 17↑·보조 15↑ ──
+        h1: ["24px", { lineHeight: "1.3", fontWeight: "700" }], // 페이지 타이틀 (5060: 22→24)
+        h2: ["19px", { lineHeight: "1.35", fontWeight: "600" }], // 섹션·카드 제목 (18→19)
+        body: ["17px", { lineHeight: "1.6", fontWeight: "400" }], // 본문 (16→17, 5060 기본선)
+        emphasis: ["17px", { lineHeight: "1.4", fontWeight: "600" }], // 버튼·강조 (16→17)
+        aux: ["15px", { lineHeight: "1.6", fontWeight: "400" }], // 보조 (14→15, 보조 15px 미만 금지)
       },
       borderRadius: {
         // ── WORKORDER-02 형태 토큰 ──

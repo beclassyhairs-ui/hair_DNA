@@ -10,7 +10,11 @@ useHairTransformJob · hairJobConstants · verifyFallbackEligibility · resolver
 **문장 무변경**(고치고 싶으면 COPY_SUGGESTIONS.md에 적기만).
 
 ## 현재 상태
-- **Phase 0 진행 중.**
+- **Phase 0 완료·커밋 `dddceab`** / **Phase 1 토큰 완료(커밋 예정).**
+  - Phase 1-1 토큰(tailwind.config·globals): body 16→17·aux 14→15·h1 22→24·h2 18→19·emphasis 16→17 / --ink-3 #b7b0a5→#7a7268(WCAG AA). tsc 0. /style 랜딩 390 렌더 확인(새 토큰 반영).
+  - Phase 1-2 컴포넌트: **기존 세트가 요청 역할을 이미 커버**(TestHeader≈AppHeader·BottomStickyCTA≈BottomCTA·RoundedOptionButton≈ChoiceButton·ProgressBar≈ProgressDots·GlassCard≈SectionCard·CoupangCardList≈ProductCard). 라운드 원칙("갈아엎지 말고 스타일만·props 유지")+"Phase1 화면변화 0" 정합 위해 **컴포넌트 restyle은 화면 바뀌는 Phase 2에서 화면별 before/after와 함께** 수행(신규 컴포넌트는 필요 시 그때 신설). → 설계 선택지 표 참조.
+  - ⚠️ **스크린샷 파일 워크플로**: 브라우저 도구 스크린샷은 인라인(내가 봄)이라 shots/*.png **파일 저장 불가**. Phase 2 before/after PNG는 playwright 헬퍼로 저장 예정(프로젝트에 playwright 있음) — 권장안. 이번 토큰 diff는 인라인 확인으로 대체.
+- **(구) Phase 0 진행 중.**
   - [x] 0-1 벤치마크 리서치(WebSearch·WebFetch). 퀸잇=큰 글씨·화면당 1상품·저밀도·큰 결제버튼·터치최소. 마메드네=사진1장→전/후→예약·디자이너 포트폴리오 신뢰. ⚠️ 스토어 스크린샷 이미지 추출 불가(마크다운 변환) — 문서화 UX+리뷰 근거.
   - [x] 0-3 PRINCIPLES.md(원칙 10 + 강제 5060 기본선).
   - [x] 0-5 frontend-design SKILL.md 읽음 → 절제·의도적 토큰·스크린샷 자기비평 반영(단 5060·기존브랜드·무로직/무카피 우선).

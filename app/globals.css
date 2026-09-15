@@ -21,7 +21,7 @@
   /* ── 구 토큰명 별칭 (3단계 마이그레이션 중 병존, 이후 제거) ── */
   --surface: var(--soft);   /* 구 --surface → --soft */
   --ink-2: var(--sub);      /* 구 --ink-2 → --sub */
-  --ink-3: #b7b0a5;         /* 힌트(아주 드물게) */
+  --ink-3: #7a7268;         /* 힌트 — 5060 대비 상향(구 #b7b0a5는 흰 배경 WCAG AA 미달) */
   --btn: var(--ink);        /* 구 소프트 차콜 */
   --btn-line: var(--line);  /* 아웃라인 버튼 테두리 */
   --btn-bg: #f1eee8;        /* 구 WORKORDER-03 연한 CTA (3단계에서 --ink 채움으로 교체) */
