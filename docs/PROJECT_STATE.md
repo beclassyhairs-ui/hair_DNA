@@ -3,9 +3,10 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-16
 
-## 🟡 L. 도메인 전환 라운드 — mialtip.kr + OG + UTM + 쿠팡 LIVE + 새치 알림받기 (2026-09-16 · **push 대기**)
+## 🟢 L. 도메인 전환 라운드 — mialtip.kr + OG + UTM + 쿠팡 LIVE + 새치 알림받기 (2026-09-16 · **push·배포 완료 `9fe2789`**)
 
-> 현재 상태 한 줄: **5개 페이즈 완료·미커밋 0·미push 5커밋(`1f3102b`·`bac1157`·`d71f3f6`·`0e046d6`·`4ddf690`). tsc0·copy:check OK·invariant9/9·fallback14/14·Codex(도메인 1건 수정후통과 + 새치 2관점 통과). dev 실측: og:url·og:image·sitemap·robots 전부 mialtip.kr 해석·OG 3종 200. push 대기.**
+> 현재 상태 한 줄: **5개 페이즈 완료. tsc0·copy:check OK·invariant9/9·fallback14/14·Codex(도메인 1건 수정후통과 + 새치 2관점 통과). dev 실측: og:url·og:image·sitemap·robots 전부 mialtip.kr 해석·OG 3종 200. push·배포 완료(`56ced24..9fe2789`), Vercel 자동배포. HEAD==origin/main==`9fe2789`.**
+> ⚠️ **코드는 배포됐으나, 사장님 env(NEXT_PUBLIC_SITE_URL·PUBLIC_ASSET_ORIGIN)를 넣고 재배포하기 전까지는 mialtip.kr이 실제 발효되지 않는다**(빌드타임 인라인). 아래 "사장님 직접 넣을 값" 참조.
 
 - **Phase 1 도메인 일원화 (`1f3102b`)**: 손님대면 기준 URL을 `lib/siteUrl.ts` SSOT로 통합(OG·카노니컬·공유·sitemap·robots 15곳 import). 기본값 hair-dna.vercel.app→**mialtip.kr**(실값은 Vercel env `NEXT_PUBLIC_SITE_URL`). **Codex 지적 반영**: faceswap 자산 origin이 사이트 URL에 묶여 있던 것 → 전용 env `PUBLIC_ASSET_ORIGIN` 최우선 분기 신설로 분리(미설정 시 회귀 0·하위호환, 302 회귀 방지). 법적문서(terms/privacy)는 도메인 하드코딩 없음(회사정보 business.ts env) → 무변경.
 - **Phase 2 OG 카드 (`bac1157`)**: og-home/og-style/og-damage.png 1200x630(로컬 Pretendard, 외부폰트 0), 아이보리+차콜+골드. 문구는 각 페이지 기존 metadata verbatim. **/damage-check가 bangs-og.png(잔재) 재사용하던 버그 → og-damage.png로 교체**. /home 전용 layout 신설. (사장님께 3장 전달·톤/문구 피드백 대기, 지금은 이대로.)
@@ -17,7 +18,8 @@
   2. **카카오 콘솔 Redirect URI**: `https://mialtip.kr/api/auth/kakao/callback` 등록(+로컬 유지). Vercel `KAKAO_REDIRECT_URI`도 새 도메인으로.
   3. **Supabase SQL(§4, 사장님 실행)**: `supabase/user_consents_marketing_check.sql` — 사전점검 후 `marketing`이 CHECK에 없으면 실행(있으면 no-op).
   4. **배포 후 육안**: 카톡 공유 미리보기(홈/style/damage OG), 새치 결과지 알림버튼(로그인 필요→폰), 21종 카드 노출.
-- 🔴 **다음 = 사장님 push 승인**(5커밋) → Vercel 자동배포 → 배포 해시 기록.
+- ✅ **push·배포 완료**: 2026-09-16 `56ced24..9fe2789` origin/main push → Vercel 자동배포. 배포 커밋 **`9fe2789`**(HEAD==origin/main).
+- 🔴 **다음 = 사장님 env 3종 등록+재배포**(위 "직접 넣을 값") → 카톡 공유/새치버튼/카드 폰 확인. 그 뒤 마케팅 링크 UTM 배포·OG 톤 피드백 반영.
 
 
 ## 🟢 K. UI 눈금 정정 라운드 — 라운드 I 과대(17/15/56) 되돌림 (2026-09-16 · **push·배포 완료 `56ced24`**)
