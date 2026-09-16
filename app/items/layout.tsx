@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 // /items·/items/[id]는 자체 metadata가 없어 root 기본값을 쓰던 상태 →
 // 섹션 공통 title/description을 이 layout에서 부여.

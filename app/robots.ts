@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app").replace(/\/$/, "");
+import { SITE_URL as BASE_URL } from "@/lib/siteUrl";
 
 // /robots.txt 생성. 관리자·API는 색인 차단, 사이트맵 위치 안내.
 export default function robots(): MetadataRoute.Robots {

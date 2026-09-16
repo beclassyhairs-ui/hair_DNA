@@ -4,8 +4,7 @@ import type { Metadata } from "next";
 // 미알팁 셀프 손상도 자가진단 (/damage-check) — 공유용 OG 메타데이터
 // ============================================================================
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
   title: "미알팁 - 미용실 가기 전 1분 손상도 자가진단",

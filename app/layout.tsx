@@ -7,6 +7,7 @@ import AttributionCapture from "./components/AttributionCapture";
 import ProfileSync from "./components/ProfileSync";
 import Toaster from "./components/Toaster";
 import SiteFooter from "./components/SiteFooter";
+import { SITE_URL } from "@/lib/siteUrl";
 
 // 본문·타이틀 공용: Pretendard (WORKORDER-02 — 가변폰트 로컬 로딩)
 // 굵기 위계는 타이포 토큰(tailwind.config)에서 400/600/700으로 관리. 굵기로 밀어붙이지 않는다.
@@ -37,9 +38,7 @@ const SITE_DESCRIPTION =
 
 export const metadata: Metadata = {
   // 소셜 미리보기 이미지 절대 URL 해석 기준 — 배포 도메인으로 교체
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app"
-  ),
+  metadataBase: new URL(SITE_URL),
   // title 미설정 페이지의 기본값. 각 랜딩 layout이 자체 title(접미사 포함)을
   // 이미 지정하므로 template은 두지 않는다(이중 접미사 방지).
   title: "미알팁 — 미용실에서 알 수 없는 꿀팁",

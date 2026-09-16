@@ -99,15 +99,22 @@ async function verifyFallbackEligibility(originalId: string, replicateKey: strin
 }
 
 // ─── 레퍼런스(공개 자산) 절대 URL의 origin ────────────────────────────────────
-const PUBLIC_ASSET_ORIGIN = "https://hair-dna.vercel.app"; // 공개 alias(배포보호 없음). 비밀 아님. NEXT_PUBLIC_SITE_URL 미설정 시 폴백.
+// 자산 fetch origin 의 고정 폴백. 배포보호(SSO) 302 없이 항상 200 을 주는 공개 alias. 비밀 아님.
+const PUBLIC_ASSET_ORIGIN_FALLBACK = "https://hair-dna.vercel.app";
 
 function getAssetBaseUrl(req: NextRequest): string {
-  // 레퍼런스 자산은 공개 alias origin에서 서버가 fetch한다. ★ VERCEL_URL(자동 배포도메인)은 배포보호(SSO)
-  //   302가 걸려 자산 fetch가 깨질 수 있어 절대 쓰지 않는다. 공개 alias를 NEXT_PUBLIC_SITE_URL로
-  //   오버라이드(권장), 미설정 시 고정 공개 alias로 폴백.
+  // 레퍼런스 자산은 배포보호(SSO) 302 없이 항상 200 을 주는 origin 에서 서버가 fetch 해야 한다.
+  // ★ 우선순위 (도메인 전환 대비 — faceswap 자산 origin 을 사이트 주소와 분리):
+  //   (1) 전용 env PUBLIC_ASSET_ORIGIN — 사이트 도메인과 독립적으로 자산 origin 을 고정(pin).
+  //       도메인 전환 중 NEXT_PUBLIC_SITE_URL 을 새 도메인으로 바꿔도 자산은 검증된 origin 유지.
+  //   (2) 미설정 시에만 NEXT_PUBLIC_SITE_URL(사이트 주소와 결합·하위호환).
+  //   (3) 둘 다 없고 배포환경이면 검증된 공개 alias 로 폴백.
+  //   (4) 로컬 개발은 요청 origin. VERCEL_URL(자동 배포도메인)은 302 위험이라 절대 쓰지 않는다.
+  const assetOrigin = process.env.PUBLIC_ASSET_ORIGIN?.replace(/\/+$/, "");
+  if (assetOrigin) return assetOrigin;
   const publicSite = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
   if (publicSite) return publicSite;
-  if (process.env.VERCEL) return PUBLIC_ASSET_ORIGIN;
+  if (process.env.VERCEL) return PUBLIC_ASSET_ORIGIN_FALLBACK;
   return req.nextUrl.origin; // 로컬 개발
 }
 

@@ -7,7 +7,7 @@
 
 import type { Metadata } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 const OG_IMAGE = `${SITE_URL}/hair-mbti-og.png`;
 
 export const metadata: Metadata = {

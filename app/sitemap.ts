@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app").replace(/\/$/, "");
+import { SITE_URL as BASE_URL } from "@/lib/siteUrl";
 
 // 공개·색인 대상 엔트리 페이지만 포함한다.
 // 제외: /admin·/api(robots 차단), 결과/업로드/로딩 등 전이 화면, 개인화면(/home·/myhair),

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 const TITLE = "퍼스널 헤어 MBTI 테스트 💇";
 const DESCRIPTION =
   "내 평소 관리 습관으로 알아보는 찰떡 헤어스타일! 나는 어떤 유형일까? 지금 바로 확인해 보세요.";

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import StyleSessionPing from "./StyleSessionPing";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 // 플래그십 랜딩. OG 대표 이미지는 root의 og-default.png(브랜드 임시 플레이스홀더)를 상속한다.
 // 과거 bangs-og.png(인생 앞머리 전용 아트)를 재사용했으나 본 서비스와 어긋나 제거.

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 // /hair-quiz는 자체 metadata가 없어 root 기본값만 쓰던 상태(sitemap 공개 엔트리) →
 // 섹션 title/description + OG를 부여. OG 대표 이미지는 root의 og-default.png를 상속
 // (openGraph.images 미지정 → 상위 값 병합). 자체 OG 아트는 [사업주 승인] 대상.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
   title: "헤어 습관 진단 | 미알팁",

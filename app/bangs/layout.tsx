@@ -5,8 +5,7 @@ import type { Metadata } from "next";
 // 이미지: public/images/bangs-og.png (1200×630px) 필요
 // ============================================================================
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
   title: "미알팁 - 내 인생 앞머리 찾기",

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 // /consulting(헤어 고민상담소)은 자체 metadata가 없어 root 기본값만 쓰던 상태(sitemap 공개 엔트리) →
 // 섹션 title/description + OG 부여. OG 대표 이미지는 root의 og-default.png 상속.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hair-dna.vercel.app";
+import { SITE_URL } from "@/lib/siteUrl";
 
 export const metadata: Metadata = {
   title: "헤어 고민상담소 | 미알팁",
