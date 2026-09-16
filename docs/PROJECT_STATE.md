@@ -3,9 +3,26 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-16
 
-## 🟡 K. UI 눈금 정정 라운드 — 라운드 I 과대(17/15/56) 되돌림 (2026-09-16 · **push 대기**)
+## 🟡 L. 도메인 전환 라운드 — mialtip.kr + OG + UTM + 쿠팡 LIVE + 새치 알림받기 (2026-09-16 · **push 대기**)
 
-> 현재 상태 한 줄: **라운드 I의 5060 눈금(본문17·보조15·터치56)이 과대 → 퀸잇 기준(C)으로 하향(본문15·보조13·터치48). 구조·컴포넌트·문장 무변경, 값만. tsc0·copy:check OK·하네스 통과·Codex 통과. 미push.**
+> 현재 상태 한 줄: **5개 페이즈 완료·미커밋 0·미push 5커밋(`1f3102b`·`bac1157`·`d71f3f6`·`0e046d6`·`4ddf690`). tsc0·copy:check OK·invariant9/9·fallback14/14·Codex(도메인 1건 수정후통과 + 새치 2관점 통과). dev 실측: og:url·og:image·sitemap·robots 전부 mialtip.kr 해석·OG 3종 200. push 대기.**
+
+- **Phase 1 도메인 일원화 (`1f3102b`)**: 손님대면 기준 URL을 `lib/siteUrl.ts` SSOT로 통합(OG·카노니컬·공유·sitemap·robots 15곳 import). 기본값 hair-dna.vercel.app→**mialtip.kr**(실값은 Vercel env `NEXT_PUBLIC_SITE_URL`). **Codex 지적 반영**: faceswap 자산 origin이 사이트 URL에 묶여 있던 것 → 전용 env `PUBLIC_ASSET_ORIGIN` 최우선 분기 신설로 분리(미설정 시 회귀 0·하위호환, 302 회귀 방지). 법적문서(terms/privacy)는 도메인 하드코딩 없음(회사정보 business.ts env) → 무변경.
+- **Phase 2 OG 카드 (`bac1157`)**: og-home/og-style/og-damage.png 1200x630(로컬 Pretendard, 외부폰트 0), 아이보리+차콜+골드. 문구는 각 페이지 기존 metadata verbatim. **/damage-check가 bangs-og.png(잔재) 재사용하던 버그 → og-damage.png로 교체**. /home 전용 layout 신설. (사장님께 3장 전달·톤/문구 피드백 대기, 지금은 이대로.)
+- **Phase 3 UTM (`d71f3f6`, 문서)**: `docs/UTM_RULES.md`(source/medium/campaign 규칙+예시 10). **계측(lib/eventTracking)은 무변경** — utm 3종은 이미 first-touch로 캡처돼 전용 컬럼(source·utm_medium·utm_campaign)으로 모든 이벤트 동승 중(확인 완료). ⚠️ 마케팅 링크는 루트 `/`(→/style redirect로 쿼리 유실) 말고 `/style`·`/damage-check`·`/home` 직접.
+- **Phase 4 쿠팡 LIVE (코드 변경 0)**: `COUPANG_CARDS_LIVE`는 **이미 true**. 21종 링크 전건 유효(302→실상품 /vp/products, 제휴태그 AF2812258 전건 유지, 깨진 링크 0). 대가성 고지 문구·위치 무변경.
+- **Phase 5 새치 알림받기 (`0e046d6` 기능 + `4ddf690` 스키마관문)**: 데미지 새치(h_root_gray) 결과지에 '제품 나오면 알려드릴까요?' + 수신고지. 누름=동의(사전체크 없음·선택동의). `/api/consents` **선택 동의 경로(optionalOnly) 신설**(필수 완결성 생략+필수유형 차단=게이트 우회 방지, granted=false 철회 지원). 게이트 경로(기존)는 REQUIRED 강제·granted=true 그대로. GET `?type=marketing`+`hasCurrentMarketingConsent`(policy_version 미필터=구독 유지)로 새로고침 상태 반영. `/api/auth/me` hot-path 무변경. 신규 이벤트 `notify_signup`(meta landing·gray). 연타 방지 busyRef. Codex 2관점 통과. **결과지는 이미 로그인 게이트라 5-2 충족**(미로그인시 게이트 경유도 배선).
+- 🔴 **사장님이 직접 넣어야 할 값(배포 전/후)**:
+  1. **Vercel env**: `NEXT_PUBLIC_SITE_URL=https://mialtip.kr` — ⚠️ **mialtip.kr을 Vercel 프로젝트에 도메인 부착+DNS 완료해 `/references/*.jpg`가 200으로 열리는 것을 확인한 뒤** 넣는다. `PUBLIC_ASSET_ORIGIN=https://hair-dna.vercel.app`(faceswap 자산 pin — 사이트 도메인 바꿔도 안 깨지게). NEXT_PUBLIC_*은 빌드타임 인라인이라 등록 후 재배포 필수.
+  2. **카카오 콘솔 Redirect URI**: `https://mialtip.kr/api/auth/kakao/callback` 등록(+로컬 유지). Vercel `KAKAO_REDIRECT_URI`도 새 도메인으로.
+  3. **Supabase SQL(§4, 사장님 실행)**: `supabase/user_consents_marketing_check.sql` — 사전점검 후 `marketing`이 CHECK에 없으면 실행(있으면 no-op).
+  4. **배포 후 육안**: 카톡 공유 미리보기(홈/style/damage OG), 새치 결과지 알림버튼(로그인 필요→폰), 21종 카드 노출.
+- 🔴 **다음 = 사장님 push 승인**(5커밋) → Vercel 자동배포 → 배포 해시 기록.
+
+
+## 🟢 K. UI 눈금 정정 라운드 — 라운드 I 과대(17/15/56) 되돌림 (2026-09-16 · **push·배포 완료 `56ced24`**)
+
+> 현재 상태 한 줄: **라운드 I의 5060 눈금(본문17·보조15·터치56)이 과대 → 퀸잇 기준(C)으로 하향(본문15·보조13·터치48). 구조·컴포넌트·문장 무변경, 값만. tsc0·copy:check OK·하네스 통과·Codex 통과. push·배포 완료(`d003a87..56ced24`), Vercel 자동배포. HEAD==origin/main==`56ced24`.**
 > 사유: 라운드 I가 "어른용 큰 글씨"로 과했다. 목표 인상 "깔끔·심플" — 크기보다 여백·굵기·선을 줄이는 쪽.
 > 대상: **디자인 토큰(tailwind.config fontSize + globals) + 스코프 화면/공통 컴포넌트의 하드코딩 px→토큰 클래스 치환.** 레이아웃·구조·문장 무변경.
 
@@ -16,7 +33,8 @@
 - **캡처**: 10화면 `_c` + 비교 1장(`_compare_survey_I_vs_C`) + 5상태·3폭(360/390/430) 무점프. docs/ui_redesign_2026-09-15/shots.
 - **자기점검**: 결과지 15px 본문 한 줄 ~18~28자(범위 내)·스탬프 한 줄 OK·그림자 0·선 연함.
 - **검수**: tsc 0 · copy:check OK · fallback 14/14 · invariant 9/9 · Codex 회귀·불가침(로직·계측·구조·문장 무변경) 통과.
-- 🔴 **다음 = 사장님 push 승인** → 배포 해시 기록.
+- ✅ **push·배포 완료**: 2026-09-16 `d003a87..56ced24` origin/main push → Vercel 자동배포. 배포 커밋 **`56ced24`**(HEAD==origin/main).
+- 🔴 **다음 = 도메인 전환 라운드**(mialtip.kr + OG + UTM + 쿠팡 LIVE + 새치 알림받기).
 
 ## 🟢 J. 원고 전면 교체 라운드 — style 9갈래 재작성 + damage 되읽기 (2026-09-15 · **push·배포 완료 `f250d58`**)
 
