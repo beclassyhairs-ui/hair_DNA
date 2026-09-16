@@ -33,7 +33,7 @@ export default function ItemBuyButton({ id, buyLink }: { id: number; buyLink: st
           treatmentFreq: seg.treatmentFreq,
         });
       }}
-      className="flex min-h-14 w-full items-center justify-center gap-1.5 rounded-btn bg-btn-bg border border-btn-border py-3.5 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.99]"
+      className="flex min-h-12 w-full items-center justify-center gap-1.5 rounded-btn bg-btn-bg border border-btn-border py-3.5 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.99]"
     >
       구매하러 가기 →
     </a>

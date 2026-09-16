@@ -75,7 +75,7 @@ function TreatmentHistoryStep({
 
   const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
     <button type="button" onClick={onToggle} disabled={disabled}
-      className={`flex min-h-14 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
+      className={`flex min-h-12 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
         on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
       }`}>
       <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
@@ -255,12 +255,12 @@ export default function StyleSurveyPage() {
           leading={
             qIdx > 0 ? (
               <button onClick={goBack} disabled={pending}
-                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
+                className="-ml-2 inline-flex min-h-12 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
                 <span aria-hidden className="text-xl leading-none">←</span> 이전
               </button>
             ) : (
               <Link href="/style"
-                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
+                className="-ml-2 inline-flex min-h-12 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
                 <span aria-hidden className="text-xl leading-none">←</span> 나가기
               </Link>
             )
@@ -283,14 +283,14 @@ export default function StyleSurveyPage() {
               className="flex flex-1 flex-col py-7"
             >
               <div className="mb-6">
-                <p className="mb-2 text-[15px] font-bold uppercase tracking-[0.1em] text-ink-2">
+                <p className="mb-2 text-label uppercase tracking-[0.1em] text-ink-2">
                   {q.no}
                 </p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink sm:text-2xl">
                   {q.title}
                 </h2>
                 {q.hint && (
-                  <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{q.hint}</p>
+                  <p className="mt-2 text-aux leading-relaxed text-ink-2">{q.hint}</p>
                 )}
               </div>
 

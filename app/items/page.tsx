@@ -34,7 +34,7 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
       }
       className="block rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow active:shadow-md"
     >
-      <p className="text-[15px] font-semibold tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
+      <p className="text-label tracking-wide text-ink-2">AI 헤어 분석 결과 기반</p>
 
       <div className="mt-3 flex gap-3.5">
         <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-surface">
@@ -46,18 +46,18 @@ function DiscoveryItemCard({ item, coreKey }: { item: PublicProduct; coreKey: st
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-bold text-ink">{item.product_name}</p>
+          <p className="text-body font-bold text-ink">{item.product_name}</p>
           {item.category && (
-            <span className="mt-1.5 inline-block rounded-full bg-surface px-2.5 py-1 text-[15px] font-medium text-ink-2">
+            <span className="mt-1.5 inline-block rounded-full bg-surface px-2.5 py-1 text-aux font-medium text-ink-2">
               {item.category}
             </span>
           )}
         </div>
       </div>
 
-      <p className="mt-4 line-clamp-2 text-[15px] leading-relaxed text-ink-2">{reason}</p>
+      <p className="mt-4 line-clamp-2 text-aux leading-relaxed text-ink-2">{reason}</p>
 
-      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-surface py-3 text-[15px] font-semibold text-ink-2">
+      <span className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-surface py-3 text-aux font-semibold text-ink-2">
         자세히 보기 →
       </span>
     </Link>
@@ -141,19 +141,19 @@ export default function ItemsPage() {
       )}
 
       {loading && (
-        <div className="flex min-h-[160px] items-center justify-center text-[15px] text-ink-2">
+        <div className="flex min-h-[160px] items-center justify-center text-aux text-ink-2">
           발견템 불러오는 중…
         </div>
       )}
 
       {!loading && error && (
         <div className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-center">
-          <p className="text-[15px] text-red-500">
+          <p className="text-aux text-red-500">
             발견템을 불러오지 못했어요. 잠시 후 다시 시도해주세요.
           </p>
           <button
             onClick={loadItems}
-            className="mt-3 inline-flex min-h-14 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-[15px] font-semibold text-red-500 transition-colors active:bg-red-50"
+            className="mt-3 inline-flex min-h-12 items-center justify-center rounded-xl border border-red-200 bg-white px-5 text-aux font-semibold text-red-500 transition-colors active:bg-red-50"
           >
             다시 시도 ↻
           </button>
@@ -161,7 +161,7 @@ export default function ItemsPage() {
       )}
 
       {!loading && !error && matched.length === 0 && coupangCards.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-10 text-center text-[15px] text-ink-2">
+        <div className="rounded-2xl border border-dashed border-line bg-white px-6 py-10 text-center text-aux text-ink-2">
           {coreKey
             ? "지금 모발 타입에 딱 맞는 발견템을 준비하고 있어요. 곧 채워질 예정이에요."
             : "아직 공개된 발견템이 없어요. 곧 채워질 예정이에요."}

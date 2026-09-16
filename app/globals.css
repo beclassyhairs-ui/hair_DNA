@@ -14,7 +14,7 @@
   --card: #ffffff; /* 카드 */
   --ink: #2a261f;  /* 본문/제목/주CTA 배경 = 차콜 */
   --sub: #6e665b;  /* 보조 텍스트 — 노안 대비 강화(구 #948d82, 저대비 흐림 해소) */
-  --line: #e9e3d8; /* 구분선/테두리 */
+  --line: #ebe8e0; /* 구분선/테두리 — 2026-09-16 한 톤 연하게(깔끔·심플) */
   --soft: #efeae0; /* 태그·뱃지 바탕 */
   /* --tone 폐기(2톤 원칙): 타입명 강조는 명조체+크기로만, 색은 var(--ink) */
 
@@ -30,10 +30,10 @@
   --upload-bg: #1a1714;     /* 업로드 화면 웜 차콜 */
 
   /* ── 형태 ── */
-  --r-card: 16px;   /* 구 카드 (병존) */
-  --r-btn: 12px;
+  --r-card: 12px;   /* 2026-09-16: 16→12 */
+  --r-btn: 24px;    /* 2026-09-16: 12→24(필 형태 유지) */
   --r-pill: 999px;
-  --shadow: 0 4px 16px rgba(42, 38, 31, 0.05); /* 카드 옅은 그림자 */
+  --shadow: none;   /* 2026-09-16: 그림자 제거(연한 선으로 대체) */
   --pad-x: 20px;    /* 화면 좌우 패딩 고정 */
 
   /* ── 간격 (섹션 여백 3단, 8px 배수) ── */
@@ -70,26 +70,25 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 54px;
+    height: 48px;
     padding: 0 24px;
-    border-radius: 30px;
+    border-radius: var(--r-btn);
     background: var(--ink);
     color: var(--bg);
-    font-weight: 700;
-    box-shadow: 0 8px 20px rgba(42, 38, 31, 0.22);
+    font-weight: 600;
   }
-  /* 보조: 흰 배경 · 옅은 그림자 */
+  /* 보조: 흰 배경 · 연한 선(그림자 제거) */
   .btn-secondary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 54px;
+    height: 48px;
     padding: 0 24px;
-    border-radius: 30px;
+    border-radius: var(--r-btn);
     background: var(--card);
     color: var(--ink);
     font-weight: 600;
-    box-shadow: 0 3px 12px rgba(42, 38, 31, 0.05);
+    border: 1px solid var(--line);
   }
   /* 텍스트 링크 */
   .btn-textlink {
@@ -98,11 +97,10 @@
     text-underline-offset: 3px;
   }
 
-  /* ── 카드: 진한 테두리 대신 옅은 그림자 ── */
+  /* ── 카드: 연한 선, 그림자 없음. 배경색은 기존 유지(rgba 0.94) ── */
   .card-soft {
     background: rgba(255, 255, 255, 0.94);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    border-radius: 18px;
-    box-shadow: 0 4px 16px rgba(42, 38, 31, 0.05);
+    border: 1px solid var(--line);
+    border-radius: var(--r-card);
   }
 }

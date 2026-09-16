@@ -234,14 +234,14 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         {/* 헤더 */}
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[15px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+            <p className="text-aux font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               Style {index + 1}
             </p>
             <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.styleName}
             </p>
           </div>
-          <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-aux" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {/* After 이미지 썸네일 */}
@@ -256,7 +256,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               <img src={entry.generatedImageUrl} alt="AI 변신 결과"
                 className="h-48 w-full object-cover" />
               <div className="px-3 py-1.5 text-center" style={{ background: "var(--surface)" }}>
-                <p className="text-[15px]" style={{ color: "var(--ink-2)" }}>탭하면 크게 볼 수 있어요</p>
+                <p className="text-aux" style={{ color: "var(--ink-2)" }}>탭하면 크게 볼 수 있어요</p>
               </div>
             </button>
             <button
@@ -266,7 +266,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
                 setDownloading(false);
               }}
               disabled={downloading}
-              className="mx-4 mb-3 flex min-h-14 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-[15px] font-bold transition-all active:scale-[0.98] disabled:opacity-60"
+              className="mx-4 mb-3 flex min-h-12 w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-xl text-aux font-bold transition-all active:scale-[0.98] disabled:opacity-60"
               style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}
             >
               {downloading ? "저장 중..." : "사진 갤러리에 저장하기"}
@@ -277,7 +277,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         {/* 접기/펼치기 */}
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex min-h-14 w-full items-center justify-between px-4 pb-3 text-[15px] transition-colors"
+          className="flex min-h-12 w-full items-center justify-between px-4 pb-3 text-aux transition-colors"
           style={{ color: "var(--ink-2)" }}
         >
           <span>진단 데이터 {expanded ? "접기" : "보기"}</span>
@@ -292,8 +292,8 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
               const val = entry.answers[qId] ?? "";
               return (
                 <div key={qId} className="rounded-lg px-3 py-2" style={{ background: "var(--surface)" }}>
-                  <p className="text-[15px]" style={{ color: "var(--ink-2)" }}>{Q_LABELS[qId]}</p>
-                  <p className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+                  <p className="text-aux" style={{ color: "var(--ink-2)" }}>{Q_LABELS[qId]}</p>
+                  <p className="text-aux font-semibold" style={{ color: "var(--ink)" }}>
                     {A_LABELS[qId]?.[val] ?? "—"}
                   </p>
                 </div>
@@ -306,16 +306,16 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
         <div className="mx-4 mb-4 overflow-hidden rounded-xl" style={{ border: "1px solid var(--line)" }}>
           <div className="flex items-center gap-3 px-3 py-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-bold uppercase tracking-wider" style={{ color: "var(--ink-2)" }}>
+              <p className="text-aux font-bold uppercase tracking-wider" style={{ color: "var(--ink-2)" }}>
                 {hint.category}
               </p>
-              <p className="truncate text-[17px] font-semibold" style={{ color: "var(--ink)" }}>
+              <p className="truncate text-body font-semibold" style={{ color: "var(--ink)" }}>
                 이 진단에 맞는 제품 보기
               </p>
             </div>
           </div>
           <Link href="/items"
-            className="flex min-h-14 w-full items-center justify-center text-[15px] font-bold transition-all"
+            className="flex min-h-12 w-full items-center justify-center text-aux font-bold transition-all"
             style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
             발견템에서 보기 →
           </Link>
@@ -342,24 +342,24 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
       <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[15px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+            <p className="text-aux font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손상도 진단 · {entry.resultCode}
             </p>
             <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.levelLabel} · {entry.typeLabel}
             </p>
           </div>
-          <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-aux" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-3 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
+        <p className="px-4 pb-3 text-body leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.headline}
         </p>
 
         {entry.concernTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-3">
             {entry.concernTags.map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[15px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-aux font-semibold"
                 style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>
@@ -372,17 +372,17 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
             <div className="flex items-center gap-3 px-3 py-3">
               <span className="text-2xl">{entry.product.emoji}</span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[17px] font-semibold" style={{ color: "var(--ink)" }}>
+                <p className="truncate text-body font-semibold" style={{ color: "var(--ink)" }}>
                   {entry.product.name}
                 </p>
-                <p className="truncate text-[15px]" style={{ color: "var(--ink-2)" }}>
+                <p className="truncate text-aux" style={{ color: "var(--ink-2)" }}>
                   {entry.product.description}
                 </p>
               </div>
             </div>
             {/* 외부 제휴 링크 대신 자체 커머스(발견템)로 — 본진 파트너스 링크 금지 정책 */}
             <Link href="/items"
-              className="flex min-h-14 w-full items-center justify-center text-[15px] font-bold transition-all"
+              className="flex min-h-12 w-full items-center justify-center text-aux font-bold transition-all"
               style={{ background: "var(--ink)", color: "var(--bg)", border: "none" }}>
               발견템에서 보기 →
             </Link>
@@ -411,18 +411,18 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
       <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[15px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+            <p className="text-aux font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               손질 습관 진단{entry.badge ? ` · ${entry.badge}` : ""}
             </p>
             <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.title}
             </p>
           </div>
-          <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-aux" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
         {entry.diagnosisSummary && (
-          <p className="px-4 pb-3 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
+          <p className="px-4 pb-3 text-body leading-relaxed" style={{ color: "var(--ink)" }}>
             {entry.diagnosisSummary}
           </p>
         )}
@@ -430,7 +430,7 @@ function HairQuizDiaryCard({ entry, index }: { entry: HairQuizDiaryEntry; index:
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {tags.map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[15px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-aux font-semibold"
                 style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>
@@ -458,7 +458,7 @@ function DiaryImageThumb({ label, url }: { label: string; url: string }) {
         </div>
       )}
       <div className="absolute inset-x-0 bottom-0 px-1.5 py-1" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}>
-        <p className="truncate text-[15px] font-semibold text-white/90">{label}</p>
+        <p className="truncate text-aux font-semibold text-white/90">{label}</p>
       </div>
     </div>
   );
@@ -480,23 +480,23 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
       <div style={{ background: "var(--card)" }}>
         <div className="flex items-center justify-between gap-2 px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[15px] font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
+            <p className="text-aux font-bold uppercase tracking-widest" style={{ color: "var(--ink-2)" }}>
               인생앞머리 · {shapesAgree ? "얼굴형 신호 일치" : "답변 신호 보정 반영"}
             </p>
             <p className="mt-0.5 font-serif text-h2" style={{ color: "var(--ink)" }}>
               {entry.primaryBangLabel}
             </p>
           </div>
-          <p className="shrink-0 text-[15px]" style={{ color: "var(--ink-2)" }}>{date}</p>
+          <p className="shrink-0 text-aux" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
-        <p className="px-4 pb-2 text-[17px] leading-relaxed" style={{ color: "var(--ink)" }}>
+        <p className="px-4 pb-2 text-body leading-relaxed" style={{ color: "var(--ink)" }}>
           {entry.diagnosisSummary}
         </p>
-        <p className="px-4 pb-1 text-[15px]" style={{ color: "var(--ink-2)" }}>
+        <p className="px-4 pb-1 text-aux" style={{ color: "var(--ink-2)" }}>
           선택 얼굴형 기준: {entry.selectedFaceBangLabel} · 답변 신호 기준: {entry.signalBasedBangLabel}
         </p>
-        <p className="px-4 pb-3 text-[15px]" style={{ color: "var(--ink-2)" }}>
+        <p className="px-4 pb-3 text-aux" style={{ color: "var(--ink-2)" }}>
           함께 고려한 스타일: {entry.secondaryBangLabel}
         </p>
 
@@ -511,7 +511,7 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
         {(entry.concernTags.length > 0 || entry.hairTextureTag) && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-4">
             {[...entry.concernTags, entry.hairTextureTag].map((tag) => (
-              <span key={tag} className="rounded-full px-2.5 py-1 text-[15px] font-semibold"
+              <span key={tag} className="rounded-full px-2.5 py-1 text-aux font-semibold"
                 style={{ background: "var(--surface)", color: "var(--ink-2)" }}>
                 {tag}
               </span>

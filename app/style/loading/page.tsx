@@ -165,8 +165,8 @@ export default function StyleIntakePage() {
         {phase === "submitting" && (
           <div className="flex flex-col items-center gap-5 text-center">
             <div className="h-12 w-12 animate-spin rounded-full border-2 border-ink/20 border-t-ink/80" />
-            <p className="text-[17px] font-bold leading-snug text-ink">결과지를 준비하고 있어요</p>
-            <p className="text-[15px] text-ink-2">잠시만요…</p>
+            <p className="text-body font-bold leading-snug text-ink">결과지를 준비하고 있어요</p>
+            <p className="text-aux text-ink-2">잠시만요…</p>
           </div>
         )}
 
@@ -174,10 +174,10 @@ export default function StyleIntakePage() {
           const f = failMessage(failReason);
           return (
             <GlassCard className="flex max-w-[340px] flex-col items-center gap-3 px-6 py-8 text-center">
-              <p className="text-[18px] font-extrabold leading-snug text-ink">{f.title}</p>
-              <p className="text-[15px] leading-relaxed text-ink-2">{f.hint}</p>
+              <p className="text-h2 font-extrabold leading-snug text-ink">{f.title}</p>
+              <p className="text-aux leading-relaxed text-ink-2">{f.hint}</p>
               <button onClick={() => router.replace("/style/upload")}
-                className="mt-2 inline-flex min-h-14 items-center justify-center rounded-full border border-btn-border bg-btn-bg px-6 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+                className="mt-2 inline-flex min-h-12 items-center justify-center rounded-full border border-btn-border bg-btn-bg px-6 text-emphasis font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
                 {f.button}
               </button>
             </GlassCard>

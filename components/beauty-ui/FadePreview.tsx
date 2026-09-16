@@ -30,7 +30,7 @@ export default function FadePreview({
       }`}
     >
       {title && (
-        <div className="px-4 pt-3.5 pb-1 text-[15px] font-bold leading-snug text-ink">{title}</div>
+        <div className="px-4 pt-3.5 pb-1 text-aux font-bold leading-snug text-ink">{title}</div>
       )}
 
       <div className="relative px-4">
@@ -57,7 +57,7 @@ export default function FadePreview({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex min-h-14 w-full items-center justify-center gap-1.5 border-t border-line bg-btn-bg px-4 py-3 text-[15px] font-extrabold text-ink transition-colors hover:brightness-95 active:scale-[0.99]"
+        className="flex min-h-12 w-full items-center justify-center gap-1.5 border-t border-line bg-btn-bg px-4 py-3 text-aux font-extrabold text-ink transition-colors hover:brightness-95 active:scale-[0.99]"
       >
         {open ? "접기" : "탭하면 원장님 상세 설명"}
         <span aria-hidden className={`text-[11px] transition-transform ${open ? "rotate-180" : ""}`}>▼</span>

@@ -145,20 +145,20 @@ function SaveDiaryModal({
         className="relative z-10 w-full max-w-lg overflow-hidden rounded-t-[28px] border-t border-white/60 bg-white/95 shadow-xl px-6 pb-10 pt-5 backdrop-blur-xl"
         onClick={(e) => e.stopPropagation()}>
         <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-surface" />
-        <p className="text-[15px] font-bold uppercase tracking-[0.12em] text-ink-2">MY HAIR</p>
+        <p className="text-label uppercase tracking-[0.12em] text-ink-2">MY HAIR</p>
         <h3 className="mt-2 text-h2 text-ink">나의 헤어에 저장하고 평생 소장하기</h3>
-        <p className="mt-2 text-[15px] text-ink-2 leading-relaxed">
+        <p className="mt-2 text-aux text-ink-2 leading-relaxed">
           진단 결과를 저장하면 나만의 맞춤 홈케어 제품과 스타일 히스토리가 보관됩니다.
         </p>
         <div className="mt-4 space-y-2">
           {["맞춤 홈케어 제품 상단 노출 (시술 이력 기반)", "내 헤어 스타일 히스토리 보관", "전문가 케어 처방전 저장"].map(b => (
-            <div key={b} className="flex items-center gap-2.5 text-[15px] text-ink-2">
+            <div key={b} className="flex items-center gap-2.5 text-aux text-ink-2">
               <span className="h-1 w-1 flex-none rounded-full bg-ink" />{b}
             </div>
           ))}
         </div>
         <button onClick={handleSaveAndRoute} disabled={loading}
-          className="mt-6 flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-btn-bg border border-btn-border text-[17px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-50">
+          className="mt-6 flex min-h-12 w-full items-center justify-center gap-3 rounded-full bg-btn-bg border border-btn-border text-body font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-50">
           {loading
             ? <motion.span
                 className="inline-block h-4 w-4 rounded-full"
@@ -167,7 +167,7 @@ function SaveDiaryModal({
               />
             : "나의 헤어에 저장"}
         </button>
-        <button onClick={onClose} className="mt-2.5 flex min-h-14 w-full items-center justify-center rounded-full text-[15px] text-ink-2 hover:text-ink">
+        <button onClick={onClose} className="mt-2.5 flex min-h-12 w-full items-center justify-center rounded-full text-aux text-ink-2 hover:text-ink">
           나중에 저장하기
         </button>
       </motion.div>
@@ -228,14 +228,14 @@ function BeforeAfterSection({
             <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
               <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <p className="text-[15px] font-bold leading-snug text-white/95">오늘 사진은<br />여기까지예요</p>
-            <p className="text-[15px] leading-relaxed text-white/75">내일 다시<br />만들어드릴게요</p>
+            <p className="text-aux font-bold leading-snug text-white/95">오늘 사진은<br />여기까지예요</p>
+            <p className="text-aux leading-relaxed text-white/75">내일 다시<br />만들어드릴게요</p>
           </div>
         ) : generating ? (
           // Phase2: 사진 준비 중 — 슬롯엔 스피너만(상세 문구는 그리드 아래 전폭 블록).
           <div className="flex h-full flex-col items-center justify-center gap-3 px-3 text-center">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-white/85" />
-            <p className="text-[15px] font-semibold leading-snug text-white/90">준비 중</p>
+            <p className="text-aux font-semibold leading-snug text-white/90">준비 중</p>
           </div>
         ) : (() => {
           const f = failMessage(failReason);
@@ -244,9 +244,9 @@ function BeforeAfterSection({
               <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7 flex-none text-white/60" stroke="currentColor" strokeWidth={1.3}>
                 <circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" strokeLinecap="round" />
               </svg>
-              <p className="text-[15px] font-bold leading-snug text-white/95">{f.title}</p>
+              <p className="text-aux font-bold leading-snug text-white/95">{f.title}</p>
               <button onClick={onRetry}
-                className="mt-1 inline-flex min-h-14 items-center rounded-btn border border-white/35 bg-white/10 px-4 text-[15px] font-semibold text-white transition-colors hover:bg-white/20">
+                className="mt-1 inline-flex min-h-12 items-center rounded-btn border border-white/35 bg-white/10 px-4 text-aux font-semibold text-white transition-colors hover:bg-white/20">
                 {f.button}
               </button>
             </div>
@@ -283,7 +283,7 @@ function Rich({ html, className }: { html: string; className?: string }) {
 
 // 섹션 라벨(작은 제목)
 function TT({ children }: { children: string }) {
-  return <p className="mb-2 mt-6 text-[15px] font-extrabold uppercase tracking-[0.12em] text-ink-2">{children}</p>;
+  return <p className="mb-2 mt-6 text-label uppercase tracking-[0.12em] text-ink-2">{children}</p>;
 }
 
 // 판정 스탬프 3단 — 전문은 갈래 카피(bcopy.stamp), 색만 게이트 레벨로(block=amber / 그 외 green).
@@ -291,7 +291,7 @@ function VerdictStamp({ level, stamp }: { level: "pass" | "caution" | "block"; s
   const isBlock = level === "block";
   return (
     <div className="mt-2.5 flex justify-center">
-      <span className={`rounded-full border px-4 py-1.5 text-center text-[15px] font-extrabold ${
+      <span className={`rounded-full border px-4 py-1.5 text-center text-stamp ${
         isBlock ? "border-amber-500 bg-amber-50 text-amber-700" : "border-emerald-600 bg-emerald-50 text-emerald-700"
       }`}>
         {stamp}
@@ -308,11 +308,11 @@ function SafetyNotice({ entries }: { entries: ResolvedCopy[] }) {
     <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
       <div className="space-y-1.5">
         {entries.map((e) => (
-          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-amber-900" />
+          <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-aux font-semibold leading-relaxed text-amber-900" />
         ))}
       </div>
       <Link href="/damage-check"
-        className="mt-1.5 inline-flex min-h-14 items-center gap-1 text-[15px] font-semibold text-amber-700 underline underline-offset-2">
+        className="mt-1.5 inline-flex min-h-12 items-center gap-1 text-aux font-semibold text-amber-700 underline underline-offset-2">
         정밀 손상 진단 받아보기 →
       </Link>
     </div>
@@ -620,7 +620,7 @@ export default function StyleResultPage() {
               photoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
               if (photoState === "done") setBannerDismissed(true);
             }}
-            className="fixed inset-x-0 top-0 z-40 mx-auto flex h-14 w-full max-w-[430px] items-center justify-center gap-1.5 border-b border-line bg-surface/95 px-4 text-[17px] font-bold text-ink backdrop-blur-sm transition-transform active:scale-[0.99]"
+            className="fixed inset-x-0 top-0 z-40 mx-auto flex h-12 w-full max-w-[430px] items-center justify-center gap-1.5 border-b border-line bg-surface/95 px-4 text-body font-bold text-ink backdrop-blur-sm transition-transform active:scale-[0.99]"
           >
             {generatingPhoto && <span>사진 준비 중 · {elapsedText}</span>}
             {photoState === "done" && <span>사진이 도착했어요 ↑ 보기</span>}
@@ -636,14 +636,14 @@ export default function StyleResultPage() {
 
           {/* 헤더 */}
           <div className="flex items-center justify-between pb-4">
-            <Link href="/style/upload" className="-ml-1 flex min-h-14 items-center gap-1 px-1 text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">
+            <Link href="/style/upload" className="-ml-1 flex min-h-12 items-center gap-1 px-1 text-aux font-medium text-ink-2 hover:text-ink transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               다시 찍기
             </Link>
-            <span className="text-[15px] font-bold uppercase tracking-[0.12em] text-ink-2">스타일 결과지</span>
-            <Link href="/style" className="-mr-1 flex min-h-14 items-center px-1 text-[15px] font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
+            <span className="text-label uppercase tracking-[0.12em] text-ink-2">스타일 결과지</span>
+            <Link href="/style" className="-mr-1 flex min-h-12 items-center px-1 text-aux font-medium text-ink-2 hover:text-ink transition-colors">처음부터</Link>
           </div>
 
           {/* A-1 완성도 게이지 — 결과지 상단 */}
@@ -653,20 +653,20 @@ export default function StyleResultPage() {
           <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} generating={generatingPhoto} sectionRef={photoRef} />
           {generatingPhoto ? (
             <div className="mt-3 rounded-2xl border border-line bg-surface px-4 py-4 text-center">
-              <p className="text-[17px] font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
-              <p className="mt-1.5 text-[17px] leading-relaxed text-ink">먼저 아래 진단 결과부터 읽어보세요. 다 읽을 때쯤 사진이 도착합니다.</p>
-              <p className="mt-2.5 text-[15px] font-medium tabular-nums text-ink-2">{elapsedText} 준비 중</p>
-              <p className="mt-1 text-[15px] leading-relaxed text-ink-2/80">이 화면을 벗어나면 준비가 멈춰요.</p>
+              <p className="text-body font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
+              <p className="mt-1.5 text-body leading-relaxed text-ink">먼저 아래 진단 결과부터 읽어보세요. 다 읽을 때쯤 사진이 도착합니다.</p>
+              <p className="mt-2.5 text-aux font-medium tabular-nums text-ink-2">{elapsedText} 준비 중</p>
+              <p className="mt-1 text-aux leading-relaxed text-ink-2/80">이 화면을 벗어나면 준비가 멈춰요.</p>
             </div>
           ) : (
-            <p className="mt-2 text-center text-[15px] leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
+            <p className="mt-2 text-center text-aux leading-relaxed text-ink-2">실제 시술은 머리 상태에 따라 달라요</p>
           )}
 
           {/* 2. 고른 스타일명(간판명) + 부제 + 판정 스탬프 3단 — 사진 결과의 헤드라인(항상 노출) */}
           <div className="mt-4 text-center">
-            <p className="text-[15px] text-ink-2">내가 고른 스타일</p>
-            <p className="mt-0.5 text-[26px] font-extrabold tracking-tight text-ink">{entry.name}</p>
-            {entry.subtitle && <p className="mt-1 text-[15px] text-ink-2">{entry.subtitle}</p>}
+            <p className="text-aux text-ink-2">내가 고른 스타일</p>
+            <p className="mt-0.5 text-h1 font-extrabold tracking-tight text-ink">{entry.name}</p>
+            {entry.subtitle && <p className="mt-1 text-aux text-ink-2">{entry.subtitle}</p>}
             {stampEntry && <VerdictStamp level={gate.level} stamp={stampEntry.text} />}
           </div>
 
@@ -679,7 +679,7 @@ export default function StyleResultPage() {
           {/* 파트2 훅 — 스크롤 없이 보이는 위치에서 '왜 어울리는지 / 뭘 주문해야 실패 안 하는지'를
               아래 버튼으로 끌어내린다(50·60은 스크롤을 안 하고 사진만 보고 끝내는 문제 직격). */}
           <div className="mt-5 rounded-2xl border border-line bg-surface px-4 py-3.5 text-center">
-            <p className="text-[17px] font-semibold leading-relaxed text-ink">
+            <p className="text-body font-semibold leading-relaxed text-ink">
               내 모발은 <b className="font-extrabold">{readableHairLabel(answers)}</b> — 이 스타일이 왜 어울리는지, 미용실에서 뭘 주문해야 실패 안 하는지 아래에 담았어요
             </p>
           </div>
@@ -694,7 +694,7 @@ export default function StyleResultPage() {
                   <>
                     <TT>혹시, 이런 적 있다면</TT>
                     <GlassCard className="border-l-4 border-l-ink px-5 py-4">
-                      <Rich html={doorEntry.text} className="block whitespace-pre-line text-[17px] font-extrabold leading-relaxed text-ink" />
+                      <Rich html={doorEntry.text} className="block whitespace-pre-line text-body font-extrabold leading-relaxed text-ink" />
                     </GlassCard>
                   </>
                 )}
@@ -705,7 +705,7 @@ export default function StyleResultPage() {
                     <TT>왜 그런가요</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                       {ahaEntries.map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] font-semibold leading-relaxed text-ink" />
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-body font-semibold leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
@@ -717,7 +717,7 @@ export default function StyleResultPage() {
                     <TT>내 모발 구조</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                       {bodyOf(sblock("hair-structure")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-body leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
@@ -732,8 +732,8 @@ export default function StyleResultPage() {
                       {bodyOf(sblock("procedure")).map((e) => (
                         <Rich key={e.id} html={e.text}
                           className={e.id === "style.safety.blocked_procedure_prefix"
-                            ? "block whitespace-pre-line text-[15px] font-semibold leading-relaxed text-ink-2"
-                            : "block whitespace-pre-line text-[17px] leading-relaxed text-ink"} />
+                            ? "block whitespace-pre-line text-aux font-semibold leading-relaxed text-ink-2"
+                            : "block whitespace-pre-line text-body leading-relaxed text-ink"} />
                       ))}
                     </GlassCard>
                   </>
@@ -753,7 +753,7 @@ export default function StyleResultPage() {
                       {body.length > 0 && (
                         <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                           {body.map((e) => (
-                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
+                            <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-body leading-relaxed text-ink" />
                           ))}
                         </div>
                       )}
@@ -761,10 +761,10 @@ export default function StyleResultPage() {
                         <FadePreview title={title?.text ?? "정수리만 다시 세우는 드라이 · 순서 그대로"}>
                           <ol className="list-decimal space-y-1.5 pl-5">
                             {steps.map((e) => (
-                              <li key={e.id} className="text-[17px] leading-relaxed text-ink"><Rich html={e.text} /></li>
+                              <li key={e.id} className="text-body leading-relaxed text-ink"><Rich html={e.text} /></li>
                             ))}
                           </ol>
-                          {note && <p className="mt-2 text-[15px] text-ink-2">{note.text}</p>}
+                          {note && <p className="mt-2 text-aux text-ink-2">{note.text}</p>}
                         </FadePreview>
                       )}
                     </>
@@ -777,7 +777,7 @@ export default function StyleResultPage() {
                     <TT>기장은 이렇게 봅니다</TT>
                     <div className="space-y-2 rounded-xl border border-line bg-surface px-4 py-3">
                       {bodyOf(sblock("cut")).map((e) => (
-                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-[17px] leading-relaxed text-ink" />
+                        <Rich key={e.id} html={e.text} className="block whitespace-pre-line text-body leading-relaxed text-ink" />
                       ))}
                     </div>
                   </>
@@ -788,7 +788,7 @@ export default function StyleResultPage() {
                   !showProducts ? (
                     <button
                       onClick={() => { setShowProducts(true); trackEvent("result_products_open", { source: "style" }); }}
-                      className="mt-5 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border px-5 py-4 text-[17px] font-extrabold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+                      className="mt-5 flex min-h-[56px] w-full items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border px-5 py-4 text-body font-extrabold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
                       <span aria-hidden>🛍</span> 내 모발에 딱 맞는 케어 제품 보기
                     </button>
                   ) : (
@@ -800,7 +800,7 @@ export default function StyleResultPage() {
                 ) : (
                   /* 데미지 송객 CTA — 차단 시(주의는 위 노란줄에서 이미 노출). 링크만, 문구 기존 유지. */
                   <Link href="/damage-check"
-                    className="mt-5 flex min-h-14 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-[15px] font-semibold text-ink-2 transition-colors hover:text-ink">
+                    className="mt-5 flex min-h-12 items-center justify-between gap-3 rounded-xl border border-line bg-surface px-3.5 py-2.5 text-aux font-semibold text-ink-2 transition-colors hover:text-ink">
                     정밀 손상 진단 받아보기 <span className="flex-none">→</span>
                   </Link>
                 )}
@@ -810,10 +810,10 @@ export default function StyleResultPage() {
                 저장하기=아웃라인(하단 고정 채움 CTA와 위계 구분), 공유/재진단=옅은 테두리 보조버튼. */}
             <GlassCard className="space-y-2.5 px-5 py-5">
               <button onClick={() => setShowSave(true)}
-                className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-[17px] font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
+                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-body font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
                 <span aria-hidden>⬇️</span> 사진 다운받기 (나의 헤어 저장 후 가능)
               </button>
-              <p className="text-center text-[15px] text-ink-2 -mt-1">
+              <p className="text-center text-aux text-ink-2 -mt-1">
                 나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
               </p>
               {/* 공유(③)가 재진단(④)보다 우선 — 좌측 우선 배치 */}
@@ -828,11 +828,11 @@ export default function StyleResultPage() {
                     if (navigator.share) navigator.share({ title: "미알팁 | 내 AI 헤어 변신 결과", text, url }).catch(() => {});
                     else navigator.clipboard?.writeText(url).then(() => toast("링크가 복사됐어요!"));
                   }}
-                  className="flex min-h-14 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
+                  className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-line text-aux font-semibold text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   공유하기
                 </button>
                 <Link href="/style/survey"
-                  className="flex min-h-14 flex-1 items-center justify-center rounded-full border border-line text-[15px] font-medium text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
+                  className="flex min-h-12 flex-1 items-center justify-center rounded-full border border-line text-aux font-medium text-ink-2 transition-all hover:bg-surface hover:text-ink active:scale-[0.98]">
                   다시 진단하기
                 </Link>
               </div>
@@ -840,7 +840,7 @@ export default function StyleResultPage() {
 
             {/* 홈 복귀 — 데미지 결과지와 동일 동선(C-2 [3-3]). 저장 없이 홈으로. */}
             <div className="flex justify-center pt-1">
-              <Link href="/home" className="inline-flex min-h-14 items-center text-[15px] font-medium text-sub transition-colors hover:text-ink">
+              <Link href="/home" className="inline-flex min-h-12 items-center text-aux font-medium text-sub transition-colors hover:text-ink">
                 홈으로 →
               </Link>
             </div>
@@ -867,7 +867,7 @@ export default function StyleResultPage() {
         <BottomStickyCTA>
           <button
             onClick={() => setShowSave(true)}
-            className="flex h-14 min-h-14 w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-[17px] font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+            className="flex h-12 min-h-12 w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-body font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
             저장하고 홈에서 오늘 케어 보기
           </button>
         </BottomStickyCTA>

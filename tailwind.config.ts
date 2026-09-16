@@ -50,15 +50,17 @@ const config: Config = {
         serif: ["var(--font-serif)", "serif"],
       },
       fontSize: {
-        // ── WORKORDER-02 타이포 스케일 (Pretendard) ──
-        // 가독성은 크기·대비로 확보하고 굵기로 밀어붙이지 않는다(50·60 타깃).
-        // 한 화면에 700(페이지타이틀)은 1~2곳만. 본문·라벨 기본은 400.
-        // ── UI 개편(2026-09-15) 5060 기본선: 본문 17↑·보조 15↑ ──
-        h1: ["24px", { lineHeight: "1.3", fontWeight: "700" }], // 페이지 타이틀 (5060: 22→24)
-        h2: ["19px", { lineHeight: "1.35", fontWeight: "600" }], // 섹션·카드 제목 (18→19)
-        body: ["17px", { lineHeight: "1.6", fontWeight: "400" }], // 본문 (16→17, 5060 기본선)
-        emphasis: ["17px", { lineHeight: "1.4", fontWeight: "600" }], // 버튼·강조 (16→17)
-        aux: ["15px", { lineHeight: "1.6", fontWeight: "400" }], // 보조 (14→15, 보조 15px 미만 금지)
+        // ── 타이포 스케일 (Pretendard) ──
+        // 2026-09-16 눈금 정정(라운드 I 17/15 과대 → 퀸잇 기준 C): "깔끔·심플".
+        //   크기보다 여백·굵기·선으로 정돈. 700→600, 본문 굵게는 500 이하.
+        h1: ["24px", { lineHeight: "1.3", fontWeight: "600" }], // 페이지 타이틀·결과지 스타일명
+        h2: ["19px", { lineHeight: "1.35", fontWeight: "600" }], // 소제목·문항
+        stamp: ["16px", { lineHeight: "1.4", fontWeight: "600" }], // 판정 스탬프
+        body: ["15px", { lineHeight: "1.6", fontWeight: "400" }], // 본문
+        emphasis: ["15px", { lineHeight: "1.5", fontWeight: "600" }], // 버튼·강조(본문 굵게 ≤500~600)
+        aux: ["13px", { lineHeight: "1.6", fontWeight: "400" }], // 보조
+        label: ["12px", { lineHeight: "1.4", fontWeight: "600" }], // 칸 라벨(eyebrow)
+        nav: ["11px", { lineHeight: "1.3", fontWeight: "500" }], // 하단탭 라벨
       },
       borderRadius: {
         // ── WORKORDER-02 형태 토큰 ──

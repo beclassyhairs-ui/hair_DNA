@@ -31,7 +31,7 @@ export default function DamageCheckLandingPage() {
       <Link
         href="/home"
         aria-label="홈으로"
-        className="absolute left-3 top-3 z-10 flex h-14 w-14 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-soft hover:text-ink active:scale-95"
+        className="absolute left-3 top-3 z-10 flex h-12 w-14 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-soft hover:text-ink active:scale-95"
       >
         <Home size={24} strokeWidth={1.8} />
       </Link>
@@ -42,7 +42,7 @@ export default function DamageCheckLandingPage() {
           transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
           className="flex w-full max-w-sm flex-col items-center text-center"
         >
-          <span className="font-serif text-[15px] tracking-[0.3em] text-sub">MIALTIP</span>
+          <span className="font-serif text-aux tracking-[0.3em] text-sub">MIALTIP</span>
           <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
           {/* 히어로 — 상한 결 1장(정사각·라벨 없음). 2장 세로배치가 무거워 1장으로 축소(C-2).

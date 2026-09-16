@@ -67,7 +67,7 @@ export default function StyleLandingPage() {
                 </p>
                 <button
                   onClick={() => setShowLimitModal(false)}
-                  className="mt-6 flex min-h-14 w-full items-center justify-center rounded-btn bg-surface text-emphasis text-ink transition hover:bg-line"
+                  className="mt-6 flex min-h-12 w-full items-center justify-center rounded-btn bg-surface text-emphasis text-ink transition hover:bg-line"
                 >
                   확인
                 </button>
@@ -83,7 +83,7 @@ export default function StyleLandingPage() {
           className="flex w-full flex-col items-center text-center"
         >
           {/* 브랜드 배지 (명조) + 태그라인 */}
-          <span className="font-serif text-[15px] tracking-[0.3em] text-sub">MIALTIP</span>
+          <span className="font-serif text-aux tracking-[0.3em] text-sub">MIALTIP</span>
           <p className="mt-1.5 text-aux text-sub">미용실에서 알 수 없는 꿀팁</p>
 
           {/* 액자 히어로 — 첫 화면에 헤드라인·CTA가 함께 보이도록 폭 축소(유일한 흰 카드) */}
@@ -109,7 +109,7 @@ export default function StyleLandingPage() {
             <Link
               href="/damage-check"
               onClick={() => trackEvent("diagnosis_card_click", { diagnosisType: "damage", source: "style_landing_secondary" })}
-              className="flex min-h-14 items-center justify-center py-3 text-center text-aux text-sub transition-colors active:text-ink"
+              className="flex min-h-12 items-center justify-center py-3 text-center text-aux text-sub transition-colors active:text-ink"
             >
               머리 상태부터 볼까요? · 1분 손상도 체크 →
             </Link>
@@ -136,7 +136,7 @@ export default function StyleLandingPage() {
         {/* 주 CTA — 차콜 채움. 횟수 차단 게이트(handleStart) 유지. 터치 56 */}
         <button
           onClick={handleStart}
-          className={`btn-primary w-full min-h-14 ${remaining === 0 ? "opacity-45" : ""}`}
+          className={`btn-primary w-full min-h-12 ${remaining === 0 ? "opacity-45" : ""}`}
         >
           나의 맞춤 스타일 분석하기
         </button>

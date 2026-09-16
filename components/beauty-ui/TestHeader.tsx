@@ -21,9 +21,9 @@ export default function TestHeader({
 }) {
   return (
     <header className="sticky top-0 z-20 bg-bg/95 px-5 pb-3 pt-3 backdrop-blur-md">
-      {leading && <div className="mb-1 flex min-h-14 items-center">{leading}</div>}
+      {leading && <div className="mb-1 flex min-h-12 items-center">{leading}</div>}
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[15px] font-bold uppercase tracking-[0.1em] text-ink-2">
+        <span className="text-label uppercase tracking-[0.1em] text-ink-2">
           {stepLabel}
         </span>
         <span className="tabular-nums text-aux font-semibold text-ink-2">

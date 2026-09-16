@@ -424,10 +424,10 @@ export default function StyleUploadPage() {
         {/* ── 헤더 (flex-none) ── */}
         <header className="flex flex-none items-center justify-between border-b border-line bg-bg px-page py-3.5">
           <button onClick={() => router.push("/style/survey")}
-            className="-ml-1 inline-flex min-h-14 items-center px-1 text-body font-medium text-ink-2 transition-colors hover:text-ink">
+            className="-ml-1 inline-flex min-h-12 items-center px-1 text-body font-medium text-ink-2 transition-colors hover:text-ink">
             ← 질문으로
           </button>
-          <span className="text-[15px] font-medium uppercase tracking-[0.12em] text-ink-2">사진 등록</span>
+          <span className="text-label uppercase tracking-[0.12em] text-ink-2">사진 등록</span>
           <div className="w-16" />
         </header>
 
@@ -492,11 +492,11 @@ export default function StyleUploadPage() {
                   정확한 AI 분석을 위해 다음 창에서 카메라 접근을 [허용]해 주세요.
                 </p>
                 <button onClick={() => startCamera("user")}
-                  className="flex min-h-14 w-64 items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border py-4 text-emphasis font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]">
+                  className="flex min-h-12 w-64 items-center justify-center gap-2 rounded-full bg-btn-bg border border-btn-border py-4 text-emphasis font-bold text-btn-text shadow-soft transition-all hover:brightness-95 active:scale-[0.98]">
                   카메라로 촬영
                 </button>
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="flex min-h-14 w-64 items-center justify-center gap-2 rounded-full py-4 text-emphasis font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
+                  className="flex min-h-12 w-64 items-center justify-center gap-2 rounded-full py-4 text-emphasis font-medium text-ink transition-colors hover:bg-surface active:scale-[0.98]">
                   갤러리에서 선택
                 </button>
               </div>
@@ -524,7 +524,7 @@ export default function StyleUploadPage() {
           {/* 카메라 오류 토스트 */}
           {camError && (
             <div className="absolute inset-x-4 top-4 z-30 flex justify-center">
-              <p className="rounded-xl bg-black/75 px-4 py-2.5 text-center text-[15px] text-red-300/90 backdrop-blur-sm">
+              <p className="rounded-xl bg-black/75 px-4 py-2.5 text-center text-aux text-red-300/90 backdrop-blur-sm">
                 {camError}
               </p>
             </div>
@@ -534,14 +534,14 @@ export default function StyleUploadPage() {
           {showImageCrop && (
             <div className="absolute inset-x-0 bottom-4 z-20 flex justify-center px-6">
               <div className="flex items-center gap-3 rounded-2xl bg-black/65 px-5 py-2.5 backdrop-blur-sm">
-                <span className="text-[15px] text-white/45">－</span>
+                <span className="text-aux text-white/45">－</span>
                 <input
                   type="range" min={MIN_SCALE} max={MAX_SCALE} step={0.01}
                   value={transform.scale} onChange={onSlide}
                   className="w-36 cursor-pointer accent-[#33302c] sm:w-48"
                   aria-label="확대/축소"
                 />
-                <span className="text-[15px] text-white/45">＋</span>
+                <span className="text-aux text-white/45">＋</span>
               </div>
             </div>
           )}
@@ -549,7 +549,7 @@ export default function StyleUploadPage() {
           {/* 저장된 사진 안내 텍스트 */}
           {showSavedPreview && (
             <div className="absolute inset-x-4 top-4 z-10 flex justify-center">
-              <p className="rounded-xl bg-black/65 px-4 py-2 text-center text-[15px] text-white/70 backdrop-blur-sm">
+              <p className="rounded-xl bg-black/65 px-4 py-2 text-center text-aux text-white/70 backdrop-blur-sm">
                 이전에 올린 사진이에요. 계속 진행하거나 다시 등록할 수 있어요.
               </p>
             </div>
@@ -565,7 +565,7 @@ export default function StyleUploadPage() {
             /* 카메라 촬영 모드 */
             <div className="flex gap-3">
               <button onClick={stopCamera}
-                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-12 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 닫기
               </button>
               <div className="flex-1">
@@ -583,7 +583,7 @@ export default function StyleUploadPage() {
                   setSavedPhoto(null);
                   try { sessionStorage.removeItem(STYLE_PHOTO_KEY); } catch { /**/ }
                 }}
-                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-12 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 등록
               </button>
               <div className="flex-1">
@@ -597,7 +597,7 @@ export default function StyleUploadPage() {
             /* 이미지 크롭/확인 모드 */
             <div className="flex gap-3">
               <button onClick={resetSrc}
-                className="flex h-14 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
+                className="flex h-12 items-center justify-center rounded-btn px-6 text-emphasis text-ink hover:bg-surface active:scale-[0.98]">
                 다시 선택
               </button>
               <div className="flex-1">
@@ -610,7 +610,7 @@ export default function StyleUploadPage() {
           ) : (
             /* 초기 선택 화면 — 뒤로가기 */
             <button onClick={() => router.push("/style/survey")}
-              className="flex h-14 w-full items-center justify-center rounded-btn text-emphasis text-ink hover:bg-surface">
+              className="flex h-12 w-full items-center justify-center rounded-btn text-emphasis text-ink hover:bg-surface">
               ← 설문으로 돌아가기
             </button>
           )}

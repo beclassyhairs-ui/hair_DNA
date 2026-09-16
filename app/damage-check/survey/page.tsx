@@ -78,7 +78,7 @@ function TreatmentHistoryStep({
 
   const Chk = ({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) => (
     <button type="button" onClick={onToggle} disabled={disabled}
-      className={`flex min-h-14 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
+      className={`flex min-h-12 w-full items-center gap-2.5 rounded-xl border px-4 py-3.5 text-left text-emphasis transition-colors disabled:opacity-40 ${
         on ? "border-ink bg-ink/[0.04] font-semibold text-ink" : "border-line text-ink-2"
       }`}>
       <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-md border ${on ? "border-ink bg-ink text-white" : "border-line"}`}>
@@ -150,7 +150,7 @@ function TreatmentHistoryStep({
       )}
 
       <button type="button" onClick={submit} disabled={!canProceed}
-        className="btn-primary min-h-14 w-full disabled:opacity-50">
+        className="btn-primary min-h-12 w-full disabled:opacity-50">
         진단 결과 보기 →
       </button>
     </div>
@@ -221,12 +221,12 @@ export default function DamageCheckSurveyPage() {
           leading={
             qIdx > 0 ? (
               <button onClick={goBack} disabled={pending}
-                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
+                className="-ml-2 inline-flex min-h-12 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink disabled:opacity-40">
                 <span aria-hidden className="text-xl leading-none">←</span> 이전
               </button>
             ) : (
               <a href="/damage-check"
-                className="-ml-2 inline-flex min-h-14 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
+                className="-ml-2 inline-flex min-h-12 items-center gap-1 rounded-btn px-2 text-emphasis text-ink-2 transition-colors hover:text-ink">
                 <span aria-hidden className="text-xl leading-none">←</span> 나가기
               </a>
             )
@@ -250,9 +250,9 @@ export default function DamageCheckSurveyPage() {
               className="flex min-h-full flex-col justify-center pt-6 pb-10"
             >
               <div className="mb-6">
-                <p className="mb-1.5 text-[15px] font-bold uppercase tracking-[0.1em] text-ink-2">{q.no}</p>
+                <p className="mb-1.5 text-label uppercase tracking-[0.1em] text-ink-2">{q.no}</p>
                 <h2 className="font-serif text-xl font-bold leading-snug text-ink whitespace-pre-line">{q.title}</h2>
-                {q.hint && <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{q.hint}</p>}
+                {q.hint && <p className="mt-2 text-aux leading-relaxed text-ink-2">{q.hint}</p>}
               </div>
 
               {q.kind === "treatment_history" ? (
@@ -279,7 +279,7 @@ export default function DamageCheckSurveyPage() {
         {/* 하단 안내 — 뒤로가기는 좌상단(P7)으로 이동, 자동진행 안내만 유지 */}
         {q.kind === "single" && (
           <div className="flex-none px-5 py-4">
-            <p className="text-center text-[15px] text-ink-2">선택하면 자동으로 넘어가요</p>
+            <p className="text-center text-aux text-ink-2">선택하면 자동으로 넘어가요</p>
           </div>
         )}
       </main>

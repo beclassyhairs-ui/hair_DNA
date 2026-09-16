@@ -33,7 +33,7 @@ export default function RoundedOptionButton({
       onClick={onSelect}
       disabled={disabled}
       whileTap={{ scale: 0.985 }}
-      className={`flex min-h-14 w-full items-center gap-3 rounded-full border px-5 py-4 text-left transition-all duration-200 disabled:opacity-40 ${
+      className={`flex min-h-12 w-full items-center gap-3 rounded-full border px-5 py-4 text-left transition-all duration-200 disabled:opacity-40 ${
         selected
           ? "border-ink bg-white shadow-soft"
           : "border-line bg-white/70 hover:border-btn-line hover:bg-white"
@@ -41,7 +41,7 @@ export default function RoundedOptionButton({
     >
       {icon && (
         <span
-          className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors ${
+          className={`flex h-9 w-9 flex-none items-center justify-center rounded-full text-aux font-semibold tabular-nums transition-colors ${
             selected ? "bg-ink text-white" : "bg-surface text-ink-2"
           }`}
         >
