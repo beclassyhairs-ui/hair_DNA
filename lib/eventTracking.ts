@@ -30,6 +30,7 @@ export const EVENT_NAMES = {
   PRODUCT_CLICKED:     "product_clicked",    // 상품 클릭
   PURCHASE_CLICK:      "purchase_click",     // 구매 전환(외부 구매 링크 클릭)
   LOGIN_CLICKED:       "login_clicked",      // 로그인 클릭
+  NOTIFY_SIGNUP:       "notify_signup",      // 출시 알림 신청(마케팅 동의) — meta: landing, gray
 } as const;
 
 export type TrackedEventName = (typeof EVENT_NAMES)[keyof typeof EVENT_NAMES];

@@ -32,6 +32,7 @@ import { KAKAO_LOGIN_ENABLED } from "@/lib/loginGate";
 import { ensureLoggedInOrRedirect } from "@/lib/authGate";
 import InlineCompletion from "@/components/InlineCompletion";
 import ConsultChannel from "../../components/ConsultChannel";
+import NotifySignup from "../../components/NotifySignup";
 import LockedPreviewCard from "@/components/LockedPreviewCard";
 import HairTypeHero from "../../components/HairTypeHero";
 import CoupangCardList from "@/components/CoupangCardList";
@@ -351,6 +352,11 @@ export default function DamageCheckResultPage() {
             landingId="damage_check"
             heading="이 상태에 맞는 제품"
           />
+
+          {/* 새치 축 — 출시 알림 신청(마케팅 동의, 선택). 새치 체크 손님에게만 노출. */}
+          {answers.h_root_gray && (
+            <NotifySignup landing="damage" gray={answers.h_root_gray} />
+          )}
 
           {/* ── 다른 진단 안내 (FIX3: hair-quiz 숨김 · 스타일 송객은 아래 카드 1개로 통일) ── */}
           {SHOW_HAIRQUIZ && (

@@ -21,12 +21,23 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getSessionUserId } from "@/lib/userSession";
+import { hasCurrentMarketingConsent } from "@/lib/consentServer";
 import {
   CONSENT_POLICY_VERSION,
   REQUIRED_CONSENT_TYPES,
   isConsentType,
   type ConsentType,
 } from "@/lib/consent";
+
+// GET /api/consents?type=marketing — 현재 로그인 유저의 선택 동의(마케팅) 보유 여부.
+//   결과지 "알림받기" 버튼이 새로고침 후에도 신청 상태를 반영하려고 마운트 시 1회 호출한다.
+//   ※ 지금은 marketing 만 노출한다(필수 동의 상태는 /api/auth/me 가 담당).
+export async function GET(req: NextRequest) {
+  const userId = await getSessionUserId(req);
+  if (!userId) return NextResponse.json({ loggedIn: false, marketing: false });
+  const marketing = await hasCurrentMarketingConsent(userId);
+  return NextResponse.json({ loggedIn: true, marketing });
+}
 
 // 본문 폭주 방지(작은 JSON만 허용).
 const MAX_BODY_BYTES = 4_000;
@@ -59,6 +70,12 @@ export async function POST(req: NextRequest) {
 
   const submissionId = (body as { submissionId?: unknown })?.submissionId;
   const agreedRaw = (body as { agreed?: unknown })?.agreed;
+  // 선택 동의 경로: 로그인 게이트가 아니라, 온보딩을 마친 유저가 선택 동의(예: 마케팅 알림)를
+  //   개별로 켜고/끄는 경로. 필수 동의 완결성(REQUIRED 전부 포함) 강제를 건너뛰고, 대신 필수
+  //   유형은 이 경로로 못 들어오게 막는다(게이트 우회 방지). granted=false 면 철회(append-only).
+  const optionalOnly = (body as { optionalOnly?: unknown })?.optionalOnly === true;
+  // granted: 선택 경로에서만 의미. 미지정 시 true(신청), false 명시 시 철회.
+  const granted = (body as { granted?: unknown })?.granted === false ? false : true;
 
   if (typeof submissionId !== "string" || !UUID_RE.test(submissionId)) {
     return NextResponse.json({ ok: false, reason: "invalid_submission_id" }, { status: 400 });
@@ -76,21 +93,42 @@ export async function POST(req: NextRequest) {
     agreedSet.add(v);
   }
 
-  // 4) 필수 충족 판정(서버). 필수가 전부 포함되지 않으면 요청 자체를 거부.
-  const missing = REQUIRED_CONSENT_TYPES.filter((t) => !agreedSet.has(t));
-  if (missing.length > 0) {
-    return NextResponse.json(
-      { ok: false, reason: "required_consents_missing", missing },
-      { status: 400 },
-    );
+  // 4) 경로별 검증.
+  if (optionalOnly) {
+    // 선택 동의 경로: 최소 1개 필요, 필수 유형은 여기로 못 들어온다(필수는 게이트에서만).
+    if (agreedSet.size === 0) {
+      return NextResponse.json({ ok: false, reason: "empty_agreed" }, { status: 400 });
+    }
+    const required = (REQUIRED_CONSENT_TYPES as readonly string[]);
+    for (const t of agreedSet) {
+      if (required.includes(t)) {
+        return NextResponse.json(
+          { ok: false, reason: "required_not_allowed_in_optional_path", type: t },
+          { status: 400 },
+        );
+      }
+    }
+  } else {
+    // 게이트 경로(기존): 필수가 전부 포함돼야 하고, 철회(granted=false)는 이 경로로 못 한다.
+    if (granted !== true) {
+      return NextResponse.json({ ok: false, reason: "withdraw_requires_optional_path" }, { status: 400 });
+    }
+    const missing = REQUIRED_CONSENT_TYPES.filter((t) => !agreedSet.has(t));
+    if (missing.length > 0) {
+      return NextResponse.json(
+        { ok: false, reason: "required_consents_missing", missing },
+        { status: 400 },
+      );
+    }
   }
 
-  // 5) 서버 권위 필드로 행 구성(granted=true 고정). 정황: user-agent(IP는 저장 안 함).
+  // 5) 서버 권위 필드로 행 구성. granted 는 게이트 경로에선 항상 true(위에서 강제),
+  //    선택 경로에선 요청의 granted(신청 true / 철회 false). 정황: user-agent(IP는 저장 안 함).
   const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 1000) || null;
   const rows = Array.from(agreedSet).map((consent_type) => ({
     user_id: userId,
     consent_type,
-    granted: true,
+    granted,
     policy_version: CONSENT_POLICY_VERSION,
     submission_id: submissionId,
     user_agent: userAgent,
