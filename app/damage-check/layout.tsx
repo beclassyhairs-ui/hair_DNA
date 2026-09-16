@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     type:     "website",
     images: [
       {
-        url:    `${SITE_URL}/images/bangs-og.png`,
+        url:    `${SITE_URL}/og-damage.png`,
         width:  1200,
         height: 630,
         alt:    "미알팁 손상도 자가진단",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card:        "summary_large_image",
     title:       "미알팁 | 미용실 가기 전 1분 팩트체크",
     description: "시크릿 테스트 3가지로 내 모발 손상도를 바로 확인하세요.",
-    images:      [`${SITE_URL}/images/bangs-og.png`],
+    images:      [`${SITE_URL}/og-damage.png`],
   },
 };
 
