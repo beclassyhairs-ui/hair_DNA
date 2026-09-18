@@ -24,14 +24,15 @@ const nextConfig = {
     unoptimized: false,
   },
 
-  // 구형 경로는 전부 플래그십(/style)으로 흘려보낸다.
+  // 루트(/)는 첫 화면 = 홈(/home)으로. 구형 경로(/upload·/result·/ai-loading)는 플래그십(/style)으로.
   // 과거엔 /upload·/result·/ai-loading이 /mbti로 향했지만, /mbti는 파트너스 링크를
   // 유지하는 미끼 랜딩 실험장이라 본진과 완전 분리한다(sitemap 제외 + noindex).
   // 특히 /diagnosis/quick → /upload 경로가 살아 있어서, 그대로 두면 본진 방문자가
   // 퀵 진단만 끝내도 미끼 랜딩에 착지했다.
+  // ⚠️ 이 config redirect 가 app/page.tsx 보다 먼저 평가된다 — 루트 진입점은 여기가 실효.
   async redirects() {
     return [
-      { source: "/",           destination: "/style", permanent: false },
+      { source: "/",           destination: "/home",  permanent: false },
       { source: "/upload",     destination: "/style", permanent: false },
       { source: "/result",     destination: "/style", permanent: false },
       { source: "/ai-loading", destination: "/style", permanent: false },

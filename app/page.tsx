@@ -10,5 +10,5 @@ import { redirect } from "next/navigation";
 // ============================================================================
 
 export default function RootPage() {
-  redirect("/home");
+  redirect("/home"); // 첫 화면 = 홈
 }
