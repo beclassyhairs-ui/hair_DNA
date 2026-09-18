@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "../components/layout/AppShell";
-import DeleteAccountSection from "../components/DeleteAccountSection";
+import AccountSection from "../components/AccountSection";
 import { LENGTH_LABEL_MAP } from "../style/surveyData";
 import TreatmentHistoryField from "@/components/TreatmentHistoryField";
 import { toast } from "../../lib/toast";
@@ -614,8 +614,8 @@ export default function MyDiaryPage() {
         </div>
       )}
 
-      {/* 계정·기록 삭제(로그인된 손님만 노출). 화면 최하단. */}
-      <DeleteAccountSection />
+      {/* 계정 메뉴(로그인 상태별: 로그아웃+삭제 / 카카오 로그인). 화면 최하단. */}
+      <AccountSection />
     </AppShell>
   );
 }
