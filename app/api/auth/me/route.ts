@@ -23,6 +23,25 @@ const BUMP_DB_TIMEOUT_MS = 2500;            // DB가 느려도 /me가 오래 멈
 // 조건부 단일 UPDATE: last_login_at이 없거나(방어적 — 스키마는 NOT NULL) 24h보다 오래됐을 때만
 // 1행 갱신, 아니면 0행(쓰기 없음). abortSignal로 응답 지연 상한(2.5s)을 두고, 실패는 삼킨다
 // (세션 확인 자체는 계속 성공). ※ null 포함 조건이라 last_login_at이 null인 행도 갱신된다.
+// soft-delete 된 계정인지 확인 — 삭제된 계정의 서명 쿠키가 만료(최대 30일) 전까지 로그인으로
+//   판정되는 것을 막는다. 조회 실패는 fail-OPEN(로그인 유지) — 삭제는 드물고, DB 순단으로 전체
+//   세션을 끊는 편이 더 위험하다(삭제 계정의 쓰기는 assert_parent_active 트리거가 이미 차단).
+async function isActiveUser(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("deleted_at")
+      .eq("id", userId)
+      .abortSignal(AbortSignal.timeout(BUMP_DB_TIMEOUT_MS))
+      .maybeSingle();
+    if (error) return true;   // 조회 실패 → fail-open(가용성)
+    if (!data) return false;  // 행 없음 → 유효 세션 아님
+    return data.deleted_at == null;
+  } catch {
+    return true;              // 타임아웃 등 → fail-open
+  }
+}
+
 async function bumpLastLoginInDb(userId: string): Promise<void> {
   try {
     const cutoff = new Date(Date.now() - LAST_LOGIN_THROTTLE_MS).toISOString();
@@ -47,6 +66,14 @@ export async function GET(req: NextRequest) {
   const session = await verifyUserToken(secret, token);
   if (!session) {
     return NextResponse.json({ loggedIn: false });
+  }
+
+  // 삭제(soft-delete)된 계정이면 로그인으로 인정하지 않고 세션 쿠키를 만료한다(다음 /me 호출에서 자정).
+  if (!(await isActiveUser(session.userId))) {
+    const res = NextResponse.json({ loggedIn: false });
+    res.cookies.delete(USER_COOKIE);
+    res.cookies.delete(BUMP_COOKIE);
+    return res;
   }
 
   // §5: 기존 필드(loggedIn/userId) 유지 + consent 필드만 추가. loading 백스톱은 loggedIn만 봐서 무영향.
