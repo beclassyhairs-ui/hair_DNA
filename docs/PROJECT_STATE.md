@@ -3,9 +3,10 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-18
 
-## 🟡 M. 마무리 라운드 — 홈 진입 + 내 정보 삭제 (2026-09-18 · **push 대기**)
+## 🟢 M. 마무리 라운드 — 홈 진입 + 내 정보 삭제 (2026-09-18 · **push·배포 완료 `e9a4e86`**)
 
-> 현재 상태 한 줄: **루트 진입점 /home 전환 + 계정 삭제(soft-delete) 완료. 미커밋 0·미push 4커밋(`253c117`·`bfb5379`·`2365e72` + 아래 docs M). tsc0·copy:check OK·9/9·14/14·Codex 1관점(3건 지적 수정후 통과). dev 실측: / → 307 /home · POST /api/me/delete 무세션 401 · /me loggedIn:false→삭제버튼 숨김. push 대기.**
+> 현재 상태 한 줄: **루트 진입점 /home 전환 + 계정 삭제(soft-delete) 완료. tsc0·copy:check OK·9/9·14/14·Codex 1관점(3건 지적 수정후 통과). dev 실측: / → 307 /home · POST /api/me/delete 무세션 401 · /me loggedIn:false→삭제버튼 숨김. push·배포 완료(`9fe2789..e9a4e86`), Vercel 자동배포. HEAD==origin/main==`e9a4e86`.**
+> ⚠️ **`docs/delete_user_rpc.sql` 을 Supabase 에서 실행하기 전엔 /api/me/delete 가 500**(RPC 없음). 배포와 함께 실행 필요.
 
 - **Phase 1 루트 진입 (`253c117`+`2365e72`)**: `/` → **/home**(구 /style). ⚠️ 실효 지점은 app/page.tsx 가 아니라 **next.config.mjs redirects()**(config 가 먼저 평가) — 거기 destination 을 /home 으로. 구형 경로(/upload·/result·/ai-loading)는 /style 유지. app/page.tsx 폴백도 /home 으로 일치. dev 실측 / →307 /home 확인.
 - **Phase 2 내 정보 삭제 (`bfb5379`)**: /my-diary 하단 '내 정보 삭제'(로그인 손님만·미로그인 숨김) → 확인 모달("진단 기록과 계정 정보가 모두 삭제됩니다. 복구되지 않아요." / 취소·삭제하기) → POST `/api/me/delete`.
@@ -16,7 +17,8 @@
   - Codex 1관점: 3건 지적(401 쿠키 미삭제 / 삭제계정 쿠키 30일 유효 / SQL 재실행 실패) **전부 수정 후 통과**.
 - 🔴 **사장님이 직접 실행할 SQL(§4)**: **`docs/delete_user_rpc.sql`** — Supabase SQL Editor 에서 사전점검 후 실행(멱등). users.deleted_at 컬럼 + numeric CHECK + assert_parent_active 트리거 + soft_delete_user RPC(service_role 전용). **이걸 실행하기 전엔 /api/me/delete 가 500**(RPC 없음).
 - 🔴 **사장님 확인(배포 후·폰)**: 로그인 상태로 /my-diary 하단 '내 정보 삭제' → 모달 → 삭제하기 → 로그아웃 + /style 착지 + 재로그인 시 기록 초기화. + 루트 접속 시 /home 착지.
-- 🔴 **다음 = 사장님 push 승인**(4커밋) → Vercel 자동배포 → 배포 해시 기록.
+- ✅ **push·배포 완료**: 2026-09-18 `9fe2789..e9a4e86` origin/main push → Vercel 자동배포. 배포 커밋 **`e9a4e86`**(HEAD==origin/main).
+- 🔴 **다음 = 사장님 SQL 실행(`docs/delete_user_rpc.sql`) + 폰 확인**(홈 착지·삭제 플로우 완주). + 도메인 라운드(L) env 3종도 아직 미등록이면 함께.
 
 ## 🟢 L. 도메인 전환 라운드 — mialtip.kr + OG + UTM + 쿠팡 LIVE + 새치 알림받기 (2026-09-16 · **push·배포 완료 `9fe2789`**)
 
