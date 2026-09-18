@@ -3,6 +3,19 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-18
 
+## 🟡 N. 마이헤어 계정 메뉴 보강 — 로그아웃/로그인 추가 (2026-09-18 · **push 대기**)
+
+> 현재 상태 한 줄: **/my-diary 하단 계정 메뉴를 로그인 상태별로. 미커밋 0·미push 2커밋(`cfc8f48` + 아래 docs N, 그리고 앞 라운드 미push 잔여 `3c053a1`). tsc0·copy:check OK·9/9·14/14·Codex 1관점 통과. dev 실측: 비로그인 '카카오로 로그인' 버튼 렌더. push 대기.**
+
+- **구현 (`cfc8f48`)**: `DeleteAccountSection` → **`AccountSection`**(git mv). `/api/auth/me` 로 상태 판단(checking/in/out, checking 중 렌더 안 함=깜빡임 방지).
+  - **로그인 손님**: [로그아웃](일반 톤·bordered pill) + [내 정보 삭제](빨강 #b23b34·확인 모달 유지).
+  - **로그아웃**: `POST /api/auth/logout`(기존 라우트) **성공 후에만** 로컬 `abeauty*` 클리어 → `/home`(전체 리로드). 실패 시 로컬 유지·재시도(로컬만 지우고 세션 남는 오작동 없음).
+  - **비로그인 손님**: [카카오로 로그인] → `/login/consent?return_to=/my-diary`(결과지 게이트와 동일 경로 재사용). 로그아웃·삭제 숨김.
+  - 삭제계정(deleted_at→loggedIn:false) 처리 그대로. 연타 busyRef. 삭제 트리거도 busy 중 비활성.
+- **Codex 1관점**: 로그아웃 세션+로컬 둘 다 확실히 제거·타인 세션 무영향·상태 /me 기반 → **통과**.
+- 🔴 **다음 = 사장님 push 승인**(잔여 포함) → Vercel 자동배포 → 배포 해시 기록.
+- ℹ️ 사장님 확인(배포 후·폰): 마이헤어 하단 — 로그인 시 로그아웃/삭제, 로그아웃 누르면 /home + 재방문 시 로그인 버튼.
+
 ## 🟢 M. 마무리 라운드 — 홈 진입 + 내 정보 삭제 (2026-09-18 · **push·배포 완료 `e9a4e86`**)
 
 > 현재 상태 한 줄: **루트 진입점 /home 전환 + 계정 삭제(soft-delete) 완료. tsc0·copy:check OK·9/9·14/14·Codex 1관점(3건 지적 수정후 통과). dev 실측: / → 307 /home · POST /api/me/delete 무세션 401 · /me loggedIn:false→삭제버튼 숨김. push·배포 완료(`9fe2789..e9a4e86`), Vercel 자동배포. HEAD==origin/main==`e9a4e86`.**
