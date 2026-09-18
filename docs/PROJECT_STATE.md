@@ -3,9 +3,9 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-18
 
-## 🟡 N. 마이헤어 계정 메뉴 보강 — 로그아웃/로그인 추가 (2026-09-18 · **push 대기**)
+## 🟢 N. 마이헤어 계정 메뉴 보강 — 로그아웃/로그인 추가 (2026-09-18 · **push·배포 완료 `e79222a`**)
 
-> 현재 상태 한 줄: **/my-diary 하단 계정 메뉴를 로그인 상태별로. 미커밋 0·미push 2커밋(`cfc8f48` + 아래 docs N, 그리고 앞 라운드 미push 잔여 `3c053a1`). tsc0·copy:check OK·9/9·14/14·Codex 1관점 통과. dev 실측: 비로그인 '카카오로 로그인' 버튼 렌더. push 대기.**
+> 현재 상태 한 줄: **/my-diary 하단 계정 메뉴를 로그인 상태별로. tsc0·copy:check OK·9/9·14/14·Codex 1관점 통과. dev 실측: 비로그인 '카카오로 로그인' 버튼 렌더. push·배포 완료(`e9a4e86..e79222a`), Vercel 자동배포. HEAD==origin/main==`e79222a`.**
 
 - **구현 (`cfc8f48`)**: `DeleteAccountSection` → **`AccountSection`**(git mv). `/api/auth/me` 로 상태 판단(checking/in/out, checking 중 렌더 안 함=깜빡임 방지).
   - **로그인 손님**: [로그아웃](일반 톤·bordered pill) + [내 정보 삭제](빨강 #b23b34·확인 모달 유지).
@@ -13,8 +13,9 @@
   - **비로그인 손님**: [카카오로 로그인] → `/login/consent?return_to=/my-diary`(결과지 게이트와 동일 경로 재사용). 로그아웃·삭제 숨김.
   - 삭제계정(deleted_at→loggedIn:false) 처리 그대로. 연타 busyRef. 삭제 트리거도 busy 중 비활성.
 - **Codex 1관점**: 로그아웃 세션+로컬 둘 다 확실히 제거·타인 세션 무영향·상태 /me 기반 → **통과**.
-- 🔴 **다음 = 사장님 push 승인**(잔여 포함) → Vercel 자동배포 → 배포 해시 기록.
+- ✅ **push·배포 완료**: 2026-09-18 `e9a4e86..e79222a` origin/main push → Vercel 자동배포. 배포 커밋 **`e79222a`**(HEAD==origin/main).
 - ℹ️ 사장님 확인(배포 후·폰): 마이헤어 하단 — 로그인 시 로그아웃/삭제, 로그아웃 누르면 /home + 재방문 시 로그인 버튼.
+- ⏳ **선행 미완(라운드 M·L)**: `docs/delete_user_rpc.sql` Supabase 실행(안 하면 삭제 500) + 도메인 env 3종(NEXT_PUBLIC_SITE_URL·PUBLIC_ASSET_ORIGIN·카카오 Redirect URI) 등록·재배포.
 
 ## 🟢 M. 마무리 라운드 — 홈 진입 + 내 정보 삭제 (2026-09-18 · **push·배포 완료 `e9a4e86`**)
 
