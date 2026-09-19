@@ -6,12 +6,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import AppShell from "../components/layout/AppShell";
 import AccountSection from "../components/AccountSection";
+import PhotoLightbox from "../components/PhotoLightbox";
 import { LENGTH_LABEL_MAP } from "../style/surveyData";
 import TreatmentHistoryField from "@/components/TreatmentHistoryField";
-import { toast } from "../../lib/toast";
+import { downloadImage } from "../../lib/downloadImage";
+import {
+  STYLE_ANSWERS_KEY, STYLE_GENERATED_KEY, STYLE_JOB_KEY,
+  STYLE_LIMIT_KEY, STYLE_FAIL_REASON_KEY, STYLE_PHOTO_KEY, STYLE_REVISIT_KEY,
+} from "../style/constants";
+import { DAMAGE_SURVEY_KEY, DAMAGE_REVISIT_KEY } from "../damage-check/constants";
 
 // ─── 레이블 매핑 ─────────────────────────────────────────────────────────────
 
@@ -71,6 +78,7 @@ interface DamageDiaryEntry {
   id:          string;
   kind:        "damage";
   savedAt:     number;
+  answers?:    Record<string, string>; // 결과지 다시보기 재조립용(2026-09 이후 저장분). 옛 기록엔 없음.
   resultCode:  string;
   levelLabel:  string;
   typeLabel:   string;
@@ -133,88 +141,13 @@ function isHairQuizEntry(entry: AnyEntry): entry is HairQuizDiaryEntry {
   return (entry as HairQuizDiaryEntry).kind === "hairquiz";
 }
 
-// ─── 이미지 모달 ─────────────────────────────────────────────────────────────
-
-function ImageModal({ url, onClose }: { url: string; onClose: () => void }) {
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 px-4 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9 }}
-          animate={{ scale: 1 }}
-          exit={{ scale: 0.9 }}
-          className="relative max-h-[85dvh] max-w-sm overflow-hidden rounded-2xl"
-          onClick={e => e.stopPropagation()}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="AI 변신 스타일" className="h-full w-full object-contain" />
-          <button
-            onClick={onClose}
-            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth={2}>
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
-            </svg>
-          </button>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+// 이미지 확대는 공용 PhotoLightbox(핀치 줌·저장·공유)로 대체 — 로컬 ImageModal 제거.
 
 // ─── 기록 카드 ────────────────────────────────────────────────────────────
 
-// 이미지 저장 — 모바일 우선. 저장 대상은 data URI(만료·CORS 없음)라, 실패는 "저장 방식" 문제였다:
-//   ① iOS 사파리는 a[download]를 무시(같은 탭에서 이미지만 열림) → Web Share(파일)로 '사진에 추가' 유도.
-//   ② click 직후 동기 revokeObjectURL이 다운로드를 시작 전에 취소 → revoke를 지연.
-async function downloadImage(url: string, styleName: string) {
-  const filename = `mialtip-${styleName}-${Date.now()}.jpg`;
+// 이미지 저장(downloadImage)은 lib/downloadImage 공용 유틸을 쓴다(결과지·확대뷰어와 동일 경로).
 
-  let blob: Blob;
-  try {
-    blob = await (await fetch(url)).blob();
-  } catch {
-    toast("저장 준비에 실패했어요. 이미지를 길게 눌러 '사진에 추가'를 눌러 주세요.");
-    return;
-  }
-
-  // ① iOS 사파리 등 — Web Share(파일)로 사진 앱 저장. 버튼 클릭(사용자 제스처) 흐름 안에서 호출.
-  try {
-    const file = new File([blob], filename, { type: blob.type || "image/jpeg" });
-    const nav = navigator as Navigator & { canShare?: (d: { files?: File[] }) => boolean };
-    if (typeof nav.canShare === "function" && nav.canShare({ files: [file] }) && typeof navigator.share === "function") {
-      await navigator.share({ files: [file] });
-      return; // 공유 시트에서 저장/취소 완료
-    }
-  } catch (e) {
-    // 사용자가 공유 시트를 닫은 것(AbortError)은 실패가 아니다 — 조용히 종료.
-    if (e instanceof DOMException && e.name === "AbortError") return;
-    // 그 외(공유 미지원)면 아래 a[download]로 폴백.
-  }
-
-  // ② 데스크톱·안드로이드 크롬 — a[download]. revoke는 지연 해제.
-  try {
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href     = objectUrl;
-    a.download = filename;
-    a.rel      = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
-  } catch {
-    toast("저장이 안 되면 이미지를 길게 눌러 '사진에 추가'를 눌러 주세요.");
-  }
-}
-
-function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: number; onOpenModal: (url: string) => void; }) {
+function DiaryCard({ entry, index, onOpenModal, onRevisit }: { entry: DiaryEntry; index: number; onOpenModal: (url: string, title: string) => void; onRevisit: (entry: DiaryEntry) => void; }) {
   const [expanded,     setExpanded]     = useState(false);
   const [downloading,  setDownloading]  = useState(false);
   const hint = getProductHint(entry.answers);
@@ -245,11 +178,22 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
           <p className="shrink-0 text-aux" style={{ color: "var(--ink-2)" }}>{date}</p>
         </div>
 
+        {/* 결과지 다시 보기 — 저장된 답변으로 결과지 전문 재조립(합성·quota 없음). 답변 있는 기록만. */}
+        {entry.answers && Object.keys(entry.answers).length > 0 && (
+          <button
+            onClick={() => onRevisit(entry)}
+            className="mx-4 mb-2 flex min-h-11 w-[calc(100%-2rem)] items-center justify-center rounded-xl text-aux font-semibold active:opacity-70"
+            style={{ border: "1px solid var(--line)", color: "var(--ink)" }}
+          >
+            결과지 다시 보기 →
+          </button>
+        )}
+
         {/* After 이미지 썸네일 */}
         {entry.generatedImageUrl && (
           <>
             <button
-              onClick={() => onOpenModal(entry.generatedImageUrl!)}
+              onClick={() => onOpenModal(entry.generatedImageUrl!, entry.styleName)}
               className="mx-4 mb-2 block w-[calc(100%-2rem)] overflow-hidden rounded-xl active:scale-[0.98] transition-transform"
               style={{ border: "1px solid var(--line)" }}
             >
@@ -328,7 +272,7 @@ function DiaryCard({ entry, index, onOpenModal }: { entry: DiaryEntry; index: nu
 
 // ─── 손상도 진단 기록 카드 ────────────────────────────────────────────────
 
-function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: number }) {
+function DamageDiaryCard({ entry, index, onRevisit }: { entry: DamageDiaryEntry; index: number; onRevisit: (entry: DamageDiaryEntry) => void }) {
   const date = new Date(entry.savedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
 
   return (
@@ -365,6 +309,19 @@ function DamageDiaryCard({ entry, index }: { entry: DamageDiaryEntry; index: num
                 {tag}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* 결과지 다시 보기 — 답변 있는 기록만(옛 저장분엔 answers 없어 숨김). */}
+        {entry.answers && Object.keys(entry.answers).length > 0 && (
+          <div className="px-4 pb-3">
+            <button
+              onClick={() => onRevisit(entry)}
+              className="flex min-h-11 w-full items-center justify-center rounded-xl text-aux font-semibold active:opacity-70"
+              style={{ border: "1px solid var(--line)", color: "var(--ink)" }}
+            >
+              결과지 다시 보기 →
+            </button>
           </div>
         )}
 
@@ -527,9 +484,34 @@ function BangsDiaryCard({ entry, index }: { entry: BangsDiaryEntry; index: numbe
 // ─── 메인 페이지 ─────────────────────────────────────────────────────────────
 
 export default function MyDiaryPage() {
+  const router = useRouter();
   const [entries,    setEntries]    = useState<AnyEntry[]>([]);
   const [ready,      setReady]      = useState(false);
-  const [modalUrl,   setModalUrl]   = useState<string | null>(null);
+  const [lightbox,   setLightbox]   = useState<{ url: string; title: string } | null>(null);
+
+  // 결과지 다시 보기 — 저장된 답변(+스타일은 이미지)을 sessionStorage에 실어 결과지로 보낸다.
+  //   합성 job 키는 비워서 폴링·합성·quota가 일어나지 않게 한다(저장분으로만 재조립).
+  function revisitStyle(entry: DiaryEntry) {
+    try {
+      // ① 합성/폴링 유발 키를 먼저 제거 + revisit 플래그 설정(작은 쓰기 — 실패 위험 최소).
+      //    결과지는 revisit 이면 job 을 아예 안 읽지만, 여기서도 stale job 을 확실히 지운다.
+      [STYLE_JOB_KEY, STYLE_LIMIT_KEY, STYLE_FAIL_REASON_KEY, STYLE_PHOTO_KEY, STYLE_GENERATED_KEY].forEach((k) => sessionStorage.removeItem(k));
+      sessionStorage.setItem(STYLE_REVISIT_KEY, "1");
+      sessionStorage.setItem(STYLE_ANSWERS_KEY, JSON.stringify(entry.answers ?? {}));
+    } catch { /**/ }
+    // ② 이미지(큰 data URI)는 마지막에 따로 — quota 초과로 실패해도 위의 키 제거·revisit·answers 는 이미 적용됨.
+    try {
+      if (entry.generatedImageUrl) sessionStorage.setItem(STYLE_GENERATED_KEY, entry.generatedImageUrl);
+    } catch { /* 이미지 저장 실패 시 사진만 비고 본문은 정상 재조립 */ }
+    router.push("/style/result");
+  }
+  function revisitDamage(entry: DamageDiaryEntry) {
+    try {
+      sessionStorage.setItem(DAMAGE_SURVEY_KEY, JSON.stringify(entry.answers ?? {}));
+      sessionStorage.setItem(DAMAGE_REVISIT_KEY, "1");
+    } catch { /**/ }
+    router.push("/damage-check/result");
+  }
 
   useEffect(() => {
     try {
@@ -554,8 +536,10 @@ export default function MyDiaryPage() {
 
   return (
     <AppShell>
-      {/* 이미지 확대 모달 (fixed 오버레이 — 셸 위에 뜸) */}
-      {modalUrl && <ImageModal url={modalUrl} onClose={() => setModalUrl(null)} />}
+      {/* 이미지 확대(핀치 줌·저장·공유) — 셸 위 전체화면 */}
+      {lightbox && (
+        <PhotoLightbox url={lightbox.url} title={lightbox.title} source="my_diary" onClose={() => setLightbox(null)} />
+      )}
 
       {/* 명조 페이지 제목 (5-B 톤). 하단탭 "나의 헤어" 목적지 = 이 실체 페이지 */}
       <header className="flex items-end justify-between gap-3">
@@ -597,7 +581,7 @@ export default function MyDiaryPage() {
         <div className="space-y-4">
           {entries.map((entry, i) =>
             isDamageEntry(entry) ? (
-              <DamageDiaryCard key={entry.id} entry={entry} index={i} />
+              <DamageDiaryCard key={entry.id} entry={entry} index={i} onRevisit={revisitDamage} />
             ) : isBangsEntry(entry) ? (
               <BangsDiaryCard key={entry.id} entry={entry} index={i} />
             ) : isHairQuizEntry(entry) ? (
@@ -607,7 +591,8 @@ export default function MyDiaryPage() {
                 key={entry.id}
                 entry={entry}
                 index={i}
-                onOpenModal={setModalUrl}
+                onOpenModal={(url, title) => setLightbox({ url, title })}
+                onRevisit={revisitStyle}
               />
             ),
           )}

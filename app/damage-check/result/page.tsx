@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
-import { DAMAGE_SURVEY_KEY } from "../constants";
+import { DAMAGE_SURVEY_KEY, DAMAGE_REVISIT_KEY } from "../constants";
 import { diagnoseDamage, type DamageResult } from "../damageRecommend";
 import type { DamageSurveyAnswers } from "../surveyData";
 import { TREATMENT_OPTIONS } from "../surveyData";
@@ -108,6 +108,8 @@ export default function DamageCheckResultPage() {
   // ★ 직접 URL 진입(설문 미완료) 가드 — 2026-08-16 D-2 감사 🔴-02. 세션에 실제 설문 데이터가
   //   있었는지를 별도로 추적한다(answers 자체는 항상 DEFAULT_ANSWERS로 초기화돼 있어 구분 못 함).
   const [hasSurveyData, setHasSurveyData] = useState(false);
+  // 마이헤어 "결과지 다시 보기" — 저장된 answers 재조립(엔진 재실행만, 서버·합성 없음).
+  const [revisit, setRevisit] = useState(false);
 
   // ── 로그인 게이트(결과 보기 직전) — 스타일과 공용 authGate 공유. 미로그인이면 /login/consent로,
   //   로그인 후 이 결과 페이지로 복귀(return_to=/damage-check/result). 로그인 꺼진 상태면 게이트 없음.
@@ -125,6 +127,10 @@ export default function DamageCheckResultPage() {
 
   useEffect(() => {
     try {
+      if (sessionStorage.getItem(DAMAGE_REVISIT_KEY) === "1") {
+        setRevisit(true);
+        try { sessionStorage.removeItem(DAMAGE_REVISIT_KEY); } catch { /**/ }
+      }
       const raw = sessionStorage.getItem(DAMAGE_SURVEY_KEY);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
@@ -179,6 +185,7 @@ export default function DamageCheckResultPage() {
       diagnosis_type: LANDING_ID,
       result_type: result.resultCode,
       concern_tags: result.concernTags,
+      source: revisit ? "revisit" : "new",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, authOk, hasSurveyData]);
@@ -189,6 +196,7 @@ export default function DamageCheckResultPage() {
         id: uid(),
         kind: "damage",
         savedAt: Date.now(),
+        answers, // 결과지 다시보기 재조립용(전체 답변). 문장 텍스트는 저장 안 함 — 엔진 재실행으로 최신 원고 반영.
         resultCode: result.resultCode,
         levelLabel: result.level.label,
         typeLabel: result.typeInfo.label,
@@ -403,14 +411,16 @@ export default function DamageCheckResultPage() {
         </motion.div>
       </div>
 
-      {/* ── 하단 고정 CTA — 저장·프로필 누적 ── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-5 py-4 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-lg">
-          <button onClick={handleSaveAndGoHome} disabled={saved} className="btn-primary w-full disabled:opacity-50">
-            {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 내 홈에서 관리 시작"}
-          </button>
+      {/* ── 하단 고정 CTA — 저장·프로필 누적. 다시보기(revisit)는 이미 저장된 진단이라 숨긴다. ── */}
+      {!revisit && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 px-5 py-4 backdrop-blur-xl">
+          <div className="mx-auto w-full max-w-lg">
+            <button onClick={handleSaveAndGoHome} disabled={saved} className="btn-primary w-full disabled:opacity-50">
+              {saved ? "저장 완료 ✓ 이동 중..." : "결과 저장하고 내 홈에서 관리 시작"}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
     </main>
   );

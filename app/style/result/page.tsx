@@ -17,6 +17,7 @@ import {
   STYLE_JOB_KEY,
   STYLE_LIMIT_KEY,
   STYLE_PHOTO_KEY,
+  STYLE_REVISIT_KEY,
 } from "../constants";
 import {
   getStyleEntry,
@@ -48,6 +49,7 @@ import { resolveStyle } from "@/copy-drafts/resolver";
 import type { ResolvedBlock, ResolvedCopy } from "@/copy-drafts/resolver";
 import CoupangCardList from "@/components/CoupangCardList";
 import ConsultChannel from "../../components/ConsultChannel";
+import PhotoLightbox from "../../components/PhotoLightbox";
 import { pickStyleCards } from "@/lib/coupangCards";
 
 function buildHairTags(answers: StyleAnswers): string[] {
@@ -181,7 +183,7 @@ function SaveDiaryModal({
 // failMessage(5종)는 app/style/failMessage 단일 출처에서 import(접수 페이지와 공용).
 
 function BeforeAfterSection({
-  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel, generating, sectionRef,
+  photo, generatedUrl, failReason, limitMessage, onRetry, hairLabel, generating, sectionRef, revisit, onImageTap,
 }: {
   photo:        string | null;
   generatedUrl: string | null;
@@ -191,6 +193,8 @@ function BeforeAfterSection({
   hairLabel?:   string | null;
   generating?:  boolean; // Phase2 선공개: 사진 생성/폴백 진행 중(사진 준비 중) — 슬롯은 스피너만(무점프)
   sectionRef?:  React.Ref<HTMLDivElement>; // sticky 띠 IntersectionObserver 용
+  revisit?:     boolean; // 다시보기: 합성 재요청·실패 UI 없음. 이미지 없으면 슬롯만 비운다.
+  onImageTap?:  () => void; // After 이미지 탭 → 전체화면 확대(이미지 있을 때만)
 }) {
   return (
     <div ref={sectionRef} className="grid grid-cols-2 gap-3">
@@ -217,11 +221,17 @@ function BeforeAfterSection({
       <div className="relative overflow-hidden rounded-2xl border border-line bg-black/40 transition-all duration-700"
         style={{ aspectRatio: "3/4" }}>
         {generatedUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={generatedUrl} alt="AI 변신 스타일" draggable={false}
-            className="h-full w-full select-none object-cover"
-            style={{ pointerEvents: "none", WebkitTouchCallout: "none" }}
-            onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
+          <button type="button" onClick={onImageTap} aria-label="사진 크게 보기"
+            className="block h-full w-full active:opacity-95" style={{ cursor: onImageTap ? "zoom-in" : "default" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={generatedUrl} alt="AI 변신 스타일" draggable={false}
+              className="h-full w-full select-none object-cover"
+              style={{ pointerEvents: "none", WebkitTouchCallout: "none" }}
+              onError={(e) => console.error("[Result] ❌ AI 이미지 로드 실패. src:", (e.target as HTMLImageElement).src)} />
+          </button>
+        ) : revisit ? (
+          // 다시보기인데 저장된 사진이 없음 — 실패 UI·문구 없이 슬롯만 비운다(본문 진단은 정상 노출).
+          null
         ) : limitMessage ? (
           // 일일 한도 초과 — 친절 안내(빨간 에러 아님)
           <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center overflow-y-auto py-4">
@@ -432,11 +442,22 @@ export default function StyleResultPage() {
   const scrollFiredRef = useRef<Set<number>>(new Set()); // scroll_depth 임계 1회씩
   const [photoOffscreen,  setPhotoOffscreen]  = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  // 마이헤어 "결과지 다시 보기" — 저장된 진단 재조립(합성·폴링·quota 없음). 이미지는 저장분만.
+  const [revisit,      setRevisit]      = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
 
   // 세션 데이터 즉시 로드 + 진행 중 job 이면 훅(단일 poller)에 넘긴다.
   useEffect(() => {
     try {
+      // 다시보기 1회성 플래그 — 읽는 즉시 제거(새로고침 시 일반 완료뷰로). isRevisit 이면 아래에서
+      //   job 을 절대 넘기지 않아(폴링·합성·quota 0), 혹시 남아있는 stale job 키가 있어도 무시된다.
+      let isRevisit = false;
+      if (sessionStorage.getItem(STYLE_REVISIT_KEY) === "1") {
+        isRevisit = true;
+        setRevisit(true);
+        try { sessionStorage.removeItem(STYLE_REVISIT_KEY); } catch { /**/ }
+      }
       const p = sessionStorage.getItem(STYLE_PHOTO_KEY);
       if (p) setPhoto(p);
       // 🔴-02 가드 기준인 answers 유효성 — job 을 훅에 넘기기 전에 먼저 확정한다(Codex b:
@@ -471,7 +492,7 @@ export default function StyleResultPage() {
                   && pj.startedAt <= now && now - pj.startedAt < POLL_BUDGET_MS) parsedJob = pj;
             }
           } catch { /**/ }
-          if (parsedJob && answersValid) setJob(parsedJob);
+          if (parsedJob && answersValid && !isRevisit) setJob(parsedJob);
           else if (!parsedJob) setFailReason(sessionStorage.getItem(STYLE_FAIL_REASON_KEY));
         }
       }
@@ -503,9 +524,10 @@ export default function StyleResultPage() {
       result_type: report.hairTypeKey,
       concern_tags: buildHairTags(answers),
       photo_state: generated ? "done" : limitMessage ? "limited" : "pending",
+      source: revisit ? "revisit" : "new",
     });
     setCompleteTracked(true);
-  }, [ready, answers, completeTracked, generated, limitMessage]);
+  }, [ready, answers, completeTracked, generated, limitMessage, revisit]);
 
   // Phase3: 사진 도착(photo_arrived) — 훅으로 이미지가 "이 화면에서" 완성된 경우 1회.
   useEffect(() => {
@@ -611,8 +633,9 @@ export default function StyleResultPage() {
     <SilkBackground>
       <main className="mx-auto min-h-screen max-w-[430px] text-ink" style={{ touchAction: "pan-y" }}>
 
-        {/* Phase2 sticky 띠 — 사진 칸이 화면 밖으로 나가면 상단 고정(준비 중 / 도착 / 실패). ≥16px. */}
-        {photoOffscreen && (generatingPhoto || photoState === "failed" || (photoState === "done" && !bannerDismissed)) && (
+        {/* Phase2 sticky 띠 — 사진 칸이 화면 밖으로 나가면 상단 고정(준비 중 / 도착 / 실패). ≥16px.
+            다시보기(revisit)에선 합성 진행이 없으므로 이 띠를 띄우지 않는다. */}
+        {!revisit && photoOffscreen && (generatingPhoto || photoState === "failed" || (photoState === "done" && !bannerDismissed)) && (
           <button
             onClick={() => {
               trackEvent("photo_banner_click", { source: "style", photo_state: photoStateForMeta });
@@ -632,6 +655,11 @@ export default function StyleResultPage() {
           {showSave && <SaveDiaryModal answers={answers} styleName={entry.name} onClose={() => setShowSave(false)} />}
         </AnimatePresence>
 
+        {/* After 이미지 전체화면 확대(핀치 줌·저장·공유) — 이미지 있을 때만 */}
+        {lightboxOpen && generated && (
+          <PhotoLightbox url={generated} title={entry.name} source={revisit ? "revisit" : "style_result"} onClose={() => setLightboxOpen(false)} />
+        )}
+
         <div className="mx-auto max-w-lg px-4 py-6 pb-32 sm:px-6">
 
           {/* 헤더 */}
@@ -650,7 +678,7 @@ export default function StyleResultPage() {
           <CompletionGauge className="mb-4" />
 
           {/* 1. 사진 칸(선공개) — 생성 중엔 스피너만(자리 크기=완성 사진, 무점프). 상세 안내는 바로 아래 전폭 블록(16px+). */}
-          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} generating={generatingPhoto} sectionRef={photoRef} />
+          <BeforeAfterSection photo={photo} generatedUrl={generated} failReason={failReason} limitMessage={limitMessage} onRetry={handleRetry} hairLabel={readableHairLabel(answers)} generating={generatingPhoto} sectionRef={photoRef} revisit={revisit} onImageTap={generated ? () => setLightboxOpen(true) : undefined} />
           {generatingPhoto ? (
             <div className="mt-3 rounded-2xl border border-line bg-surface px-4 py-4 text-center">
               <p className="text-body font-bold leading-relaxed text-ink">스타일 사진을 만들고 있어요. 평균 2~3분 걸립니다.</p>
@@ -809,13 +837,19 @@ export default function StyleResultPage() {
             {/* 저장 + 공유 — 🟡-01 어포던스: 텍스트처럼 보이던 것을 테두리로 '버튼'임을 명확히.
                 저장하기=아웃라인(하단 고정 채움 CTA와 위계 구분), 공유/재진단=옅은 테두리 보조버튼. */}
             <GlassCard className="space-y-2.5 px-5 py-5">
-              <button onClick={() => setShowSave(true)}
-                className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-body font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
-                <span aria-hidden>⬇️</span> 사진 다운받기 (나의 헤어 저장 후 가능)
-              </button>
-              <p className="text-center text-aux text-ink-2 -mt-1">
-                나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
-              </p>
+              {/* 다시보기(revisit)는 이미 저장된 진단이라 재저장 CTA를 숨긴다(중복 저장 방지).
+                  사진 저장은 위 이미지 탭 → 확대 뷰어의 '사진 저장'으로 한다. */}
+              {!revisit && (
+                <>
+                  <button onClick={() => setShowSave(true)}
+                    className="flex h-12 w-full items-center justify-center gap-2.5 rounded-full border border-btn-border bg-surface text-body font-bold text-ink transition-all hover:brightness-95 active:scale-[0.98]">
+                    <span aria-hidden>⬇️</span> 사진 다운받기 (나의 헤어 저장 후 가능)
+                  </button>
+                  <p className="text-center text-aux text-ink-2 -mt-1">
+                    나의 헤어에 저장하면 AI 변신 사진을 갤러리에 저장할 수 있어요
+                  </p>
+                </>
+              )}
               {/* 공유(③)가 재진단(④)보다 우선 — 좌측 우선 배치 */}
               <div className="flex gap-2.5">
                 <button
@@ -863,14 +897,17 @@ export default function StyleResultPage() {
           report={report}
         />
 
-        {/* ★ 하단 고정 — 결과지 저장 CTA (로그인은 결과 진입 전 이미 완료) */}
-        <BottomStickyCTA>
-          <button
-            onClick={() => setShowSave(true)}
-            className="flex h-12 min-h-12 w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-body font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
-            저장하고 홈에서 오늘 케어 보기
-          </button>
-        </BottomStickyCTA>
+        {/* ★ 하단 고정 — 결과지 저장 CTA (로그인은 결과 진입 전 이미 완료).
+            다시보기(revisit)는 이미 저장된 진단이라 이 CTA를 띄우지 않는다(중복 저장 방지). */}
+        {!revisit && (
+          <BottomStickyCTA>
+            <button
+              onClick={() => setShowSave(true)}
+              className="flex h-12 min-h-12 w-full items-center justify-center gap-2.5 rounded-full bg-btn-bg border border-btn-border text-body font-bold text-btn-text transition-all hover:brightness-95 active:scale-[0.98]">
+              저장하고 홈에서 오늘 케어 보기
+            </button>
+          </BottomStickyCTA>
+        )}
 
       </main>
     </SilkBackground>
