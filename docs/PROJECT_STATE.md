@@ -1,7 +1,19 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-09-18
+> 최종 갱신: 2026-09-19
+
+## 🟡 O. 마이헤어 다시보기 + 사진 크게보기·저장 (2026-09-19 · **push 대기**)
+
+> 현재 상태 한 줄: **결과지 다시 보기(저장 answers 재조립·합성 0) + After 이미지 확대뷰어(줌·저장·공유). 미커밋 0·미push 2커밋(`0228266` + 아래 docs O, 앞 라운드 잔여 `b572e6b`). tsc0·copy:check OK·9/9·14/14·Codex 2관점(3건 수정 후 통과). dev 실측: 다시보기→/style/result 재조립·`/api/hair-transform` 미호출·확대뷰어·재저장 숨김. push 대기.**
+
+- **Phase 0 조사**: style 카드는 `answers` 전체+`generatedImageUrl`(data URI) 저장 → 재조립 가능. damage 카드는 answers 없어 보강 필요. 결과지는 answers 순수함수. 이미지=`style:generated`(data URI), 셀카(`style:photo`)는 저장 안 함(파기 준수). 서버엔 결과지 데이터 없음(로컬 diaryEntries 원장).
+- **Phase 1 다시보기 (`0228266`)**: 마이헤어 카드 '결과지 다시 보기'(answers 있는 기록만·옛 기록 숨김=1-4). style은 answers(+저장이미지)를 sessionStorage 로 싣고 `style:revisit`=1·job키 제거 후 /style/result → **결과지 mount 가 revisit 이면 job 을 안 잡아 폴링·합성·quota 0**(1-3). 이미지 없으면 슬롯만 비우고 본문 정상. damage는 저장에 `answers` 추가(문장 텍스트 저장 안 함=1-2) + revisit 재조립. revisit 시 재저장 CTA 숨김.
+- **Phase 2 사진 (`0228266`)**: 공용 `PhotoLightbox`(핀치 줌·닫기·사진 저장·공유하기) — 결과지·다시보기·마이헤어 After 이미지 탭. 저장=`lib/downloadImage`(추출·공용). 공유=Web Share(파일)→미지원 시 링크 복사(**시스템 공유 시트만, 카카오/서버 전송 없음**=2-3). 마이헤어 옛 ImageModal 대체.
+- **Codex 2관점**: ① 합성/quota 미소모·저장분으로만 그림(3건 지적 수정 후 통과: stale job 방어·빈슬롯 문구제거·오탐인 photo이벤트는 유지) ② 원본 셀카 미혼입·삭제 시 로컬 abeauty* 클리어로 이미지 포함 삭제·게이트 우회 없음 → 통과.
+- **계측**: report_view meta 에 `source(new|revisit)`. 신규 `photo_zoom`·`photo_save`(dev 발화 확인). 기존 이벤트명·서버·훅·문장 무변경.
+- 🔴 **다음 = 사장님 push 승인**(잔여 포함) → Vercel 자동배포 → 배포 해시 기록.
+- ℹ️ 사장님 확인(배포 후·폰): 마이헤어 카드 '결과지 다시 보기'→원본과 같은 결과지 / After 사진 탭→확대·저장·공유. (선행 미완: `delete_user_rpc.sql` 실행·도메인 env 3종 — 라운드 M·L.)
 
 ## 🟢 N. 마이헤어 계정 메뉴 보강 — 로그아웃/로그인 추가 (2026-09-18 · **push·배포 완료 `e79222a`**)
 
