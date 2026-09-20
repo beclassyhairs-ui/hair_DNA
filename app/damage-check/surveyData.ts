@@ -91,19 +91,21 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     options: [
       { id: "tangled", icon: "01", label: "엉켜서 잘 안 풀리고 빗질이 전혀 안 돼요", desc: "빗이 걸려서 넘어가질 않는 느낌" },
       { id: "loosens", icon: "02", label: "좀 엉키지만 몇 번 빗으면 풀린다", desc: "처음엔 걸리는데 곧 부드러워짐" },
-      { id: "smooth",  icon: "03", label: "뽀득거리고 잘 빗긴다",          desc: "빗질이 걸림 없이 매끄러움" },
+      { id: "smooth",  icon: "03", label: "잘 빗긴다",                     desc: "빗질이 걸림 없이 매끄러움" },
       { id: "unsure",  icon: "04", label: "잘 모르겠어요",                desc: "해보기 어렵거나 판단이 안 서요" },
     ],
   },
   // ── Q3: 관찰 테스트 — 자연건조 시간 (확정115: 오래 걸림=손상, 물 머금음) ──────────
+  //   2026-09 시간 선택지로 교체(확정): 5분 안쪽→fast / 5~10분→normal / 10분 이상→slow.
+  //   ★ id(slow/normal/fast)는 불변 — 옛 저장값·점수 로직·되읽기(drying.*) 그대로 매핑. 라벨·순서만 변경.
   {
     qKey: "q3_dry", kind: "single", no: "Q3", stepTag: "관찰 테스트",
     title: "감고 나서 다 마르는 데\n얼마나 걸리세요?",
     hint: "물을 머금는 정도로 모발 상태를 볼 수 있어요",
     options: [
-      { id: "slow",   icon: "01", label: "한참 걸린다",           desc: "속까지 마르는 데 시간이 많이 걸림" },
-      { id: "normal", icon: "02", label: "적당히 보통으로 마른다", desc: "특별히 빠르거나 느리지 않음" },
-      { id: "fast",   icon: "03", label: "금방 마른다",           desc: "가늘거나 수분이 적은 편일 수 있어요" },
+      { id: "fast",   icon: "01", label: "5분 안쪽",   desc: "가늘거나 수분이 적은 편일 수 있어요" },
+      { id: "normal", icon: "02", label: "5~10분",     desc: "특별히 빠르거나 느리지 않음" },
+      { id: "slow",   icon: "03", label: "10분 이상",  desc: "속까지 마르는 데 시간이 많이 걸림" },
     ],
   },
   // ── Q4: 시술이력 (전용 다단계 렌더러 — 최근/그전/추가 + 하위체크) ─────────────────
