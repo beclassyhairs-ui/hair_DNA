@@ -73,14 +73,15 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
   // ── Q1: 물리 테스트 — 한 줌 당김 (확정73: "한 줌 잡아서" + "잘 모르겠어요") ─────
   {
     qKey: "q1_pull", kind: "single", no: "Q1", stepTag: "물리 테스트",
-    title: "젖은 머리 한 가닥을 잡고\n살살 당겨보면?",
-    hint: "미용사들이 손상도를 볼 때 가장 먼저 하는 테스트예요",
+    // 2026-09 문구 쉽게 교체(사장님 확정). 값(enum)은 불변 — 점수·판정 그대로.
+    title: "머리 감고 젖은 상태에서,\n머리카락 한 가닥을 양쪽으로 살살 당겨보세요",
+    hint: "미용사들이 손상도를 볼 때 제일 먼저 하는 방법이에요",
     options: [
-      { id: "snap",    icon: "01", label: "살짝만 당겨도 톡 끊어져요",       desc: "힘없이 바로 끊어지는 느낌" },
-      { id: "stretch", icon: "02", label: "고무줄처럼 쭉 늘어나다 끊어져요", desc: "늘어나긴 하는데 결국 끊어짐" },
-      { id: "elastic", icon: "03", label: "늘어났다가 다시 돌아와요",       desc: "당기면 늘어나도 원래대로 복원됨" },
-      { id: "firm",    icon: "04", label: "단단해서 잘 안 늘어나요",        desc: "탄탄하게 버티는 느낌" },
-      { id: "unsure",  icon: "05", label: "잘 모르겠어요",                 desc: "해보기 어렵거나 판단이 안 서요" },
+      { id: "snap",    icon: "01", label: "톡 하고 바로 끊어져요",       desc: "" },
+      { id: "stretch", icon: "02", label: "늘어나다가 끊어져요",         desc: "" },
+      { id: "elastic", icon: "03", label: "늘어났다가 다시 돌아와요",     desc: "" },
+      { id: "firm",    icon: "04", label: "뻣뻣해서 잘 안 늘어나요",      desc: "" },
+      { id: "unsure",  icon: "05", label: "잘 모르겠어요 (해보기 어려우면 눌러주세요)", desc: "" },
     ],
   },
   // ── Q2: 마찰 테스트 — 빗질 (매듭·엉킴) + "잘 모르겠어요" (확정73) ────────────────
