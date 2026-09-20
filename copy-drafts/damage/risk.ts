@@ -29,8 +29,8 @@ const risk: DamageCopyBlockModule = {
       text: "펌한 지 얼마 안 되셨는데, 뿌리 쪽 볼륨이 먼저 가라앉는 느낌이 들지 않던가요?" },
     { id: "damage.risk.p01_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 1번 aha — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
       text: "염색약이 뿌리에 닿으면 펌으로 잡아둔 결합이 느슨해집니다. 그래서 컬 전체가 늘어져 보이고, 약이 닿은 부분은 펌 유지력이 약해질 수 있어요." },
-    { id: "damage.risk.p01_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 1번 tip — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "펌을 먼저 하고 염색을 하면 염색약이 닿은 부분이 가라앉을 수 있고, 염색을 먼저 하고 펌을 하면 색이 퇴색될 수 있습니다. 가장 좋은 건 두 시술 사이에 기간을 두는 거예요. 너무 자주 겹쳐서 하시면 어느 쪽도 예쁘게 나오기 어렵습니다." },
+    { id: "damage.risk.p01_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 1번 tip 마지막 문장 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "펌을 먼저 하고 염색을 하면 염색약이 닿은 부분이 가라앉을 수 있고, 염색을 먼저 하고 펌을 하면 색이 퇴색될 수 있습니다. 가장 좋은 건 두 시술 사이에 기간을 두는 거예요. 너무 자주 겹쳐서 하시면 두 가지 시술 모두 만족스러운 결과물이 나올 확률이 줄어들어요." },
 
     // ── 2. 매직 × 뿌리염색 ──────────────────────────────────────────────────
     { id: "damage.risk.p02_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 2번 door — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
@@ -51,8 +51,8 @@ const risk: DamageCopyBlockModule = {
     // ── 4. 염색 × 열펌 ──────────────────────────────────────────────────────
     { id: "damage.risk.p04_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 4번 door — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
       text: "펌하고 났더니 머리색이 오히려 밝아 보이거나 상해 보이지 않던가요?" },
-    { id: "damage.risk.p04_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 4번 aha — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "가장 마지막에 한 시술이 이전 시술에 영향을 끼칩니다. 염색 후에 열펌을 하면 색이 퇴색돼서 원래 가지고 있던 밝기로 돌아가려는 습성이 있어요. 머리색이 밝아지면 컬도 부스스해 보일 수 있습니다." },
+    { id: "damage.risk.p04_aha", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 4번 aha 습성→성향)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "가장 마지막에 한 시술이 이전 시술에 영향을 끼칩니다. 염색 후에 열펌을 하면 색이 퇴색돼서 원래 가지고 있던 밝기로 돌아가려는 성향이 있어요. 머리색이 밝아지면 컬도 부스스해 보일 수 있습니다." },
     { id: "damage.risk.p04_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 4번 tip — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
       text: "두 시술을 같이 하셔야 한다면, 열펌을 먼저 하시고 나중에 염색으로 색감만 입혀주는 게 좋습니다. 색감만 넣는 토닝 염색으로 조절하시면 손상을 줄이면서 색을 낼 수 있어요." },
 
@@ -61,12 +61,12 @@ const risk: DamageCopyBlockModule = {
       text: "매직하고 났는데 결은 매끈해졌는데, 색이 더 밝아 보이고 상해 보이지 않던가요?" },
     { id: "damage.risk.p05_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 5번 aha — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
       text: "매직은 퇴색이 심합니다. 색이 빠져서 상해 보이는 건 감출 수가 없어요." },
-    { id: "damage.risk.p05_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 5번 tip — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "이 경우도 매직을 먼저 하시고 나중에 색감만 입혀주는 순서가 낫습니다. 밝기를 조절하는 염색보다 색감을 넣어주는 토닝 쪽이 부담이 적어요." },
+    { id: "damage.risk.p05_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 5번 tip '이 경우도' 삭제)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "매직을 먼저 하시고 나중에 색감만 입혀주는 순서가 낫습니다. 밝기를 조절하는 염색보다 색감을 넣어주는 토닝 쪽이 부담이 적어요." },
 
     // ── 6. 셀프염색 × 미용실 염색 ───────────────────────────────────────────
-    { id: "damage.risk.p06_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 6번 door — 원문 그대로`, evidenceKeys: ["h_self_dye", "h_recent", "h_prev"],
-      text: "앞쪽이나 헤어라인부터 색이 얼룩덜룩하지 않던가요?" },
+    { id: "damage.risk.p06_door", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 6번 door 도입부 교체)", evidenceKeys: ["h_self_dye", "h_recent", "h_prev"],
+      text: "집에서 셀프로 하시고 샵에서 염색했을 때, 원하는 색감이 나오지 않던 적이 있지 않나요?" },
     { id: "damage.risk.p06_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 6번 aha — 원문 그대로`, evidenceKeys: ["h_self_dye", "h_recent", "h_prev"],
       text: "뿌리 염색을 직접 하시거나 여기저기 다른 미용실에서 받으시면, 레벨 톤이 한두 톤씩 어긋나면서 얼룩이 쌓이게 됩니다." },
     { id: "damage.risk.p06_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 6번 tip — 원문 그대로`, evidenceKeys: ["h_self_dye", "h_recent", "h_prev"],
@@ -113,12 +113,12 @@ const risk: DamageCopyBlockModule = {
       text: "트리트먼트나 마스크로 관리해주시고, 말리실 때 끝까지 완전히 건조해주시면 훨씬 깔끔한 컬을 유지하실 수 있습니다." },
 
     // ── 12. 매직만 (단독 + 폴백 겸용) ───────────────────────────────────────
-    { id: "damage.risk.p12_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 12번 door — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "매직하고 시간이 지나면 뿌리 쪽부터 다시 뜨지 않던가요?" },
-    { id: "damage.risk.p12_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 12번 aha — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "새로 자라 나오는 뿌리는 원래 성질 그대로 올라옵니다." },
-    { id: "damage.risk.p12_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 12번 tip — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "전체를 다시 펴기보다 뿌리만 정리하시는 편이 머릿결에 훨씬 낫고요. 그 사이에는 곱슬기를 완화해주는 케라틴 미스트 같은 제품을 쓰시는 것도 좋은 방법입니다." },
+    { id: "damage.risk.p12_door", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 12번 매직만 — door 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "매직하고 몇 개월 지나면 전체적으로 부스스해 보이지 않으신가요?" },
+    { id: "damage.risk.p12_aha", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 12번 매직만 — aha 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "의외로 뿌리 쪽에 자란 곱슬머리 때문에 전체적으로 지저분해 보이는 경우가 많아요." },
+    { id: "damage.risk.p12_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 12번 매직만 — tip 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "손상도가 걱정되신다면 뿌리 쪽에만 매직을 해주셔도 전체적으로 깔끔해지는 효과를 볼 수 있어요. 그 사이에는 곱슬기를 완화해주는 케라틴 미스트 같은 제품을 쓰시는 것도 좋은 방법입니다." },
 
     // ── 13. 염색만 (단독 + 폴백 겸용) ───────────────────────────────────────
     { id: "damage.risk.p13_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 13번 door — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],

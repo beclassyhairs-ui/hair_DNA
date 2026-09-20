@@ -96,6 +96,14 @@ function lastTreatmentLabel(a: DamageSurveyAnswers): string {
   return TREATMENT_OPTIONS.find((o) => o.id === last)?.label.replace(/\s*\(.*\)/, "") ?? "";
 }
 
+// 레벨별 공통 케어 한 줄(요약 아래). 건강·경미 vs 손상·극손상 두 갈래(사장님 구술 2026-09-20).
+const LEVEL_CARE_LINE: Record<number, string> = {
+  1: "가벼운 데일리 케어를 매일 해주면 그날 스타일링이나 컨디션 관리에 좋아요.",
+  2: "가벼운 데일리 케어를 매일 해주면 그날 스타일링이나 컨디션 관리에 좋아요.",
+  3: "가벼운 데일리 케어도 좋지만, 손상도가 올라갈수록 손상 원인을 찾아서 관리해줘야 해요.",
+  4: "가벼운 데일리 케어도 좋지만, 손상도가 올라갈수록 손상 원인을 찾아서 관리해줘야 해요.",
+};
+
 export default function DamageCheckResultPage() {
   const router = useRouter();
   const [answers,   setAnswers]   = useState<DamageSurveyAnswers>(DEFAULT_ANSWERS);
@@ -283,6 +291,7 @@ export default function DamageCheckResultPage() {
           <section className="card-soft space-y-2 p-5">
             <p className="text-label uppercase tracking-[0.2em] text-sub">진단 요약</p>
             <p className="mt-1 text-body leading-relaxed text-ink">{result.level.summary}</p>
+            <p className="text-aux leading-relaxed text-sub">{LEVEL_CARE_LINE[result.level.level]}</p>
             <p className="pt-1 text-aux font-semibold text-sub">
               권장 관리 강도: <span className="text-ink">{result.level.careIntensity}</span>
             </p>
@@ -398,7 +407,7 @@ export default function DamageCheckResultPage() {
           {/* 푸터 — 20년차 디자이너 판단 기준(확정49 · 🟡-03 연차·직함 통일: 25년 원장→20년차 디자이너,
               스타일 결과지/로딩과 동일 페르소나). % 미노출. */}
           <p className="pt-2 text-center text-aux leading-relaxed text-sub">
-            이 진단은 20년차 디자이너의 판단 기준을 바탕으로 안내드리는 참고 결과예요.
+            이 진단은 25년차 디자이너의 판단 기준을 바탕으로 안내드리는 참고 결과예요.
           </p>
 
           {/* 문의 창구 — 결과지 맨 하단, 커머스(제품) 블록 아래(구매 동선 안 끊기). 홈과 다른 문구. */}

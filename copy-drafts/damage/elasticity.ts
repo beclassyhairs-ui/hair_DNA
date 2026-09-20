@@ -25,18 +25,18 @@ const elasticity: DamageCopyBlockModule = {
   entries: [
     {
       id: "damage.elasticity.snap",
-      text: "살짝만 당겨도 톡 끊어진다고 하셨어요. 모발 안쪽에서 힘을 버텨주던 결합이 많이 풀린 걸로 보입니다. 지금은 새로 뭘 얹기보다, 끊어진 끝을 정리하면서 기르는 쪽이 빠릅니다.",
+      text: "조금만 당겨도 끊어진다고 하셨어요. 모발 안쪽에서 힘을 버텨주던 결합이 많이 풀린 상태로 보입니다. 이럴 땐 모발 성분과 같은 고농축 케라틴 트리트먼트로 속을 채워주면서, 전체적으로 잘라내며 결을 되찾아가는 편이 좋아요.",
       status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — Q1 snap(+1.0) 문장화. 결과지에 물리테스트 렌더가 없어 원문 없음",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-20 사장님 구술(Q1 되읽기 — snap+stretch '끊어짐' 통합. stretch는 resolver가 이 문장으로 remap)",
       evidenceKeys: ["q1_pull"],
     },
     {
       id: "damage.elasticity.stretch",
       text: "쭉 늘어나다 끊어진다고 하셨어요. 젖은 머리는 원래 3할 정도 늘어났다가 바로 돌아오는데, 늘어난 채 못 돌아오고 끊어지면 속을 채우던 단백질이 빠져나가고 그 자리에 물이 들어찬 상태로 보입니다. 이쪽은 빠진 자리를 단백질로 채워주는 관리가 맞습니다.",
-      status: "approved",
+      status: "retired",
       sourceGrade: "구술",
-      sourceRef: "2026-09-15 사장님 구술(되읽기 교체) — Q1 stretch(늘어나다 끊어짐)",
+      sourceRef: "2026-09-20 retired — Q1 보기에서 stretch 제거('조금만 당겨도 끊어져요'로 통합). 옛 저장 stretch 데이터는 resolver가 snap 되읽기로 remap",
       evidenceKeys: ["q1_pull"],
     },
     {
@@ -49,9 +49,9 @@ const elasticity: DamageCopyBlockModule = {
     },
     {
       id: "damage.elasticity.firm",
-      text: "단단해서 잘 안 늘어난다고 하셨어요. 지금은 크게 걱정하실 신호가 보이지 않는 단계예요. 다만 당김 하나로 단정하지는 않으니, 다른 항목과 함께 보시면 됩니다.",
+      text: "늘어나지도 끊어지지도 않는다고 하셨어요. 지금은 크게 걱정하실 신호가 보이지 않는 단계예요. 다만 이 항목 하나로 단정하지 않고, 다른 항목과 함께 봅니다.",
       status: "approved",
-      sourceGrade: "신규",
+      sourceGrade: "구술",
       // ⚠️ 이 문장은 firm을 부정 신호로 말하지 않는 유일한 분기다. 이력이 가벼운 손님에게만
       //   도달해야 하며, Lv3 이상 화면에 뜨면 안 된다(check.ts가 유효 입력공간 전수로 보장).
       //   "좋은 신호" 확언은 넣지 않는다 — 다른 물리진단은 전부 손상 신호를 주는데 당김만

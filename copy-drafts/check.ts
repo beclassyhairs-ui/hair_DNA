@@ -180,8 +180,8 @@ const smoke = (() => {
     "development",
   );
   if (gray.severity.level < 2) problems.push(`새치 반복 손님 기대 Lv2+, 실제 Lv${gray.severity.level} (INV7)`);
-  if (gray.severity.summary.includes("거의 안 했거나")) {
-    problems.push("새치 반복 손님에게 Lv1 요약문('시술을 거의 안 했거나…')이 나감");
+  if (gray.severity.summary.includes("어떤 스타일도 가능")) {
+    problems.push("새치 반복 손님에게 Lv1 요약문('어떤 스타일도 가능한 상태…')이 나감");
   }
 }
 

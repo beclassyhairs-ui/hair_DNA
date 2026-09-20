@@ -19,9 +19,10 @@ import type { Resolution, ResolutionIssue, ResolvedBlock } from "./types";
 // 표로 두는 이유: 도달 가능한 id 전량(reachable)을 표에서 그대로 뽑아낼 수 있어야
 //   §7-1 production 게이트가 추측 없이 발동한다.
 
+// stretch(옛 저장값)는 2026-09 Q1 보기 재편에서 UI에서 빠지고 snap '끊어짐' 되읽기로 통합됐다.
+//   PULL_MAP에는 두지 않고(엔트리 retired), resolveDamage에서 stretch→snap 으로 remap한다(하위호환).
 const PULL_MAP: Record<string, string> = {
   snap: "damage.elasticity.snap",
-  stretch: "damage.elasticity.stretch",
   elastic: "damage.elasticity.elastic",
   firm: "damage.elasticity.firm",
   unsure: "damage.elasticity.unsure",
@@ -141,7 +142,9 @@ export function resolveDamage(answers: DamageSurveyAnswers, env?: CopyEnv): Dama
 
   // ① 물리테스트 3블록 — 미응답("")은 읽을 답이 없으므로 아무것도 내지 않는다.
   //    "잘 모르겠어요"(unsure)는 **답을 한 것**이라 반드시 안내 문구가 나간다(PM 확정).
-  const pullId = answers.q1_pull === "firm" ? pickFirmCopy(answers) : PULL_MAP[answers.q1_pull];
+  // stretch(옛 저장값)는 snap '끊어짐' 되읽기로 통합해 remap(UI 보기에서 제거됨·하위호환).
+  const rawPull = answers.q1_pull === "stretch" ? "snap" : answers.q1_pull;
+  const pullId = answers.q1_pull === "firm" ? pickFirmCopy(answers) : PULL_MAP[rawPull];
 
   const frictionIds: string[] = [];
   const frictionId = FRICTION_MAP[answers.q2_friction];

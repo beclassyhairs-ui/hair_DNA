@@ -80,12 +80,14 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     // 2026-09 문구 쉽게 교체(사장님 확정). 값(enum)은 불변 — 점수·판정 그대로.
     title: "머리 감고 젖은 상태에서,\n머리카락 한 가닥을 양쪽으로 살살 당겨보세요",
     hint: "미용사들이 손상도를 볼 때 제일 먼저 하는 방법이에요",
+    // 2026-09 보기 재편(값/enum 유지): '늘어나다 끊어짐'(stretch)은 '조금만 당겨도 끊어져요'(snap)로
+    //   통합해 UI 보기에서 제거. stretch enum 값은 옛 저장 호환 위해 타입에 남기고, resolver가 snap
+    //   되읽기로 remap한다(되읽기도 통합 1문장). firm 라벨은 '늘어나지도 끊어지지도 않아요'로 교체.
     options: [
-      { id: "snap",    icon: "01", label: "톡 하고 바로 끊어져요",       desc: "" },
-      { id: "stretch", icon: "02", label: "늘어나다가 끊어져요",         desc: "" },
-      { id: "elastic", icon: "03", label: "늘어났다가 다시 돌아와요",     desc: "" },
-      { id: "firm",    icon: "04", label: "뻣뻣해서 잘 안 늘어나요",      desc: "" },
-      { id: "unsure",  icon: "05", label: "잘 모르겠어요 (해보기 어려우면 눌러주세요)", desc: "" },
+      { id: "snap",    icon: "01", label: "조금만 당겨도 끊어져요",       desc: "" },
+      { id: "elastic", icon: "02", label: "늘어났다가 다시 돌아와요",     desc: "" },
+      { id: "firm",    icon: "03", label: "늘어나지도 끊어지지도 않아요", desc: "" },
+      { id: "unsure",  icon: "04", label: "잘 모르겠어요",               desc: "" },
     ],
   },
   // ── Q2: 마찰 테스트 — 빗질 (매듭·엉킴) + "잘 모르겠어요" (확정73) ────────────────
