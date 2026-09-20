@@ -116,8 +116,18 @@ interface ProphecyCtx {
   rootDye: boolean; fullDye: boolean; anyDye: boolean; bleach: boolean;
   selfDye: boolean; // 집에서 직접(셀프염색) 체크 — 6번 트리거
 }
+// 최근 1년 시술 "종류 집합" — h_all(복수선택, 무손실) 우선, 없으면 2슬롯[h_recent,h_prev]에서 파생.
+//   'none' 제외 + 중복 제거. 예언 조합 매칭이 이 집합을 본다(h_all 있으면 셋+ 조합도 포착,
+//   없으면 레거시와 동일 = 불변식 유지). ★ 점수(calcScore)는 여전히 2슬롯만 본다(회수 오인 방지).
+function allTreatments(a: DamageSurveyAnswers): DamageTreatment[] {
+  const src: DamageTreatment[] = (Array.isArray(a.h_all) && a.h_all.length > 0) ? a.h_all : [a.h_recent, a.h_prev];
+  const out: DamageTreatment[] = [];
+  for (const t of src) if (t && t !== "none" && !out.includes(t)) out.push(t);
+  return out;
+}
+
 function prophecyCtx(a: DamageSurveyAnswers): ProphecyCtx {
-  const slots: DamageTreatment[] = [a.h_recent, a.h_prev].filter((t) => t !== "none");
+  const slots: DamageTreatment[] = allTreatments(a);
   const has = (t: DamageTreatment) => slots.includes(t);
   const bleach = has("bleach") || a.h_bleach_2plus; // 탈색 2회+ 체크도 탈색 있음으로 취급
   return {

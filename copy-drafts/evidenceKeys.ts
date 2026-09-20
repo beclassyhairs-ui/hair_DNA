@@ -29,6 +29,7 @@ const DAMAGE_KEY_TABLE: Record<DamageEvidenceKey, true> = {
   h_self_dye: true,
   h_root_interval: true,
   h_root_over6m: true,
+  h_all: true, // 복수선택 종류 집합(무손실 기록). 예언 확장용 — 개별 copy entry가 직접 참조하진 않음.
 };
 
 export const DAMAGE_EVIDENCE_KEYS: ReadonlySet<string> = new Set(Object.keys(DAMAGE_KEY_TABLE));

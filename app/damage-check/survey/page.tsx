@@ -13,9 +13,9 @@ import { DAMAGE_SURVEY_KEY } from "../constants";
 import {
   SURVEY_QUESTIONS,
   TREATMENT_OPTIONS,
-  MORE_OPTIONS,
   ROOT_DYE_INTERVAL_OPTIONS,
   type DamageSurveyAnswers,
+  type DamageTreatment,
   type RootDyeInterval,
 } from "../surveyData";
 import { EVENT_NAMES, trackEvent } from "../../../lib/eventTracking";
@@ -32,42 +32,65 @@ const slideVariants = {
   exit:   (dir: number) => ({ opacity: 0, x: dir > 0 ? -64 : 64 }),
 };
 
-// ─── Q4 시술이력 전용 다단계 렌더러 (확정 72·77·95) ──────────────────────────
-// 최근 → (선택 시) 그 전 → (선택 시) 더 하신 거 + 하위체크 → "진단 결과 보기".
-// 최근="없음"이면 나머지 스킵하고 바로 제출 활성.
+// ─── Q4 시술이력 전용 렌더러 (2026-09 옵션① — 복수선택 + 가장 최근 1개) ──────────
+// 받은 시술 전부(복수 체크) → (2개 이상이면) 가장 최근 1개 → 하위체크/뿌리주기 → 제출.
+// '없음'이면 나머지 스킵하고 바로 제출. h_all(무손실)과 2슬롯(h_recent/h_prev/h_more)을 함께 기록.
+//
+// 매핑: h_recent=마지막(유형·cause·스탬프 결정) · h_prev=나머지 중 손상우선순위 대표(점수 2번째 슬롯)
+//   · h_more=슬롯 밖 초과 개수(0 none/1 few/2+ many) · h_all=선택 전부(예언 조합 확장·무손실).
+//   ※ 서로 다른 시술을 '같은 시술 2회'로 세지 않는다(점수는 2슬롯 유지).
+const TREATMENT_PRIORITY: DamageTreatment[] = ["bleach", "heat_perm", "straight_perm", "normal_perm", "dye", "root_dye"];
+
 function TreatmentHistoryStep({
   disabled, onComplete,
 }: {
   disabled: boolean;
   onComplete: (partial: Partial<DamageSurveyAnswers>) => void;
 }) {
-  const [recent, setRecent] = useState<string | null>(null);
-  const [prev, setPrev]     = useState<string | null>(null);
-  const [more, setMore]     = useState<string>("none");
+  const [selected, setSelected] = useState<DamageTreatment[]>([]);
+  const [none, setNone]         = useState(false);
+  const [recent, setRecent]     = useState<DamageTreatment | null>(null); // 가장 최근(2개 이상일 때만)
   const [bleach2, setBleach2]   = useState(false);
   const [rootGray, setRootGray] = useState(false);
-  const [selfDye, setSelfDye]   = useState(false); // 염색/뿌리염색 → 집에서 직접(셀프염색)
+  const [selfDye, setSelfDye]   = useState(false);
   const [rootInterval, setRootInterval] = useState<RootDyeInterval>("");
   const [rootOver6m, setRootOver6m]     = useState(false);
 
-  const recentIsNone = recent === "none";
-  const hasBleach  = !recentIsNone && (recent === "bleach" || prev === "bleach");
-  const hasRootDye = !recentIsNone && (recent === "root_dye" || prev === "root_dye");
-  // 셀프 체크 노출 대상: 염색 또는 뿌리염색을 어느 슬롯에서든 골랐을 때(한 번만).
-  const hasAnyDye  = !recentIsNone && (recent === "dye" || recent === "root_dye" || prev === "dye" || prev === "root_dye");
-  // 뿌리염색 손님은 주기 선택까지 해야 진행(정확 점수 확보). 그 외엔 기존과 동일.
-  const canProceed = !disabled && (recentIsNone || (recent !== null && prev !== null && (!hasRootDye || rootInterval !== "")));
+  function toggleTreatment(id: DamageTreatment) {
+    if (id === "none") { setNone(true); setSelected([]); setRecent(null); return; }
+    setNone(false);
+    setSelected((prevSel) => {
+      const next = prevSel.includes(id) ? prevSel.filter((t) => t !== id) : [...prevSel, id];
+      if (recent && !next.includes(recent)) setRecent(null); // 마지막 선택이 빠지면 무효화
+      return next;
+    });
+  }
+
+  const multi      = selected.length >= 2;
+  const hasBleach  = selected.includes("bleach");
+  const hasRootDye = selected.includes("root_dye");
+  const hasAnyDye  = selected.includes("dye") || selected.includes("root_dye");
+  const needRecent = multi && recent === null;
+  const canProceed = !disabled && (
+    none || (selected.length >= 1 && !needRecent && (!hasRootDye || rootInterval !== ""))
+  );
 
   function submit() {
     if (!canProceed) return;
-    if (recentIsNone) {
-      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_bleach_2plus: false, h_root_gray: false, h_self_dye: false, h_root_interval: "", h_root_over6m: false });
+    if (none || selected.length === 0) {
+      onComplete({ h_recent: "none", h_prev: "none", h_more: "none", h_all: [], h_bleach_2plus: false, h_root_gray: false, h_self_dye: false, h_root_interval: "", h_root_over6m: false });
       return;
     }
+    const last: DamageTreatment = selected.length === 1 ? selected[0]! : (recent ?? selected[0]!);
+    const rest = selected.filter((t) => t !== last);
+    const prev: DamageTreatment = TREATMENT_PRIORITY.find((t) => rest.includes(t)) ?? "none";
+    const extras = rest.filter((t) => t !== prev).length;
+    const more: DamageSurveyAnswers["h_more"] = extras >= 2 ? "many" : extras === 1 ? "few" : "none";
     onComplete({
-      h_recent: recent as DamageSurveyAnswers["h_recent"],
-      h_prev:   prev as DamageSurveyAnswers["h_prev"],
-      h_more:   more as DamageSurveyAnswers["h_more"],
+      h_recent: last,
+      h_prev:   prev,
+      h_more:   more,
+      h_all:    [...selected],
       h_bleach_2plus: hasBleach && bleach2,
       h_root_gray:    hasRootDye && rootGray,
       h_self_dye:     hasAnyDye && selfDye,
@@ -90,29 +113,34 @@ function TreatmentHistoryStep({
 
   return (
     <div className="space-y-6">
+      {/* 복수선택 — 받은 시술 전부. '없음'은 배타(누르면 나머지 해제). */}
       <div>
-        <p className="mb-2 text-emphasis text-ink">가장 최근에 한 시술은?</p>
         <div className="grid grid-cols-2 gap-2">
           {TREATMENT_OPTIONS.map((o) => (
-            <RoundedOptionButton key={o.id} label={o.label} selected={recent === o.id}
-              disabled={disabled} onSelect={() => setRecent(o.id)} />
+            <RoundedOptionButton key={o.id} label={o.label}
+              selected={o.id === "none" ? none : selected.includes(o.id)}
+              disabled={disabled} onSelect={() => toggleTreatment(o.id)} />
           ))}
         </div>
       </div>
 
-      {recent !== null && !recentIsNone && (
+      {/* 가장 최근 1개 — 2개 이상 선택 시에만(1개면 자동). */}
+      {multi && (
         <div>
-          <p className="mb-2 text-emphasis text-ink">그 전에 한 시술은?</p>
+          <p className="mb-2 text-emphasis text-ink">그중 가장 최근에 한 건?</p>
           <div className="grid grid-cols-2 gap-2">
-            {TREATMENT_OPTIONS.map((o) => (
-              <RoundedOptionButton key={o.id} label={o.label} selected={prev === o.id}
-                disabled={disabled} onSelect={() => setPrev(o.id)} />
-            ))}
+            {selected.map((id) => {
+              const o = TREATMENT_OPTIONS.find((t) => t.id === id);
+              return (
+                <RoundedOptionButton key={id} label={o?.label ?? id} selected={recent === id}
+                  disabled={disabled} onSelect={() => setRecent(id)} />
+              );
+            })}
           </div>
         </div>
       )}
 
-      {!recentIsNone && (hasBleach || hasRootDye || hasAnyDye) && recent !== null && prev !== null && (
+      {!none && (hasBleach || hasRootDye || hasAnyDye) && (
         <div className="space-y-2">
           {hasBleach  && <Chk on={bleach2}  onToggle={() => setBleach2((v) => !v)}  label="탈색은 2번 이상 했어요" />}
           {hasRootDye && <Chk on={rootGray} onToggle={() => setRootGray((v) => !v)} label="뿌리염색은 새치 염색이에요" />}
@@ -120,8 +148,8 @@ function TreatmentHistoryStep({
         </div>
       )}
 
-      {/* 뿌리염색 주기 — 뿌리염색 선택 손님에게만(새치 주고객 2~3주 반영). 선택해야 진행. */}
-      {hasRootDye && recent !== null && prev !== null && (
+      {/* 뿌리염색 주기 — 뿌리염색 선택 손님에게만. 선택해야 진행. */}
+      {hasRootDye && (
         <div>
           <p className="mb-2 text-emphasis text-ink">뿌리 염색은 보통 얼마마다 하세요?</p>
           <div className="grid grid-cols-3 gap-2">
@@ -132,19 +160,6 @@ function TreatmentHistoryStep({
           </div>
           <div className="mt-2">
             <Chk on={rootOver6m} onToggle={() => setRootOver6m((v) => !v)} label="6개월 넘게 계속 해왔어요" />
-          </div>
-        </div>
-      )}
-
-      {!recentIsNone && recent !== null && prev !== null && (
-        <div>
-          <p className="mb-1 text-emphasis text-ink">이거 말고 작년에 더 하신 게 있으세요?</p>
-          <p className="mb-2 text-aux text-ink-2">한 번만 눌러주시면 결과가 훨씬 정확해집니다</p>
-          <div className="grid grid-cols-3 gap-2">
-            {MORE_OPTIONS.map((o) => (
-              <RoundedOptionButton key={o.id} label={o.label} selected={more === o.id}
-                disabled={disabled} onSelect={() => setMore(o.id)} />
-            ))}
           </div>
         </div>
       )}

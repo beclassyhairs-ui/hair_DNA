@@ -32,6 +32,10 @@ export interface DamageSurveyAnswers {
   h_self_dye?:    boolean;         // 염색/뿌리염색 → 집에서 직접(셀프염색) (예언 6번 트리거 · 점수 영향 없음). 옛 세션 호환 위해 옵셔널.
   h_root_interval: RootDyeInterval; // 뿌리염색 주기 (뿌리염색 선택 시만) — 새치 주고객 2~3주 반영
   h_root_over6m:   boolean;         // 뿌리염색 6개월↑ 지속 (+0.5, 합계 최대 1.3)
+  // 2026-09 Q4 복수선택(옵션①): 최근 1년 받은 시술 "종류 집합"(무손실 기록). 옛 세션엔 없음(옵셔널).
+  //   엔진은 h_all 이 없으면 [h_recent, h_prev]에서 파생해 동일 동작(하위호환). 점수·유형은 2슬롯 유지,
+  //   예언 조합만 h_all 로 확장(셋+ 조합 포착). ※ 서로 다른 시술을 '같은 시술 2회'로 세지 않는다.
+  h_all?:          DamageTreatment[];
 }
 
 // 뿌리염색 주기 옵션(뿌리염색 선택 손님 하위질문) — id는 RootDyeInterval와 1:1.
@@ -113,7 +117,7 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
   {
     qKey: "h_history", kind: "treatment_history", no: "Q4", stepTag: "시술 이력",
     title: "최근 1년, 어떤 시술을 받으셨어요?",
-    hint: "가장 최근에 한 것부터 순서대로 알려주세요",
+    hint: "받으신 걸 모두 골라주세요 (여러 개 선택 가능)",
   },
 ];
 
