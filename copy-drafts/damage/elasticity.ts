@@ -61,7 +61,7 @@ const elasticity: DamageCopyBlockModule = {
     },
     {
       id: "damage.elasticity.firm_after_magic",
-      text: "단단해서 잘 안 늘어난다고 하셨어요. 다만 마지막에 매직을 하셨다면, 이 단단함은 결을 펴면서 겉을 잡아준 상태일 수 있습니다. 겉이 매끈해도 속은 따로 보셔야 하는 걸로 보입니다.",
+      text: "늘어나지도 끊어지지도 않는다고 하셨어요. 다만 마지막에 매직을 하셨다면, 이 단단함은 결을 펴면서 겉을 잡아준 상태일 수 있습니다. 겉이 매끈해도 속은 따로 보셔야 하는 걸로 보입니다.",
       status: "approved",
       sourceGrade: "파생",
       sourceRef: "확정124 — 매직 코팅 규칙(firm의 −0.3 무효화)을 카피로 확장",
@@ -69,7 +69,7 @@ const elasticity: DamageCopyBlockModule = {
     },
     {
       id: "damage.elasticity.firm_after_bleach",
-      text: "단단해서 잘 안 늘어난다고 하셨어요. 그런데 탈색한 머리는 단단할 수가 없어서, 마른 상태에서 해보셨을 확률이 높습니다. 젖은 머리로 한 번만 다시 해보세요.",
+      text: "늘어나지도 끊어지지도 않는다고 하셨어요. 그런데 탈색한 머리는 단단할 수가 없어서, 마른 상태에서 해보셨을 확률이 높습니다. 젖은 머리로 한 번만 다시 해보세요.",
       status: "approved",
       sourceGrade: "구술",
       sourceRef: "2026-09-15 사장님 구술(되읽기 교체) — Q1 firm × 탈색 이력",
@@ -77,7 +77,7 @@ const elasticity: DamageCopyBlockModule = {
     },
     {
       id: "damage.elasticity.firm_heavy_history",
-      text: "단단해서 잘 안 늘어난다고 하셨어요. 시술이 많이 쌓인 머리가 단단하게 느껴지는 경우는 단백질·케라틴 케어를 과하게 했을 때 정도예요. 이 항목은 참고로만 두고, 판단은 시술 이력을 더 크게 봅니다.",
+      text: "늘어나지도 끊어지지도 않는다고 하셨어요. 시술이 많이 쌓인 머리가 단단하게 느껴지는 경우는 단백질·케라틴 케어를 과하게 했을 때 정도예요. 이 항목은 참고로만 두고, 판단은 시술 이력을 더 크게 봅니다.",
       status: "approved",
       sourceGrade: "구술",
       sourceRef: "2026-09-15 사장님 구술(되읽기 교체·❓애매) — Q1 firm × 시술 누적 많음",
