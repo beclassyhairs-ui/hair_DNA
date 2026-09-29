@@ -1,7 +1,22 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-09-20
+> 최종 갱신: 2026-09-29
+
+## 🟡 R. 데미지 결과지 원고 2차 교체 (2026-09-29 · **push 대기**)
+
+> 현재 상태 한 줄: **구술 원고 2차 이식 완료·커밋(`e8839be`, 미push). 흰머리 3분할·건조·원인(탈색·없음)·예언 4건·빗질·당김. text/소제목 렌더만·로직 무변경. tsc0·copy:check·9/9·14/14·Codex(옛 저장 호환 15만 전수 0·retired 누출 0·refId 무결) 통과. resolver 직접호출 실렌더 검증.**
+
+- **흰머리 (`e8839be`)**: gray.story **retired** → 3덩어리(weak/aging/care) + 소제목("흰머리는 왜 약한가요"/"여기에 나이가 더해지면"/"그래서 이렇게 관리하세요"). 소제목은 결과지 `GRAY_SUBTITLE` id 매핑 렌더. resolver `GRAY_IDS` 3개.
+- **건조**: slow(10분↑)·normal(5~10분) 구술 교체. fast(5분)는 normal과 동일 → **refId 재사용**.
+- **주된 원인**: 탈색·없음 구술 교체(나머지는 1차에서 완료).
+- **예언**(엔진 PROPHECIES + risk.ts **양쪽 동기**·grade 구술): 열펌×매직 tip('회색빛' 삭제)·탈색×열펌 tip·펌만 door/aha/tip 전체·탈색만 tip. **id10/id14 tip 동일 → p14_tip은 p10_tip refId**(resolver 텍스트 역매칭 모호성 회피).
+- **빗질**: tangled 구술 교체 + loosens→tangled **refId**(공통 문장). smooth 유지.
+- **당김 '돌아옴'**: 전체 구술 교체.
+- **검수**: copy:check(원문대조·firm 누출 0·refId 무결·reachable) OK · invariant 9/9(스냅샷 갱신: 펌만 door) · fallback 14/14 · Codex 1관점 통과. resolver 직접호출 12케이스 실렌더 확인(흰머리 3덩어리·refId 공유·retired 미노출·예언 동기).
+- **copy:lint**: 경고 12건(L1 10·L2 2). damage gray1·risk2는 구술 다문단(사장님 승인 예외), 나머지(style cut3·procedure6)는 기존.
+- ℹ️ 참고: 엔진 `GRAY_HAIR_STORY` 상수는 미렌더(resolver gray 블록이 실표시) — 손 안 댐. "복구"는 상태설명(탈색×매직 시술명·탈색 마무리)이라 copy:check 금지어 미검출.
+- 🔴 **다음 = 사장님 push 승인** → Vercel 자동배포 → 배포 해시 기록.
 
 ## 🟢 Q. 데미지 결과지 원고 1차 교체 (2026-09-20~22 · **push·배포 완료 `29cf588`**)
 
