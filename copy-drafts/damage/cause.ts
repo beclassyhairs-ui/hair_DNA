@@ -38,10 +38,10 @@ const cause: DamageCopyBlockModule = {
     },
     {
       id: "damage.cause.bleach",
-      text: "마지막에 하신 게 탈색이네요. 탈색은 색을 넣기 전에 원래 있던 색소를 빼내는 시술이라, 다른 시술과 출발선이 다릅니다. 원하는 밝기까지 한 번에 안 되면 반복하게 되고, 그만큼 모발이 버텨야 하는 양도 같이 늘어납니다. 지금은 다음 시술까지 간격을 넉넉히 두시는 게 가장 확실합니다.",
+      text: "마지막 시술 탈색은, 색을 넣기 전 색소를 빼는 시술이라 다른 시술과 중복해 원하는 느낌을 만들기엔 손상도가 너무 높아요. 데일리로 꾸준한 관리(현 상태 유지하기)와 조금씩 잘라내면서 손상도를 줄이는 게 가장 이상적이에요.",
       status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — 원문에 탈색 고유 판단 없음. 현행은 전체염색과 함께 DRY로 뭉쳐 있어 §5-4 고위험 분기로 신설",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(주된 원인 2차 — 탈색)",
       evidenceKeys: ["h_recent"],
     },
     {
@@ -70,10 +70,10 @@ const cause: DamageCopyBlockModule = {
     },
     {
       id: "damage.cause.none",
-      text: "지금은 시술 손상이 거의 없는 상태예요. 뭘 해도 잘 나오는, 선택의 폭이 가장 넓은 시기입니다.",
+      text: "어떤 스타일이든 도전하기 쉬운 상태예요!",
       status: "approved",
-      sourceGrade: "재배치",
-      sourceRef: "TYPE_INFO.HEALTHY.causeExplain 원문 그대로",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(주된 원인 2차 — 없음)",
       evidenceKeys: ["h_recent"],
     },
   ],

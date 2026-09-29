@@ -96,6 +96,13 @@ function lastTreatmentLabel(a: DamageSurveyAnswers): string {
   return TREATMENT_OPTIONS.find((o) => o.id === last)?.label.replace(/\s*\(.*\)/, "") ?? "";
 }
 
+// 흰머리 원고 3덩어리 소제목(사장님 구술 2026-09-29). gray 엔트리 id로 매핑.
+const GRAY_SUBTITLE: Record<string, string> = {
+  "damage.gray.weak":  "흰머리는 왜 약한가요",
+  "damage.gray.aging": "여기에 나이가 더해지면",
+  "damage.gray.care":  "그래서 이렇게 관리하세요",
+};
+
 // 레벨별 공통 케어 한 줄(요약 아래). 건강·경미 vs 손상·극손상 두 갈래(사장님 구술 2026-09-20).
 const LEVEL_CARE_LINE: Record<number, string> = {
   1: "가벼운 데일리 케어를 매일 해주면 그날 스타일링이나 컨디션 관리에 좋아요.",
@@ -332,9 +339,14 @@ export default function DamageCheckResultPage() {
           {grayBlock && (
             <details className="overflow-hidden rounded-2xl border border-line bg-card">
               <summary className="cursor-pointer p-5 text-body font-bold text-ink">새치 염색을 오래 하셨다면 — 꼭 읽어보세요</summary>
-              <div className="border-t border-line px-5 pb-5 pt-3 space-y-3">
+              <div className="border-t border-line px-5 pb-5 pt-3 space-y-4">
                 {grayBlock.entries.map((e) => (
-                  <p key={e.id} className="text-body leading-relaxed text-ink">{e.text}</p>
+                  <div key={e.id}>
+                    {GRAY_SUBTITLE[e.id] && (
+                      <p className="mb-1 text-emphasis font-bold text-ink">{GRAY_SUBTITLE[e.id]}</p>
+                    )}
+                    <p className="text-body leading-relaxed text-ink">{e.text}</p>
+                  </div>
                 ))}
               </div>
             </details>

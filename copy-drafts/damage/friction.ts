@@ -20,18 +20,18 @@ const friction: DamageCopyBlockModule = {
   entries: [
     {
       id: "damage.friction.tangled",
-      text: "감고 나면 빗질이 전혀 안 된다고 하셨어요. 모발 겉면이 거칠어져 서로 걸리는 상태로 보입니다. 억지로 빗어 내리면 걸린 자리부터 끊어지니, 끝쪽부터 조금씩 나눠 푸시는 게 안전합니다.",
+      text: "모발 겉면이 거칠어져 서로 걸리는 상태에선, 부드러운 트리트먼트나 마스크를 바르고 빗질해서 머릿결 정돈을 해주고 말리거나, 다 헹구고 젖은 상태에서 오일 바르고 결 정돈 빗질 등을 해주고 말린다면 훨씬 더 부드럽고 좋은 컨디션으로 관리할 수 있어요.",
       status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — Q2 tangled(+1.0) 문장화. 확정124에서 문구가 '뜯긴다'→'빗질이 전혀 안 돼요'로 완화된 톤을 따름",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(빗질 되읽기 2차 — 전혀 안 됨/좀 엉킴 공통 문장)",
       evidenceKeys: ["q2_friction"],
     },
     {
+      // 좀 엉킴(loosens)도 전혀 안 됨(tangled)과 같은 공통 문장(사장님 구술) → refId 공유(복사 방지).
       id: "damage.friction.loosens",
-      text: "몇 번 빗으면 풀린다고 하셨어요. 겉면이 조금 거칠어졌지만, 아직 크게 걸리는 단계는 아닌 걸로 보입니다.",
-      status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — Q2 loosens(+0.5) 문장화",
+      refId: "damage.friction.tangled",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(빗질 되읽기 2차 — tangled와 동일 → refId)",
       evidenceKeys: ["q2_friction"],
     },
     {

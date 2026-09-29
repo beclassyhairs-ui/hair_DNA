@@ -81,7 +81,8 @@ const CAUSE_MAP: Record<string, string> = {
   none: "damage.cause.none",
 };
 
-const GRAY_STORY = "damage.gray.story";
+// 흰머리 원고 3덩어리(2026-09-29). 소제목은 결과지 gray 렌더가 id로 매핑. 순서 = 화면 노출 순서.
+const GRAY_IDS = ["damage.gray.weak", "damage.gray.aging", "damage.gray.care"];
 
 // ─── 예언 역방향 조회 ───────────────────────────────────────────────────────
 // 엔진은 예언 **문자열**만 돌려주고 id는 module-private다(selectProphecy 비공개).
@@ -160,7 +161,7 @@ export function resolveDamage(answers: DamageSurveyAnswers, env?: CopyEnv): Dama
   }
 
   // ③ 새치 — 뿌리염색 위에서만 켜지는 하위체크라 단독으로 참일 수 없다(설문이 보장).
-  const grayIds = answers.h_root_gray ? [GRAY_STORY] : [];
+  const grayIds = answers.h_root_gray ? GRAY_IDS : [];
 
   // ④ 예언 — Phase 1.0은 첫 매칭 1개만(secondary는 1.5 flag). 엔진이 고른 그 1개를 쓴다.
   const riskIndex = buildRiskIndex();
@@ -217,7 +218,7 @@ export function damageReachableIds(): string[] {
     FRICTION_TIP,
     ...Object.values(DRY_MAP),
     ...Object.values(CAUSE_MAP),
-    GRAY_STORY,
+    ...GRAY_IDS,
     ...risk,
   ];
 }

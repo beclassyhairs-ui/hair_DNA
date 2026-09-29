@@ -77,8 +77,8 @@ const risk: DamageCopyBlockModule = {
       text: "펌을 하시고 나중에 매직을 하셨는데, 끝머리가 지저분하거나 유난히 엉키는 느낌이 들지 않던가요?" },
     { id: "damage.risk.p07_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 7번 aha — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
       text: "잦은 열펌과 화학 시술은 결합을 많이 끊기게 합니다. 매직으로 깔끔하게 펴도 끝머리는 부스스하게 올라올 확률이 있어요." },
-    { id: "damage.risk.p07_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 7번 tip — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "그렇게 부스스해지거나 회색빛으로 보이는 부분은 어느 정도 정리해주면서 다듬어 가셔야 합니다. 매직을 하셔서 머리가 깔끔해 보인다고 다시 컬을 넣으시면, 기존 시술에 영향을 받아 좋은 결과가 안 나올 수 있어요." },
+    { id: "damage.risk.p07_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(예언 열펌×매직 tip '회색빛' 삭제)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "그렇게 부스스해지는 부분은 어느 정도 정리해주면서 다듬어 가셔야 합니다. 매직을 하셔서 머리가 깔끔해 보인다고 다시 컬을 넣으시면, 기존 시술에 영향을 받아 좋은 결과가 안 나올 수 있어요." },
 
     // ── 8. 긴 길이 × 반복 시술 — ⚠️ match=false, 구조상 미노출(문구 보존) ────
     { id: "damage.risk.p08_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 8번 door — 원문 보존. 길이 문항 부재로 현재 도달 불가`, evidenceKeys: [],
@@ -101,16 +101,16 @@ const risk: DamageCopyBlockModule = {
       text: "탈색한 머리에 펌을 하셨다면, 컬이 아예 안 나오거나 부스스해지지 않던가요?" },
     { id: "damage.risk.p10_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 10번 aha — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"],
       text: "탈색모에 열펌은 사실상 불가능합니다. 컬을 걸어둘 뼈대가 남아 있지 않아서요." },
-    { id: "damage.risk.p10_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 10번 tip — 원문 그대로`, evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"],
-      text: "지금은 새로 뭘 얹기보다, 있는 걸 지키면서 정리하는 쪽이 결과가 빠릅니다." },
+    { id: "damage.risk.p10_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(예언 탈색×열펌 tip 교체 · 탈색만 tip도 이 문장 공유→refId)", evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"],
+      text: "새로울 스타일에 도전하기보다 현재 머릿결을 다듬으면서 복구해야 되는 시기예요." },
 
     // ── 11. 펌만 (단독 + 폴백 겸용) ─────────────────────────────────────────
-    { id: "damage.risk.p11_door", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 11번 door — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "펌하고 한 달쯤 지나면, 컬이 늘어지기보다 지저분하고 부스스해 보이지 않던가요?" },
-    { id: "damage.risk.p11_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 11번 aha — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "원래 곱슬기가 있는 머리에 펌으로 컬이 한 겹 더 얹히면, 두 개가 섞이면서 부스스해 보일 수 있어요." },
-    { id: "damage.risk.p11_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 11번 tip — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev"],
-      text: "트리트먼트나 마스크로 관리해주시고, 말리실 때 끝까지 완전히 건조해주시면 훨씬 깔끔한 컬을 유지하실 수 있습니다." },
+    { id: "damage.risk.p11_door", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(예언 펌만 door 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "펌하고 나면 부스스해지는 경우가 있으신가요?" },
+    { id: "damage.risk.p11_aha", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(예언 펌만 aha 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "이럴 땐 곱슬머리에 컬이 걸리거나 지난 펌의 주기가 빠르다면, 컬들이 겹치면서 부스스해 보일 수 있어요." },
+    { id: "damage.risk.p11_tip", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(예언 펌만 tip 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
+      text: "한 달쯤 지나서 컬이 늘어지거나 부하게 올라온다면, 다시 펌하는 것보다 머릿결의 결을 관리해준다면 탄력과 깔끔함을 유지할 수 있습니다." },
 
     // ── 12. 매직만 (단독 + 폴백 겸용) ───────────────────────────────────────
     { id: "damage.risk.p12_door", status: "approved", sourceGrade: "구술", sourceRef: "2026-09-20 사장님 구술(예언 12번 매직만 — door 전체 교체)", evidenceKeys: ["h_recent", "h_prev"],
@@ -133,8 +133,9 @@ const risk: DamageCopyBlockModule = {
       text: "탈색하고 나서 머리가 유난히 잘 엉키고, 젖으면 늘어나지 않던가요?" },
     { id: "damage.risk.p14_aha", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 14번 aha — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"],
       text: "탈색은 색소를 빼내면서 머리 속을 비워냅니다. 비워진 자리는 다시 채워지지 않아요." },
-    { id: "damage.risk.p14_tip", status: "approved", sourceGrade: "재배치", sourceRef: `${P} 14번 tip — 원문 그대로. 단독매칭+폴백 겸용(dedupe 주의)`, evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"],
-      text: "지금은 새로 뭘 얹기보다 있는 걸 지키면서 정리하는 쪽이 결과가 빠릅니다." },
+    // 탈색만 tip = 탈색×열펌 tip과 동일 문장(사장님 구술). 문장 복사 대신 refId로 p10_tip 상속 —
+    //   resolver가 예언 문자열을 text로 역매칭하므로, 같은 문장이 두 entry에 있으면 모호해진다(refId는 index에서 제외).
+    { id: "damage.risk.p14_tip", refId: "damage.risk.p10_tip", sourceGrade: "구술", sourceRef: "2026-09-29 사장님 구술(탈색만 tip = p10_tip과 동일 → refId)", evidenceKeys: ["h_recent", "h_prev", "h_bleach_2plus"] },
   ],
 };
 export default risk;

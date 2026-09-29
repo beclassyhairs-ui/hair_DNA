@@ -14,27 +14,28 @@ const drying: DamageCopyBlockModule = {
   block: "drying",
   entries: [
     {
-      id: "damage.drying.slow",
-      text: "감고 나서 다 마르기까지 한참 걸린다고 하셨죠. 숱이 많아서 물을 머금는 양이 많은 거면 손상이 아니에요. 그게 아니면, 원래 단백질이 채우고 있어야 할 자리가 비어서 그 안에 물이 들어찬 다공성 모발일 확률이 높습니다 — 이런 머리는 물을 두 배 가까이 머금고 잘 내보내지 못해요. 이쪽이면 물이 차지한 자리를 원래 성분인 단백질로 다시 채워주는 관리가 맞습니다.",
+      id: "damage.drying.slow", // 10분 이상
+      text: "감고 말리기까지 10분 이상 걸린다면 두 가지 상태일 확률이 높아요. 숱이 많고 모발 밀도가 높거나, 머리에 손상도가 높아 단백질 성분들이 들어갈 자리에 물로 채워져 있는(다공성모) 경우입니다. 이쪽이라면 물이 머금는 자리에 다시 단백질을 채워줘야 하는 쪽이 맞아요.",
       status: "approved",
       sourceGrade: "구술",
-      sourceRef: "2026-09-15 사장님 구술(되읽기 교체) — Q3 slow(다 마르기 오래) 두 원인 분기. copy:lint L1(4문장+) 사장님 승인 예외",
+      sourceRef: "2026-09-29 사장님 구술(건조 되읽기 2차 — 10분 이상=slow)",
       evidenceKeys: ["q3_dry"],
     },
     {
-      id: "damage.drying.normal",
-      text: "마르는 시간이 보통이라고 하셨어요. 모발이 물을 머금는 정도가 무난한 걸로 보입니다.",
+      id: "damage.drying.normal", // 5~10분
+      text: "보편적인 손상도를 갖고 계십니다. 머리 말리는 시간의 기준은, 모발 속 단백질 자리에 수분이 머금고 있어(다공성모) 수분이 마르는 시간에 비해 길어질 수 있어요. 모발 속 단백질을 채워주는 관리가 필요할 수 있어요.",
       status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — Q3 normal(0) 문장화",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(건조 되읽기 2차 — 5~10분=normal)",
       evidenceKeys: ["q3_dry"],
     },
     {
+      // 5분 안쪽(fast)은 5~10분(normal)과 같은 문장 노출(설문 의도 전달 위해 동일 조각 재사용).
+      //   문장 복사 대신 refId로 normal 본문을 상속(사장님 지시 "동일 조각 재사용").
       id: "damage.drying.fast",
-      text: "금방 마른다고 하셨어요. 이건 좋고 나쁨을 가르는 신호는 아닙니다. 모발이 가늘거나 숱이 많지 않아도 빨리 마르기 때문에, 이 항목만으로는 판단하지 않습니다.",
-      status: "approved",
-      sourceGrade: "신규",
-      sourceRef: "신규 — Q3 fast(0) 문장화. 확정117(빨리=중립, 손상 단정 금지) 준수",
+      refId: "damage.drying.normal",
+      sourceGrade: "구술",
+      sourceRef: "2026-09-29 사장님 구술(건조 되읽기 2차 — 5분 안쪽=5~10분과 동일 조각 재사용)",
       evidenceKeys: ["q3_dry"],
     },
   ],
