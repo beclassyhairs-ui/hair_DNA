@@ -10,6 +10,7 @@
 //   클릭은 PRODUCT_CLICKED 로 계측(§4-1 제휴 클릭·전환 데이터가 목적).
 // ============================================================================
 
+import { useEffect, useRef } from "react";
 import { COUPANG_DISCLOSURE, type CoupangCard } from "@/lib/coupangCards";
 import { EVENT_NAMES, trackEvent } from "@/lib/eventTracking";
 
@@ -18,12 +19,30 @@ export default function CoupangCardList({
   landingId,
   heading = "이 머리에 맞는 제품",
   metaExtra,
+  coreKey,
 }: {
   cards: CoupangCard[];
   landingId: string;
   heading?: string;
   metaExtra?: Record<string, unknown>; // 호출측 부가 계측(예: 결과지 photo_state). 기존 필드는 그대로.
+  coreKey?: string | null;             // 모발타입 세그먼트(있으면 impression meta에 실음)
 }) {
+  // 노출(impression) — 카드가 실제로 화면에 뜬 마운트에서 1회. Q5(노출 대비 클릭) 분모.
+  //   결과지·다시보기·items 모두 이 컴포넌트를 쓰므로 여기 한 곳에서 발화. 클릭은 아래 PRODUCT_CLICKED.
+  //   ★ 신규 이벤트만 추가 — 기존 이벤트명·meta 무변경.
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (firedRef.current || !cards || cards.length === 0) return;
+    firedRef.current = true;
+    void trackEvent("product_impression", {
+      diagnosis_type: landingId, // 클릭(PRODUCT_CLICKED)과 동일 축 — 조인 편의(컬럼)
+      landing: landingId,
+      product_ids: cards.map((c) => c.g),
+      ...(coreKey ? { coreKey } : {}),
+      ...(metaExtra ?? {}),
+    });
+  }, [cards, landingId, coreKey, metaExtra]);
+
   if (!cards || cards.length === 0) return null;
 
   return (

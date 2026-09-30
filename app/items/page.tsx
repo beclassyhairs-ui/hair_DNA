@@ -137,7 +137,7 @@ export default function ItemsPage() {
 
       {/* 쿠팡 제휴 카드 — 진단에서 추천된 제품을 다시 찾는 공간(추천사유+대가성 문구 포함). */}
       {coupangCards.length > 0 && (
-        <CoupangCardList cards={coupangCards} landingId="items" heading="진단에서 추천된 제품" />
+        <CoupangCardList cards={coupangCards} landingId="items" heading="진단에서 추천된 제품" coreKey={coreKey} />
       )}
 
       {loading && (

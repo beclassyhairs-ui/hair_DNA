@@ -380,6 +380,7 @@ export default function DamageCheckResultPage() {
             cards={damageCards}
             landingId="damage_check"
             heading="이 상태에 맞는 제품"
+            coreKey={coreKey}
           />
 
           {/* 새치 축 — 출시 알림 신청(마케팅 동의, 선택). 새치 체크 손님에게만 노출. */}
