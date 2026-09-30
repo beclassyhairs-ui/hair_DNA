@@ -1,7 +1,17 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-09-29
+> 최종 갱신: 2026-09-30
+
+## 🟡 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-09-30 · Phase 1 **push 대기** · Phase 2 사장님 데이터 대기)
+
+> 현재 상태 한 줄: **Phase 0 현황 정리 + Phase 1(조회 SQL 5종 + product_impression 신설) 완료·커밋(`2ac24c1`, 미push). tsc0. dev 실측 impression 발화. Phase 2(컬럼 승격)는 사장님이 Q1~Q5 결과 준 뒤.**
+
+- **events 스키마**: 컬럼 = event_name·anonymous_id·user_id·session_id·landing_id·diagnosis_type·result_type·concern_tags(jsonb)·answers(jsonb)·product_id_clicked·cta_clicked·recommended_product_groups·product_group_clicked·marketing_consent·kakao_channel_added·source(utm)·utm_medium·utm_campaign·event_time·created_at·meta(jsonb). 나머지 값은 meta.
+- **Phase 0 이벤트 현황**(주요): landing_view·diagnosis_start·answer_selected(answers 컬럼)·diagnosis_complete·report_view(meta: photo_state·source[new|revisit])·result_scroll_depth(meta: depth·photo_state·elapsed_ms)·product_viewed(items)·product_clicked(product_id_clicked 컬럼·meta ui·photo_state)·purchase_click·photo_arrived(meta: model·job_elapsed_ms·user_on_result_ms)·hair_transform_done/fail/fallback(meta: model·reason)·photo_banner_click·notify_signup(meta landing·gray)·photo_zoom/save(meta source)·login_consent_view/agree·diagnosis_card_click·save_result_go_home·consult_*. **첫-터치 utm 3종(source/utm_medium/utm_campaign)은 이미 컬럼**. 대부분 세부값은 meta.
+- **Phase 1 (`2ac24c1`)**: `product_impression` 신설(CoupangCardList 마운트 1회·결과지/다시보기/items 공용·meta landing·product_ids·coreKey·diagnosis_type 컬럼). `docs/analytics_queries_2026-09-29.sql`(Q1 깔때기·Q2 스크롤×photo_state·Q3 파이프라인·Q4 세그먼트·Q5 노출대비클릭, SELECT 전용·NULLIF·빈데이터 무에러). 기존 이벤트명·meta 무변경.
+- 🔴 **Phase 2(컬럼 승격) — 사장님 데이터 대기**: 우선 검토 후보 = **연령대(q1)·모발타입(굵기 q7×숱 q8)·손상레벨**(현재 answer_selected answers/meta에 흩어져 Q4 조인이 복잡 → 승격 근거). 최대 3개. 결정 시 마이그레이션+코드(컬럼 추가만, 기존 호환).
+- 🔴 **다음 = 사장님 push 승인**(Phase 1) + Supabase에서 Q1~Q5 실행 후 결과 공유 → Phase 2.
 
 ## 🟢 R. 데미지 결과지 원고 2차 교체 (2026-09-29 · **push·배포 완료 `2ee12dd`**)
 
