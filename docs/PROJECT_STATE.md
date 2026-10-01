@@ -1,7 +1,17 @@
 # PROJECT_STATE.md — 미알팁 현재 상태
 
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
-> 최종 갱신: 2026-09-30
+> 최종 갱신: 2026-10-01
+
+## 🟢 T. 계측 전건 중단 사고·복구 (2026-10-01 · **복구·커밋 완료 `0a800d2`**)
+
+> 현재 상태 한 줄: **events 계측이 2026-09-18부터 전건 중단됐던 것을 발견·복구. 서비스·합성은 정상인데 이벤트만 죽음. 원인=soft-delete 라운드(`bfb5379`, 9/18)가 events에 건 트리거 `trg_events_parent_active`가 `assert_parent_active()`(users.id uuid = new.user_id)로 비교하는데 events.user_id는 text → `operator does not exist: uuid = text`로 전건 거부(익명분은 users에도 없어 이중 거부). 서비스·합성은 events에 의존 안 해 멀쩡. trackEvent가 에러를 삼켜(try/catch) 오래 안 드러남.**
+
+- **발견 경로**: 프로덕션 /style 브라우저 콘솔에서 `[trackEvent] Supabase insert 실패 (landing_view): operator does not exist: uuid = text` 직접 확인. env·RLS·anon키 전부 정상(실제 Supabase 도달·`with check(true)`)으로 배제.
+- **복구**: `supabase/events_trigger_fix_2026-10-01.sql`(사장님 Supabase 실행 완료) — events 전용 `assert_event_parent_active()`로 분리. null·비uuid·비계정(users 미존재)은 통과, 정규식+`::uuid` 캐스팅, 실제 계정이면서 soft-delete된 경우만 차단. diagnoses/profiles/hair_usage 트리거 무변경. 정본 `user_soft_delete_schema.sql`도 패치(그간 untracked였음 → 수정본으로 정본화).
+- **검증**: Codex 통과 · 새 탭 /style 콘솔 클린(uuid=text 소멸) · DB 실시각 2건(landing_view·diagnosis_card_click) 적재 확인.
+- **파급**: 어제 세그먼트 Phase 2(`a74518b`) 컬럼 적재는 이 트리거에 가려 한 번도 발생 안 함(세그먼트가 원인은 아님·독립). 복구 후 신규 진단부터 Q4b(승격 컬럼)·Q7(유실 감시)로 정상 확인 가능.
+- 🔴 **교훈/후속**: ① trackEvent가 insert 실패를 콘솔로만 남기고 삼킴 → 장기 무감지. 서버측 유실 알림(일일 events 0건 체크 등) 검토. ② untracked SQL(soft-delete 계열)을 prod에 수동 적용 → 레포·prod 괴리로 추적 지연. supabase/ SQL은 커밋 후 적용 원칙.
 
 ## 🟢 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-10-01 · Phase 2 **push·배포 완료 `a74518b`** · 유실 2h 감시 중)
 
