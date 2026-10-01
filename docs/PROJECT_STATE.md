@@ -3,11 +3,11 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-30
 
-## 🟡 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-09-30 · Phase 2 **구현 완료·커밋/마이그레이션 대기**)
+## 🟢 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-10-01 · Phase 2 **push·배포 완료 `a74518b`** · 유실 2h 감시 중)
 
-> 현재 상태 한 줄: **Phase 2(세그먼트 축 컬럼 승격) 구현 완료 — Q1~Q5 결과 판정 반영. ① answer_selected가 flow마다 questionId/choice(style·hair-quiz·mbti) vs questionKey/optionId(damage·bangs)로 저장돼 Q4가 전건 NULL이던 원인 규명·수정 ② age_band/hair_thickness/hair_density 3컬럼을 report_view·product_clicked·product_impression에 승격(스키마+마이그레이션+eventTracking COLUMN_KEYS+CoupangCardList segment+style 결과지 배선) ③ Q1 revisit 제외로 '시작→결과지 160%' 교정 + Q1b 원인규명 쿼리 ④ Q6 실패 reason 분포. Codex 재검수 통과(쉼표 오탐 3건 기각·pc를 style로 제한·max→array_agg 최신값). ⚠️ tsc/build는 권한차단으로 미실행(사장님/후속세션 확인 필요). 미커밋·미push. Phase 1 배포분 HEAD==origin/main==`624ae39`.**
+> 현재 상태 한 줄: **Phase 2(세그먼트 축 컬럼 승격) push·배포 완료 — ① answer_selected가 flow마다 questionId/choice(style·hair-quiz·mbti) vs questionKey/optionId(damage·bangs)로 저장돼 Q4가 전건 NULL이던 원인 규명·수정 ② age_band/hair_thickness/hair_density 3컬럼 승격 ③ Q1 revisit 제외('시작→결과지 160%' 교정)+Q1b ④ Q6 실패 reason 분포. 마이그레이션 사장님 실행+컬럼 3개 확인 완료. 검증 전부 통과: tsc0·copy:check·invariant 9/9·fallback 14/14(깨보기 12/14 FAIL→원복 복귀). Codex 재검수 통과. 3분할 커밋(`656d097` db·`6407851` analytics·`a74518b` docs) push(`624ae39..a74518b`)→Vercel 자동배포. HEAD==origin/main==`a74518b`.**
 >
-> 🔴 **배포 순서 하드 게이트**: `events_segment_columns_migration.sql`(사장님이 Supabase에서 먼저 실행) → 컬럼 존재 확인 → **그 다음에만** push 승인. 컬럼 없는 상태로 코드가 배포되면 age_band 실은 report_view/product_* insert가 행 전체 거부되어 계측이 유실된다(오류는 삼켜 UI는 정상).
+> 🔴 **다음(사장님) = 배포 후 2h 내 유실 감시**: `docs/analytics_queries_2026-09-29.sql` 하단 Q7(유실 감시) 실행 — 최근 report_view/product_* 건수가 0이면 컬럼 insert 실패 → **즉시 롤백**(`git revert a74518b 6407851 656d097` 또는 Vercel 이전 배포로 롤백). 0이 아니면 정상. 이후 Q4(과거 데이터)·Q4b(신규 컬럼) 비교.
 
 - **events 스키마**: 컬럼 = event_name·anonymous_id·user_id·session_id·landing_id·diagnosis_type·result_type·concern_tags(jsonb)·answers(jsonb)·product_id_clicked·cta_clicked·recommended_product_groups·product_group_clicked·marketing_consent·kakao_channel_added·source(utm)·utm_medium·utm_campaign·event_time·created_at·meta(jsonb). 나머지 값은 meta.
 - **Phase 0 이벤트 현황**(주요): landing_view·diagnosis_start·answer_selected(answers 컬럼)·diagnosis_complete·report_view(meta: photo_state·source[new|revisit])·result_scroll_depth(meta: depth·photo_state·elapsed_ms)·product_viewed(items)·product_clicked(product_id_clicked 컬럼·meta ui·photo_state)·purchase_click·photo_arrived(meta: model·job_elapsed_ms·user_on_result_ms)·hair_transform_done/fail/fallback(meta: model·reason)·photo_banner_click·notify_signup(meta landing·gray)·photo_zoom/save(meta source)·login_consent_view/agree·diagnosis_card_click·save_result_go_home·consult_*. **첫-터치 utm 3종(source/utm_medium/utm_campaign)은 이미 컬럼**. 대부분 세부값은 meta.
