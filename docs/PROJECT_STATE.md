@@ -3,16 +3,20 @@
 > 이 파일이 프로젝트 상태의 단일 출처다. Claude Code는 매 세션 시작 시 이 파일을 읽고, 종료 시 갱신한다.
 > 최종 갱신: 2026-09-30
 
-## 🟡 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-09-30 · Phase 1 **push·배포 완료 `624ae39`** · Phase 2 사장님 데이터 대기)
+## 🟡 S. 계측 점검 — 조회 SQL + 노출 이벤트 (2026-09-30 · Phase 2 **구현 완료·커밋/마이그레이션 대기**)
 
-> 현재 상태 한 줄: **Phase 0 현황 정리 + Phase 1(조회 SQL 5종 + product_impression 신설) 완료. tsc0. dev 실측 impression 발화. push·배포 완료(`2ee12dd..624ae39`), Vercel 자동배포. HEAD==origin/main==`624ae39`. Phase 2(컬럼 승격)는 사장님이 Q1~Q5 결과 준 뒤.**
+> 현재 상태 한 줄: **Phase 2(세그먼트 축 컬럼 승격) 구현 완료 — Q1~Q5 결과 판정 반영. ① answer_selected가 flow마다 questionId/choice(style·hair-quiz·mbti) vs questionKey/optionId(damage·bangs)로 저장돼 Q4가 전건 NULL이던 원인 규명·수정 ② age_band/hair_thickness/hair_density 3컬럼을 report_view·product_clicked·product_impression에 승격(스키마+마이그레이션+eventTracking COLUMN_KEYS+CoupangCardList segment+style 결과지 배선) ③ Q1 revisit 제외로 '시작→결과지 160%' 교정 + Q1b 원인규명 쿼리 ④ Q6 실패 reason 분포. Codex 재검수 통과(쉼표 오탐 3건 기각·pc를 style로 제한·max→array_agg 최신값). ⚠️ tsc/build는 권한차단으로 미실행(사장님/후속세션 확인 필요). 미커밋·미push. Phase 1 배포분 HEAD==origin/main==`624ae39`.**
+>
+> 🔴 **배포 순서 하드 게이트**: `events_segment_columns_migration.sql`(사장님이 Supabase에서 먼저 실행) → 컬럼 존재 확인 → **그 다음에만** push 승인. 컬럼 없는 상태로 코드가 배포되면 age_band 실은 report_view/product_* insert가 행 전체 거부되어 계측이 유실된다(오류는 삼켜 UI는 정상).
 
 - **events 스키마**: 컬럼 = event_name·anonymous_id·user_id·session_id·landing_id·diagnosis_type·result_type·concern_tags(jsonb)·answers(jsonb)·product_id_clicked·cta_clicked·recommended_product_groups·product_group_clicked·marketing_consent·kakao_channel_added·source(utm)·utm_medium·utm_campaign·event_time·created_at·meta(jsonb). 나머지 값은 meta.
 - **Phase 0 이벤트 현황**(주요): landing_view·diagnosis_start·answer_selected(answers 컬럼)·diagnosis_complete·report_view(meta: photo_state·source[new|revisit])·result_scroll_depth(meta: depth·photo_state·elapsed_ms)·product_viewed(items)·product_clicked(product_id_clicked 컬럼·meta ui·photo_state)·purchase_click·photo_arrived(meta: model·job_elapsed_ms·user_on_result_ms)·hair_transform_done/fail/fallback(meta: model·reason)·photo_banner_click·notify_signup(meta landing·gray)·photo_zoom/save(meta source)·login_consent_view/agree·diagnosis_card_click·save_result_go_home·consult_*. **첫-터치 utm 3종(source/utm_medium/utm_campaign)은 이미 컬럼**. 대부분 세부값은 meta.
 - **Phase 1 (`2ac24c1`)**: `product_impression` 신설(CoupangCardList 마운트 1회·결과지/다시보기/items 공용·meta landing·product_ids·coreKey·diagnosis_type 컬럼). `docs/analytics_queries_2026-09-29.sql`(Q1 깔때기·Q2 스크롤×photo_state·Q3 파이프라인·Q4 세그먼트·Q5 노출대비클릭, SELECT 전용·NULLIF·빈데이터 무에러). 기존 이벤트명·meta 무변경.
-- 🔴 **Phase 2(컬럼 승격) — 사장님 데이터 대기**: 우선 검토 후보 = **연령대(q1)·모발타입(굵기 q7×숱 q8)·손상레벨**(현재 answer_selected answers/meta에 흩어져 Q4 조인이 복잡 → 승격 근거). 최대 3개. 결정 시 마이그레이션+코드(컬럼 추가만, 기존 호환).
-- ✅ **push·배포 완료**: 2026-09-30 `2ee12dd..624ae39` origin/main push → Vercel 자동배포. 배포 커밋 **`624ae39`**.
-- 🔴 **다음 = 사장님이 Supabase에서 Q1~Q5 실행 후 결과 공유 → Phase 2(컬럼 승격 판단)**. (선행 미완: 라운드 M·L — delete_user_rpc.sql·도메인 env 3종.)
+- **Phase 2 근본원인(Q4 전건 NULL)**: `answer_selected`의 answers(jsonb) 키가 flow마다 다르다 — **style·hair-quiz·mbti = {questionId, choice}**(연령/굵기/숱은 여기, questionId로 저장) / **damage·bangs = {questionKey, optionId}**. 9/29 최초 Q4가 questionKey만 조회 → style축이 전건 NULL. → Q4를 두 컨벤션 coalesce로 수정(과거 데이터 즉시 해결).
+- **Phase 2 컬럼 승격 (미커밋)**: `age_band`·`hair_thickness`·`hair_density` 3컬럼. 배선 = `supabase/schema.sql`(events 테이블) + `supabase/events_segment_columns_migration.sql`(사장님 실행, ADD COLUMN IF NOT EXISTS·nullable·RLS무변경) + `lib/eventTracking.ts`(COLUMN_KEYS+인터페이스) + `components/CoupangCardList.tsx`(segment prop→product_impression·product_clicked) + `app/style/result/page.tsx`(report_view + CoupangCardList segment). damage/items는 미전달→NULL(무변경).
+- **쿼리 (`docs/analytics_queries_2026-09-29.sql` 개정)**: Q1(report_view revisit 제외) · Q1b(source별·start없는 결과지 규모) · Q4(coalesce·array_agg 최신값·pc를 style로 제한) · Q4b(승격 컬럼 직접 사용·배포후 신규데이터용) · Q6(hair_transform_fail/fallback reason·model 분포). 전부 SELECT 전용.
+- **Codex 검수**: 1차 '수정필요' 5건 중 4·5(pc style 제한·max→array_agg 최신)만 반영, 1~3(쉼표)은 실파일 확인 오탐으로 기각. 재검수 **통과**(array_agg filter subscript 유효 확인).
+- 🔴 **다음 = ① 커밋 승인(§5) ② 사장님이 마이그레이션 먼저 실행·컬럼 확인 ③ push 승인 → Vercel 배포 → 배포 후 Q4b·신규 컬럼 적재 확인**. (선행 미완: 라운드 M·L — delete_user_rpc.sql·도메인 env 3종.)
 
 ## 🟢 R. 데미지 결과지 원고 2차 교체 (2026-09-29 · **push·배포 완료 `2ee12dd`**)
 
