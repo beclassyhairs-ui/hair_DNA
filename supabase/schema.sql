@@ -25,6 +25,15 @@ create table if not exists events (
   result_type                 text,           -- 도출된 결과 유형
   recommended_product_groups  jsonb,          -- 추천된 제품군 배열
 
+  -- 모발 세그먼트 축 (Phase 2 승격 · 2026-09-30) — 기존엔 answer_selected answers(jsonb)에 흩어져
+  --   Q4 세그먼트 조인이 복잡했다. report_view·product_clicked·product_impression 발화 시 컬럼으로 승격.
+  --   값 도메인은 style 설문 원값(age_20.. / coarse·medium_thickness·fine / thick_density·medium_density·thin_density).
+  --   ⚠️ 이 컬럼이 없는 DB에 age_band 등을 실은 insert가 오면 Supabase가 행 전체를 거부한다 →
+  --      **코드 배포 전 반드시 이 컬럼을 먼저 추가**(events_segment_columns_migration.sql).
+  age_band                    text,           -- 연령대 (q1_age 원값)
+  hair_thickness              text,           -- 모발 굵기 (q7_thickness 원값)
+  hair_density                text,           -- 모발 숱 (q8_density 원값)
+
   -- 이벤트 본문
   event_name                  text not null,  -- landing_view / diagnosis_start / answer_selected / diagnosis_complete / product_clicked / login_clicked
   event_time                  timestamptz not null default now(),
