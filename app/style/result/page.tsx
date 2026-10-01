@@ -525,6 +525,10 @@ export default function StyleResultPage() {
       concern_tags: buildHairTags(answers),
       photo_state: generated ? "done" : limitMessage ? "limited" : "pending",
       source: revisit ? "revisit" : "new",
+      // 모발 세그먼트 축(Phase 2 승격) — style 설문 원값을 컬럼으로. 값 없으면 trackEvent가 건너뜀.
+      age_band:       answers.q1_age,
+      hair_thickness: answers.q7_thickness,
+      hair_density:   answers.q8_density,
     });
     setCompleteTracked(true);
   }, [ready, answers, completeTracked, generated, limitMessage, revisit]);
@@ -822,7 +826,7 @@ export default function StyleResultPage() {
                   ) : (
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mt-5">
                       {/* 7. 쿠팡 제휴 제품 카드 — 매칭 실물(확정48). COUPANG_CARDS_LIVE=false 면 자동 미노출. */}
-                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" metaExtra={{ photo_state: photoStateForMeta }} />
+                      <CoupangCardList cards={pickStyleCards(answers)} landingId="style" heading="이 머리에 맞는 제품" metaExtra={{ photo_state: photoStateForMeta }} segment={{ age_band: answers.q1_age, hair_thickness: answers.q7_thickness, hair_density: answers.q8_density }} />
                     </motion.div>
                   )
                 ) : (

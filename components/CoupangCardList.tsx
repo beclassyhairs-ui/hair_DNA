@@ -20,13 +20,22 @@ export default function CoupangCardList({
   heading = "이 머리에 맞는 제품",
   metaExtra,
   coreKey,
+  segment,
 }: {
   cards: CoupangCard[];
   landingId: string;
   heading?: string;
   metaExtra?: Record<string, unknown>; // 호출측 부가 계측(예: 결과지 photo_state). 기존 필드는 그대로.
   coreKey?: string | null;             // 모발타입 세그먼트(있으면 impression meta에 실음)
+  // 모발 세그먼트 축(Phase 2 승격) — style 결과지처럼 원값을 아는 호출측만 전달. 값 있는 키만 컬럼 적재.
+  //   (damage/items 등 축이 없는 호출측은 미전달 → 컬럼 NULL, 기존 동작 무변경.)
+  segment?: { age_band?: string; hair_thickness?: string; hair_density?: string };
 }) {
+  // 값이 있는 축만 골라 payload에 얹는다(COLUMN_KEYS라 컬럼으로 적재). undefined는 trackEvent가 건너뛴다.
+  const segmentFields: Record<string, string> = {};
+  if (segment?.age_band)       segmentFields.age_band       = segment.age_band;
+  if (segment?.hair_thickness) segmentFields.hair_thickness = segment.hair_thickness;
+  if (segment?.hair_density)   segmentFields.hair_density   = segment.hair_density;
   // 노출(impression) — 카드가 실제로 화면에 뜬 마운트에서 1회. Q5(노출 대비 클릭) 분모.
   //   결과지·다시보기·items 모두 이 컴포넌트를 쓰므로 여기 한 곳에서 발화. 클릭은 아래 PRODUCT_CLICKED.
   //   ★ 신규 이벤트만 추가 — 기존 이벤트명·meta 무변경.
@@ -39,8 +48,10 @@ export default function CoupangCardList({
       landing: landingId,
       product_ids: cards.map((c) => c.g),
       ...(coreKey ? { coreKey } : {}),
+      ...segmentFields, // 모발 세그먼트 축(있을 때만) — 컬럼 적재
       ...(metaExtra ?? {}),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards, landingId, coreKey, metaExtra]);
 
   if (!cards || cards.length === 0) return null;
@@ -61,6 +72,7 @@ export default function CoupangCardList({
               ui: `${landingId}_result_coupang`,
               cta_clicked: "제품 보러 가기",
               diagnosis_type: landingId,
+              ...segmentFields, // 모발 세그먼트 축(있을 때만) — 컬럼 적재
               ...(metaExtra ?? {}),
             })
           }

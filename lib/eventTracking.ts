@@ -49,6 +49,10 @@ export interface EventPayload {
   cta_clicked?: string;
   marketing_consent?: boolean;
   kakao_channel_added?: boolean;
+  // 모발 세그먼트 축 (Phase 2 승격) — report_view·product_clicked·product_impression 에서만 실린다.
+  age_band?: string;                           // 연령대 (q1_age 원값)
+  hair_thickness?: string;                     // 모발 굵기 (q7_thickness 원값)
+  hair_density?: string;                       // 모발 숱 (q8_density 원값)
   // ↓ 위 스키마에 없는 임의 키(productId, coreKey, ui, postId, rank 등)는 meta(jsonb)로 적재된다.
   [key: string]: unknown;
 }
@@ -68,6 +72,11 @@ const COLUMN_KEYS = new Set<string>([
   "cta_clicked",
   "marketing_consent",
   "kakao_channel_added",
+  // 모발 세그먼트 축 (Phase 2 승격) — DB에 age_band/hair_thickness/hair_density 컬럼이
+  // 존재해야 한다. 마이그레이션(events_segment_columns_migration.sql)을 배포보다 먼저 실행할 것.
+  "age_band",
+  "hair_thickness",
+  "hair_density",
 ]);
 
 /** Supabase에 insert되는 최종 이벤트 레코드 — created_at은 DB default now()가 채우므로 클라이언트에서 보내지 않는다 */
@@ -95,6 +104,10 @@ export interface TrackedEvent {
   cta_clicked?: string;
   marketing_consent?: boolean;
   kakao_channel_added?: boolean;
+  // 모발 세그먼트 축 (Phase 2 승격)
+  age_band?: string;
+  hair_thickness?: string;
+  hair_density?: string;
   // 스키마 외 임의 컨텍스트
   meta: Record<string, unknown> | null;
 }
