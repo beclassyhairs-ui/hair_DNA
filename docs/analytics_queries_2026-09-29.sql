@@ -207,3 +207,20 @@ from events
 where event_name in ('product_impression', 'product_clicked')
 group by 1
 order by 1;
+
+
+-- ── Q7 · 배포 후 유실 감시(2026-10-01 세그먼트 컬럼 승격용): 최근 2시간 핵심 이벤트 건수 ──
+--    왜: 마이그레이션이 안 돼 있거나 컬럼이 없으면, age_band를 실은 report_view/product_* insert가
+--        행 전체 거부된다(오류는 삼켜 UI는 정상). 그러면 이 세 이벤트만 0으로 떨어진다.
+--    ★ 판정: lv_total > 0 (손님은 들어오는데) 인데 rv_total = 0 → 컬럼 insert 실패 → 즉시 롤백.
+--       (landing_view는 신규 컬럼을 안 실어 항상 들어오므로 대조군.) rv_total > 0 이면 정상.
+--    배포 후 2시간 내 1~2회 실행. rv_with_seg는 style 신규진단이 있었다면 >0 이 된다(없으면 0 정상).
+select
+  count(*) filter (where event_name = 'landing_view')                               as lv_total,      -- 대조군(신규컬럼 미적재)
+  count(*) filter (where event_name = 'report_view')                                as rv_total,      -- ★ lv>0인데 0이면 롤백
+  count(*) filter (where event_name = 'report_view' and age_band is not null)       as rv_with_seg,   -- 컬럼 실제 적재 확인(style 신규)
+  count(*) filter (where event_name = 'product_impression')                         as impr_total,
+  count(*) filter (where event_name = 'product_clicked')                            as click_total,
+  max(event_time)                                                                    as 최근이벤트
+from events
+where event_time > now() - interval '2 hours';
