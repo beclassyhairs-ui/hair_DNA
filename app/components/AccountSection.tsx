@@ -117,7 +117,7 @@ export default function AccountSection() {
         type="button"
         onClick={() => setOpen(true)}
         disabled={busy}
-        className="mt-1 flex min-h-11 items-center text-aux font-medium underline underline-offset-4 transition-opacity active:opacity-70 disabled:opacity-50"
+        className="mt-1 flex min-h-11 items-center text-body font-semibold underline underline-offset-4 transition-opacity active:opacity-70 disabled:opacity-50"
         style={{ color: "#b23b34" }}
       >
         내 정보 삭제
